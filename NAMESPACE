@@ -1,0 +1,5 @@
+useDynLib(ecmei)
+exportPattern("^[[:alpha:]]+")
+import("mvtnorm")
+import("truncnorm")
+import(parallel, Rcpp, RcppZiggurat)

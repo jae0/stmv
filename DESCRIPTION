@@ -1,0 +1,44 @@
+Package: ecmei
+Title: Lattice-based models   
+Version: 0.1
+Authors@R: c( person("Jae", "Choi", email="choijaeseok@gmail.com", role=c("aut", "cre")) ) 
+Description: Lattice-based models -- Constrained Kernel-based methods of modelling and predicting space-time hierarchical models. This package interacts with bio and associated projects to provide some kernel-density like (global covariate modelling - local space-time windowed) modelling and interpolation methods. Constrainst are in the form of covariates and/or local process models.
+Depends: R (>= 3.0.0), 
+  mvtnorm, 
+  truncnorm
+Imports: 
+  lubridate,
+  alphahull,
+  parallel,
+  Rcpp, 
+  RcppZiggurat,
+  RcppArmadillo,
+  inline,
+  sp,
+  mgcv,
+  lattice,
+  gstat,
+  fields,
+  RandomFields,
+  parallel, 
+  bigmemory,
+  devtools, 
+  bio.base,
+  bio.utilities
+Suggests: 
+  INLA,
+  knitr, 
+  rmarkdown
+LinkingTo: 
+  Rcpp, 
+  RcppZiggurat,
+  RcppArmadillo
+NeedsCompilation: yes
+SystemRequirements: fftw3 (>= 3.1.2)
+ByteCompile: TRUE
+VignetteBuilder: knitr
+License: MIT
+LazyData: true
+URL: https://github.com/jae0/ecmei/
+
+
