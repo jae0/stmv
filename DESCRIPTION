@@ -23,7 +23,7 @@ Imports:
   parallel, 
   bigmemory,
   devtools, 
-  bio.base,
+  ecmenv,
   bio.utilities
 Suggests: 
   INLA,
