@@ -23,11 +23,11 @@ Imports:
   parallel, 
   bigmemory,
   devtools, 
-  emenv,
-  emgis
+  emenv
 Suggests: 
   INLA,
   knitr, 
+  emgis,
   rmarkdown
 LinkingTo: 
   Rcpp, 
