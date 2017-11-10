@@ -34,7 +34,7 @@ emei_map_xyz = function( x, y, z, ncolors=100, color.code.type="seis", color.seq
 
   if (0) {
   # example usage
-    bioLibrary( "bio.utilities", "emei")
+    bioLibrary( "emenv", "emei")
     require(sp)
     require(lattice)
     data(meuse)

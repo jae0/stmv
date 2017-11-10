@@ -108,7 +108,6 @@
     if ("map.prediction" %in% obj) {
       plot.new()
       require(lattice)
-      bioLibrary( "bio.utilities" )
 
       xrange = range( MESH$loc[,1], na.rm=TRUE)
       yrange = range( MESH$loc[,2], na.rm=TRUE)

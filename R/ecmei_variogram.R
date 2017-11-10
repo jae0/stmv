@@ -17,8 +17,8 @@ emei_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, inla.edge=c(1/3, 1),
       if ( 0 ) {
         # debugging / comparison of results
         
-        # bioLibrary("bio.utilities", "emei" )
-        loadfunctions( c("bio.utilities", "emei" ))
+        # bioLibrary("emenv", "emgis", "emei"  )
+        loadfunctions( c("emenv", "emgis", "emei" ))
         xyz = emei_test_data( datasource="swiss" )
         xy = xyz[, c("x", "y")]
         mz = log( xyz$rain )
