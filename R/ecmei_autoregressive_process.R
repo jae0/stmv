@@ -1,5 +1,5 @@
 
-ecmei_autoregressive_process = function( yt, lag=1, order=1 ) {
+emei_autoregressive_process = function( yt, lag=1, order=1 ) {
 
     require(LaplacesDemon)
 

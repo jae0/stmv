@@ -1,6 +1,6 @@
 
-ecmei__krige = function( p, dat, pa, nu, phi, varObs, varSpatial ) {
-  #\\ this is the core engine of ecmei .. localised space (no-time) modelling interpolation 
+emei__krige = function( p, dat, pa, nu, phi, varObs, varSpatial ) {
+  #\\ this is the core engine of emei .. localised space (no-time) modelling interpolation 
   # \ as a 2D gaussian process (basically, simple krigimg or TPS -- time is treated as being independent)
   #\\ note: time is not being modelled and treated independently 
   #\\      .. you had better have enough data in each time slice ..  essentially this is kriging 
@@ -29,7 +29,7 @@ ecmei__krige = function( p, dat, pa, nu, phi, varObs, varSpatial ) {
     ss = lm( dat$mean[xi] ~ dat[xi,p$variables$Y], na.action=na.omit)
     if ( "try-error" %in% class( ss ) ) next()
     rsquared = summary(ss)$r.squared
-    if (rsquared < p$ecmei_rsquared_threshold ) next()
+    if (rsquared < p$emei_rsquared_threshold ) next()
     pa$mean[pa_i] = predict(fspmodel, x=pa[pa_i, p$variables$LOCS] )
     # pa$sd[pa_i]   = predictSE(fspmodel, x=pa[pa_i, p$variables$LOCS] ) # SE estimates are slooow
  
@@ -55,9 +55,9 @@ ecmei__krige = function( p, dat, pa, nu, phi, varObs, varSpatial ) {
   ss = lm( dat$mean ~ dat[,p$variables$Y], na.action=na.omit)
   if ( "try-error" %in% class( ss ) ) return( NULL )
   rsquared = summary(ss)$r.squared
-  if (rsquared < p$ecmei_rsquared_threshold ) return(NULL)
+  if (rsquared < p$emei_rsquared_threshold ) return(NULL)
 
-  ecmei_stats = list( sdTotal=sdTotal, rsquared=rsquared, ndata=nrow(dat) ) # must be same order as p$statsvars
-  return( list( predictions=pa, ecmei_stats=ecmei_stats ) )  
+  emei_stats = list( sdTotal=sdTotal, rsquared=rsquared, ndata=nrow(dat) ) # must be same order as p$statsvars
+  return( list( predictions=pa, emei_stats=emei_stats ) )  
 }
 

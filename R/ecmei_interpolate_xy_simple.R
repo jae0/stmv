@@ -1,6 +1,6 @@
 
 
-ecmei_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NULL,
+emei_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NULL,
   trimquants=TRUE, trimprobs=c(0.025, 0.975), 
   nr=NULL, nc=NULL, phi=1, xwidth=phi*10, ywidth=phi*10, nu=0.5 ) {
   #\\ reshape after interpolating to fit the output resolution 
@@ -21,8 +21,8 @@ ecmei_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=N
       nr2 = round( nr*2)
       nc2 = round( nc*2)
       
-      (o=ecmei::ecmei_variogram( xy=RMprecip$x, z=RMprecip$y, methods="gstat" ) )
-      (o=ecmei_variogram( xy=RMprecip$x, z=RMprecip$y, methods="fast" ) )
+      (o=emei::emei_variogram( xy=RMprecip$x, z=RMprecip$y, methods="gstat" ) )
+      (o=emei_variogram( xy=RMprecip$x, z=RMprecip$y, methods="fast" ) )
   
       phi = 2.92
       nu= 0.2338
@@ -111,7 +111,7 @@ ecmei_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=N
     nu = 0.5
     phi = min(dx, dy) / 10
 
-    o = ecmei::ecmei_variogram( xy=cbind(x,y), z=z, methods="gstat" ) 
+    o = emei::emei_variogram( xy=cbind(x,y), z=z, methods="gstat" ) 
     # suggest: nu=0.3; phi =1.723903
 
     keep = sample.int( nrow(locsout), 1000 ) 
@@ -119,8 +119,8 @@ ecmei_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=N
     y = y[keep]
     z = z[keep]
     
-    o = ecmei::ecmei_variogram( xy=cbind(x,y), z=z, methods="gstat" ) 
-    o = ecmei::ecmei_variogram( xy=cbind(x,y), z=z, methods="fast" ) 
+    o = emei::emei_variogram( xy=cbind(x,y), z=z, methods="gstat" ) 
+    o = emei::emei_variogram( xy=cbind(x,y), z=z, methods="fast" ) 
 
   }
 
@@ -141,9 +141,9 @@ ecmei_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=N
      nc = length(im2$x)
      pres = min(c(diff( im2$x), diff(im2$y )) )
      
-     a = ecmei::ecmei_variogram( data[,c("x","y")], data[,"z"] )
+     a = emei::emei_variogram( data[,c("x","y")], data[,"z"] )
 
-     ecmei::matern_phi2distance( phi=a$fast$phi, nu=a$fast$nu, cor=0.95)
+     emei::matern_phi2distance( phi=a$fast$phi, nu=a$fast$nu, cor=0.95)
 
 
   }
@@ -203,7 +203,7 @@ ecmei_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=N
     fcovar = fft(mcovar)/(fft(mC) * nr2 * nc2)
  
   #  rm(dgrid, covar, mC, mcovar); gc()
-    x_id = ecmei::array_map( "xy->1", data[,c("x","y")], 
+    x_id = emei::array_map( "xy->1", data[,c("x","y")], 
       dims=c(nr2,nc2), origin=c(min(data$x), min(data$y)), res=c(pres, pres) )
 
     # data
@@ -258,7 +258,7 @@ ecmei_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=N
   if (interp.method == "convoSPAT") {
     require(convoSPAT)
 
-    ## interesting approach similar to ecmei but too slow to use 
+    ## interesting approach similar to emei but too slow to use 
     # .. seems to get stuck in optimization .. perhaps use LBFGS?
 
     m <- NSconvo_fit(
@@ -291,7 +291,7 @@ ecmei_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=N
     ndata = length(Y)
     noise = lengthscale * 1e-9
     locs = locs + runif( ndata*2, min=-noise, max=noise ) # add  noise  to prevent a race condition .. inla does not like uniform grids
-    MESH = ecmei_mesh_inla( locs, lengthscale=lengthscale )
+    MESH = emei_mesh_inla( locs, lengthscale=lengthscale )
     if ( is.null( MESH) ) return( "Mesh Error" )
     SPDE = inla.spde2.matern( MESH,  alpha=2 ) # alpha is 2*nu (Bessel smoothness factor)
     varY = as.character( FM[2] )
@@ -317,9 +317,9 @@ ecmei_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=N
       i_data = inla.stack.index( DATA, "preds")$data
     }
     RES = NULL
-    RES = ecmei_inla_call( FM=FM, DATA=DATA, SPDE=SPDE, FAMILY="gaussian" )
+    RES = emei_inla_call( FM=FM, DATA=DATA, SPDE=SPDE, FAMILY="gaussian" )
     # extract summary statistics from a spatial (SPDE) analysis and update the output file
-    # inla.summary = ecmei_summary_inla_spde2 = ( RES, SPDE )
+    # inla.summary = emei_summary_inla_spde2 = ( RES, SPDE )
     # inla.spde2.matern creates files to disk that are not cleaned up:
     spdetmpfn = SPDE$f$spde2.prefix
     fns = list.files( dirname( spdetmpfn ), all.files=TRUE, full.names=TRUE, recursive=TRUE, include.dirs=TRUE )
@@ -393,7 +393,7 @@ ecmei_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=N
 
     pCovars = as.matrix( rep(1, nrow(locsout)))  # in the simplest model, 1 col matrix for the intercept
 
-    stv = ecmei_variogram( xy, z, methods=method )
+    stv = emei_variogram( xy, z, methods=method )
     rbounds = stv[[method]]$range * c( 0.01, 1.5 )
     phibounds = range( -log(0.05) / rbounds ) ## approximate
     nubounds = c(1e-3, stv[[method]]$kappa * 1.5 )# Finley et al 2007 suggest limiting this to (0,2)

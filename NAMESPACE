@@ -1,4 +1,4 @@
-useDynLib(ecmei)
+useDynLib(emei)
 exportPattern("^[[:alpha:]]+")
 import("mvtnorm")
 import("truncnorm")

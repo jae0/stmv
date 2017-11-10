@@ -1,5 +1,5 @@
 
-ecmei_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvarsout=c("id", p$variables$TIME, p$variables$LOCS, p$variables$Y)) {
+emei_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvarsout=c("id", p$variables$TIME, p$variables$LOCS, p$variables$Y)) {
 
   # static vars .. don't need to look up
     datgridded = dat # only the static parts .. time has to be a uniform grid so reconstruct below
@@ -15,7 +15,7 @@ ecmei_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvars
     if (p$nloccov > 0) {
       for (ci in 1:p$nloccov) {
         vn = p$variables$local_cov[ci]
-        pu = ecmei_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
+        pu = emei_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
         nts = ncol(pu)
         if ( nts==1 ) tokeep = c(tokeep, vn ) 
       }
@@ -30,14 +30,14 @@ ecmei_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvars
       datgridded = cbind( datgridded[ rep.int(1:datgridded_n, p$nt), ], 
                       rep.int(p$prediction.ts, rep(datgridded_n, p$nt )) )
       names(datgridded)[ ncol(datgridded) ] = p$variables$TIME 
-      datgridded = cbind( datgridded, ecmei_timecovars ( vars=p$variables$local_all, ti=datgridded[,p$variables$TIME]  ) )
+      datgridded = cbind( datgridded, emei_timecovars ( vars=p$variables$local_all, ti=datgridded[,p$variables$TIME]  ) )
     }
 
     if (p$nloccov > 0) {
       # add time-varying covars .. not necessary except when covars are modelled locally
       for (ci in 1:p$nloccov) {
         vn = p$variables$local_cov[ci]
-        pu = ecmei_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
+        pu = emei_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
         nts = ncol(pu)
         if ( nts== 1) {
           # static vars are retained in the previous step
@@ -54,10 +54,10 @@ ecmei_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvars
 
     rownames(datgridded) = NULL
 
-    ts_gam = ecmei__gam( p, dat, datgridded ) # currently only a GAM is enabled for the TS component
+    ts_gam = emei__gam( p, dat, datgridded ) # currently only a GAM is enabled for the TS component
 
     if (is.null( ts_gam)) return(NULL)
-    if (ts_gam$ecmei_stats$rsquared < p$ecmei_rsquared_threshold ) return(NULL)
+    if (ts_gam$emei_stats$rsquared < p$emei_rsquared_threshold ) return(NULL)
 
     # range checks
     rY = range( dat[,p$variables$Y], na.rm=TRUE)
@@ -117,7 +117,7 @@ ecmei_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvars
         for (ci in 1:p$nloccov) {
           vn = p$variables$local_cov[ci]
           pu = NULL
-          pu = ecmei_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
+          pu = emei_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
           nts = ncol(pu)
           if ( nts== 1 ) {
             pvars = c( pvars, vn )
@@ -126,14 +126,14 @@ ecmei_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvars
         }
       }
       datgridded = datgridded[, pvars]
-      datgridded = cbind( datgridded, ecmei_timecovars ( vars=p$variables$local_all, ti=datgridded[,p$variables$TIME]  ) )
+      datgridded = cbind( datgridded, emei_timecovars ( vars=p$variables$local_all, ti=datgridded[,p$variables$TIME]  ) )
 
       if (p$nloccov > 0) {
         # add time-varying covars .. not necessary except when covars are modelled locally
         for (ci in 1:p$nloccov) {
           vn = p$variables$local_cov[ci]
           pu = NULL
-          pu = ecmei_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
+          pu = emei_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
           nts = ncol(pu)
           if ( nts == p$ny )  {
             datgridded$iy = datgridded$yr - p$yrs[1] + 1 #yr index

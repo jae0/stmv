@@ -1,5 +1,5 @@
 
-ecmei_attach = function( method, pointer ) {
+emei_attach = function( method, pointer ) {
   #\\ generic method to attach data pointer from bigmemory or ff storage pointers
   return( 
     switch( method, 

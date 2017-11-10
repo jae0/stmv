@@ -1,6 +1,6 @@
 
-  ecmei_inla_call = function( FM, DATA, SPDE, FAMILY ) {
-    #\\ call inla using ecmei expected data objects: 
+  emei_inla_call = function( FM, DATA, SPDE, FAMILY ) {
+    #\\ call inla using emei expected data objects: 
     #\\   FM is the model formula
     #\\   DATA is the "stacked" data
     #\\   SPDE is the SPDE spatial covariance data object (Matern)

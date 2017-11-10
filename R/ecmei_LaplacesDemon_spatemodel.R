@@ -1,5 +1,5 @@
 
-ecmei_LaplacesDemon_spatemodel = function(Data=list()) {
+emei_LaplacesDemon_spatemodel = function(Data=list()) {
 
   #Data$mon.names = c( "LP", paste0("yhat[",1:Data$N,"]" ) )
   Data$mon.names = c( "LP" )
@@ -61,7 +61,7 @@ ecmei_LaplacesDemon_spatemodel = function(Data=list()) {
     spec = spec * Data$N / sum(spec) * {1 - exp(2 * DiffDamp)}/{-2}/ ( DiffDamp/Data$dt ) # normalize and include diffusion/advection
 
     RcppZiggurat::zsetseed( floor(runif(1)*1000) )
-    fbs = .C( "ffbs_spectral_ecmei_oneshot", 
+    fbs = .C( "ffbs_spectral_emei_oneshot", 
       yh=as.double(spate::TSmat.to.vect(Data$y)), 
       ll=as.double(1.0),  # dummy variable .. make sure it is a float 
       tau2=as.double(tau2),
@@ -77,7 +77,7 @@ ecmei_LaplacesDemon_spatemodel = function(Data=list()) {
       NF=as.integer(Data$NF), 
       NFc=as.integer(Data$NFc), 
       ns=as.integer(Data$ns),
-      PACKAGE="ecmei" )
+      PACKAGE="emei" )
 
     LL = fbs$ll ## Log Likelihood
 

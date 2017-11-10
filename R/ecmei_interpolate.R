@@ -1,6 +1,6 @@
 
 
-ecmei_interpolate = function( ip=NULL, p, debug=FALSE ) {
+emei_interpolate = function( ip=NULL, p, debug=FALSE ) {
   #\\ core function to intepolate (model and predict) in parllel
 
   if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) ) 
@@ -9,26 +9,26 @@ ecmei_interpolate = function( ip=NULL, p, debug=FALSE ) {
 
   #---------------------
   # data for modelling
-  S = ecmei_attach( p$storage.backend, p$ptr$S )
-  Sflag = ecmei_attach( p$storage.backend, p$ptr$Sflag )
+  S = emei_attach( p$storage.backend, p$ptr$S )
+  Sflag = emei_attach( p$storage.backend, p$ptr$Sflag )
   
-  Sloc = ecmei_attach( p$storage.backend, p$ptr$Sloc )
-  Ploc = ecmei_attach( p$storage.backend, p$ptr$Ploc )
-  Yloc = ecmei_attach( p$storage.backend, p$ptr$Yloc )
+  Sloc = emei_attach( p$storage.backend, p$ptr$Sloc )
+  Ploc = emei_attach( p$storage.backend, p$ptr$Ploc )
+  Yloc = emei_attach( p$storage.backend, p$ptr$Yloc )
 
-  Y = ecmei_attach( p$storage.backend, p$ptr$Y )
+  Y = emei_attach( p$storage.backend, p$ptr$Y )
 
-  P = ecmei_attach( p$storage.backend, p$ptr$P )
-  Pn = ecmei_attach( p$storage.backend, p$ptr$Pn )
-  Psd = ecmei_attach( p$storage.backend, p$ptr$Psd )
+  P = emei_attach( p$storage.backend, p$ptr$P )
+  Pn = emei_attach( p$storage.backend, p$ptr$Pn )
+  Psd = emei_attach( p$storage.backend, p$ptr$Psd )
 
 
   if (p$nloccov > 0) {
-    Ycov = ecmei_attach( p$storage.backend, p$ptr$Ycov )
+    Ycov = emei_attach( p$storage.backend, p$ptr$Ycov )
   }
   
   if ( exists("TIME", p$variables) ) {
-    Ytime = ecmei_attach( p$storage.backend, p$ptr$Ytime )
+    Ytime = emei_attach( p$storage.backend, p$ptr$Ytime )
   }
 
   if ( p$storage.backend != "bigmemory.ram" ) {
@@ -38,21 +38,21 @@ ecmei_interpolate = function( ip=NULL, p, debug=FALSE ) {
     # Y = Y[]
   }
 
-  Yi = ecmei_attach( p$storage.backend, p$ptr$Yi )
+  Yi = emei_attach( p$storage.backend, p$ptr$Yi )
   # Yi = as.vector(Yi[])  #force copy to RAM as a vector
 
   # misc intermediate calcs to be done outside of parallel loops
   upsampling = sort( p$sampling[ which( p$sampling > 1 ) ] )
-  upsampling = upsampling[ which(upsampling*p$ecmei_distance_scale <= p$ecmei_distance_max )]
+  upsampling = upsampling[ which(upsampling*p$emei_distance_scale <= p$emei_distance_max )]
   downsampling = sort( p$sampling[ which( p$sampling < 1) ] , decreasing=TRUE )
-  downsampling = downsampling[ which(downsampling*p$ecmei_distance_scale >= p$ecmei_distance_min )]
+  downsampling = downsampling[ which(downsampling*p$emei_distance_scale >= p$emei_distance_min )]
 
   localcount = -1 
 
   stime = Sys.time()
 
 
-  if (p$ecmei_local_modelengine %in% c("stan", "gaussianprocess")) stanmodel = gaussian_process_stanmodel()  # precompile to speed the rest
+  if (p$emei_local_modelengine %in% c("stan", "gaussianprocess")) stanmodel = gaussian_process_stanmodel()  # precompile to speed the rest
 
 
 # main loop over each output location in S (stats output locations)
@@ -64,23 +64,23 @@ ecmei_interpolate = function( ip=NULL, p, debug=FALSE ) {
     if (( localcount %% 13 )== 0) {
       varstoout = c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outsidepreddomain", "n.outside", "n.complete", "prop_incomp" )
       header = paste( c( varstoout) )
-      currentstatus = ecmei_db( p=p, DS="statistics.status" )
+      currentstatus = emei_db( p=p, DS="statistics.status" )
       currentstatus = c( unlist( currentstatus[ varstoout ] ) )
       dtime = difftime( Sys.time(), stime )
       dtimehr = difftime( Sys.time(), stime, units="hours" )
       nrate = currentstatus["n.complete"]/ as.numeric(dtimehr)
       tmore = currentstatus["n.todo"] / nrate
       tall = (currentstatus["n.todo"]+currentstatus["n.complete"]) / nrate
-      cat( paste( "---", p$project.root, p$variables$Y, p$spatial.domain, "--- \n\n"), file=p$ecmei_current_status, append=FALSE )
-      cat( paste( "Start time :  ", stime, "\n"), file=p$ecmei_current_status, append=TRUE )
-      cat( paste( "Current time :", Sys.time(), "\n"), file=p$ecmei_current_status, append=TRUE )
-      cat( paste( "Elapsed time :", format(dtime), "\n" ), file=p$ecmei_current_status, append=TRUE)
-      cat( paste( "Est. time remaining (hrs) :", round( tmore,3), "\n" ), file=p$ecmei_current_status, append=TRUE)
-      cat( paste( "Est. time total (hrs) :", round( tall,3), "\n" ), file=p$ecmei_current_status, append=TRUE)
+      cat( paste( "---", p$project.root, p$variables$Y, p$spatial.domain, "--- \n\n"), file=p$emei_current_status, append=FALSE )
+      cat( paste( "Start time :  ", stime, "\n"), file=p$emei_current_status, append=TRUE )
+      cat( paste( "Current time :", Sys.time(), "\n"), file=p$emei_current_status, append=TRUE )
+      cat( paste( "Elapsed time :", format(dtime), "\n" ), file=p$emei_current_status, append=TRUE)
+      cat( paste( "Est. time remaining (hrs) :", round( tmore,3), "\n" ), file=p$emei_current_status, append=TRUE)
+      cat( paste( "Est. time total (hrs) :", round( tall,3), "\n" ), file=p$emei_current_status, append=TRUE)
       for ( hd in varstoout ){
-        cat( paste( hd, ":", currentstatus[hd], "\n" ), file=p$ecmei_current_status, append=TRUE)
+        cat( paste( hd, ":", currentstatus[hd], "\n" ), file=p$emei_current_status, append=TRUE)
       }
-      # message( readLines( p$ecmei_current_status ) )
+      # message( readLines( p$emei_current_status ) )
     }
 
     Si = p$runs[ iip, "locs" ]
@@ -94,8 +94,8 @@ ecmei_interpolate = function( ip=NULL, p, debug=FALSE ) {
     # find data nearest S[Si,] and with sufficient data
     dlon = abs( Sloc[Si,1] - Yloc[Yi[],1] ) 
     dlat = abs( Sloc[Si,2] - Yloc[Yi[],2] ) 
-    U =  which( (dlon  <= p$ecmei_distance_scale)  & (dlat <= p$ecmei_distance_scale) )
-    ecmei_distance_cur = p$ecmei_distance_scale
+    U =  which( (dlon  <= p$emei_distance_scale)  & (dlat <= p$emei_distance_scale) )
+    emei_distance_cur = p$emei_distance_scale
     ndata = length(U)
 
     if (0) {
@@ -118,13 +118,13 @@ ecmei_interpolate = function( ip=NULL, p, debug=FALSE ) {
         } else {
           # need to downsample
           for ( dsamp in downsampling )  { # lots of data .. downsample
-            ecmei_distance_cur = p$ecmei_distance_scale * dsamp
-            U = which( dlon < ecmei_distance_cur & dlat < ecmei_distance_cur )# faster to take a block 
+            emei_distance_cur = p$emei_distance_scale * dsamp
+            U = which( dlon < emei_distance_cur & dlat < emei_distance_cur )# faster to take a block 
             ndata = length(U)
             if ( ndata <= p$n.max ) break()
-            if ( ecmei_distance_cur <= p$ecmei_distance_min ) {
+            if ( emei_distance_cur <= p$emei_distance_min ) {
               # reached lower limit in distance, taking a subsample instead
-              U = which( dlon < p$ecmei_distance_min & dlat < p$ecmei_distance_min ) # faster to take a block 
+              U = which( dlon < p$emei_distance_min & dlat < p$emei_distance_min ) # faster to take a block 
               U = U[ .Internal( sample( length(U), p$n.max, replace=FALSE, prob=NULL)) ]
               ndata = length(U)
               break()
@@ -135,8 +135,8 @@ ecmei_interpolate = function( ip=NULL, p, debug=FALSE ) {
     } else {
       # need to upsample
       for ( usamp in upsampling )  {
-        ecmei_distance_cur = p$ecmei_distance_scale * usamp
-        U = which( dlon < ecmei_distance_cur & dlat < ecmei_distance_cur ) # faster to take a block 
+        emei_distance_cur = p$emei_distance_scale * usamp
+        U = which( dlon < emei_distance_cur & dlat < emei_distance_cur ) # faster to take a block 
         ndata = length(U)
         if ( ndata >= p$n.min ) {
           if (ndata >= p$n.max) {
@@ -151,15 +151,15 @@ ecmei_interpolate = function( ip=NULL, p, debug=FALSE ) {
    if (ndata < p$n.min)  next() # check in case a fault in logic, above
 
    # crude (mean) variogram across all time slices
-    o = try( ecmei_variogram( xy=Yloc[U,], z=Y[U], methods=p$ecmei_variogram_method  ) )
+    o = try( emei_variogram( xy=Yloc[U,], z=Y[U], methods=p$emei_variogram_method  ) )
       if ( !is.null(o)) {
         if (!inherits(o, "try-error")) {
-          if (exists(p$ecmei_variogram_method, o)) {
-            ores = o[[p$ecmei_variogram_method]] # store current best estimate of variogram characteristics
+          if (exists(p$emei_variogram_method, o)) {
+            ores = o[[p$emei_variogram_method]] # store current best estimate of variogram characteristics
             if (exists("range_ok", ores) & exists("range", ores) ) {
               if (ores[["range_ok"]] ) {
-                if ( (ores[["range"]] > p$ecmei_distance_min) & (ores[["range"]] <= p$ecmei_distance_max) ) {
-                  ecmei_distance_cur = ores[["range"]]
+                if ( (ores[["range"]] > p$emei_distance_min) & (ores[["range"]] <= p$emei_distance_max) ) {
+                  emei_distance_cur = ores[["range"]]
                   vario_U  = which( dlon  <= ores[["range"]]  & dlat <= ores[["range"]] )
                   vario_ndata =length(vario_U)                
                   if ((vario_ndata > p$n.min) & (vario_ndata < p$n.max) ) { 
@@ -189,16 +189,16 @@ ecmei_interpolate = function( ip=NULL, p, debug=FALSE ) {
     dlon=dlat=o=NULL; gc()
 
     YiU = Yi[U]  
-    # So, YiU and p$ecmei_distance_prediction determine the data entering into local model construction
-    # dist_model = ecmei_distance_cur
+    # So, YiU and p$emei_distance_prediction determine the data entering into local model construction
+    # dist_model = emei_distance_cur
 
-    pa = ecmei_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=p$windowsize.half )
+    pa = emei_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=p$windowsize.half )
     if (is.null(pa)) next()
 
       if (debug) {
         # check that position indices are working properly
-        Sloc = ecmei_attach( p$storage.backend, p$ptr$Sloc )
-        Yloc = ecmei_attach( p$storage.backend, p$ptr$Yloc )
+        Sloc = emei_attach( p$storage.backend, p$ptr$Sloc )
+        Yloc = emei_attach( p$storage.backend, p$ptr$Yloc )
         plot( Yloc[U,2]~ Yloc[U,1], col="red", pch=".", 
           ylim=range(c(Yloc[U,2], Sloc[Si,2], Ploc[pa$i,2]) ), 
           xlim=range(c(Yloc[U,1], Sloc[Si,1], Ploc[pa$i,1]) ) ) # all data
@@ -231,7 +231,7 @@ ecmei_interpolate = function( ip=NULL, p, debug=FALSE ) {
      
     if (exists("TIME", p$variables)) {
       dat[, p$variables$TIME ] = Ytime[YiU,] 
-      dat = cbind( dat, ecmei_timecovars ( vars=p$variables$local_all, ti=dat[,p$variables$TIME]  ) )
+      dat = cbind( dat, emei_timecovars ( vars=p$variables$local_all, ti=dat[,p$variables$TIME]  ) )
     }
 
     nu = phi = varSpatial = varObs = NULL
@@ -240,8 +240,8 @@ ecmei_interpolate = function( ip=NULL, p, debug=FALSE ) {
     if ( exists("varSpatial", ores)  && is.finite(ores$varSpatial) ) varSpatial = ores$varSpatial
     if ( exists("varObs", ores)  && is.finite(ores$varObs) && ores$varObs > p$eps ) varObs = ores$varObs
   
-    if (is.null(nu)) nu = p$ecmei_lowpass_nu
-    if (is.null(phi)) phi = ecmei_distance_cur/sqrt(8*nu) # crude estimate of phi based upon current scaling  distance approximates the range at 90% autocorrelation(e.g., see Lindgren et al. 2011)
+    if (is.null(nu)) nu = p$emei_lowpass_nu
+    if (is.null(phi)) phi = emei_distance_cur/sqrt(8*nu) # crude estimate of phi based upon current scaling  distance approximates the range at 90% autocorrelation(e.g., see Lindgren et al. 2011)
     if (is.null(varSpatial)) varSpatial =0.5 * var( dat[, p$variables$Y], na.rm=TRUE)
     if (is.null(varObs)) varObs = varSpatial
     
@@ -252,23 +252,23 @@ ecmei_interpolate = function( ip=NULL, p, debug=FALSE ) {
     
     gc()
     res =NULL
-    res = try( switch( p$ecmei_local_modelengine, 
-      bayesx = ecmei__bayesx( p, dat, pa ),
-      habitat = ecmei__habitat( p, dat, pa ), # TODO 
-      inla = ecmei__inla( p, dat, pa ),
-      gam = ecmei__gam( p, dat, pa ), 
-      gaussianprocess2Dt = ecmei__gaussianprocess2Dt( p, dat, pa ), 
-      gaussianprocess = ecmei__gaussianprocess( p, dat, pa ),  # TODO
-      glm = ecmei__glm( p, dat, pa), 
-      gstat = ecmei__gstat( p, dat, pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ), 
-      krige = ecmei__krige( p, dat, pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ), 
-      LaplacesDemon = ecmei__LaplacesDemon( p, dat, pa ),
-      stan = ecmei__stan( p, dat, pa, stanmodel=stanmodel ),  ## todo
-      splancs = ecmei__splancs( p, dat, pa ), # TODO
-      spate = ecmei__spate( p, dat, pa, sloc=Sloc[Si,], distance=ecmei_distance_cur, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial), 
-      fft = ecmei__fft( p, dat, pa, nu=nu, phi=phi ), 
-      tps = ecmei__tps( p, dat, pa, lambda=varObs/varSpatial ), 
-      twostep = ecmei__twostep( p, dat, pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial )
+    res = try( switch( p$emei_local_modelengine, 
+      bayesx = emei__bayesx( p, dat, pa ),
+      habitat = emei__habitat( p, dat, pa ), # TODO 
+      inla = emei__inla( p, dat, pa ),
+      gam = emei__gam( p, dat, pa ), 
+      gaussianprocess2Dt = emei__gaussianprocess2Dt( p, dat, pa ), 
+      gaussianprocess = emei__gaussianprocess( p, dat, pa ),  # TODO
+      glm = emei__glm( p, dat, pa), 
+      gstat = emei__gstat( p, dat, pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ), 
+      krige = emei__krige( p, dat, pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ), 
+      LaplacesDemon = emei__LaplacesDemon( p, dat, pa ),
+      stan = emei__stan( p, dat, pa, stanmodel=stanmodel ),  ## todo
+      splancs = emei__splancs( p, dat, pa ), # TODO
+      spate = emei__spate( p, dat, pa, sloc=Sloc[Si,], distance=emei_distance_cur, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial), 
+      fft = emei__fft( p, dat, pa, nu=nu, phi=phi ), 
+      tps = emei__tps( p, dat, pa, lambda=varObs/varSpatial ), 
+      twostep = emei__twostep( p, dat, pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial )
     ) )
 
 
@@ -295,8 +295,8 @@ ecmei_interpolate = function( ip=NULL, p, debug=FALSE ) {
       next()
     }
 
-    if (exists( "ecmei_quantile_bounds", p)) {
-      tq = quantile( Y[YiU], probs=p$ecmei_quantile_bounds, na.rm=TRUE  )
+    if (exists( "emei_quantile_bounds", p)) {
+      tq = quantile( Y[YiU], probs=p$emei_quantile_bounds, na.rm=TRUE  )
       toolow  = which( res$predictions$mean < tq[1] )
       toohigh = which( res$predictions$mean > tq[2] )
       if (length( toolow) > 0)  res$predictions$mean[ toolow] = tq[1]
@@ -310,24 +310,24 @@ ecmei_interpolate = function( ip=NULL, p, debug=FALSE ) {
     }
 
     # stats collator
-    if (!exists("ecmei_stats",  res) ) res$ecmei_stats = list()
+    if (!exists("emei_stats",  res) ) res$emei_stats = list()
     
-    if (!exists("sdSpatial", res$ecmei_stats)) {
+    if (!exists("sdSpatial", res$emei_stats)) {
       # some methods can generate spatial stats simultaneously .. 
       # it is faster to keep them all together instead of repeating here
       # field and RandomFields gaussian processes seem most promising ... 
       # default to fields for speed:
-      res$ecmei_stats["sdSpatial"] = NA 
-      res$ecmei_stats["sdObs"] = NA 
-      res$ecmei_stats["range"] = NA
-      res$ecmei_stats["phi"] = NA
-      res$ecmei_stats["nu"] = NA
+      res$emei_stats["sdSpatial"] = NA 
+      res$emei_stats["sdObs"] = NA 
+      res$emei_stats["range"] = NA
+      res$emei_stats["phi"] = NA
+      res$emei_stats["nu"] = NA
       if ( !is.null(ores)) {
-        if ( exists("varSpatial", ores) ) res$ecmei_stats["sdSpatial"] = sqrt( ores[["varSpatial"]] ) 
-        if ( exists("varObs", ores) ) res$ecmei_stats["sdObs"] = sqrt(ores[["varObs"]]) 
-        if ( exists("range", ores) ) res$ecmei_stats["range"] = ores[["range"]]
-        if ( exists("phi", ores) ) res$ecmei_stats["phi"] = ores[["phi"]]
-        if ( exists("nu", ores) ) res$ecmei_stats["nu"] = ores[["nu"]]
+        if ( exists("varSpatial", ores) ) res$emei_stats["sdSpatial"] = sqrt( ores[["varSpatial"]] ) 
+        if ( exists("varObs", ores) ) res$emei_stats["sdObs"] = sqrt(ores[["varObs"]]) 
+        if ( exists("range", ores) ) res$emei_stats["range"] = ores[["range"]]
+        if ( exists("phi", ores) ) res$emei_stats["phi"] = ores[["phi"]]
+        if ( exists("nu", ores) ) res$emei_stats["nu"] = ores[["nu"]]
       } 
     }
     
@@ -337,8 +337,8 @@ ecmei_interpolate = function( ip=NULL, p, debug=FALSE ) {
       pac_i = which( res$predictions$plon==Sloc[Si,1] & res$predictions$plat==Sloc[Si,2] )
       # plot( mean~tiyr, res$predictions[pac_i,])
       # plot( mean~tiyr, res$predictions, pch="." )
-      res$ecmei_stats["ar_timerange"] = NA 
-      res$ecmei_stats["ar_1"] = NA
+      res$emei_stats["ar_timerange"] = NA 
+      res$emei_stats["ar_1"] = NA
             
       if (length(pac_i) > 5) {
         pac = res$predictions[ pac_i, ]
@@ -348,9 +348,9 @@ ecmei_interpolate = function( ip=NULL, p, debug=FALSE ) {
         pac = pac[ order(pac[,p$variables$TIME]),]
         if (length(piid) > 5 ) {
           ts.stat = NULL
-          ts.stat = try( ecmei_timeseries( pac$mean, method="fft" ) )
+          ts.stat = try( emei_timeseries( pac$mean, method="fft" ) )
           if (!is.null(ts.stat) && !inherits(ts.stat, "try-error") ) {
-            res$ecmei_stats["ar_timerange"] = ts.stat$quantilePeriod 
+            res$emei_stats["ar_timerange"] = ts.stat$quantilePeriod 
             if (all( is.finite(pac$mean))) {
               afin = which (is.finite(pac$mean) )
               if (length(afin) > 5 && var( pac$mean, na.rm=TRUE) > p$eps ) {
@@ -358,19 +358,19 @@ ecmei_interpolate = function( ip=NULL, p, debug=FALSE ) {
                 ar1 = try( ar( pac$mean, order.max=1 ) )
                 if (!inherits(ar1, "try-error")) {
                   if ( length(ar1$ar) == 1 ) {
-                    res$ecmei_stats["ar_1"] = ar1$ar
+                    res$emei_stats["ar_1"] = ar1$ar
                   }  
                 } 
               }
             }
-            if ( !is.finite(res$ecmei_stats[["ar_1"]]) ) {
+            if ( !is.finite(res$emei_stats[["ar_1"]]) ) {
               ar1 = try( cor( pac$mean[1:(length(piid) - 1)], pac$mean[2:(length(piid))], use="pairwise.complete.obs" ) )
-              if (!inherits(ar1, "try-error")) res$ecmei_stats["ar_1"] = ar1 
+              if (!inherits(ar1, "try-error")) res$emei_stats["ar_1"] = ar1 
             }
           } 
 
           ### Do the logistic model here ! -- if not already done ..
-          if (!exists("ts_K", res$ecmei_stats)) {
+          if (!exists("ts_K", res$emei_stats)) {
             # model as a logistic with ts_r, ts_K, etc .. as stats outputs
             
           } 
@@ -466,8 +466,8 @@ ecmei_interpolate = function( ip=NULL, p, debug=FALSE ) {
 
     # save stats
     for ( k in 1: length(p$statsvars) ) {
-      if (exists( p$statsvars[k], res$ecmei_stats )) {
-        S[Si,k] = res$ecmei_stats[[ p$statsvars[k] ]]
+      if (exists( p$statsvars[k], res$emei_stats )) {
+        S[Si,k] = res$emei_stats[[ p$statsvars[k] ]]
       }
     }
     

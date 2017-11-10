@@ -1,5 +1,5 @@
 
-ecmei__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpatial=varSpatial ) {
+emei__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpatial=varSpatial ) {
 
   #\\ twostep modelling time first as a simple ts and then spatial or spatio-temporal interpolation
   #\\ nu is the bessel smooth param
@@ -21,7 +21,7 @@ ecmei__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpat
   if (p$nloccov > 0) {
     for (ci in 1:p$nloccov) {
       vn = p$variables$local_cov[ci]
-      pu = ecmei_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
+      pu = emei_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
       nts = ncol(pu)
       if ( nts==1 ) tokeep = c(tokeep, vn ) 
     }
@@ -35,14 +35,14 @@ ecmei__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpat
     px = cbind( px[ rep.int(1:px_n, p$nt), ], 
                     rep.int(p$prediction.ts, rep(px_n, p$nt )) )
     names(px)[ ncol(px) ] = p$variables$TIME 
-    px = cbind( px, ecmei_timecovars ( vars=p$variables$local_all, ti=px[,p$variables$TIME]  ) )
+    px = cbind( px, emei_timecovars ( vars=p$variables$local_all, ti=px[,p$variables$TIME]  ) )
   }
 
   if (p$nloccov > 0) {
     # add time-varying covars .. not necessary except when covars are modelled locally
     for (ci in 1:p$nloccov) {
       vn = p$variables$local_cov[ci]
-      pu = ecmei_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
+      pu = emei_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
       nts = ncol(pu)
       if ( nts== 1) {
         # static vars are retained in the previous step
@@ -58,10 +58,10 @@ ecmei__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpat
   } # end if
   rownames(px) = NULL
 
-  ts_gam = ecmei__gam( p, dat, px ) # currently only a GAM is enabled for the TS component
+  ts_gam = emei__gam( p, dat, px ) # currently only a GAM is enabled for the TS component
 
   if (is.null( ts_gam)) return(NULL)
-  if (ts_gam$ecmei_stats$rsquared < p$ecmei_rsquared_threshold ) return(NULL)
+  if (ts_gam$emei_stats$rsquared < p$emei_rsquared_threshold ) return(NULL)
 
   # range checks
   rY = range( dat[,p$variables$Y], na.rm=TRUE)
@@ -90,25 +90,25 @@ ecmei__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpat
 
   # step 2 :: spatial modelling .. essentially a time-space separable solution
 
-  if (!exists( "ecmei_twostep_space", p)) p$ecmei_twostep_space="krige" # default
+  if (!exists( "emei_twostep_space", p)) p$emei_twostep_space="krige" # default
   
-  if ( p$ecmei_twostep_space == "krige" ) {
-    out = ecmei__krige( p, dat=pxts, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ) 
+  if ( p$emei_twostep_space == "krige" ) {
+    out = emei__krige( p, dat=pxts, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ) 
     if (is.null( out)) return(NULL)
   }
 
-  if ( p$ecmei_twostep_space == "gstat" ) {
-    out = ecmei__gstat( p, dat=pxts, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ) 
+  if ( p$emei_twostep_space == "gstat" ) {
+    out = emei__gstat( p, dat=pxts, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ) 
     if (is.null( out)) return(NULL)
   }
 
-  if (p$ecmei_twostep_space %in% c("tps") ) {
-    out = ecmei__tps( p, dat=pxts, pa=pa, lambda=varObs/varSpatial  )  
+  if (p$emei_twostep_space %in% c("tps") ) {
+    out = emei__tps( p, dat=pxts, pa=pa, lambda=varObs/varSpatial  )  
     if (is.null( out)) return(NULL)
   }
 
-  if (p$ecmei_twostep_space %in% c("fft", "lowpass", "spatial.process", "lowpass_spatial.process") ) {
-    out = ecmei__fft( p, dat=pxts, pa=pa, nu=nu, phi=phi )  
+  if (p$emei_twostep_space %in% c("fft", "lowpass", "spatial.process", "lowpass_spatial.process") ) {
+    out = emei__fft( p, dat=pxts, pa=pa, nu=nu, phi=phi )  
     if (is.null( out)) return(NULL)
   }
 

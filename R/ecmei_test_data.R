@@ -1,6 +1,6 @@
 
 
-ecmei_test_data = function( datasource="swiss" ) {
+emei_test_data = function( datasource="swiss" ) {
 
   if ( datasource == "swiss" ) {
     require(geostatsp)
@@ -25,7 +25,7 @@ ecmei_test_data = function( datasource="swiss" ) {
 
 
   if ( datasource == "binomial" ) {
-    xy = ecmei_test_data( "swiss")
+    xy = emei_test_data( "swiss")
     # mimic binomial data from rain values
     xy = as.list(xy)
     xy$N=length(xy$rain)
@@ -41,7 +41,7 @@ ecmei_test_data = function( datasource="swiss" ) {
 
 
   if ( datasource == "poisson" ) {
-    xy = ecmei_test_data( "swiss")
+    xy = emei_test_data( "swiss")
     # mimic poisson data from rain values
     xy = as.list(xy)
     xy$N=length(xy$rain)
@@ -58,7 +58,7 @@ ecmei_test_data = function( datasource="swiss" ) {
 
 
   if ( datasource == "gaussian" ) {
-    xy = ecmei_test_data( "swiss")
+    xy = emei_test_data( "swiss")
     # mimic binomial data from rain values
     xy = as.list(xy)
     xy$N=length(xy$rain)

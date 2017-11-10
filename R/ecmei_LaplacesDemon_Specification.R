@@ -1,5 +1,5 @@
 
-ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Covar, ScaleF, ... ) {
+emei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Covar, ScaleF, ... ) {
 
   
     LogMarginalLikelihood = FALSE # default
@@ -7,7 +7,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
 
     if(Algorithm == "ADMG") {
          alg = "Adaptive Directional Metropolis-within-Gibbs"
-         mcmcFN = .ecmei__mcmcadmg
+         mcmcFN = .emei__mcmcadmg
          if( is.null(Specs))
               Specs <- list(n=0, Periodicity=1)
          if(!is.list(Specs))
@@ -19,7 +19,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "AGG") {
          alg = "Adaptive Griddy-Gibbs"
-         mcmcFN =  .ecmei__mcmcagg
+         mcmcFN =  .emei__mcmcagg
          LogMarginalLikelihood = TRUE
          # Algorithm <- "Adaptive Griddy-Gibbs"
          if(is.null(Specs))
@@ -49,7 +49,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "AHMC") {
          alg = "Adaptive Hamiltonian Monte Carlo"
-         mcmcFN = .ecmei__mcmcahmc
+         mcmcFN = .emei__mcmcahmc
 
          # Algorithm <- "Adaptive Hamiltonian Monte Carlo"
          if( is.null(Specs))
@@ -69,7 +69,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "AIES") {
          alg = "Affine-Invariant Ensemble Sampler"
-         mcmcFN = .ecmei__mcmcaies
+         mcmcFN = .emei__mcmcaies
          LogMarginalLikelihood = TRUE
          # Algorithm <- "Affine-Invariant Ensemble Sampler"
          if(is.null(Specs))
@@ -97,7 +97,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "AM") {
          alg = "Adaptive Metropolis"
-         mcmcFN = .ecmei__mcmcam
+         mcmcFN = .emei__mcmcam
          # Algorithm <- "Adaptive Metropolis"
          if( is.null(Specs))
               Specs=list(Adaptive=floor(Iterations/2), Periodicity=1)
@@ -108,7 +108,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "AMM") {
         alg = "Adaptive-Mixture Metropolis"
-        mcmcFN = .ecmei__mcmcamm
+        mcmcFN = .emei__mcmcamm
          # Algorithm <- "Adaptive-Mixture Metropolis"
          if( is.null(Specs))
               Specs=list(Adaptive=floor(Iterations/2), B=NULL, n=0, Periodicity=1, w=0.05)
@@ -129,7 +129,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "AMWG") {
          alg = "Adaptive Metropolis-within-Gibbs"
-         mcmcFN = .ecmei__mcmcamwg
+         mcmcFN = .emei__mcmcamwg
          # Algorithm <- "Adaptive Metropolis-within-Gibbs"
          if( is.null(Specs))
               Specs=list(Periodicity=1)
@@ -140,7 +140,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "CHARM") {
          alg = "Componentwise Hit-And-Run Metropolis"
-         mcmcFN = .ecmei__mcmccharm
+         mcmcFN = .emei__mcmccharm
          LogMarginalLikelihood = TRUE
          # Algorithm <- "Componentwise Hit-And-Run Metropolis"
          if( is.null(Specs))
@@ -157,7 +157,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "DEMC") {
          alg = "Differential Evolution Markov Chain"
-         mcmcFN = .ecmei__mcmcdemc
+         mcmcFN = .emei__mcmcdemc
          # Algorithm <- "Differential Evolution Markov Chain"
          if(is.null(Specs))
               stop("The Specs argument is required.", file=LogFile, append=TRUE)
@@ -194,7 +194,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "DRAM") {
          alg = "Delayed Rejection Adaptive Metropolis"
-         mcmcFN = .ecmei__mcmcdram 
+         mcmcFN = .emei__mcmcdram 
          # Algorithm <- "Delayed Rejection Adaptive Metropolis"
          if( is.null(Specs))
               Specs=list(Adaptive=floor(Iterations/2), Periodicity=1)
@@ -205,7 +205,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "DRM") {
          alg = "Delayed Rejection Metropolis"
-         mcmcFN = .ecmei__mcmcdrm
+         mcmcFN = .emei__mcmcdrm
          LogMarginalLikelihood = TRUE
          # Algorithm <- "Delayed Rejection Metropolis"
          Specs <- NULL
@@ -226,7 +226,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
 
     else if(Algorithm == "GG") {
          alg = "Griddy-Gibbs"
-         mcmcFN = .ecmei__mcmcgg 
+         mcmcFN = .emei__mcmcgg 
          LogMarginalLikelihood = TRUE
          # Algorithm <- "Griddy-Gibbs"
          if(is.null(Specs))
@@ -255,7 +255,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "Gibbs") {
          alg = "Gibbs Sampler"
-         mcmcFN = .ecmei__mcmcgibbs
+         mcmcFN = .emei__mcmcgibbs
          LogMarginalLikelihood = TRUE
          # Algorithm <- "Gibbs Sampler"
          if(is.null(Specs) ) {
@@ -284,7 +284,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "HARM") {
          alg = "Hit-And-Run Metropolis"
-         mcmcFN = .ecmei__mcmcharm
+         mcmcFN = .emei__mcmcharm
          LogMarginalLikelihood = TRUE
          # Algorithm <- "Hit-And-Run Metropolis"
          if( is.null(Specs))
@@ -304,7 +304,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "HMC") {
          alg = "Hamiltonian Monte Carlo"
-         mcmcFN = .ecmei__mcmchmc
+         mcmcFN = .emei__mcmchmc
          LogMarginalLikelihood = TRUE
          # Algorithm <- "Hamiltonian Monte Carlo"
          if( is.null(Specs))
@@ -323,7 +323,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "HMCDA") {
          alg = "Hamiltonian Monte Carlo with Dual-Averaging"
-         mcmcFN = .ecmei__mcmchmcda
+         mcmcFN = .emei__mcmchmcda
          # Algorithm <- "Hamiltonian Monte Carlo with Dual-Averaging"
          if(is.null(Specs))
               stop("The Specs argument is required.", file=LogFile, append=TRUE)
@@ -343,7 +343,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "IM") {
          alg = "Independence Metropolis"
-         mcmcFN = .ecmei__mcmcim
+         mcmcFN = .emei__mcmcim
          LogMarginalLikelihood = TRUE
          if(is.null(Specs))
               stop("The Specs argument is required.", file=LogFile, append=TRUE)
@@ -357,7 +357,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "INCA") {
          alg = "Interchain Adaptation"
-         mcmcFN = .ecmei__mcmcinca
+         mcmcFN = .emei__mcmcinca
          if( is.null(Specs))
               Specs=list(Adaptive=floor(Iterations/2), Periodicity=1)
          if(!is.list(Specs))
@@ -367,7 +367,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "MALA") {
          alg = "Metropolis-Adjusted Langevin Algorithm"
-         mcmcFN = .ecmei__mcmcmala
+         mcmcFN = .emei__mcmcmala
          LogMarginalLikelihood = TRUE
          # Algorithm <- "Metropolis-Adjusted Langevin Algorithm"
          if( is.null(Specs))
@@ -383,7 +383,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "MCMCMC") {
          alg = "Metropolis-Coupled Markov Chain Monte Carlo"
-         mcmcFN = .ecmei__mcmcmcmcmc
+         mcmcFN = .emei__mcmcmcmcmc
          LogMarginalLikelihood = TRUE
          # Algorithm <- "Metropolis-Coupled Markov Chain Monte Carlo"
          if( is.null(Specs))
@@ -399,7 +399,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "MTM") {
          alg = "Multiple-Try Metropolis"
-         mcmcFN = .ecmei__mcmcmtm
+         mcmcFN = .emei__mcmcmtm
          LogMarginalLikelihood = TRUE
          # Algorithm <- "Multiple-Try Metropolis"
          if( is.null(Specs))
@@ -415,14 +415,14 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "MWG") {
          alg = "Metropolis-within-Gibbs"
-         mcmcFN = .ecmei__mcmcmwg
+         mcmcFN = .emei__mcmcmwg
          LogMarginalLikelihood = TRUE
          # Algorithm <- "Metropolis-within-Gibbs"
          Specs <- NULL
          }
     else if(Algorithm == "NUTS") {
          alg = "No-U-Turn Sampler"
-         mcmcFN = .ecmei__mcmcnuts
+         mcmcFN = .emei__mcmcnuts
          LogMarginalLikelihood = TRUE
          # Algorithm <- "No-U-Turn Sampler"
          if( is.null(Specs))
@@ -441,7 +441,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "OHSS") {
          alg = "Oblique Hyperrectangle Slice Sampler"
-         mcmcFN = .ecmei__mcmcohss
+         mcmcFN = .emei__mcmcohss
          LogMarginalLikelihood = TRUE
          # Algorithm <- "Oblique Hyperrectangle Slice Sampler"
          if( is.null(Specs))
@@ -456,7 +456,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "pCN") {
          alg = "Preconditioned Crank-Nicolson"
-         mcmcFN = .ecmei__mcmcpcn
+         mcmcFN = .emei__mcmcpcn
          LogMarginalLikelihood = TRUE
          # Algorithm <- "Preconditioned Crank-Nicolson"
          if( is.null(Specs))
@@ -469,7 +469,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "RAM") {
          alg = "Robust Adaptive Metropolis"
-         mcmcFN = .ecmei__mcmcram
+         mcmcFN = .emei__mcmcram
          # Algorithm <- "Robust Adaptive Metropolis"
          if( is.null(Specs))
               Specs=list(alpha.star=0.234, Dist="N", gamma=0.66, Periodicity=1)
@@ -492,14 +492,14 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "RDMH") {
          alg = "Random Dive Metropolis-Hastings"
-         mcmcFN = .ecmei__mcmcrdmh
+         mcmcFN = .emei__mcmcrdmh
          LogMarginalLikelihood = TRUE
          # Algorithm <- "Random Dive Metropolis-Hastings"
          Specs <- NULL
          }
     else if(Algorithm == "Refractive") {
          alg = "Refractive Sampler"
-         mcmcFN = .ecmei__mcmcrefractive
+         mcmcFN = .emei__mcmcrefractive
          LogMarginalLikelihood = TRUE
          # Algorithm <- "Refractive Sampler"
          if( is.null(Specs))
@@ -523,7 +523,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "RJ") {
          alg = "Reversible-Jump"
-         mcmcFN = .ecmei__mcmcrj
+         mcmcFN = .emei__mcmcrj
          LogMarginalLikelihood = TRUE
          # Algorithm <- "Reversible-Jump"
          if(is.null(Specs))
@@ -554,7 +554,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "RSS") {
          alg = "Reflective Slice Sampler"
-         mcmcFN = .ecmei__mcmcrss
+         mcmcFN = .emei__mcmcrss
          LogMarginalLikelihood = TRUE
          # Algorithm <- "Reflective Slice Sampler"
          if(is.null(Specs))
@@ -578,7 +578,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "RWM") {
          alg = "Random-Walk Metropolis"
-         mcmcFN = .ecmei__mcmcrwm
+         mcmcFN = .emei__mcmcrwm
          LogMarginalLikelihood = TRUE
          # Algorithm <- "Random-Walk Metropolis"
          if( is.null(Specs))
@@ -590,7 +590,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "SAMWG") {
          alg = "Sequential Adaptive Metropolis-within-Gibbs"
-         mcmcFN = .ecmei__mcmcsamwg
+         mcmcFN = .emei__mcmcsamwg
          # Algorithm <- "Sequential Adaptive Metropolis-within-Gibbs"
          if(is.null(Specs))
               stop("The Specs argument is required.", file=LogFile, append=TRUE)
@@ -603,7 +603,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "SGLD") {
          alg = "Stochastic Gradient Langevin Dynamics"
-         mcmcFN = .ecmei__mcmcsgld
+         mcmcFN = .emei__mcmcsgld
          LogMarginalLikelihood = TRUE
          # Algorithm <- "Stochastic Gradient Langevin Dynamics"
          if(is.null(Specs))
@@ -626,7 +626,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "Slice") {
          alg = "Slice Sampler"
-         mcmcFN = .ecmei__mcmcslice
+         mcmcFN = .emei__mcmcslice
          LogMarginalLikelihood = TRUE
          # Algorithm <- "Slice Sampler"
          if( is.null(Specs))
@@ -656,7 +656,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "SMWG") {
          alg = "Sequential Metropolis-within-Gibbs"
-         mcmcFN = .ecmei__mcmcsmwg
+         mcmcFN = .emei__mcmcsmwg
          LogMarginalLikelihood = TRUE
          # Algorithm <- "Sequential Metropolis-within-Gibbs"
          if(is.null(Specs))
@@ -670,7 +670,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "THMC") {
          alg = "Tempered Hamiltonian Monte Carlo"
-         mcmcFN = .ecmei__mcmcthmc
+         mcmcFN = .emei__mcmcthmc
          LogMarginalLikelihood = TRUE
          # Algorithm <- "Tempered Hamiltonian Monte Carlo"
          if(is.null(Specs))
@@ -693,7 +693,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "twalk") {
          alg = "t-walk"
-         mcmcFN = .ecmei__mcmctwalk
+         mcmcFN = .emei__mcmctwalk
          LogMarginalLikelihood = TRUE
          # Algorithm <- "t-walk"
          if( is.null(Specs))
@@ -733,7 +733,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "UESS") {
          alg = "Univariate Eigenvector Slice Sampler"
-         mcmcFN = .ecmei__mcmcuess
+         mcmcFN = .emei__mcmcuess
          LogMarginalLikelihood = TRUE
          # Algorithm = "Univariate Eigenvector Slice Sampler"
          if( is.null(Specs))
@@ -753,7 +753,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "USAMWG") {
          alg = "Updating Sequential Adaptive Metropolis-within-Gibbs"
-         mcmcFN = .ecmei__mcmcusamwg
+         mcmcFN = .emei__mcmcusamwg
          # Algorithm <- "Updating Sequential Adaptive Metropolis-within-Gibbs"
          if(is.null(Specs))
               stop("The Specs argument is required.", file=LogFile, append=TRUE)
@@ -766,7 +766,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
          }
     else if(Algorithm == "USMWG") {
          alg = "Updating Sequential Metropolis-within-Gibbs"
-         mcmcFN = .ecmei__mcmcusmwg
+         mcmcFN = .emei__mcmcusmwg
          # Algorithm <- "Updating Sequential Metropolis-within-Gibbs"
          if(is.null(Specs))
               stop("The Specs argument is required.", file=LogFile, append=TRUE)
@@ -784,7 +784,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
     if (alg=="Unknown") {
        cat("Unknown algorithm has been changed to Metropolis-within-Gibbs.\n", file=LogFile, append=TRUE)
        alg = "Metropolis-within-Gibbs"
-       mcmcFN = .ecmei__mcmcmwg
+       mcmcFN = .emei__mcmcmwg
        LogMarginalLikelihood = TRUE  
        Specs <- NULL
     }
@@ -843,7 +843,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
            }
       }
 
-    if (Algorithm == "AMM" & is.list(VarCov) ) mcmcFN = .ecmei__mcmcamm.b
+    if (Algorithm == "AMM" & is.list(VarCov) ) mcmcFN = .emei__mcmcamm.b
 
   return( list(Algorithm=Algorithm, alg=alg, Specs=Specs, mcmcFN=mcmcFN, tuning=tuning, VarCov=VarCov, DiagCovar=DiagCovar ) )
 }
@@ -863,7 +863,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
 
 
      
-.ecmei__mcmcadmg <- function()
+.emei__mcmcadmg <- function()
      {
      n <- Specs[["n"]]
      Periodicity <- Specs[["Periodicity"]]
@@ -943,7 +943,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=VarCov)
      return(out)
      }
-.ecmei__mcmcagg <- function()
+.emei__mcmcagg <- function()
      {
      Grid <- Specs[["Grid"]]
      dparm <- Specs[["dparm"]]
@@ -1030,7 +1030,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
                          round(Mo0[["LP"]],1), "\n", sep="",
                          file=LogFile, append=TRUE)
                for (j in sample.int(LIV)) {
-                    if(j %in% dparm) Mo0 <- .ecmei__mcmcggdp(Model, Data, j, Mo0, Grid)
+                    if(j %in% dparm) Mo0 <- .emei__mcmcggdp(Model, Data, j, Mo0, Grid)
                     else {
                          agg <- AGGCP(Model, Data, j, Mo0, Grid, tuning,
                               smax)
@@ -1077,7 +1077,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
                          file=LogFile, append=TRUE)
                for (j in sample.int(LIV)) {
                     if(j %in% dparm)
-                         Mo0 <- .ecmei__mcmcggdpp(Model, Data, j, Mo0, Grid, cl)
+                         Mo0 <- .emei__mcmcggdpp(Model, Data, j, Mo0, Grid, cl)
                     else {
                          agg <- AGGCPP(Model, Data, j, Mo0, Grid,
                               tuning, smax, cl)
@@ -1095,7 +1095,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           Mon=Mon, thinned=thinned, VarCov=.colVars(thinned))
      return(out)
      }
-.ecmei__mcmcahmc <- function()
+.emei__mcmcahmc <- function()
      {
      epsilon <- Specs[["epsilon"]]
      L <- Specs[["L"]]
@@ -1184,7 +1184,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=.colVars(thinned))
      return(out)
      }
-.ecmei__mcmcaies <- function()
+.emei__mcmcaies <- function()
      {
      Nc <- Specs[["Nc"]]
      Z <- Specs[["Z"]]
@@ -1349,7 +1349,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=.colVars(thinned))
      return(out)
      }
-.ecmei__mcmcam <- function()
+.emei__mcmcam <- function()
      {
      Adaptive <- Specs[["Adaptive"]]
      Periodicity <- Specs[["Periodicity"]]
@@ -1438,7 +1438,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
      return(out)
      }
 
-.ecmei__mcmcamm <- function()
+.emei__mcmcamm <- function()
      {
      Adaptive <- Specs[["Adaptive"]]
      Block <- Specs[["B"]]
@@ -1518,7 +1518,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=VarCov)
      return(out)
      }
-.ecmei__mcmcamm.b <- function()
+.emei__mcmcamm.b <- function()
      {
      Adaptive <- Specs[["Adaptive"]]
      Block <- Specs[["B"]]
@@ -1612,7 +1612,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=VarCov)
      return(out)
      }
-.ecmei__mcmcamwg <- function()
+.emei__mcmcamwg <- function()
      {
      Periodicity <- Specs[["Periodicity"]]
      Acceptance <- matrix(0, 1, LIV)
@@ -1676,7 +1676,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=tuning)
      return(out)
      }
-.ecmei__mcmccharm <- function()
+.emei__mcmccharm <- function()
      {
      alpha.star <- Specs[["alpha.star"]]
      if(is.na(alpha.star)) {
@@ -1791,7 +1791,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           return(out)
           }
      }
-.ecmei__mcmcdemc <- function()
+.emei__mcmcdemc <- function()
      {
      Nc <- Specs[["Nc"]]
      Z <- Specs[["Z"]]
@@ -1884,7 +1884,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=.colVars(thinned))
      return(out)
      }
-.ecmei__mcmcdram <- function()
+.emei__mcmcdram <- function()
      {
      Adaptive <- Specs[["Adaptive"]]
      DR <- 1
@@ -2010,7 +2010,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=VarCov)
      return(out)
      }
-.ecmei__mcmcdrm <- function()
+.emei__mcmcdrm <- function()
      {
      DR <- 1
      U <- chol(VarCov)
@@ -2110,7 +2110,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=VarCov)
      return(out)
      }
-.ecmei__mcmcess <- function()
+.emei__mcmcess <- function()
      {
      Block <- Specs[["B"]]
      if(length(Block) == 0) {
@@ -2237,7 +2237,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=.Call("covar", thinned, PACKAGE="LaplacesDemonCpp"))
      return(out)
      }
-.ecmei__mcmcgibbs <- function()
+.emei__mcmcgibbs <- function()
      {
      FC <- Specs[["FC"]]
      MWG <- Specs[["MWG"]]
@@ -2306,7 +2306,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=tuning)
      return(out)
      }
-.ecmei__mcmcgg <- function()
+.emei__mcmcgg <- function()
   
      {
      Grid <- Specs[["Grid"]]
@@ -2326,8 +2326,8 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
                          round(Mo0[["LP"]],1), "\n", sep="",
                          file=LogFile, append=TRUE)
                for (j in sample.int(LIV)) {
-                    if(j %in% dparm) Mo0 <- .ecmei__mcmcggdp(Model, Data, j, Mo0, Grid)
-                    else Mo0 <- .ecmei__mcmcggcp(Model, Data, j, Mo0, Grid)
+                    if(j %in% dparm) Mo0 <- .emei__mcmcggdp(Model, Data, j, Mo0, Grid)
+                    else Mo0 <- .emei__mcmcggcp(Model, Data, j, Mo0, Grid)
   
                     }
                if(iter %% Thinning == 0) {
@@ -2372,9 +2372,9 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
                for (j in sample.int(LIV)) {
   
                     if(j %in% dparm)
-                         Mo0 <- .ecmei__mcmcggdpp(Model, Data, j, Mo0, Grid, cl)
+                         Mo0 <- .emei__mcmcggdpp(Model, Data, j, Mo0, Grid, cl)
   
-                    else Mo0 <- .ecmei__mcmcggcpp(Model, Data, j, Mo0, Grid, cl)
+                    else Mo0 <- .emei__mcmcggcpp(Model, Data, j, Mo0, Grid, cl)
                     }
                if(iter %% Thinning == 0) {
                     t.iter <- floor(iter/Thinning) + 1
@@ -2387,7 +2387,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
      }
   
 ### Griddy-Gibbs Continuous Parameter (Non-Parallelized)
-.ecmei__mcmcggcp <- function(Model, Data, j, Mo0, Grid)
+.emei__mcmcggcp <- function(Model, Data, j, Mo0, Grid)
      {
      G <- length(Grid[[j]])
      LP.grid <- rep(0, G)
@@ -2417,7 +2417,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
      return(Mo0)
      }
 ### Griddy-Gibbs Continuous Parameter (Parallelized)
-.ecmei__mcmcggcpp <- function(Model, Data, j, Mo0, Grid, cl)
+.emei__mcmcggcpp <- function(Model, Data, j, Mo0, Grid, cl)
      {
      G <- length(Grid[[j]])
      LP.grid <- rep(0, G)
@@ -2452,7 +2452,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
 ### Griddy-Gibbs Discrete Parameter (Non-Parallelized)
 #where j is which parameter, and Grid are discrete values
   
-.ecmei__mcmcggdp <- function(Model, Data, j, Mo0, Grid)
+.emei__mcmcggdp <- function(Model, Data, j, Mo0, Grid)
      {
      G <- length(Grid[[j]])
      LP.grid <- rep(0, G)
@@ -2478,7 +2478,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
      return(Mo0)
      }
 ### Griddy-Gibbs Discrete Parameter (Parallelized)
-.ecmei__mcmcggdpp <- function(Model, Data, j, Mo0, Grid, cl)
+.emei__mcmcggdpp <- function(Model, Data, j, Mo0, Grid, cl)
      {
      G <- length(Grid[[j]])
      LP.grid <- rep(0, G)
@@ -2508,7 +2508,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
      Mo0 <- Mo1
      return(Mo0)
      }
-.ecmei__mcmcharm <- function()
+.emei__mcmcharm <- function()
      {
      alpha.star <- Specs[["alpha.star"]]
      Block <- Specs[["B"]]
@@ -2766,7 +2766,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           return(out)
           }
      }
-.ecmei__mcmchmc <- function()
+.emei__mcmchmc <- function()
      {
      epsilon <- Specs[["epsilon"]]
      L <- Specs[["L"]]
@@ -2844,7 +2844,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=.colVars(thinned))
      return(out)
      }
-.ecmei__mcmchmcda <- function()
+.emei__mcmchmcda <- function()
      {
      A <- Specs[["A"]]
      delta <- Specs[["delta"]]
@@ -2996,7 +2996,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=.colVars(thinned))
      return(out)
      }
-.ecmei__mcmcim <- function()
+.emei__mcmcim <- function()
      {
      mu <- Specs[["mu"]]
      VarCov <- as.positive.definite(as.symmetric.matrix(VarCov * 1.1))
@@ -3060,7 +3060,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=.Call("covar", thinned, PACKAGE="LaplacesDemonCpp"))
      return(out)
      }
-.ecmei__mcmcinca <- function()
+.emei__mcmcinca <- function()
      {
      Adaptive <- Specs[["Adaptive"]]
      Periodicity <- Specs[["Periodicity"]]
@@ -3186,7 +3186,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
                  VarCov=VarCov)
      return(out)
      }
-.ecmei__mcmcmala <- function()
+.emei__mcmcmala <- function()
      {
      A <- Specs[["A"]]
      alpha.star <- Specs[["alpha.star"]]
@@ -3269,7 +3269,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=Lambda)
      return(out)
      }
-.ecmei__mcmcmcmcmc <- function()
+.emei__mcmcmcmcmc <- function()
      {
      lambda <- Specs[["lambda"]]
      CPUs <- Specs[["CPUs"]]
@@ -3376,7 +3376,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=VarCov)
      return(out)
      }
-.ecmei__mcmcmtm <- function()
+.emei__mcmcmtm <- function()
      {
      K <- Specs[["K"]]
      CPUs <- Specs[["CPUs"]]
@@ -3513,7 +3513,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=.colVars(thinned))
      return(out)
      }
-.ecmei__mcmcmwg <- function()
+.emei__mcmcmwg <- function()
      {
      Acceptance <- matrix(0, 1, LIV)
      for (iter in 1:Iterations) {
@@ -3563,7 +3563,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=tuning)
      return(out)
      }
-.ecmei__mcmcnuts <- function()
+.emei__mcmcnuts <- function()
      {
    A <- Specs[["A"]]
      delta <- Specs[["delta"]]
@@ -3895,7 +3895,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
      return(out)     
 }
 
-.ecmei__mcmcohss <- function()
+.emei__mcmcohss <- function()
      {
      A <- Specs[["A"]]
      n <- Specs[["n"]]
@@ -3985,7 +3985,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=VarCov)
      return(out)
      }
-.ecmei__mcmcpcn <- function()
+.emei__mcmcpcn <- function()
      {
      beta <- Specs[["beta"]]
      U <- chol(VarCov)
@@ -4036,7 +4036,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=VarCov)
      return(out)
      }
-.ecmei__mcmcram <- function()
+.emei__mcmcram <- function()
      {
      alpha.star <- Specs[["alpha.star"]]
      Dist <- Specs[["Dist"]]
@@ -4117,7 +4117,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=VarCov)
      return(out)
      }
-.ecmei__mcmcrdmh <- function()
+.emei__mcmcrdmh <- function()
      {
      Acceptance <- matrix(0, 1, LIV)
      for (iter in 1:Iterations) {
@@ -4171,7 +4171,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=.colVars(thinned))
      return(out)
      }
-.ecmei__mcmcrefractive <- function()
+.emei__mcmcrefractive <- function()
      {
      Adaptive <- Specs[["Adaptive"]]
      m <- Specs[["m"]]
@@ -4256,7 +4256,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=.colVars(thinned))
      return(out)
      }
-.ecmei__mcmcrj <- function()
+.emei__mcmcrj <- function()
      {
      bin.n <- Specs[["bin.n"]]
      bin.p <- Specs[["bin.p"]]
@@ -4355,7 +4355,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=.colVars(thinned))
      return(out)
      }
-.ecmei__mcmcrss <- function()
+.emei__mcmcrss <- function()
      {
      m <- Specs[["m"]]
      w <- Specs[["w"]]
@@ -4415,7 +4415,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=.colVars(thinned))
      return(out)
      }
-.ecmei__mcmcrwm <- function()
+.emei__mcmcrwm <- function()
      {
      Block <- Specs[["B"]]
      if(length(Block) == 0) {
@@ -4521,7 +4521,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=VarCov)
      return(out)
      }
-.ecmei__mcmcsamwg <- function()
+.emei__mcmcsamwg <- function()
      {
      Dyn <- Specs[["Dyn"]]
      Periodicity <- Specs[["Periodicity"]]
@@ -4595,7 +4595,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=tuning)
      return(out)
      }
-.ecmei__mcmcsgld <- function()
+.emei__mcmcsgld <- function()
      {
      epsilon <- Specs[["epsilon"]]
      file <- Specs[["file"]]
@@ -4651,7 +4651,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=.colVars(thinned))
      return(out)
      }
-.ecmei__mcmcslice <- function()
+.emei__mcmcslice <- function()
      {
      m <- Specs[["m"]]
      w <- Specs[["w"]]
@@ -4766,7 +4766,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=.colVars(thinned))
      return(out)
      }
-.ecmei__mcmcsmwg <- function()
+.emei__mcmcsmwg <- function()
      {
      Dyn <- Specs[["Dyn"]]
      Acceptance <- matrix(0, 1, LIV)
@@ -4826,7 +4826,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=tuning)
      return(out)
      }
-.ecmei__mcmcthmc <- function()
+.emei__mcmcthmc <- function()
      {
      epsilon <- Specs[["epsilon"]]
      L <- Specs[["L"]]
@@ -4906,7 +4906,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=.colVars(thinned))
      return(out)
      }
-.ecmei__mcmctwalk <- function()
+.emei__mcmctwalk <- function()
      {
      xp0 <- SIV <- Specs[["SIV"]]
      n1 <- Specs[["n1"]]
@@ -5282,7 +5282,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
      ### Output
      return(out)
      }
-.ecmei__mcmcuess <- function()
+.emei__mcmcuess <- function()
      {
      A <- Specs[["A"]]
      Block <- Specs[["B"]]
@@ -5497,7 +5497,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=VarCov)
      return(out)
      }
-.ecmei__mcmcusamwg <- function()
+.emei__mcmcusamwg <- function()
      {
      Dyn <- Specs[["Dyn"]]
      Periodicity <- Specs[["Periodicity"]]
@@ -5582,7 +5582,7 @@ ecmei_LaplacesDemon_Specification = function( Algorithm, LogFile, Specs, LIV, Co
           VarCov=tuning)
      return(out)
      }
-.ecmei__mcmcusmwg <- function()
+.emei__mcmcusmwg <- function()
      {
      Dyn <- Specs[["Dyn"]]
      Fit <- Specs[["Fit"]]

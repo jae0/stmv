@@ -1,6 +1,6 @@
 
-ecmei__bayesx = function( p, dat, pa ) {
-  #\\ this is the core engine of ecmei .. localised space-time modelling interpolation and prediction .. using bayesx 
+emei__bayesx = function( p, dat, pa ) {
+  #\\ this is the core engine of emei .. localised space-time modelling interpolation and prediction .. using bayesx 
    
   # EG: see: bayesx.term.options( bs="kr", method="REML" )  
   #  logzinc ~  sx( x,y, nu=1.5, bs="kr")  # "kr" is perhaps overly smooth  ..  ie guassian process  .. kriging
@@ -8,16 +8,16 @@ ecmei__bayesx = function( p, dat, pa ) {
 
   sdTotal=sd(dat[,p$variable$Y], na.rm=T)
 
-  if ( !exists( "ecmei_local_model_bayesxmethod", p) ) p$ecmei_local_model_bayesxmethod="MCMC"  # slightly more smoothing than the REML method
+  if ( !exists( "emei_local_model_bayesxmethod", p) ) p$emei_local_model_bayesxmethod="MCMC"  # slightly more smoothing than the REML method
  
-  hmod = try( bayesx( p$ecmei_local_modelformula, data=dat, method=p$ecmei_local_model_bayesxmethod, 
+  hmod = try( bayesx( p$emei_local_modelformula, data=dat, method=p$emei_local_model_bayesxmethod, 
                      family="gaussian" ) )
 
   if ( "try-error" %in% class(hmod) ) return( NULL )
 
   px = predict(hmod)
   ss = summary(lm( px ~ dat[, p$variables$Y ], na.action="na.omit" ))
-  if (ss$r.squared < p$ecmei_rsquared_threshold ) return(NULL)
+  if (ss$r.squared < p$emei_rsquared_threshold ) return(NULL)
     
   out = try( predict( hmod, newdata=pa, type="response" ) ) 
 
@@ -36,10 +36,10 @@ ecmei__bayesx = function( p, dat, pa ) {
   # range = geoR::practicalRange("matern", phi=phi, kappa=nu  )
   range = matern_phi2distance(phi=phi, nu=nu  )
 
-  ecmei_stats = list( sdTotal=sdTotal, rsquared=ss$r.squared, ndata=nrow(dat),
+  emei_stats = list( sdTotal=sdTotal, rsquared=ss$r.squared, ndata=nrow(dat),
     sdSpatial=sqrt(varSpatial), sdObs=sqrt(varObs), phi=phi, nu=nu, range=range ) 
 
   # lattice::levelplot( mean ~ plon + plat, data=pa[pa$tiyr==2012.05,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
   
-  return( list( predictions=pa, ecmei_stats=ecmei_stats ) )  
+  return( list( predictions=pa, emei_stats=emei_stats ) )  
 }

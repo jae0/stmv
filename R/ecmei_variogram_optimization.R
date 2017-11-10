@@ -1,9 +1,9 @@
 
-ecmei_variogram_optimization = function( vg, vx, nu, plotvgm=FALSE, eps=1e-9, ecmei_internal_scale=NA ) {
+emei_variogram_optimization = function( vg, vx, nu, plotvgm=FALSE, eps=1e-9, emei_internal_scale=NA ) {
   #\\ simple nonlinear least squares fit 
   
-  if (is.na(ecmei_internal_scale)) ecmei_internal_scale= max(vx)/2
-  vx = vx / ecmei_internal_scale 
+  if (is.na(emei_internal_scale)) emei_internal_scale= max(vx)/2
+  vx = vx / emei_internal_scale 
 
   if (any(!is.finite(vx)) | any(!is.finite(vg))) {
     fit=list()
@@ -16,7 +16,7 @@ ecmei_variogram_optimization = function( vg, vx, nu, plotvgm=FALSE, eps=1e-9, ec
   
   if (exists("nu")) {
     vario_function = function(par, vg, vx, nu){ 
-      vgm = par["tau.sq"] + par["sigma.sq"]*(1-ecmei_matern(distance=vx, mRange=par["phi"], mSmooth=nu) )
+      vgm = par["tau.sq"] + par["sigma.sq"]*(1-emei_matern(distance=vx, mRange=par["phi"], mSmooth=nu) )
       obj = sum( (vg - vgm)^2, na.rm=TRUE) # vario normal errors, no weights , etc.. just the line
       return(obj)
     }
@@ -29,7 +29,7 @@ ecmei_variogram_optimization = function( vg, vx, nu, plotvgm=FALSE, eps=1e-9, ec
   } else {
   
     vario_function = function(par, vg, vx){ 
-      vgm = par["tau.sq"] + par["sigma.sq"]*(1-ecmei_matern(distance=vx, mRange=par["phi"], mSmooth=par["nu"]) )
+      vgm = par["tau.sq"] + par["sigma.sq"]*(1-emei_matern(distance=vx, mRange=par["phi"], mSmooth=par["nu"]) )
       obj = sum( (vg - vgm)^2, na.rm=TRUE) # vario normal errors, no weights , etc.. just the line
       return(obj)
     }
@@ -68,10 +68,10 @@ ecmei_variogram_optimization = function( vg, vx, nu, plotvgm=FALSE, eps=1e-9, ec
 
   }
 
-  fit$summary$phi = fit$summary$phi * ecmei_internal_scale
-  fit$summary$range = fit$summary$range * ecmei_internal_scale
-  fit$summary$vx = fit$summary$vx * ecmei_internal_scale
-  fit$summary$vgm_dist_max = fit$summary$vgm_dist_max * ecmei_internal_scale
+  fit$summary$phi = fit$summary$phi * emei_internal_scale
+  fit$summary$range = fit$summary$range * emei_internal_scale
+  fit$summary$vx = fit$summary$vx * emei_internal_scale
+  fit$summary$vgm_dist_max = fit$summary$vgm_dist_max * emei_internal_scale
   
   # message( " Optim flag (0==all good): ", fit$convergence, " --- ", fit$message ) 
 
@@ -80,7 +80,7 @@ ecmei_variogram_optimization = function( vg, vx, nu, plotvgm=FALSE, eps=1e-9, ec
     ylim= c(0, vgm_var_max*1.1)
     plot( fit$summary$vx, fit$summary$vg, col="green", xlim=xlim, ylim=ylim )
     ds = seq( 0, fit$summary$vgm_dist_max, length.out=100 )
-    ac = fit$summary$varObs + fit$summary$varSpatial*(1 - ecmei_matern( ds, fit$summary$phi, fit$summary$nu ) )
+    ac = fit$summary$varObs + fit$summary$varSpatial*(1 - emei_matern( ds, fit$summary$phi, fit$summary$nu ) )
     lines( ds, ac, col="orange" )
     abline( h=0, lwd=1, col="lightgrey" )
     abline( v=0 ,lwd=1, col="lightgrey" )

@@ -1,13 +1,13 @@
 
-ecmei__LaplacesDemon = function( p, dat, pa, sloc, distance, nu, phi, varObs, varSpatial ) {
+emei__LaplacesDemon = function( p, dat, pa, sloc, distance, nu, phi, varObs, varSpatial ) {
 
   # require(LaplacesDemonCpp)
-  # sloc=Sloc[Si,]; distance=ecmei_distance_cur
+  # sloc=Sloc[Si,]; distance=emei_distance_cur
  
   sdTotal = sd(dat[, p$variables$Y], na.rm=T) 
   ndata = nrow(dat)
   
-  TS = ecmei_timeseries_smooth(p=p, dat=dat, sloc=sloc, distance=distance )
+  TS = emei_timeseries_smooth(p=p, dat=dat, sloc=sloc, distance=distance )
 
   SV = c(rho0 = 0.25, 
         sigma2 = mean(0.01, varSpatial, na.rm=TRUE), zeta = 0.25, rho1 = 0.25, gamma = 1, alpha = 0.1, 
@@ -17,12 +17,12 @@ ecmei__LaplacesDemon = function( p, dat, pa, sloc, distance, nu, phi, varObs, va
     # shorten by 1 row and column to make it even
     nsq = TS$pa_w_n-1
     w = matrix( TS$xM[,1:nsq, 1:nsq ], nrow=p$nt )
-    nburnin = p$ecmei_spate_nmcmc - p$ecmei_spate_nposteriors
+    nburnin = p$emei_spate_nmcmc - p$emei_spate_nposteriors
 
 
     if (0) {
       require(LaplacesDemonCpp)
-      y=w; yvar=sdTotal^2; n=nsq; Nmc=p$ecmei_spate_nmcmc;SV=SV; Drift=TRUE; Diffusion=TRUE; NPosteriors=1000; BurnIn=100; NcovUpdates=20; RWCov=NULL; parh=NULL; indEst=1:9; dt=1; MultCov=0.5; ogInd=c(1, 2, 3, 4, 5, 9); nu=1; seed=1
+      y=w; yvar=sdTotal^2; n=nsq; Nmc=p$emei_spate_nmcmc;SV=SV; Drift=TRUE; Diffusion=TRUE; NPosteriors=1000; BurnIn=100; NcovUpdates=20; RWCov=NULL; parh=NULL; indEst=1:9; dt=1; MultCov=0.5; ogInd=c(1, 2, 3, 4, 5, 9); nu=1; seed=1
     } 
 
    # modified to do both prediction and parameter estimation and speed up as much as possible
@@ -64,12 +64,12 @@ ecmei__LaplacesDemon = function( p, dat, pa, sloc, distance, nu, phi, varObs, va
             indNA=indNA,
             nNA=nNA 
           )
-          source( "~/bio/ecmei/R/ecmei_LaplacesDemon_spatemodel.R")
-          source( "~/bio/ecmei/R/ecmei_LaplacesDemon_Specification.R")
+          source( "~/bio/emei/R/emei_LaplacesDemon_spatemodel.R")
+          source( "~/bio/emei/R/emei_LaplacesDemon_Specification.R")
 
 
 
-          Data = ecmei_LaplacesDemon_spatemodel(Data)
+          Data = emei_LaplacesDemon_spatemodel(Data)
           Data$yhat=Data$y[]*0
 
 
@@ -157,15 +157,15 @@ ecmei__LaplacesDemon = function( p, dat, pa, sloc, distance, nu, phi, varObs, va
         }
 
     ss = summary(Hmodel)
-    ecmei_stats = list( sdTotal=sdTotal, rsquared=ss$r.sq, ndata=ss$n ) # must be same order as p$statsvars
+    emei_stats = list( sdTotal=sdTotal, rsquared=ss$r.sq, ndata=ss$n ) # must be same order as p$statsvars
 
-    return( list( predictions=newdata, ecmei_stats=ecmei_stats ) )
+    return( list( predictions=newdata, emei_stats=emei_stats ) )
 
 
   testing = FALSE
   if (testing) {
     require(LaplacesDemonCpp)
-    require(ecmei)
+    require(emei)
     n = 12
     nn=n*n
     T=10
@@ -223,7 +223,7 @@ ecmei__LaplacesDemon = function( p, dat, pa, sloc, distance, nu, phi, varObs, va
         
         rm(Z)
 
-        Data = ecmei_LaplacesDemon_spatemodel(Data)
+        Data = emei_LaplacesDemon_spatemodel(Data)
 
      
         str(Data$Model( parm=Data$PGF(Data), Data ) ) # test to see if return values are sensible

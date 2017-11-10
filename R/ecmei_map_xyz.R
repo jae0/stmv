@@ -1,5 +1,5 @@
 
-ecmei_map_xyz = function( x, y, z, ncolors=100, color.code.type="seis", color.sequence=NULL, cex=1, xylines=list(), xypoints=list(), ... ) {
+emei_map_xyz = function( x, y, z, ncolors=100, color.code.type="seis", color.sequence=NULL, cex=1, xylines=list(), xypoints=list(), ... ) {
 
   require(lattice)
   zrange = range(z, na.rm=TRUE)
@@ -34,7 +34,7 @@ ecmei_map_xyz = function( x, y, z, ncolors=100, color.code.type="seis", color.se
 
   if (0) {
   # example usage
-    bioLibrary( "bio.utilities", "ecmei")
+    bioLibrary( "bio.utilities", "emei")
     require(sp)
     require(lattice)
     data(meuse)
@@ -44,7 +44,7 @@ ecmei_map_xyz = function( x, y, z, ncolors=100, color.code.type="seis", color.se
     cols = color.code( "seis", seq( drange[1], drange[2], length.out=ncolors) ) [ cut( z, ncolors, label = FALSE) ]  ## see color.code.r to contruct your own
     zi <- rev(order( z ))
     xyplot( y ~ x, data=meuse[ zi,] , aspect="iso", col=cols[zi], fill = cols[zi], pch=21, cex=1 )
-    o = ecmei_map_xyz( x=meuse$x, y=meuse$y, z=meuse$lead, xylines=list( meuse[1:5, c("x", "y")] ), xypoints = list(meuse[6:8, c("x", "y")] ) )
+    o = emei_map_xyz( x=meuse$x, y=meuse$y, z=meuse$lead, xylines=list( meuse[1:5, c("x", "y")] ), xypoints = list(meuse[6:8, c("x", "y")] ) )
   }
 }
 

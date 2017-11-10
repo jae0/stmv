@@ -1,5 +1,5 @@
 
-  ecmei_db = function( ip=NULL, DS, p, B=NULL, yr=NULL, ret="mean" ) {
+  emei_db = function( ip=NULL, DS, p, B=NULL, yr=NULL, ret="mean" ) {
     #// usage: low level function to convert data into file-based data obects to permit parallel
     #// data access and manipulation and deletes/updates
     #// B is the xyz or xytz data or the function to get the data to work upon
@@ -34,7 +34,7 @@
 
       p$cache$Ploc =  file.path( p$stloc, "predictions_loc.cache" )
 
-      if (exists("ecmei_global_modelengine", p) ) {
+      if (exists("emei_global_modelengine", p) ) {
         p$cache$P0 = file.path( p$stloc, "P0.cache" )
         p$cache$P0sd = file.path( p$stloc, "P0sd.cache" )
       }
@@ -88,7 +88,7 @@
 
     if ( DS %in% c( "statistics.status", "statistics.status.reset") ) {
     
-      Sflag = ecmei_attach( p$storage.backend, p$ptr$Sflag )
+      Sflag = emei_attach( p$storage.backend, p$ptr$Sflag )
       ioutside = which( Sflag[]==2L )
       itodo = which( Sflag[]==0L )       # 0 = TODO
       idone = which( Sflag[]==1L )       # 1 = completed
@@ -118,11 +118,11 @@
       return( out )
   
       if (0) {
-        Yloc = ecmei_attach( p$storage.backend, p$ptr$Yloc )
-        Sloc = ecmei_attach( p$storage.backend, p$ptr$Sloc )
+        Yloc = emei_attach( p$storage.backend, p$ptr$Yloc )
+        Sloc = emei_attach( p$storage.backend, p$ptr$Sloc )
       
         plot( Yloc[], pch=".", col="grey" ) # data locations
-        bnds = try( ecmei_db( p=p, DS="boundary" ) )
+        bnds = try( emei_db( p=p, DS="boundary" ) )
         if ( !is.null(bnds)) {
           lines( bnds$polygon[] , col="green", pch=2 )
           points( Sloc[which(bnds$inside.polygon==1),], pch=".", col="orange", cex=5 )
@@ -145,14 +145,14 @@
       # create location specific flags for analysis, etc..
 
       # flag areas overlapping with prediction locations:
-      Ploc = ecmei_attach( p$storage.backend, p$ptr$Ploc )
-      Sloc = ecmei_attach( p$storage.backend, p$ptr$Sloc )
+      Ploc = emei_attach( p$storage.backend, p$ptr$Ploc )
+      Sloc = emei_attach( p$storage.backend, p$ptr$Sloc )
 
       pidP = array_map( "xy->1", Ploc, gridparams=p$gridparams ) 
       pidS = array_map( "xy->1", Sloc, gridparams=p$gridparams )
       overlap = match( pidS, pidP )
       outside = which( !is.finite( overlap )) 
-      Sflag = ecmei_attach( p$storage.backend, p$ptr$Sflag )
+      Sflag = emei_attach( p$storage.backend, p$ptr$Sflag )
       if (length(outside)  > 0 ) Sflag[outside] = 4L  # outside of prediction domain
 
       # catch data boundaries if present
@@ -161,10 +161,10 @@
         message("\n")
         message( "Defining boundary polygon for data .. this reduces the number of points to analyse")
         message( "but takes a few minutes to set up ...")
-        ecmei_db( p=p, DS="boundary.redo" ) # ~ 5 min on nfs
+        emei_db( p=p, DS="boundary.redo" ) # ~ 5 min on nfs
       # last set of filters to reduce problem size
-        Sflag = ecmei_attach( p$storage.backend, p$ptr$Sflag )
-        bnds = try( ecmei_db( p=p, DS="boundary" ) )
+        Sflag = emei_attach( p$storage.backend, p$ptr$Sflag )
+        bnds = try( emei_db( p=p, DS="boundary" ) )
         if (!is.null(bnds)) {
           if( !("try-error" %in% class(bnds) ) ) {
             outside = which( bnds$inside.polygon == 0 ) # outside boundary
@@ -178,12 +178,12 @@
         # additionaldepth-based filter:
         # assuming that there is depth information in Pcov, match Sloc's and filter out locations that fall on land
         if ( "z" %in% p$variables$COV ){
-          z = ecmei_attach( p$storage.backend, p$ptr$Pcov[["z"]] )[]
+          z = emei_attach( p$storage.backend, p$ptr$Pcov[["z"]] )[]
           Pabove = which( z < p$depth.filter ) # negative = above land
           Pbelow = which( z >= p$depth.filter )
 
-          Ploc = ecmei_attach( p$storage.backend, p$ptr$Ploc )
-          Sloc = ecmei_attach( p$storage.backend, p$ptr$Sloc )
+          Ploc = emei_attach( p$storage.backend, p$ptr$Ploc )
+          Sloc = emei_attach( p$storage.backend, p$ptr$Sloc )
 
           pidA = array_map( "xy->1", Ploc[Pabove,], gridparams=p$gridparams ) 
           pidB = array_map( "xy->1", Ploc[Pbelow,], gridparams=p$gridparams )
@@ -192,14 +192,14 @@
           below = which( is.finite( match( sid, pidB ) )) 
           above = which( is.finite( match( sid, pidA ) ))
           
-          Sflag = ecmei_attach( p$storage.backend, p$ptr$Sflag )
+          Sflag = emei_attach( p$storage.backend, p$ptr$Sflag )
           if (length(below) > 0 ) Sflag[below] = 0L
           if (length(above) > 0 ) Sflag[above] = 3L
 
           if (0) {
-            Yloc = ecmei_attach( p$storage.backend, p$ptr$Yloc )
+            Yloc = emei_attach( p$storage.backend, p$ptr$Yloc )
             plot( Yloc[], pch=".", col="grey" ) # data locations
-            bnds = try( ecmei_db( p=p, DS="boundary" ) )
+            bnds = try( emei_db( p=p, DS="boundary" ) )
             if (!is.null(bnds)) {
               if ( !("try-error" %in% class(bnds) ) ) {
                 points( Sloc[which(bnds$inside.polygon==1),], pch=".", col="orange" )
@@ -219,7 +219,7 @@
 
     if (DS== "flag.incomplete.predictions") {
       # statistics locations where estimations need to be redone 
-      P = ecmei_attach( p$storage.backend, p$ptr$P )
+      P = emei_attach( p$storage.backend, p$ptr$P )
       if (ncol(P) == 1 ) {
         noP = which( !is.finite( P[]) )
       } else {
@@ -227,14 +227,14 @@
       }
       uP = NULL
       if( length(noP)>0 ) {
-        Sloc = ecmei_attach( p$storage.backend, p$ptr$Sloc )
+        Sloc = emei_attach( p$storage.backend, p$ptr$Sloc )
        
-        Sloc_nplat = ceiling( diff( p$corners$plat) / p$ecmei_distance_statsgrid)
-        Sloc_nplon = ceiling( diff( p$corners$plon) / p$ecmei_distance_statsgrid)
+        Sloc_nplat = ceiling( diff( p$corners$plat) / p$emei_distance_statsgrid)
+        Sloc_nplon = ceiling( diff( p$corners$plon) / p$emei_distance_statsgrid)
 
-        Ploc = ecmei_attach( p$storage.backend, p$ptr$Ploc )
-        uS = array_map( "2->1", round( cbind(Sloc[,1]-p$origin[1], Sloc[,2]-p$origin[2])/p$ecmei_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
-        uP = array_map( "2->1", round( cbind(Ploc[noP,1]-p$origin[1], Ploc[noP,2]-p$origin[2])/p$ecmei_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) ) 
+        Ploc = emei_attach( p$storage.backend, p$ptr$Ploc )
+        uS = array_map( "2->1", round( cbind(Sloc[,1]-p$origin[1], Sloc[,2]-p$origin[2])/p$emei_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
+        uP = array_map( "2->1", round( cbind(Ploc[noP,1]-p$origin[1], Ploc[noP,2]-p$origin[2])/p$emei_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) ) 
         inrange = which( (uP >= min(uS)) & (uP <= max(uS)) )
         if (length( inrange) > 0) uP = uP[inrange] 
         uP = unique(uP)
@@ -254,14 +254,14 @@
       }
 
       # data:
-      Y = ecmei_attach(  p$storage.backend, p$ptr$Y )
+      Y = emei_attach(  p$storage.backend, p$ptr$Y )
       hasdata = 1:length(Y)
       bad = which( !is.finite( Y[]))
       if (length(bad)> 0 ) hasdata[bad] = NA
 
       # covariates (independent vars)
       if ( exists( "COV", p$variables) ) {
-        Ycov = ecmei_attach(  p$storage.backend, p$ptr$Ycov )
+        Ycov = emei_attach(  p$storage.backend, p$ptr$Ycov )
         if ( length( p$variables$COV ) == 1 ) {
           bad = which( !is.finite( Ycov[]) )
         } else {
@@ -271,7 +271,7 @@
       }
 
       ii = na.omit(hasdata)
-      Yloc = ecmei_attach(  p$storage.backend, p$ptr$Yloc )
+      Yloc = emei_attach(  p$storage.backend, p$ptr$Yloc )
       yplon = round( ( Yloc[ii,1] - p$origin[1] )/p$pres) + 1
       yplat = round( ( Yloc[ii,2] - p$origin[2] )/p$pres) + 1
       uu = unique( array_map( "2->1", cbind(yplon, yplat), c(p$nplons, p$nplats) ) )
@@ -279,11 +279,11 @@
       
       ww = cbind( (vv[,1] - 1) * p$pres + p$origin[1], (vv[,2] - 1) * p$pres + p$origin[2] )
 
-      if (!exists("ecmei_nonconvexhull_alpha", p)) p$ecmei_nonconvexhull_alpha=20
-      boundary=list( polygon = non_convex_hull( ww, alpha=p$ecmei_nonconvexhull_alpha, plot=FALSE ) )
+      if (!exists("emei_nonconvexhull_alpha", p)) p$emei_nonconvexhull_alpha=20
+      boundary=list( polygon = non_convex_hull( ww, alpha=p$emei_nonconvexhull_alpha, plot=FALSE ) )
       
       # statistical output locations
-      Sloc = ecmei_attach(  p$storage.backend, p$ptr$Sloc )
+      Sloc = emei_attach(  p$storage.backend, p$ptr$Sloc )
       boundary$inside.polygon = point.in.polygon( Sloc[,1], Sloc[,2],
           boundary$polygon[,1], boundary$polygon[,2], mode.checked=TRUE )
       
@@ -292,8 +292,8 @@
       points( Sloc[which(boundary$inside.polygon==1),], pch=".", col="orange" )
       lines( boundary$polygon[] , col="green", pch=2 )
       message( "Check the map of data and boundaries. ")
-      message( "If not suitable, set another value for p$ecmei_nonconvexhull_alpha value (radius; distance) ")
-      message( "and re-run ecmei() " )
+      message( "If not suitable, set another value for p$emei_nonconvexhull_alpha value (radius; distance) ")
+      message( "and re-run emei() " )
       return( fn )
     }
 
@@ -301,7 +301,7 @@
   
     if (DS %in% c("global_model", "global_model.redo") ) {
 
-      fn.global_model = file.path( p$savedir, paste( "global_model", p$ecmei_global_modelengine, "rdata", sep=".") )
+      fn.global_model = file.path( p$savedir, paste( "global_model", p$emei_global_modelengine, "rdata", sep=".") )
 
       if (DS =="global_model") {
         global_model = NULL
@@ -310,24 +310,24 @@
       }  
 
       if ( file.exists( fn.global_model ) ) {
-        resp = readline( "||| ecmei: A global model already exists, to skip press ENTER, otherwise to overwrite type <YES>:  ")
+        resp = readline( "||| emei: A global model already exists, to skip press ENTER, otherwise to overwrite type <YES>:  ")
         if (resp=="YES") {
           good = which( is.finite (rowSums(B[ , c(p$variables$Y,p$variables$COV) ])) )
           if (length(good)>0) B= B[good,]
 
           # as a first pass, model the time-independent factors as a user-defined model
-          if (p$ecmei_global_modelengine=="gam") {
+          if (p$emei_global_modelengine=="gam") {
             if (!exists("wt", B)) B$wt=1
             require(mgcv)
             global_model = try( 
-              gam( formula=p$ecmei_global_modelformula, data=B, optimizer=c("outer","bfgs"), family=p$ecmei_global_family , weights=wt )
+              gam( formula=p$emei_global_modelformula, data=B, optimizer=c("outer","bfgs"), family=p$emei_global_family , weights=wt )
             ) 
           } 
 
-          if (p$ecmei_global_modelengine=="bayesx") {
+          if (p$emei_global_modelengine=="bayesx") {
             require(mgcv)
             global_model = try( 
-              bayesx( formula=p$ecmei_global_modelformula, data=B, family=p$ecmei_global_family ) ) 
+              bayesx( formula=p$emei_global_modelformula, data=B, family=p$emei_global_family ) ) 
           } 
 
           if ( "try-error" %in% class(global_model) ) stop( "The covariate model was problematic" )
@@ -345,17 +345,17 @@
     if (DS %in% c("global.prediction.surface") ) {
       if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
       if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
-      global_model = ecmei_db( p=p, DS="global_model") 
+      global_model = emei_db( p=p, DS="global_model") 
       if (is.null(global_model)) stop("Covariate model not found.")
 
-      P0 = ecmei_attach( p$storage.backend, p$ptr$P0 ) 
-      P0sd = ecmei_attach( p$storage.backend, p$ptr$P0sd ) 
+      P0 = emei_attach( p$storage.backend, p$ptr$P0 ) 
+      P0sd = emei_attach( p$storage.backend, p$ptr$P0sd ) 
       
       for ( iip in ip ) {
         it = p$runs$tindex[iip]
         pa = NULL # construct prediction surface
         for (i in p$variables$COV ) {
-          pu = ecmei_attach( p$storage.backend, p$ptr$Pcov[[i]] )
+          pu = emei_attach( p$storage.backend, p$ptr$Pcov[[i]] )
           nc = ncol(pu)
           if ( nc== 1 ) {
             pa = cbind( pa, pu[] ) # ie. a static variable (space)
@@ -373,26 +373,26 @@
         pa = as.data.frame( pa )
         names(pa) = p$variables$COV
         
-        if ( any( p$variables$LOCS %in%  all.vars( p$ecmei_global_modelformula ) ) ) {
-          Ploc = ecmei_attach( p$storage.backend, p$ptr$Ploc )
+        if ( any( p$variables$LOCS %in%  all.vars( p$emei_global_modelformula ) ) ) {
+          Ploc = emei_attach( p$storage.backend, p$ptr$Ploc )
           pa = cbind(pa, Ploc[])
           names(pa) = c( p$variables$COV, p$variables$LOCS )
         }
 
      
-        if ( "yr" %in%  all.vars( p$ecmei_global_modelformula ) ) {
+        if ( "yr" %in%  all.vars( p$emei_global_modelformula ) ) {
           npa = names(pa)
           pa = cbind(pa, p$yrs[it] )
           names(pa) = c( npa, "yr" )
         }
 
-        if ( "dyear" %in%  all.vars( p$ecmei_global_modelformula ) ) {
+        if ( "dyear" %in%  all.vars( p$emei_global_modelformula ) ) {
           npa = names(pa)
           pa = cbind(pa, p$prediction.dyear )
           names(pa) = c( npa, "dyear" )
         }
 
-        if (p$ecmei_global_modelengine=="gam") {
+        if (p$emei_global_modelengine=="gam") {
           Pbaseline = try( predict( global_model, newdata=pa, type="response", se.fit=TRUE ) ) 
           pa = NULL
           gc()
@@ -426,13 +426,13 @@
 
     # -----
     
-    if (DS %in% c("ecmei.prediction.redo", "ecmei.prediction") )  {
+    if (DS %in% c("emei.prediction.redo", "emei.prediction") )  {
 
-      if (DS=="ecmei.prediction") {
+      if (DS=="emei.prediction") {
         if (! exists("TIME", p$variables)) {
-          fn = file.path( p$savedir, paste("ecmei.prediction",  ret, "rdata", sep="." ) )
+          fn = file.path( p$savedir, paste("emei.prediction",  ret, "rdata", sep="." ) )
         } else {
-          fn = file.path( p$savedir, paste("ecmei.prediction",  ret, yr, "rdata", sep="." ) ) 
+          fn = file.path( p$savedir, paste("emei.prediction",  ret, yr, "rdata", sep="." ) ) 
         }
         if (file.exists(fn) ) load(fn) 
         if (ret=="mean") return (P)
@@ -441,17 +441,17 @@
        }
 
 
-      PP = ecmei_attach( p$storage.backend, p$ptr$P )
-      PPsd = ecmei_attach( p$storage.backend, p$ptr$Psd )
-      if (exists("ecmei_global_modelengine", p)) {
-        P0 = ecmei_attach( p$storage.backend, p$ptr$P0 )
-        P0sd = ecmei_attach( p$storage.backend, p$ptr$P0sd )
+      PP = emei_attach( p$storage.backend, p$ptr$P )
+      PPsd = emei_attach( p$storage.backend, p$ptr$Psd )
+      if (exists("emei_global_modelengine", p)) {
+        P0 = emei_attach( p$storage.backend, p$ptr$P0 )
+        P0sd = emei_attach( p$storage.backend, p$ptr$P0sd )
       }
 
       shallower = NULL
       if ( exists("depth.filter", p) && is.finite( p$depth.filter) ) {
         if ( "z" %in% p$variables$COV ){
-          depths = ecmei_attach( p$storage.backend, p$ptr$Pcov[["z"]] )
+          depths = emei_attach( p$storage.backend, p$ptr$Pcov[["z"]] )
           ii = which( depths[] < p$depth.filter )
           if (length(ii) > 0) shallower = ii
           rm(depths)
@@ -462,9 +462,9 @@
         # outputs are on yearly breakdown
         for ( r in 1:p$ny ) {
           y = p$yrs[r]
-          fn_P = file.path( p$savedir, paste("ecmei.prediction", "mean", y, "rdata", sep="." ) )
-          fn_Pl = file.path( p$savedir, paste("ecmei.prediction", "lb",   y, "rdata", sep="." ) )
-          fn_Pu = file.path( p$savedir, paste("ecmei.prediction", "ub",   y, "rdata", sep="." ) )
+          fn_P = file.path( p$savedir, paste("emei.prediction", "mean", y, "rdata", sep="." ) )
+          fn_Pl = file.path( p$savedir, paste("emei.prediction", "lb",   y, "rdata", sep="." ) )
+          fn_Pu = file.path( p$savedir, paste("emei.prediction", "ub",   y, "rdata", sep="." ) )
           vv = ncol(PP)
           if ( vv > p$ny ) {
             col.ranges = (r-1) * p$nw + (1:p$nw) 
@@ -475,7 +475,7 @@
             V = PPsd[,r]
           }
 
-          if (exists("ecmei_global_modelengine", p) ) {
+          if (exists("emei_global_modelengine", p) ) {
             ## maybe add via simulation ? ... 
             uu = which(!is.finite(P[]))
             if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through .. 
@@ -496,9 +496,9 @@
           }
 
           # return to user scale (that of Y)
-          Pl = p$ecmei_global_family$linkinv( P + 1.96* V )
-          Pu = p$ecmei_global_family$linkinv( P - 1.96* V )
-          P = p$ecmei_global_family$linkinv( P )
+          Pl = p$emei_global_family$linkinv( P + 1.96* V )
+          Pu = p$emei_global_family$linkinv( P - 1.96* V )
+          P = p$emei_global_family$linkinv( P )
           
           save( P, file=fn_P, compress=T )
           save( Pl, file=fn_Pl, compress=T )
@@ -506,13 +506,13 @@
           print ( paste("Year:", y)  )
         } 
       } else {
-          fn_P = file.path( p$savedir, paste("ecmei.prediction", "mean", "rdata", sep="." ) )
-          fn_Pl = file.path( p$savedir, paste("ecmei.prediction", "lb", "rdata", sep="." ) )
-          fn_Pu = file.path( p$savedir, paste("ecmei.prediction", "ub", "rdata", sep="." ) )
+          fn_P = file.path( p$savedir, paste("emei.prediction", "mean", "rdata", sep="." ) )
+          fn_Pl = file.path( p$savedir, paste("emei.prediction", "lb", "rdata", sep="." ) )
+          fn_Pu = file.path( p$savedir, paste("emei.prediction", "ub", "rdata", sep="." ) )
 
           P = PP[]
           V = PPsd[]
-          if (exists("ecmei_global_modelengine", p) ) {
+          if (exists("emei_global_modelengine", p) ) {
             uu = which(!is.finite(P[]))
             if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
             P = P[] + P0[] 
@@ -526,9 +526,9 @@
           }
 
           # return to user scale
-          Pl = p$ecmei_global_family$linkinv( P + 1.96* V )
-          Pu = p$ecmei_global_family$linkinv( P - 1.96* V )
-          P = p$ecmei_global_family$linkinv( P )
+          Pl = p$emei_global_family$linkinv( P + 1.96* V )
+          Pu = p$emei_global_family$linkinv( P - 1.96* V )
+          P = p$emei_global_family$linkinv( P )
           
           save( P, file=fn_P, compress=T )
           save( Pl, file=fn_Pl, compress=T )
@@ -539,9 +539,9 @@
     
     if(0) {
       i = 1
-      Ploc = ecmei_attach( p$storage.backend, p$ptr$Ploc )
+      Ploc = emei_attach( p$storage.backend, p$ptr$Ploc )
      
-      Z = smooth.2d( Y=P[], x=Ploc[], ncol=p$nplats, nrow=p$nplons, cov.function=stationary.cov, Covariance="Matern", range=p$ecmei_lowpass_phi, nu=p$ecmei_lowpass_nu )
+      Z = smooth.2d( Y=P[], x=Ploc[], ncol=p$nplats, nrow=p$nplons, cov.function=stationary.cov, Covariance="Matern", range=p$emei_lowpass_phi, nu=p$emei_lowpass_nu )
       lattice::levelplot( P[] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
     }
     # 
@@ -552,19 +552,19 @@
       
       # TODO:: parallelize this
 
-      fn = file.path( p$savedir, paste( "ecmei.statistics", "rdata", sep=".") )
+      fn = file.path( p$savedir, paste( "emei.statistics", "rdata", sep=".") )
       if (DS=="stats.to.prediction.grid") {
         stats = NULL
         if (file.exists(fn)) load(fn)
         return(stats)
       }
     
-      Ploc = ecmei_attach( p$storage.backend, p$ptr$Ploc )
-      S = ecmei_attach( p$storage.backend, p$ptr$S )
-      Sloc = ecmei_attach( p$storage.backend, p$ptr$Sloc )
+      Ploc = emei_attach( p$storage.backend, p$ptr$Ploc )
+      S = emei_attach( p$storage.backend, p$ptr$S )
+      Sloc = emei_attach( p$storage.backend, p$ptr$Sloc )
 
-      Sloc_nplat = ceiling( diff( p$corners$plat) / p$ecmei_distance_statsgrid)
-      Sloc_nplon = ceiling( diff( p$corners$plon) / p$ecmei_distance_statsgrid)
+      Sloc_nplat = ceiling( diff( p$corners$plat) / p$emei_distance_statsgrid)
+      Sloc_nplon = ceiling( diff( p$corners$plon) / p$emei_distance_statsgrid)
 
       stats = matrix( NaN, ncol=length( p$statsvars ), nrow=nrow( Ploc) )  # output data .. ff does not handle NA's .. using NaN for now
       colnames(stats)=p$statsvars
@@ -578,7 +578,7 @@
 
       # lattice::levelplot( stats[,1] ~ Ploc[,1]+Ploc[,2])
  
-      boundary = try( ecmei_db( p=p, DS="boundary" ) )
+      boundary = try( emei_db( p=p, DS="boundary" ) )
       if (!is.null(boundary)) {
         if( !("try-error" %in% class(boundary) ) ) {
         inside.polygon = point.in.polygon( Ploc[,1], Ploc[,2],
@@ -597,7 +597,7 @@
       if ( exists("depth.filter", p) && is.finite( p$depth.filter) ) {
         # stats is now with the same indices as Pcov, Ploc, etc..
         if ( "z" %in% p$variables$COV ){
-          depths = ecmei_attach( p$storage.backend, p$ptr$Pcov[["z"]] )
+          depths = emei_attach( p$storage.backend, p$ptr$Pcov[["z"]] )
           shallower = which( depths[] < p$depth.filter )
           if (length(shallower)>0) stats[shallower,] = NA 
           rm(shallower); gc()
@@ -612,7 +612,7 @@
 
     if (DS=="presence.absense") {
 
-      Y = ecmei_attach( p$storage.backend, p$ptr$Y )
+      Y = emei_attach( p$storage.backend, p$ptr$Y )
       z = which( Y == 0) # assumed to be real zeros
       i = which( Y >  0)  # positive values
       

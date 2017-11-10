@@ -1,20 +1,20 @@
 
 
-ecmei = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram",  debug_plot_variable_index=1 ) {
+emei = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram",  debug_plot_variable_index=1 ) {
 
   #\\ localized modelling of space and time data to predict/interpolate upon a grid OUT
   #\\ speed ratings: bigmemory.ram (1), ff (2), bigmemory.filebacked (3)
 
   # TODO: splancs::kernel3d as a method ? .. for count data?
-  # TODO: gaussian process // see ecmei_interpolate_xy_simple
+  # TODO: gaussian process // see emei_interpolate_xy_simple
   #       .. the convoSPAT seems almost fast enough
   # TODO: MBA mba.surf method? ... seems very fast
 
   if (!exists("time.start", p) ) p$time.start = Sys.time()
 
-  p = ecmei_db( p=p, DS="load.parameters" )  
+  p = emei_db( p=p, DS="load.parameters" )  
 
-  message( paste( "||| ecmei: In case something should go wrong, intermediary outputs will be placed at:", p$savedir ) )
+  message( paste( "||| emei: In case something should go wrong, intermediary outputs will be placed at:", p$savedir ) )
   p$savedir = file.path(p$project.root, "modelled", p$variables$Y, p$spatial.domain )
   if ( !file.exists(p$savedir)) dir.create( p$savedir, recursive=TRUE, showWarnings=FALSE )
 
@@ -25,23 +25,23 @@ ecmei = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ra
   if (any( grepl ("bigmemory", p$storage.backend)))  p$libs = c( p$libs, "bigmemory" )
   if (p$storage.backend=="bigmemory.ram") {
     if ( length( unique(p$clusters)) > 1 ) {
-      stop( "||| ecmei: More than one unique cluster server was specified .. the RAM-based method only works within one server." )
+      stop( "||| emei: More than one unique cluster server was specified .. the RAM-based method only works within one server." )
     }
   }
   
   # other libs
-  if (p$ecmei_local_modelengine=="bayesx")  p$libs = c( p$libs, "R2BayesX" )
-  if (p$ecmei_local_modelengine %in% c("gam", "mgcv", "habitat") )  p$libs = c( p$libs, "mgcv" )
-  if (p$ecmei_local_modelengine %in% c("LaplacesDemon") )  p$libs = c( p$libs, "LaplacesDemonCpp" )
-  if (p$ecmei_local_modelengine %in% c("inla") )  p$libs = c( p$libs, "INLA" )
-  if (p$ecmei_local_modelengine %in% c("fft", "gaussianprocess2Dt") )  p$libs = c( p$libs, "fields" )
-  if (p$ecmei_local_modelengine %in% c("gaussianprocess") )  p$libs = c( p$libs  )
-  if (p$ecmei_local_modelengine %in% c("splancs") )  p$libs = c( p$libs, "splancs" )
-  if (p$ecmei_local_modelengine %in% c("twostep") )  p$libs = c( p$libs, "mgcv", "fields" )
-  if (p$ecmei_local_modelengine %in% c("krige") ) p$libs = c( p$libs, "fields" )
-  if (p$ecmei_local_modelengine %in% c("gstat") ) p$libs = c( p$libs, "gstat" )
-  if (p$ecmei_local_modelengine %in% c("stan") ) p$libs = c( p$libs, "rstan" )
-  # if (p$ecmei_local_modelengine %in% c("spate") )  p$libs = c( p$libs, "spate" ) # now copied directly into ecmei
+  if (p$emei_local_modelengine=="bayesx")  p$libs = c( p$libs, "R2BayesX" )
+  if (p$emei_local_modelengine %in% c("gam", "mgcv", "habitat") )  p$libs = c( p$libs, "mgcv" )
+  if (p$emei_local_modelengine %in% c("LaplacesDemon") )  p$libs = c( p$libs, "LaplacesDemonCpp" )
+  if (p$emei_local_modelengine %in% c("inla") )  p$libs = c( p$libs, "INLA" )
+  if (p$emei_local_modelengine %in% c("fft", "gaussianprocess2Dt") )  p$libs = c( p$libs, "fields" )
+  if (p$emei_local_modelengine %in% c("gaussianprocess") )  p$libs = c( p$libs  )
+  if (p$emei_local_modelengine %in% c("splancs") )  p$libs = c( p$libs, "splancs" )
+  if (p$emei_local_modelengine %in% c("twostep") )  p$libs = c( p$libs, "mgcv", "fields" )
+  if (p$emei_local_modelengine %in% c("krige") ) p$libs = c( p$libs, "fields" )
+  if (p$emei_local_modelengine %in% c("gstat") ) p$libs = c( p$libs, "gstat" )
+  if (p$emei_local_modelengine %in% c("stan") ) p$libs = c( p$libs, "rstan" )
+  # if (p$emei_local_modelengine %in% c("spate") )  p$libs = c( p$libs, "spate" ) # now copied directly into emei
 
   p$libs = unique( p$libs )
   suppressMessages( RLibrary( p$libs ) )
@@ -49,40 +49,40 @@ ecmei = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ra
   
   if (is.null(DATA) ) {
     # in here as it assumes that initiation of process (save of data files) is complete and "saved" objects are present
-    message( "||| ecmei: No DATA provided, assuming we are continuing from an interrupted start" ) 
+    message( "||| emei: No DATA provided, assuming we are continuing from an interrupted start" ) 
 
-    ecmei_db(p=p, DS="statistics.status.reset" )
+    emei_db(p=p, DS="statistics.status.reset" )
  
     # unwind predictions
-    Yraw = ecmei_attach( p$storage.backend, p$ptr$Yraw )
-    PP = ecmei_attach( p$storage.backend, p$ptr$P )
-    PPsd = ecmei_attach( p$storage.backend, p$ptr$Psd )
+    Yraw = emei_attach( p$storage.backend, p$ptr$Yraw )
+    PP = emei_attach( p$storage.backend, p$ptr$P )
+    PPsd = emei_attach( p$storage.backend, p$ptr$Psd )
 
-    if (exists("ecmei_global_modelengine", p)) {
-      P0 = ecmei_attach( p$storage.backend, p$ptr$P0 )
-      P0sd = ecmei_attach( p$storage.backend, p$ptr$P0sd )
+    if (exists("emei_global_modelengine", p)) {
+      P0 = emei_attach( p$storage.backend, p$ptr$P0 )
+      P0sd = emei_attach( p$storage.backend, p$ptr$P0sd )
     }
 
     if ( exists("TIME", p$variables)) {
       # outputs are on yearly breakdown
       for ( r in 1:p$ny ) {
         y = p$yrs[r]
-        fn1 = file.path( p$savedir, paste("ecmei.prediction", "mean", y, "rdata", sep="." ) )
-        fn2 = file.path( p$savedir, paste("ecmei.prediction", "sd",   y, "rdata", sep="." ) )
+        fn1 = file.path( p$savedir, paste("emei.prediction", "mean", y, "rdata", sep="." ) )
+        fn2 = file.path( p$savedir, paste("emei.prediction", "sd",   y, "rdata", sep="." ) )
         if (file.exists(fn1)) load(fn1)
         if (file.exists(fn2)) load(fn2)
         # return to user scale (that of Y)
-        P = p$ecmei_local_family$linkfun( P )
-        V = p$ecmei_local_family$linkfun( V )
+        P = p$emei_local_family$linkfun( P )
+        V = p$emei_local_family$linkfun( V )
         
         # for binomial .. convert from logit to probability scale (local is gaussian)
-        if ( "family" %in% class(p$ecmei_global_family) ) {
-          if (  p$ecmei_global_family$family == "binomial" ) {
+        if ( "family" %in% class(p$emei_global_family) ) {
+          if (  p$emei_global_family$family == "binomial" ) {
             P = log( P/(1-P) )
             V = log( V/(1-V) ) # logit tranform
           }
         }
-        if (exists("ecmei_global_modelengine", p) ) {
+        if (exists("emei_global_modelengine", p) ) {
           ## maybe add via simulation ? ... 
           uu = which(!is.finite(P[]))
           if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through .. 
@@ -105,23 +105,23 @@ ecmei = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ra
 
     } else {
 
-      fn1 = file.path( p$savedir, paste("ecmei.prediction", "mean", "rdata", sep="." ) )
-      fn2 = file.path( p$savedir, paste("ecmei.prediction", "sd",   "rdata", sep="." ) )
+      fn1 = file.path( p$savedir, paste("emei.prediction", "mean", "rdata", sep="." ) )
+      fn2 = file.path( p$savedir, paste("emei.prediction", "sd",   "rdata", sep="." ) )
 
       if (file.exists(fn1)) load(fn1)
       if (file.exists(fn2)) load(fn2)
 
       # return to user scale
-      P = p$ecmei_local_family$linkfun( P )
-      V = p$ecmei_local_family$linkfun( V )
+      P = p$emei_local_family$linkfun( P )
+      V = p$emei_local_family$linkfun( V )
           
-      if ( "family" %in% class(p$ecmei_global_family) ) {
-        if (  p$ecmei_global_family$family == "binomial" ) {
+      if ( "family" %in% class(p$emei_global_family) ) {
+        if (  p$emei_global_family$family == "binomial" ) {
           P = log( P/(1-P) )
           V = log( V/(1-V) ) # logit tranform
         }
       }
-      if (exists("ecmei_global_modelengine", p) ) {
+      if (exists("emei_global_modelengine", p) ) {
         uu = which(!is.finite(P[]))
         if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
         P = P[] - P0[] 
@@ -135,18 +135,18 @@ ecmei = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ra
     
     }
     # unwind stats grid      
-    fn = file.path( p$savedir, paste( "ecmei.statistics", "rdata", sep=".") )
+    fn = file.path( p$savedir, paste( "emei.statistics", "rdata", sep=".") )
     if (file.exists(fn)) load(fn)
-    S = ecmei_attach( p$storage.backend, p$ptr$S )
+    S = emei_attach( p$storage.backend, p$ptr$S )
     S[] = stats[]
 
   }  else {
     # not a restart .. new instance:
 
-    p$ecmei_current_status = file.path( p$savedir, "ecmei_current_status" ) 
+    p$emei_current_status = file.path( p$savedir, "emei_current_status" ) 
 
-    p = ecmei_parameters(p=p) # fill in parameters with defaults where possible
-    p = ecmei_db( p=p, DS="filenames" )
+    p = emei_parameters(p=p) # fill in parameters with defaults where possible
+    p = emei_db( p=p, DS="filenames" )
     p$ptr = list() # location for data pointers
 
     # set up the data and problem using data objects
@@ -155,13 +155,13 @@ ecmei = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ra
     for (tf in tmpfiles) if (file.exists( tf)) file.remove(tf)
 
     p$variables$all = NULL
-    if (exists("ecmei_local_modelformula", p))  {
-      p$variables$local_all = all.vars( p$ecmei_local_modelformula )
+    if (exists("emei_local_modelformula", p))  {
+      p$variables$local_all = all.vars( p$emei_local_modelformula )
       p$variables$local_cov = intersect( p$variables$local_all, p$variables$COV ) 
       p$variables$all = unique( c( p$variables$all, p$variables$local_all ) )
     }
-    if (exists("ecmei_global_modelformula", p)) {
-      p$variables$global_all = all.vars( p$ecmei_global_modelformula )
+    if (exists("emei_global_modelformula", p)) {
+      p$variables$global_all = all.vars( p$emei_global_modelformula )
       p$variables$global_cov = intersect( p$variables$global_all, p$variables$COV )      
       p$variables$all = unique( c( p$variables$all, p$variables$global_all ) )
     }
@@ -187,28 +187,28 @@ ecmei = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ra
 
     # require knowledge of size of stats output before create S, which varies with a given type of analysis
     othervars = c( )
-    if (p$ecmei_local_modelengine == "habitat") othervars = c( )
-    if (p$ecmei_local_modelengine == "spate") othervars = c( 
+    if (p$emei_local_modelengine == "habitat") othervars = c( )
+    if (p$emei_local_modelengine == "spate") othervars = c( 
       "rho_0",  "zeta", "rho_1", "gamma", "alpha", "mu_x", "mu_y", "sigma^2", "tau^2", 
       "rho_0.sd", "zeta.sd", "rho_1.sd", "gamma.sd", "alpha.sd", "mu_x.sd", "mu_y.sd" )
     if (exists("TIME", p$variables) )  othervars = c( "ar_timerange", "ar_1" )
     p$statsvars = unique( c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "range", "phi", "nu", othervars ) )
 
-    message("||| ecmei: ")
-    message( "||| ecmei: Initializing temporary storage of data and outputs files... ")
-    message( "||| ecmei: These are large files (4 to 6 X 5GB), it will take a minute ... ")
-    ecmei_db( p=p, DS="cleanup" )
+    message("||| emei: ")
+    message( "||| emei: Initializing temporary storage of data and outputs files... ")
+    message( "||| emei: These are large files (4 to 6 X 5GB), it will take a minute ... ")
+    emei_db( p=p, DS="cleanup" )
   
     p$nloccov = 0
     if (exists("local_cov", p$variables)) p$nloccov = length(p$variables$local_cov)
 
     # construct prediction/output grid area ('pa')
-    p$windowsize.half = floor(p$ecmei_distance_prediction/p$pres) # convert distance to discretized increments of row/col indices
+    p$windowsize.half = floor(p$emei_distance_prediction/p$pres) # convert distance to discretized increments of row/col indices
 
           
-    if (exists("ecmei_global_modelengine", p)) {
+    if (exists("emei_global_modelengine", p)) {
       # to add global covariate model ??  .. simplistic this way but faster ~ kriging with external drift
-      ecmei_db( p=p, DS="global_model.redo", B=DATA$input )
+      emei_db( p=p, DS="global_model.redo", B=DATA$input )
     }
 
 
@@ -218,8 +218,8 @@ ecmei = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ra
     # init output data objects
     # statistics storage matrix ( aggregation window, coords ) .. no inputs required
     sbox = list( 
-      plats = seq( p$corners$plat[1], p$corners$plat[2], by=p$ecmei_distance_statsgrid ),
-      plons = seq( p$corners$plon[1], p$corners$plon[2], by=p$ecmei_distance_statsgrid ) )
+      plats = seq( p$corners$plat[1], p$corners$plat[2], by=p$emei_distance_statsgrid ),
+      plons = seq( p$corners$plon[1], p$corners$plon[2], by=p$emei_distance_statsgrid ) )
 
       # statistics coordinates
       Sloc = as.matrix( expand.grid( sbox$plons, sbox$plats ))
@@ -271,8 +271,8 @@ ecmei = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ra
 
       # data to be worked upon .. either the raw data or covariate-residuals
       Ydata = as.matrix(DATA$input[, p$variables$Y ])
-      if (exists("ecmei_global_modelengine", p)) {
-        covmodel = ecmei_db( p=p, DS="global_model")
+      if (exists("emei_global_modelengine", p)) {
+        covmodel = emei_db( p=p, DS="global_model")
         Ypreds = predict(covmodel, type="link", se.fit=FALSE )  ## TODO .. keep track of the SE 
         Ydata  = residuals(covmodel, type="deviance") # ie. link scale .. this is the default but make it explicit 
         covmodel =NULL; gc()
@@ -295,7 +295,7 @@ ecmei = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ra
 
       rm(Ydata)
 
-      Y = ecmei_attach( p$storage.backend, p$ptr$Y )
+      Y = emei_attach( p$storage.backend, p$ptr$Y )
 
      # data coordinates
       Yloc = as.matrix( DATA$input[, p$variables$LOCS ])
@@ -439,7 +439,7 @@ ecmei = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ra
           }
       Ploc = DATA = NULL; gc()
 
-      if (exists("ecmei_global_modelengine", p) ) {
+      if (exists("emei_global_modelengine", p) ) {
       # create prediction suface with covariate-based additive offsets
 
         if (p$storage.backend == "bigmemory.ram" ) {
@@ -471,31 +471,31 @@ ecmei = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ra
         P=NULL; gc()
 
         # test to see if all covars are static as this can speed up the initial predictions
-        message("||| ecmei: ")
-        message( "||| ecmei: Predicting global effect of covariates at each prediction location ... ")
-        message( "||| ecmei: depending upon the size of the prediction grid and number of cpus (~1hr?).. ")
+        message("||| emei: ")
+        message( "||| emei: Predicting global effect of covariates at each prediction location ... ")
+        message( "||| emei: depending upon the size of the prediction grid and number of cpus (~1hr?).. ")
 
         p$timec_covariates_0 =  Sys.time()
         nc_cov =NULL
         for (i in p$variables$COV ) {
-          pu = ecmei_attach( p$storage.backend, p$ptr$Pcov[[i]] )
+          pu = emei_attach( p$storage.backend, p$ptr$Pcov[[i]] )
           nc_cov = c( nc_cov,  ncol(pu) )
         }
         p$all.covars.static = ifelse( any(nc_cov > 1),  FALSE, TRUE )
         pc = p # copy
         if (!pc$all.covars.static) if (exists("clusters.covars", pc) ) pc$clusters = pc$clusters.covars
         pc = make.list( list( tindex=1:pc$nt) , Y=pc ) # takes about 28 GB per run .. adjust cluster number temporarily
-        suppressMessages( parallel.run( ecmei_db, p=pc, DS="global.prediction.surface" ) )
+        suppressMessages( parallel.run( emei_db, p=pc, DS="global.prediction.surface" ) )
         p$time_covariates = round(difftime( Sys.time(), p$timec_covariates_0 , units="hours"), 3)
-        message( paste( "||| ecmei: Time taken to predict covariate surface (hours):", p$time_covariates ) )
+        message( paste( "||| emei: Time taken to predict covariate surface (hours):", p$time_covariates ) )
       }
 
       P = NULL; gc() # yes, repeat in case covs are not modelled
     
-      ecmei_db( p=p, DS="statistics.Sflag" )
+      emei_db( p=p, DS="statistics.Sflag" )
 
-      Y = ecmei_attach( p$storage.backend, p$ptr$Y )
-      Yloc = ecmei_attach( p$storage.backend, p$ptr$Yloc )
+      Y = emei_attach( p$storage.backend, p$ptr$Y )
+      Yloc = emei_attach( p$storage.backend, p$ptr$Yloc )
 
       Yi = 1:length(Y) # index with useable data
       bad = which( !is.finite( Y[]))
@@ -507,7 +507,7 @@ ecmei = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ra
 
     # data locations
       if (exists("COV", p$variables)) {
-        Ycov = ecmei_attach( p$storage.backend, p$ptr$Ycov )
+        Ycov = emei_attach( p$storage.backend, p$ptr$Ycov )
         if (length(p$variables$COV)==1) {
           bad = which( !is.finite( Ycov[] ))
         } else {
@@ -519,7 +519,7 @@ ecmei = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ra
 
       # data locations
       if (exists("TIME", p$variables)) {
-        Ytime = ecmei_attach( p$storage.backend, p$ptr$Ytime )
+        Ytime = emei_attach( p$storage.backend, p$ptr$Ytime )
         bad = which( !is.finite( Ytime[] ))
         if (length(bad)> 0 ) Yi[bad] = NA
         Yi = na.omit(Yi)
@@ -541,15 +541,15 @@ ecmei = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ra
         }
       rm(Yi)
 
-      if ( !exists("ecmei_distance_scale", p)) {
-        Yloc = ecmei_attach( p$storage.backend, p$ptr$Yloc )
-        p$ecmei_distance_scale = min( diff(range( Yloc[,1]) ), diff(range( Yloc[,2]) ) ) / 10
-        message( paste( "||| ecmei: Crude distance scale:", p$ecmei_distance_scale, "" ) )
+      if ( !exists("emei_distance_scale", p)) {
+        Yloc = emei_attach( p$storage.backend, p$ptr$Yloc )
+        p$emei_distance_scale = min( diff(range( Yloc[,1]) ), diff(range( Yloc[,2]) ) ) / 10
+        message( paste( "||| emei: Crude distance scale:", p$emei_distance_scale, "" ) )
       }
 
-      if ( !exists("ecmei_distance_min", p)) p$ecmei_distance_min = mean( c(p$ecmei_distance_prediction, p$ecmei_distance_scale /20 ) )
+      if ( !exists("emei_distance_min", p)) p$emei_distance_min = mean( c(p$emei_distance_prediction, p$emei_distance_scale /20 ) )
 
-      if ( !exists("ecmei_distance_max", p)) p$ecmei_distance_max = mean( c(p$ecmei_distance_prediction*10, p$ecmei_distance_scale * 2 ) )
+      if ( !exists("emei_distance_max", p)) p$emei_distance_max = mean( c(p$emei_distance_prediction*10, p$emei_distance_scale * 2 ) )
 
       if ( !exists("sampling", p))  {
         # fractions of distance scale  to try in local block search
@@ -558,8 +558,8 @@ ecmei = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ra
 
       #browser()
 
-      ecmei_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
-      message( "||| ecmei: Finished. Moving onto analysis... ")
+      emei_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
+      message( "||| emei: Finished. Moving onto analysis... ")
       p <<- p  # push to parent in case a manual restart is needed
       gc()
       
@@ -568,49 +568,49 @@ ecmei = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ra
 
   # -------------------------------------
   # localized space-time modelling/interpolation/prediction
-  message("||| ecmei: to view maps from an external R session: ") 
-  message("|||   ecmei(p=p, runmode='debug_pred_static_map', debug_plot_variable_index=1) ") 
-  message("|||   ecmei(p=p, runmode='debug_pred_static_log_map', debug_plot_variable_index=1)") 
-  message("|||   ecmei(p=p, runmode='debug_pred_dynamic_map', debug_plot_variable_index=1)") 
-  message("|||   ecmei(p=p, runmode='debug_stats_map', debug_plot_variable_index=1)") 
-  message("||| ecmei: Monitor the status of modelling by looking at the output of the following file:")
-  message("||| ecmei: in linux, you can issue the following command:" )
-  message("|||   watch -n 60 cat ",  p$ecmei_current_status  )
+  message("||| emei: to view maps from an external R session: ") 
+  message("|||   emei(p=p, runmode='debug_pred_static_map', debug_plot_variable_index=1) ") 
+  message("|||   emei(p=p, runmode='debug_pred_static_log_map', debug_plot_variable_index=1)") 
+  message("|||   emei(p=p, runmode='debug_pred_dynamic_map', debug_plot_variable_index=1)") 
+  message("|||   emei(p=p, runmode='debug_stats_map', debug_plot_variable_index=1)") 
+  message("||| emei: Monitor the status of modelling by looking at the output of the following file:")
+  message("||| emei: in linux, you can issue the following command:" )
+  message("|||   watch -n 60 cat ",  p$emei_current_status  )
 
   if ( "debug_pred_static_map" == runmode) {  
-      Ploc = ecmei_attach( p$storage.backend, p$ptr$Ploc )
-      P = ecmei_attach( p$storage.backend, p$ptr$P )
+      Ploc = emei_attach( p$storage.backend, p$ptr$Ploc )
+      P = emei_attach( p$storage.backend, p$ptr$P )
       lattice::levelplot( (P[,debug_plot_variable_index])~Ploc[,1]+Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
   }
 
   if ( "debug_pred_static_log_map" == runmode) {  
-      Ploc = ecmei_attach( p$storage.backend, p$ptr$Ploc )
-      P = ecmei_attach( p$storage.backend, p$ptr$P )
+      Ploc = emei_attach( p$storage.backend, p$ptr$Ploc )
+      P = emei_attach( p$storage.backend, p$ptr$P )
       lattice::levelplot( log(P[,debug_plot_variable_index])~Ploc[,1]+Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
   }
 
   if ( "debug_pred_dynamic_map" == runmode) {  
-      Ploc = ecmei_attach( p$storage.backend, p$ptr$Ploc )
-      P = ecmei_attach( p$storage.backend, p$ptr$P )
+      Ploc = emei_attach( p$storage.backend, p$ptr$Ploc )
+      P = emei_attach( p$storage.backend, p$ptr$P )
       for (i in 1:p$nt) {
         print( lattice::levelplot( P[,i] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
       }
   }
 
   if ( "debug_stats_map" == runmode) {  
-      Sloc = ecmei_attach( p$storage.backend, p$ptr$Sloc )
-      S = ecmei_attach( p$storage.backend, p$ptr$S )
+      Sloc = emei_attach( p$storage.backend, p$ptr$Sloc )
+      S = emei_attach( p$storage.backend, p$ptr$S )
       lattice::levelplot(S[,debug_plot_variable_index]~Sloc[,1]+Sloc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
   }
 
   if ("serial_debug" == runmode) {
-    currentstatus = ecmei_db( p=p, DS="statistics.status" )
+    currentstatus = emei_db( p=p, DS="statistics.status" )
     p = make.list( list( locs=sample( currentstatus$todo )) , Y=p ) # random order helps use all cpus
     p <<- p  # push to parent in case a manual restart is possible
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     message( "Entering browser mode ...")
     browser()
-    ecmei_interpolate (p=p )
+    emei_interpolate (p=p )
   }
 
             
@@ -618,14 +618,14 @@ ecmei = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ra
   if ( runmode %in% c("default", "stage2", "stage3" ) ) {  
     # this is the basic run
     timei1 =  Sys.time()
-    currentstatus = ecmei_db( p=p, DS="statistics.status" )
+    currentstatus = emei_db( p=p, DS="statistics.status" )
     p = make.list( list( locs=sample( currentstatus$todo )) , Y=p ) # random order helps use all cpus
     p <<- p  # push to parent in case a manual restart is possible
-    suppressMessages( parallel.run( ecmei_interpolate, p=p ) )
+    suppressMessages( parallel.run( emei_interpolate, p=p ) )
     p$time_default = round( difftime( Sys.time(), timei1, units="hours" ), 3 )
-    message("||| ecmei: ")
-    message( paste( "||| ecmei: Time taken for main stage 1, interpolations (hours):", p$time_default, "" ) )
-    currentstatus = ecmei_db( p=p, DS="statistics.status" )
+    message("||| emei: ")
+    message( paste( "||| emei: Time taken for main stage 1, interpolations (hours):", p$time_default, "" ) )
+    currentstatus = emei_db( p=p, DS="statistics.status" )
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     gc()
   }
@@ -633,23 +633,23 @@ ecmei = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ra
 
   if ( runmode %in% c("stage2", "stage3" ) ) {  
     timei2 =  Sys.time()
-    message("||| ecmei: ")
-    message( "||| ecmei: Starting stage 2: more permisssive distance settings (spatial extent) " )
+    message("||| emei: ")
+    message( "||| emei: Starting stage 2: more permisssive distance settings (spatial extent) " )
 
-    for ( mult in p$ecmei_multiplier_stage2 ) { 
-      currentstatus = ecmei_db(p=p, DS="statistics.status.reset" ) 
+    for ( mult in p$emei_multiplier_stage2 ) { 
+      currentstatus = emei_db(p=p, DS="statistics.status.reset" ) 
       if (length(currentstatus$todo) > 0) {
-        p$ecmei_distance_max = p$ecmei_distance_max * mult
-        p$ecmei_distance_scale = p$ecmei_distance_scale*mult # km ... approx guess of 95% AC range 
+        p$emei_distance_max = p$emei_distance_max * mult
+        p$emei_distance_scale = p$emei_distance_scale*mult # km ... approx guess of 95% AC range 
         p = make.list( list( locs=sample( currentstatus$todo )) , Y=p ) # random order helps use all cpus
         p <<- p  # push to parent in case a manual restart is possible
-        suppressMessages( parallel.run( ecmei_interpolate, p=p ) )
+        suppressMessages( parallel.run( emei_interpolate, p=p ) )
       }
     }
     p$time_stage2 = round( difftime( Sys.time(), timei2, units="hours" ), 3)
-    message("||| ecmei: ---")
-    message( paste( "||| ecmei: Time taken to stage 2 interpolations (hours):", p$time_stage2, "" ) )
-    currentstatus = ecmei_db( p=p, DS="statistics.status" )
+    message("||| emei: ---")
+    message( paste( "||| emei: Time taken to stage 2 interpolations (hours):", p$time_stage2, "" ) )
+    currentstatus = emei_db( p=p, DS="statistics.status" )
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     gc()
   }
@@ -657,21 +657,21 @@ ecmei = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ra
 
   if ( runmode %in% c( "stage3" ) ) {  
     timei3 =  Sys.time()
-    message("||| ecmei: ---")
-    message( "||| ecmei: Starting stage 3: simple TPS-based failsafe method to interpolate all the remaining locations " )
-    toredo = ecmei_db( p=p, DS="flag.incomplete.predictions" )
+    message("||| emei: ---")
+    message( "||| emei: Starting stage 3: simple TPS-based failsafe method to interpolate all the remaining locations " )
+    toredo = emei_db( p=p, DS="flag.incomplete.predictions" )
     if ( !is.null(toredo) && length(toredo) > 0) { 
-      Sflag = ecmei_attach( p$storage.backend, p$ptr$Sflag )
+      Sflag = emei_attach( p$storage.backend, p$ptr$Sflag )
       Sflag[toredo]=0L
-      p$ecmei_local_modelengine = "tps"  
-      p = bathymetry.parameters( p=p, DS="ecmei" )
+      p$emei_local_modelengine = "tps"  
+      p = bathymetry.parameters( p=p, DS="emei" )
       p = make.list( list( locs=sample( toredo )) , Y=p ) # random order helps use all cpus
       p <<- p  # push to parent in case a manual restart is possible
-      parallel.run( ecmei_interpolate, p=p )
+      parallel.run( emei_interpolate, p=p )
     }
     p$time_stage3 = round( difftime( Sys.time(), timei3, units="hours" ), 3)
-    message( paste( "||| ecmei: Time taken to stage3 interpolations (hours):", p$time_stage3, "" ) )
-    currentstatus = ecmei_db( p=p, DS="statistics.status" )
+    message( paste( "||| emei: Time taken to stage3 interpolations (hours):", p$time_stage3, "" ) )
+    currentstatus = emei_db( p=p, DS="statistics.status" )
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     gc()
   }
@@ -679,37 +679,37 @@ ecmei = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ra
   # save again, in case some timings/etc needed in a restart
   p <<- p  # push to parent in case a manual restart is possible
   
-  ecmei_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
+  emei_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
 
 
   # save solutions to disk (again .. overwrite)
-  message("||| ecmei: ")
-  message( "||| ecmei: Saving predictions to disk .. " )
-  ecmei_db( p=p, DS="ecmei.prediction.redo" ) # save to disk for use outside ecmei*
+  message("||| emei: ")
+  message( "||| emei: Saving predictions to disk .. " )
+  emei_db( p=p, DS="emei.prediction.redo" ) # save to disk for use outside emei*
 
-  message( "||| ecmei: Saving statistics to disk .. " )
-  ecmei_db( p=p, DS="stats.to.prediction.grid.redo") # save to disk for use outside ecmei*
+  message( "||| emei: Saving statistics to disk .. " )
+  emei_db( p=p, DS="stats.to.prediction.grid.redo") # save to disk for use outside emei*
 
-  message ("||| ecmei: Finished! ")
+  message ("||| emei: Finished! ")
 
 
   if ( p$storage.backend !="bigmemory.ram" ) {
-    resp = readline( "||| ecmei: To delete temporary files, type <YES>:  ")
+    resp = readline( "||| emei: To delete temporary files, type <YES>:  ")
     if (resp=="YES") {
-      ecmei_db( p=p, DS="cleanup" )
+      emei_db( p=p, DS="cleanup" )
     } else {
-      message("||| ecmei: ")
-      message( "||| ecmei: Leaving temporary files alone in case you need to examine them or restart a process. ")
-      message( "||| ecmei: You can delete them by running: ecmei_db( p=p, DS='cleanup' ), once you are done. ")
+      message("||| emei: ")
+      message( "||| emei: Leaving temporary files alone in case you need to examine them or restart a process. ")
+      message( "||| emei: You can delete them by running: emei_db( p=p, DS='cleanup' ), once you are done. ")
     }
   }
 
   p$time_total = round( difftime( Sys.time(), p$time.start, units="hours" ),3)
-  message("||| ecmei: ")
-  message( paste( "||| ecmei: Time taken for ", runmode, " (hours):", p$time_total, "\n" ) )
+  message("||| emei: ")
+  message( paste( "||| emei: Time taken for ", runmode, " (hours):", p$time_total, "\n" ) )
 
-  message( paste( "||| ecmei: Your parameter 'p' has been updated in case you need to re-run something like, etc:\n" ) )
-  message( paste( "||| ecmei: ecmei(p=p, runmode='stage3') :\n" ) )
+  message( paste( "||| emei: Your parameter 'p' has been updated in case you need to re-run something like, etc:\n" ) )
+  message( paste( "||| emei: emei(p=p, runmode='stage3') :\n" ) )
   p <<- p  # push to parent in case a manual restart is possible
 
   invisible()

@@ -1,13 +1,13 @@
 
-ecmei__spate = function( p, dat, pa, sloc, distance, nu, phi, varObs, varSpatial ) {
+emei__spate = function( p, dat, pa, sloc, distance, nu, phi, varObs, varSpatial ) {
 
   # require(spate) #\\ SPDE solution via FFT using the spate library
-  # sloc=Sloc[Si,]; distance=ecmei_distance_cur
+  # sloc=Sloc[Si,]; distance=emei_distance_cur
 
   sdTotal=sd(dat[,p$variable$Y], na.rm=T)
   ndata = nrow(dat)
   
-  TS = ecmei_timeseries_smooth(p=p, dat=dat, sloc=sloc, distance=distance )
+  TS = emei_timeseries_smooth(p=p, dat=dat, sloc=sloc, distance=distance )
   if( is.null(TS)) return(NULL)
   if ( nrow( TS$datgridded) < p$n.min ) return(NULL)
 
@@ -20,30 +20,30 @@ ecmei__spate = function( p, dat, pa, sloc, distance, nu, phi, varObs, varSpatial
         muX = 0, muY = 0, tau2 = varObs)
 
 
-  if ( p$ecmei_spate_method=="mcmc" ) {
+  if ( p$emei_spate_method=="mcmc" ) {
       
-      ntotalSims = p$ecmei_spate_nburnin + p$ecmei_spate_nposteriors
+      ntotalSims = p$emei_spate_nburnin + p$emei_spate_nposteriors
 
       g = try( spate::spate.mcmc( y=w, n=nsq, Padding=FALSE, trace=TRUE, Nmc=ntotalSims, SV=SV,
         adaptive=TRUE, Separable=FALSE, Drift=TRUE, Diffusion=TRUE,  
-        BurnIn=p$ecmei_spate_nburnin, BurnInCovEst=floor(p$ecmei_spate_nburnin*0.5), NCovEst=p$ecmei_spate_nposteriors ), silent=TRUE)
+        BurnIn=p$emei_spate_nburnin, BurnInCovEst=floor(p$emei_spate_nburnin*0.5), NCovEst=p$emei_spate_nposteriors ), silent=TRUE)
 
       if ("try-error" %in% class(g)) {
         g = try( spate::spate.mcmc( y=w, n=nsq, Padding=FALSE, trace=FALSE, Nmc=ntotalSims, 
           adaptive=TRUE, Separable=FALSE, Drift=TRUE, Diffusion=TRUE,  
-          BurnIn=p$ecmei_spate_nburnin, BurnInCovEst=floor(p$ecmei_spate_nburnin*0.75), NCovEst=p$ecmei_spate_nposteriors ), silent=TRUE) # longer burn-in (1000 is default) and alternate rnd seed
+          BurnIn=p$emei_spate_nburnin, BurnInCovEst=floor(p$emei_spate_nburnin*0.75), NCovEst=p$emei_spate_nposteriors ), silent=TRUE) # longer burn-in (1000 is default) and alternate rnd seed
       }
 
       if ("try-error" %in% class(g)) {
         g = try( spate::spate.mcmc( y=w, n=nsq, Padding=FALSE, trace=FALSE, seed=1, Nmc=ntotalSims,
           adaptive=TRUE, Separable=FALSE, Drift=TRUE, Diffusion=TRUE,  
-          BurnIn=p$ecmei_spate_nburnin, BurnInCovEst=p$ecmei_spate_nburnin, NCovEst=p$ecmei_spate_nposteriors ), silent=TRUE) # longer burn-in (1000 is default) and alternate rnd seed
+          BurnIn=p$emei_spate_nburnin, BurnInCovEst=p$emei_spate_nburnin, NCovEst=p$emei_spate_nposteriors ), silent=TRUE) # longer burn-in (1000 is default) and alternate rnd seed
       }
 
       if ("try-error" %in% class(g)) return(NULL)
 
       spp <- spate::spate.predict(y=w, tPred=(1:p$nt), 
-        spateMCMC=g, Nsim=p$ecmei_spate_nposteriors, BurnIn=p$ecmei_spate_nburnin, DataModel="Normal", trace=FALSE ) # nu=nu, defulat is to assume nu =1 
+        spateMCMC=g, Nsim=p$emei_spate_nposteriors, BurnIn=p$emei_spate_nburnin, DataModel="Normal", trace=FALSE ) # nu=nu, defulat is to assume nu =1 
       #  DimRed=TRUE, NFour=101
       rm(w); gc()
 
@@ -59,7 +59,7 @@ ecmei__spate = function( p, dat, pa, sloc, distance, nu, phi, varObs, varSpatial
       psd = psd[psd_vars]
 
 
-  } else if ( p$ecmei_spate_method=="likelihood" ) {
+  } else if ( p$emei_spate_method=="likelihood" ) {
 
       warning( "This is just to show the method for param estimation via max likelihood .. it does not handle missing data..")
 
@@ -82,7 +82,7 @@ ecmei__spate = function( p, dat, pa, sloc, distance, nu, phi, varObs, varSpatial
 
       if ("try-error" %in% class(g)) return(NULL)
     
-      spp = spateSample( spate.mle=g, w=w, n=nsq, T=p$nt, Nsim=p$ecmei_spate_nposteriors )
+      spp = spateSample( spate.mle=g, w=w, n=nsq, T=p$nt, Nsim=p$emei_spate_nposteriors )
       rm(w); gc()
 
       pmean_vars = c( "rho_0", "zeta", "rho_1", "gamma", "alpha", "mu_x", "mu_y", "sigma^2", "tau^2" ) #reorder
@@ -100,18 +100,18 @@ ecmei__spate = function( p, dat, pa, sloc, distance, nu, phi, varObs, varSpatial
 
 
 
-  } else if ( p$ecmei_spate_method=="mcmc_fast" ) {
+  } else if ( p$emei_spate_method=="mcmc_fast" ) {
 
-      g = try( spate_mcmc_fast( y=w, yvar=sdTotal^2, n=nsq, NPosteriors=p$ecmei_spate_nposteriors, BurnIn=p$ecmei_spate_nburnin, NcovUpdates=p$ecmei_spate_nCovUpdates, SV=SV ), silent=TRUE)
+      g = try( spate_mcmc_fast( y=w, yvar=sdTotal^2, n=nsq, NPosteriors=p$emei_spate_nposteriors, BurnIn=p$emei_spate_nburnin, NcovUpdates=p$emei_spate_nCovUpdates, SV=SV ), silent=TRUE)
 
       if (is.null(g)) return(NULL)
 
       if ("try-error" %in% class(g)) {
-        g = try( spate_mcmc_fast( y=w, yvar=sdTotal^2, n=nsq, NPosteriors=p$ecmei_spate_nposteriors, BurnIn=floor(1.5*p$ecmei_spate_nburnin), NcovUpdates=p$ecmei_spate_nCovUpdates), silent=TRUE) # longer burn-in (1000 is default) and alternate rnd seed
+        g = try( spate_mcmc_fast( y=w, yvar=sdTotal^2, n=nsq, NPosteriors=p$emei_spate_nposteriors, BurnIn=floor(1.5*p$emei_spate_nburnin), NcovUpdates=p$emei_spate_nCovUpdates), silent=TRUE) # longer burn-in (1000 is default) and alternate rnd seed
       }
 
       if ("try-error" %in% class(g)) {
-        g = try( spate_mcmc_fast( y=w, yvar=2*sdTotal^2, n=nsq, seed=1, NPosteriors=p$ecmei_spate_nposteriors, BurnIn=floor(2*p$ecmei_spate_nburnin), NcovUpdates=p$ecmei_spate_nCovUpdates), silent=TRUE) 
+        g = try( spate_mcmc_fast( y=w, yvar=2*sdTotal^2, n=nsq, seed=1, NPosteriors=p$emei_spate_nposteriors, BurnIn=floor(2*p$emei_spate_nburnin), NcovUpdates=p$emei_spate_nCovUpdates), silent=TRUE) 
       }
 
       if ("try-error" %in% class(g)) return(NULL)
@@ -202,13 +202,13 @@ ecmei__spate = function( p, dat, pa, sloc, distance, nu, phi, varObs, varSpatial
   rm(TS); gc()
 
   rsquared = summary(ss)$r.squared
-  if (rsquared < p$ecmei_rsquared_threshold ) return(NULL)
+  if (rsquared < p$emei_rsquared_threshold ) return(NULL)
 
-  ecmei_stats = c(list( sdTotal=sdTotal, rsquared=rsquared, ndata=ndata), pmean, psd)  
+  emei_stats = c(list( sdTotal=sdTotal, rsquared=rsquared, ndata=ndata), pmean, psd)  
   
   # lattice::levelplot( mean ~ plon + plat, data=pa, col.regions=heat.colors(100), scalse=list(draw=FALSE) , aspect="iso" )
 
-  return( list( predictions=pa, ecmei_stats=ecmei_stats ) )  
+  return( list( predictions=pa, emei_stats=emei_stats ) )  
 
 }
 

@@ -1,5 +1,5 @@
 
-ecmei_LaplacesDemon_spate = function( Model, Data, Initial.Values, Covar=NULL,
+emei_LaplacesDemon_spate = function( Model, Data, Initial.Values, Covar=NULL,
      Iterations=10000, Status=100, Thinning=10, Algorithm="MWG",
      Specs=NULL, LogFile="", Fit.LA=NULL, ... ) {
 
@@ -12,7 +12,7 @@ ecmei_LaplacesDemon_spate = function( Model, Data, Initial.Values, Covar=NULL,
           Covar=NULL; Iterations=100 ;Status=1 ;Thinning=2; Algorithm="MWG"; Specs=NULL; LogFile=""; Fit.LA=NULL
 
           require(LaplacesDemonCpp)
-          require(ecmei)
+          require(emei)
           n = 12
           nn=n*n
           T=10
@@ -68,7 +68,7 @@ ecmei_LaplacesDemon_spate = function( Model, Data, Initial.Values, Covar=NULL,
           Data$nNA = length( which(Data$indNA) )
           if (Data$nNA > 0 ) Data$y[Data$indNA]=0 
           rm(Z)
-          Data = ecmei_LaplacesDemon_spatemodel(Data)
+          Data = emei_LaplacesDemon_spatemodel(Data)
           str(Data$Model( parm=Data$PGF(Data), Data ) ) # test to see if return values are sensible
 
      }

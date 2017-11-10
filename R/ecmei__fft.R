@@ -1,10 +1,10 @@
 
-ecmei__fft = function( p, dat, pa, nu=NULL, phi=NULL ) {
+emei__fft = function( p, dat, pa, nu=NULL, phi=NULL ) {
 
-  #\\ this is the core engine of ecmei .. localised space (no-time) modelling interpolation 
+  #\\ this is the core engine of emei .. localised space (no-time) modelling interpolation 
   #\\ note: time is not being modelled and treated independently 
   #\\      .. you had better have enough data in each time slice
-  #\\ first a low-pass filter as defined by p$ecmei_lowpass_nu, p$ecmei_lowpass_phi, then a simple covariance filter determined by nu,phi
+  #\\ first a low-pass filter as defined by p$emei_lowpass_nu, p$emei_lowpass_phi, then a simple covariance filter determined by nu,phi
   # varObs=varObs, varSpatial=varSpatial
   
   sdTotal=sd(dat[,p$variable$Y], na.rm=T)
@@ -41,23 +41,23 @@ ecmei__fft = function( p, dat, pa, nu=NULL, phi=NULL ) {
   mC = matrix(0, nrow = nr2, ncol = nc2)
   mC[nr, nc] = 1
  
-  if (!exists("ecmei_fft_filter",p) ) p$ecmei_fft_filter="lowpass" # default in case of no specification
+  if (!exists("emei_fft_filter",p) ) p$emei_fft_filter="lowpass" # default in case of no specification
 
-  if ( p$ecmei_fft_filter == "lowpass") {
-    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", range=p$ecmei_lowpass_phi, nu=p$ecmei_lowpass_nu )
+  if ( p$emei_fft_filter == "lowpass") {
+    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", range=p$emei_lowpass_phi, nu=p$emei_lowpass_nu )
     sp.covar.surf = as.surface(dgrid, c(sp.covar))$z
     sp.covar.kernel = fft(sp.covar.surf) / ( fft(mC) * nr2 * nc2 )
   }
 
-  if (p$ecmei_fft_filter == "spatial.process") {
+  if (p$emei_fft_filter == "spatial.process") {
     sp.covar = stationary.cov( dgrid, center, Covariance="Matern", range=phi, nu=nu )
     sp.covar.surf = as.surface(dgrid, c(sp.covar))$z
     sp.covar.kernel = fft(sp.covar.surf) / ( fft(mC) * nr2 * nc2 )
   }
 
-  if (p$ecmei_fft_filter == "lowpass_spatial.process") {
+  if (p$emei_fft_filter == "lowpass_spatial.process") {
     # both ..
-    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", range=p$ecmei_lowpass_phi, nu=p$ecmei_lowpass_nu )
+    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", range=p$emei_lowpass_phi, nu=p$emei_lowpass_nu )
     sp.covar.surf = as.surface(dgrid, c(sp.covar))$z
     sp.covar2 = stationary.cov( dgrid, center, Covariance="Matern", range=phi, nu=nu )
     sp.covar.surf2 = as.surface(dgrid, c(sp.covar2))$z
@@ -120,10 +120,10 @@ ecmei__fft = function( p, dat, pa, nu=NULL, phi=NULL ) {
   }
 
 
-  ecmei_stats = list( sdTotal=sdTotal, rsquared=NA, ndata=nrow(dat) ) # must be same order as p$statsvars
+  emei_stats = list( sdTotal=sdTotal, rsquared=NA, ndata=nrow(dat) ) # must be same order as p$statsvars
   
   # lattice::levelplot( mean ~ plon + plat, data=pa, col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
 
-  return( list( predictions=pa, ecmei_stats=ecmei_stats ) )  
+  return( list( predictions=pa, emei_stats=emei_stats ) )  
 }
 

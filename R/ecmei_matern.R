@@ -1,7 +1,7 @@
 
 
 
-ecmei_matern= function( distance=NULL, mRange, mSmooth=0.5, parameterization="ecmei" ) {
+emei_matern= function( distance=NULL, mRange, mSmooth=0.5, parameterization="emei" ) {
   # matern autocorrelation function
   # mSmooth =  Bessl smoothness parameter (aks, "nu")
   # mRange = range parameter (aka "phi", .. not the spatial range)
@@ -15,8 +15,8 @@ ecmei_matern= function( distance=NULL, mRange, mSmooth=0.5, parameterization="ec
   
   if ( mSmooth <= 0 ) warning("mSmooth should be positive to be meaningful")
 
-  mRange_ecmei = matern_phi2phi(mRange, mSmooth, parameterization_input=parameterization, parameterization_output="ecmei")
-  r = distance / mRange_ecmei  # distance scaled by range parameter
+  mRange_emei = matern_phi2phi(mRange, mSmooth, parameterization_input=parameterization, parameterization_output="emei")
+  r = distance / mRange_emei  # distance scaled by range parameter
   r[r<1e-9] = 1e-9
   
   if (mSmooth==0.5) {

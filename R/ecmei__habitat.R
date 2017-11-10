@@ -1,6 +1,6 @@
 
-ecmei__habitat = function( p, dat, pa ) {
-   #\\ this is the core engine of ecmei .. localised space-time habiat modelling
+emei__habitat = function( p, dat, pa ) {
+   #\\ this is the core engine of emei .. localised space-time habiat modelling
  
   if (0) {
     if (!exists("nsims", p)) p$nsims = 5000
@@ -9,14 +9,14 @@ ecmei__habitat = function( p, dat, pa ) {
 
   sdTotal=sd(dat[,p$variables$Y], na.rm=T)
 
-  if ( exists("ecmei_local_model_distanceweighted", p) ) {
-    if (p$ecmei_local_model_distanceweighted) {
-      Hmodel = try( gam( p$ecmei_local_modelformula, data=dat, family=binomial(), weights=weights, optimizer=c("outer","optim")  ) )
+  if ( exists("emei_local_model_distanceweighted", p) ) {
+    if (p$emei_local_model_distanceweighted) {
+      Hmodel = try( gam( p$emei_local_modelformula, data=dat, family=binomial(), weights=weights, optimizer=c("outer","optim")  ) )
     } else {
-      Hmodel = try( gam( p$ecmei_local_modelformula, data=dat, family=binomial(), optimizer=c("outer","optim")  ) )
+      Hmodel = try( gam( p$emei_local_modelformula, data=dat, family=binomial(), optimizer=c("outer","optim")  ) )
     }
   } else {
-      Hmodel = try( gam( p$ecmei_local_modelformula, data=dat, family=binomial() ) )
+      Hmodel = try( gam( p$emei_local_modelformula, data=dat, family=binomial() ) )
   } 
   if ( "try-error" %in% class(Hmodel) ) return( NULL )
 
@@ -24,7 +24,7 @@ ecmei__habitat = function( p, dat, pa ) {
   dat$Yhat = dat$P * dat$A
 
   rsq = cor( dat$Yhat, dat[,p$variables$Y], use="pairwise.complete.obs" )^2
-  if (rsq < p$ecmei_rsquared_threshold ) return(NULL)
+  if (rsq < p$emei_rsquared_threshold ) return(NULL)
 
   Hmodel.coef = mvtnorm::rmvnorm(p$nsims, coef(Hmodel), Hmodel$Vp, method="chol")
   rm( Hmodel); gc()
@@ -58,8 +58,8 @@ ecmei__habitat = function( p, dat, pa ) {
   # iHabitat = which( pa$logitmean > p$habitat.threshold.quantile & (pa$logitmean - 2 * pa$logitsd) > 0 )
 
   ss = summary(hmod)
-  ecmei_stats = list( sdTotal=sdTotal, rsquared=rsq, ndata=nrow(dat) ) # must be same order as p$statsvars
+  emei_stats = list( sdTotal=sdTotal, rsquared=rsq, ndata=nrow(dat) ) # must be same order as p$statsvars
 
-  return( list( predictions=pa, ecmei_stats=ecmei_stats ) )  
+  return( list( predictions=pa, emei_stats=emei_stats ) )  
 
 }

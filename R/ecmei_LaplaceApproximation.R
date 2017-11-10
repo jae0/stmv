@@ -1,5 +1,5 @@
 
-ecmei_LaplaceApproximation <- function(Model, parm, Data, Interval=1.0E-6,
+emei_LaplaceApproximation <- function(Model, parm, Data, Interval=1.0E-6,
      Iterations=100, Method="BFGS", Samples=1000, CovEst="Hessian",
      sir=TRUE, Stop.Tolerance=1.0E-5, CPUs=1, Type="PSOCK") {
      
@@ -13,7 +13,7 @@ ecmei_LaplaceApproximation <- function(Model, parm, Data, Interval=1.0E-6,
           Interval=1.0E-6; Iterations=100; Method="BFGS"; Samples=1000; CovEst="Hessian"; sir=TRUE; 
           Stop.Tolerance=1.0E-5; CPUs=1; Type="PSOCK"
          
-          require(ecmei)
+          require(emei)
           n = 12
           nn=n*n
           T=20
@@ -66,7 +66,7 @@ ecmei_LaplaceApproximation <- function(Model, parm, Data, Interval=1.0E-6,
             nNA=nNA 
           )
   
-          Data = ecmei_LaplacesDemon_spatemodel(Data)
+          Data = emei_LaplacesDemon_spatemodel(Data)
           Data$yhat=Data$y[]*0
 
           str(Data$Model( parm=Data$PGF(Data), Data ) ) # test to see if return values are sensible

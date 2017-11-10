@@ -1,5 +1,5 @@
 
-ecmei_LaplacesDemon_spate = function( Model, Data, Initial.Values, Covar=NULL, Iterations=1000, 
+emei_LaplacesDemon_spate = function( Model, Data, Initial.Values, Covar=NULL, Iterations=1000, 
      Status=100, Thinning=10, Algorithm="MWG", Specs=NULL, LogFile="", Fit.LA=NULL,  
      Debug=list(DB.chol=FALSE, DB.eigen=FALSE, DB.MCSE=FALSE, DB.Model=FALSE), ... ) {
 
@@ -26,7 +26,7 @@ ecmei_LaplacesDemon_spate = function( Model, Data, Initial.Values, Covar=NULL, I
           }
 
           require(LaplacesDemonCpp)
-          require(ecmei)
+          require(emei)
           n = 12
           nn=n*n
           T=20
@@ -79,7 +79,7 @@ ecmei_LaplacesDemon_spate = function( Model, Data, Initial.Values, Covar=NULL, I
             nNA=nNA 
           )
   
-          Data = ecmei_LaplacesDemon_spatemodel(Data)
+          Data = emei_LaplacesDemon_spatemodel(Data)
           Data$yhat=Data$y[]*0
 
           str(Data$Model( parm=Data$PGF(Data), Data ) ) # test to see if return values are sensible
@@ -113,7 +113,7 @@ ecmei_LaplacesDemon_spate = function( Model, Data, Initial.Values, Covar=NULL, I
     LIV <- length(Initial.Values)
     ScaleF <- 2.381204 * 2.381204 / LIV
 
-    LDspecs = ecmei_LaplacesDemon_Specification( Algorithm=Algorithm, LogFile=LogFile, Specs=Specs, LIV=LIV, Covar=Covar, ScaleF=ScaleF )
+    LDspecs = emei_LaplacesDemon_Specification( Algorithm=Algorithm, LogFile=LogFile, Specs=Specs, LIV=LIV, Covar=Covar, ScaleF=ScaleF )
     
 
 
