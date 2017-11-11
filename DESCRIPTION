@@ -1,4 +1,4 @@
-Package: emei
+Package: stm
 Title: Ecological model estimation and inference   
 Version: 0.1
 Authors@R: c( person("Jae", "Choi", email="choijaeseok@gmail.com", role=c("aut", "cre")) ) 
@@ -23,11 +23,11 @@ Imports:
   parallel, 
   bigmemory,
   devtools, 
-  emenv
+  stmenv
 Suggests: 
   INLA,
   knitr, 
-  emgis,
+  stmdat,
   rmarkdown
 LinkingTo: 
   Rcpp, 
@@ -39,6 +39,6 @@ ByteCompile: TRUE
 VignetteBuilder: knitr
 License: MIT
 LazyData: true
-URL: https://github.com/jae0/emei/
+URL: https://github.com/jae0/stm/
 
 

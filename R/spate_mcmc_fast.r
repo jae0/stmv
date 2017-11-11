@@ -126,9 +126,9 @@ spate_mcmc_fast = function (y, yvar, n, SV=NULL, RWCov=NULL, pars=NULL,
             -1/2 * log(pars["tau2",i]) # tau2
           )
 
-          wFT[] = .C("TSreal_fft_emei", n=as.integer(n), T= as.integer(nt), yh=as.double(spate::TSmat.to.vect(y)), inverse=1L, 
+          wFT[] = .C("TSreal_fft_stm", n=as.integer(n), T= as.integer(nt), yh=as.double(spate::TSmat.to.vect(y)), inverse=1L, 
             indCos=as.integer(Z$indFFT$indCos), indW=as.integer(Z$indFFT$indW), indWCon=as.integer(Z$indFFT$indWCon), 
-            NFc=as.integer(NFc), PACKAGE="emei")$yh
+            NFc=as.integer(NFc), PACKAGE="stm")$yh
 
           # spectrum: matern spatial and temporal ar1 
           rho0_inv = 1/pars["rho0",i]
@@ -168,15 +168,15 @@ spate_mcmc_fast = function (y, yvar, n, SV=NULL, RWCov=NULL, pars=NULL,
             spec_j = spec
           }
 
-          ffbs = .C("ffbs_spectral_emei", wFT=as.double(wFT), bw=as.double(FALSE), ll=as.double(TRUE), 
+          ffbs = .C("ffbs_spectral_stm", wFT=as.double(wFT), bw=as.double(FALSE), ll=as.double(TRUE), 
             specCosOnly=as.double(spec[indCosOnly]), G11C=as.double(G11C), specCosSine= as.double(spec[Z$indFFT$indCos]), 
             G11=as.double(G11), G12=as.double(G12), specAll=as.double(spec), tau2=as.double(pars["tau2",i]), 
-            T=as.integer(nt), NFc=as.integer(NFc), ns=as.integer(Z$ns), PACKAGE="emei" )
+            T=as.integer(nt), NFc=as.integer(NFc), ns=as.integer(Z$ns), PACKAGE="stm" )
 
-          ffbs_j = .C("ffbs_spectral_emei", wFT=as.double(wFT), bw=as.double(FALSE), ll=as.double(TRUE), 
+          ffbs_j = .C("ffbs_spectral_stm", wFT=as.double(wFT), bw=as.double(FALSE), ll=as.double(TRUE), 
             specCosOnly=as.double(spec_j[indCosOnly]), G11C=as.double(G11C_j), specCosSine= as.double(spec_j[Z$indFFT$indCos]), 
             G11=as.double(G11_j), G12=as.double(G12_j), specAll=as.double(spec_j), tau2=as.double(pars["tau2",j]), 
-            T=as.integer(nt), NFc=as.integer(NFc), ns=as.integer(Z$ns), PACKAGE="emei" )
+            T=as.integer(nt), NFc=as.integer(NFc), ns=as.integer(Z$ns), PACKAGE="stm" )
 
           al = min(1, exp( sum( c(
             {priors - priors_j },
@@ -195,9 +195,9 @@ spate_mcmc_fast = function (y, yvar, n, SV=NULL, RWCov=NULL, pars=NULL,
         G12_j = G12
         spec_j = spec
 
-        yhat = spate::vect.to.TSmat( .C("TSreal_fft_emei", n=as.integer(n), T=as.integer(nt), yh=as.double(ffbs_j$wFT), inverse=0L, 
+        yhat = spate::vect.to.TSmat( .C("TSreal_fft_stm", n=as.integer(n), T=as.integer(nt), yh=as.double(ffbs_j$wFT), inverse=0L, 
                 indCos=as.integer(Z$indFFT$indCos), indW=as.integer(Z$indFFT$indW), indWCon=as.integer(Z$indFFT$indWCon),
-                NFc=as.integer(NFc), PACKAGE="emei" )$yh, T=nt)
+                NFc=as.integer(NFc), PACKAGE="stm" )$yh, T=nt)
 
         AcRate = AcRate + 1
 

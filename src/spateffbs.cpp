@@ -21,7 +21,7 @@ using namespace Rcpp;
 // [[Rcpp::depends(RcppArmadillo)]]
 
 // copied from spate library with some minor optimzations 
-// .. moved here to make emei operate more flexibly 
+// .. moved here to make stm operate more flexibly 
 
 static Ziggurat::Ziggurat::Ziggurat zigg;
 
@@ -36,7 +36,7 @@ arma::mat inverse_crossproduct (arma::mat A) {
 
 
 
-extern "C" void real_fft_emei(int *n, double yh[], int *inverse, int indCos[], int indW[], int indWCon[], int *NFc){
+extern "C" void real_fft_stm(int *n, double yh[], int *inverse, int indCos[], int indW[], int indWCon[], int *NFc){
   fftw_complex *in, *out;
   fftw_plan p;
   int i;
@@ -80,7 +80,7 @@ extern "C" void real_fft_emei(int *n, double yh[], int *inverse, int indCos[], i
 
 
 
-extern "C" void propagate_spectral_emei(double xtp1[], double xt[], double G11C[], double G11[], double G12[], int *NFc, int *ns){
+extern "C" void propagate_spectral_stm(double xtp1[], double xt[], double G11C[], double G11[], double G12[], int *NFc, int *ns){
   int j, k;
   for(j=0; j<*ns;j++){
     xtp1[j]=G11C[j] * xt[j];
@@ -93,7 +93,7 @@ extern "C" void propagate_spectral_emei(double xtp1[], double xt[], double G11C[
 }
 
 
-extern "C" void kf_spectral_emei(double wFT[], double mtt1[], double mtt[], double rtt1[], double rtt[], double specCosOnly[], double G11C[], double specCosSine[], double G11[], double G12[], double *tau2, int *T, int *NFc, int *ns){
+extern "C" void kf_spectral_stm(double wFT[], double mtt1[], double mtt[], double rtt1[], double rtt[], double specCosOnly[], double G11C[], double specCosSine[], double G11[], double G12[], double *tau2, int *T, int *NFc, int *ns){
   int t,j,k,l,NF;
   NF=(2 * *NFc + *ns);
   double rtt1Temp,rttTemp;
@@ -125,7 +125,7 @@ extern "C" void kf_spectral_emei(double wFT[], double mtt1[], double mtt[], doub
   }
   for(t=0; t<*T;t++){
     l = t * NF; 
-    propagate_spectral_emei(&mtt1[l], &mtt[l], G11C, G11, G12, NFc, ns);
+    propagate_spectral_stm(&mtt1[l], &mtt[l], G11C, G11, G12, NFc, ns);
     for(j=0; j<NF;j++){
       k = l +j ;
       mtt[(t+1) * NF+j] = mtt1[k]+(rtt1[k] * (wFT[k]-mtt1[k])/(*tau2+rtt1[k]));
@@ -134,7 +134,7 @@ extern "C" void kf_spectral_emei(double wFT[], double mtt1[], double mtt[], doub
 }
 
 
-extern "C" void bs_spectral_emei(double simAlpha[], double mtt[], double mtt1[], double rtt[], double rtt1[], double spec[], double G11C[], double G11[], double G12[], int *T, int *NFc, int *ns){
+extern "C" void bs_spectral_stm(double simAlpha[], double mtt[], double mtt1[], double rtt[], double rtt1[], double spec[], double G11C[], double G11[], double G12[], int *T, int *NFc, int *ns){
   int NF=(2 * *NFc + *ns);
   int j,k,l,t;
   double *AlMinusMtt1 = (double *) malloc(NF * sizeof(*AlMinusMtt1));
@@ -150,7 +150,7 @@ extern "C" void bs_spectral_emei(double simAlpha[], double mtt[], double mtt1[],
     AlMinusMtt1[j]=simTemp-mtt1[(*T-1) * NF +j];
   }
   for(t=(*T-1); t>0;t--){
-    propagate_spectral_emei(Prop, AlMinusMtt1, G11C, G11, G12t, NFc, ns);
+    propagate_spectral_stm(Prop, AlMinusMtt1, G11C, G11, G12t, NFc, ns);
     for(j=0; j<NF;j++){
       k = t * NF +j ;
       l = (t-1) * NF +j ;
@@ -165,7 +165,7 @@ extern "C" void bs_spectral_emei(double simAlpha[], double mtt[], double mtt1[],
 
 
 
-extern "C" void ll_spectral_emei(double *ll, double wFT[], double mtt1[], double rtt1[],  int *T, int *NF, double *tau2){
+extern "C" void ll_spectral_stm(double *ll, double wFT[], double mtt1[], double rtt1[],  int *T, int *NF, double *tau2){
   *ll=0;
   int t,j,k,l;
   for(t=0; t<*T;t++){
@@ -183,15 +183,15 @@ extern "C" void ll_spectral_emei(double *ll, double wFT[], double mtt1[], double
 
 
 // [[Rcpp::export]]
-extern "C" void TSreal_fft_emei(int *n, int *T, double yh[], int *inverse, int indCos[], int indW[], int indWCon[], int *NFc){
+extern "C" void TSreal_fft_stm(int *n, int *T, double yh[], int *inverse, int indCos[], int indW[], int indWCon[], int *NFc){
   int t;
   for(t=0; t<*T;t++){
-    real_fft_emei(n, &yh[t * *n * *n], inverse, indCos, indW, indWCon, NFc);
+    real_fft_stm(n, &yh[t * *n * *n], inverse, indCos, indW, indWCon, NFc);
   }
 }
 
 
-extern "C" void ffbs_spectral_emei(double wFT[], double *bw, double *ll, double specCosOnly[], double G11C[], double specCosSine[], double G11[], double G12[], double specAll[], double *tau2, int *T, int *NFc, int *ns){
+extern "C" void ffbs_spectral_stm(double wFT[], double *bw, double *ll, double specCosOnly[], double G11C[], double specCosSine[], double G11[], double G12[], double specAll[], double *tau2, int *T, int *NFc, int *ns){
 /* , double simAlpha[] */
   int NF=(2 * *NFc + *ns);
   int j;
@@ -204,14 +204,14 @@ extern "C" void ffbs_spectral_emei(double wFT[], double *bw, double *ll, double 
     mtt[j]=0.0;
   }
   
-  kf_spectral_emei(wFT, mtt1, mtt, rtt1, rtt, specCosOnly, G11C, specCosSine, G11, G12, tau2, T, NFc, ns);
+  kf_spectral_stm(wFT, mtt1, mtt, rtt1, rtt, specCosOnly, G11C, specCosSine, G11, G12, tau2, T, NFc, ns);
 
   if(*ll==1){
-    ll_spectral_emei(ll, wFT, mtt1, rtt1, T, &NF, tau2);
+    ll_spectral_stm(ll, wFT, mtt1, rtt1, T, &NF, tau2);
    // printf("%f",*ll); 
   }
   if(*bw==1){
-    bs_spectral_emei(wFT, mtt, mtt1, rtt, rtt1, specAll, G11C, G11, G12, T, NFc, ns);
+    bs_spectral_stm(wFT, mtt, mtt1, rtt, rtt1, specAll, G11C, G11, G12, T, NFc, ns);
   }
 
   free(rtt);
@@ -225,7 +225,7 @@ extern "C" void ffbs_spectral_emei(double wFT[], double *bw, double *ll, double 
 }
 
 
-extern "C" void ffbs_spectral_emei_oneshot(  
+extern "C" void ffbs_spectral_stm_oneshot(  
     double yh[], 
     double *ll, 
     double *tau2,
@@ -321,9 +321,9 @@ extern "C" void ffbs_spectral_emei_oneshot(
     }
   }
 
-  kf_spectral_emei(wFT, mtt1, mtt, rtt1, rtt, specCosOnly, G11C, specCosSine, G11, G12, tau2, T, NFc, ns);
-  ll_spectral_emei(ll, wFT, mtt1, rtt1, T, NF, tau2);
-  bs_spectral_emei(wFT, mtt, mtt1, rtt, rtt1, spec, G11C, G11, G12, T, NFc, ns);
+  kf_spectral_stm(wFT, mtt1, mtt, rtt1, rtt, specCosOnly, G11C, specCosSine, G11, G12, tau2, T, NFc, ns);
+  ll_spectral_stm(ll, wFT, mtt1, rtt1, T, NF, tau2);
+  bs_spectral_stm(wFT, mtt, mtt1, rtt, rtt1, spec, G11C, G11, G12, T, NFc, ns);
 
   
   // return to normal space
@@ -378,9 +378,9 @@ Testing:
 
   git commit -am"debug" && R 
 
-  install_git( "/home/jae/bio/emei", branch="clibs", force=TRUE) 
+  install_git( "/home/jae/bio/stm", branch="clibs", force=TRUE) 
   
-    require(emei)
+    require(stm)
     n = 12
     nn=n*n
     T=10
@@ -427,7 +427,7 @@ Testing:
 
 microbenchmark::microbenchmark( 
 
-  {  ffbs_proposal = .C( "ffbs_spectral_emei_oneshot", 
+  {  ffbs_proposal = .C( "ffbs_spectral_stm_oneshot", 
         yh=as.double(spate::TSmat.to.vect(y)), 
         ll=as.double(1),
         tau2=as.double(parh_proposal["tau2"]),
@@ -443,31 +443,31 @@ microbenchmark::microbenchmark(
         NF=as.integer(NF), 
         NFc=as.integer(NFc), 
         ns=as.integer(ns),
-        PACKAGE="emei" )
+        PACKAGE="stm" )
 }, 
 {
-    u = .C("TSreal_fft_emei", n=as.integer(n), T= as.integer(T), yh=as.double(spate::TSmat.to.vect(y)), inverse=as.integer(1), 
+    u = .C("TSreal_fft_stm", n=as.integer(n), T= as.integer(T), yh=as.double(spate::TSmat.to.vect(y)), inverse=as.integer(1), 
                   indCos=as.integer(Z$indFFT$indCos), indW=as.integer(Z$indFFT$indW), indWCon=as.integer(Z$indFFT$indWCon), 
-                  NFc=as.integer(NFc), PACKAGE="emei")$yh
+                  NFc=as.integer(NFc), PACKAGE="stm")$yh
 
         G11C = exp(DiffDamp[indCosOnly])    
         G11 =  exp(DiffDamp[Z$indFFT$indCos]) * cos(Adv[Z$indFFT$indCos])   
         G12 = -exp(DiffDamp[Z$indFFT$indCos]) * sin(Adv[Z$indFFT$indCos])
 
-        mll <- .C("ffbs_spectral_emei", wFT=as.double(u), bw=as.double(FALSE), ll=as.double(TRUE), 
+        mll <- .C("ffbs_spectral_stm", wFT=as.double(u), bw=as.double(FALSE), ll=as.double(TRUE), 
                   specCosOnly=as.double(spec[indCosOnly]), G11C=as.double(G11C), specCosSine= as.double(spec[Z$indFFT$indCos]), 
                   G11=as.double(G11), G12=as.double(G12), specAll=as.double(spec), tau2=as.double(parh_proposal["tau2"]), 
-                  T=as.integer(T), NFc=as.integer(NFc), ns=as.integer(Z$ns), PACKAGE="emei" )$ll
+                  T=as.integer(T), NFc=as.integer(NFc), ns=as.integer(Z$ns), PACKAGE="stm" )$ll
         mll
 
-         v = .C("ffbs_spectral_emei", wFT=as.double(u), bw=as.double(TRUE), ll=as.double(FALSE), 
+         v = .C("ffbs_spectral_stm", wFT=as.double(u), bw=as.double(TRUE), ll=as.double(FALSE), 
               specCosOnly=as.double(spec[indCosOnly]), G11C=as.double(G11C), specCosSine= as.double(spec[Z$indFFT$indCos]), 
               G11=as.double(G11), G12=as.double(G12), specAll=as.double(spec), tau2=as.double(parh_proposal["tau2"]), 
-              T=as.integer(T), NFc=as.integer(NFc), ns=as.integer(Z$ns), PACKAGE="emei" )$wFT
+              T=as.integer(T), NFc=as.integer(NFc), ns=as.integer(Z$ns), PACKAGE="stm" )$wFT
 
-          yhat = spate::vect.to.TSmat( .C("TSreal_fft_emei", n=as.integer(n), T=as.integer(T), yh=as.double(v), inverse=as.integer(0), 
+          yhat = spate::vect.to.TSmat( .C("TSreal_fft_stm", n=as.integer(n), T=as.integer(T), yh=as.double(v), inverse=as.integer(0), 
               indCos=as.integer(Z$indFFT$indCos), indW=as.integer(Z$indFFT$indW), indWCon=as.integer(Z$indFFT$indWCon),
-              NFc=as.integer(NFc), PACKAGE="emei" )$yh, T=T)
+              NFc=as.integer(NFc), PACKAGE="stm" )$yh, T=T)
 }
 , times=1000)
 

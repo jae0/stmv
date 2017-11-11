@@ -21,7 +21,7 @@ matern_find_range_fast = function( xy, z, nu=0.5 ) {
   vario = vgram( xy, z, dmax=maxdist, N=nbreaks)
   vx=vario$centers
   vg=vario$stats["mean",]
-  vo = emei_variogram_optimization( vx=vx, vg=vg, nu=nu ) 
+  vo = stm_variogram_optimization( vx=vx, vg=vg, nu=nu ) 
   if ( vo$summary$range_ok ) autocorrelation_range = vo$summary$range
 
   cnt = 0
@@ -37,7 +37,7 @@ matern_find_range_fast = function( xy, z, nu=0.5 ) {
     vario = vgram( xy, z, dmax=maxdist, N=nbreaks)
     vx = vario$centers
     vg = vario$stats["mean",]
-    vo = emei_variogram_optimization( vx=vx, vg=vg, nu ) 
+    vo = stm_variogram_optimization( vx=vx, vg=vg, nu ) 
     if ( vo$summary$range_ok ) {
       autocorrelation_range = vo$summary$range
       break()
