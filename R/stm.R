@@ -2,7 +2,7 @@
 
 stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram",  debug_plot_variable_index=1 ) {
 
-  #\\ localized modelling of space and time data to predict/interpolate upon a grid OUT
+  #\\ localized modelling of space and time data to predict/interpolate upon a grid 
   #\\ speed ratings: bigmemory.ram (1), ff (2), bigmemory.filebacked (3)
 
   # TODO: splancs::kernel3d as a method ? .. for count data?
@@ -664,7 +664,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
       Sflag = stm_attach( p$storage.backend, p$ptr$Sflag )
       Sflag[toredo]=0L
       p$stm_local_modelengine = "tps"  
-      p = bathymetry.parameters( p=p, DS="stm" )
+      p = indicators.parameters( p=p, DS="bathymetry" )
       p = make.list( list( locs=sample( toredo )) , Y=p ) # random order helps use all cpus
       p <<- p  # push to parent in case a manual restart is possible
       parallel.run( stm_interpolate, p=p )
