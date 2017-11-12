@@ -12,8 +12,6 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
 
   if (!exists("time.start", p) ) p$time.start = Sys.time()
 
-  p = stm_db( p=p, DS="load.parameters" )  
-
   message( paste( "||| stm: In case something should go wrong, intermediary outputs will be placed at:", p$savedir ) )
   p$savedir = file.path(p$project.root, "modelled", p$variables$Y, p$spatial.domain )
   if ( !file.exists(p$savedir)) dir.create( p$savedir, recursive=TRUE, showWarnings=FALSE )
@@ -49,7 +47,11 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
   
   if (is.null(DATA) ) {
     # in here as it assumes that initiation of process (save of data files) is complete and "saved" objects are present
-    message( "||| stm: No DATA provided, assuming we are continuing from an interrupted start" ) 
+    message( "||| stm: No DATA provided, assuming we are continuing from an interrupted start" )
+    message( "||| stm:  and using parameters from saved configuration:", file.path( p$savedir, 'p.rdata' ) )
+    message( "||| stm:  Delete this if you want to over-ride these settings.")
+
+    p = stm_db( p=p, DS="load.parameters" )  
 
     stm_db(p=p, DS="statistics.status.reset" )
  
