@@ -12,9 +12,10 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
 
   if (!exists("time.start", p) ) p$time.start = Sys.time()
 
-  message( paste( "||| stm: In case something should go wrong, intermediary outputs will be placed at:", p$savedir ) )
   p$savedir = file.path(p$project.root, "modelled", p$variables$Y, p$spatial.domain )
   if ( !file.exists(p$savedir)) dir.create( p$savedir, recursive=TRUE, showWarnings=FALSE )
+  message( "||| stm: In case something should go wrong, intermediary outputs will be placed at:" )
+  message( "|||",  p$savedir  )
 
   # determine storage format
   p$libs = unique( c( p$libs, "sp", "rgdal", "parallel", "RandomFields", "geoR" ) )
@@ -52,95 +53,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
     message( "||| stm:  Delete this if you want to over-ride these settings.")
 
     p = stm_db( p=p, DS="load.parameters" )  
-
     stm_db(p=p, DS="statistics.status.reset" )
- 
-    # unwind predictions
-    Yraw = stm_attach( p$storage.backend, p$ptr$Yraw )
-    PP = stm_attach( p$storage.backend, p$ptr$P )
-    PPsd = stm_attach( p$storage.backend, p$ptr$Psd )
-
-    if (exists("stm_global_modelengine", p)) {
-      P0 = stm_attach( p$storage.backend, p$ptr$P0 )
-      P0sd = stm_attach( p$storage.backend, p$ptr$P0sd )
-    }
-
-    if ( exists("TIME", p$variables)) {
-      # outputs are on yearly breakdown
-      for ( r in 1:p$ny ) {
-        y = p$yrs[r]
-        fn1 = file.path( p$savedir, paste("stm.prediction", "mean", y, "rdata", sep="." ) )
-        fn2 = file.path( p$savedir, paste("stm.prediction", "sd",   y, "rdata", sep="." ) )
-        if (file.exists(fn1)) load(fn1)
-        if (file.exists(fn2)) load(fn2)
-        # return to user scale (that of Y)
-        P = p$stm_local_family$linkfun( P )
-        V = p$stm_local_family$linkfun( V )
-        
-        # for binomial .. convert from logit to probability scale (local is gaussian)
-        if ( "family" %in% class(p$stm_global_family) ) {
-          if (  p$stm_global_family$family == "binomial" ) {
-            P = log( P/(1-P) )
-            V = log( V/(1-V) ) # logit tranform
-          }
-        }
-        if (exists("stm_global_modelengine", p) ) {
-          ## maybe add via simulation ? ... 
-          uu = which(!is.finite(P[]))
-          if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through .. 
-          P = P[] - P0[,r] 
-          vv = which(!is.finite(V[]))
-          if (length(vv)>0) V[vv] = 0 # permit covariate-base predictions to pass through ..
-          V = sqrt( V[]^2 - P0sd[,r]^2) # simple additive independent errors assumed
-        }
-
-        vv = ncol(PP)
-        if ( vv > p$ny ) {
-          col.ranges = (r-1) * p$nw + (1:p$nw) 
-          PP  [,col.ranges] = P
-          PPsd[,col.ranges] = V # simpleadditive independent errors assumed
-        } else if ( vv==p$ny) {
-          PP[,r] = P
-          PPsd[,r] = V
-        }
-      } 
-
-    } else {
-
-      fn1 = file.path( p$savedir, paste("stm.prediction", "mean", "rdata", sep="." ) )
-      fn2 = file.path( p$savedir, paste("stm.prediction", "sd",   "rdata", sep="." ) )
-
-      if (file.exists(fn1)) load(fn1)
-      if (file.exists(fn2)) load(fn2)
-
-      # return to user scale
-      P = p$stm_local_family$linkfun( P )
-      V = p$stm_local_family$linkfun( V )
-          
-      if ( "family" %in% class(p$stm_global_family) ) {
-        if (  p$stm_global_family$family == "binomial" ) {
-          P = log( P/(1-P) )
-          V = log( V/(1-V) ) # logit tranform
-        }
-      }
-      if (exists("stm_global_modelengine", p) ) {
-        uu = which(!is.finite(P[]))
-        if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
-        P = P[] - P0[] 
-        vv = which(!is.finite(V[]))
-        if (length(vv)>0) V[vv] = 0 # permit covariate-base predictions to pass through ..
-        V = sqrt( V[]^2 - P0sd[]^2) # simple additive independent errors assumed
-      }
-
-      PP[] = P
-      PPsd[] = V
-    
-    }
-    # unwind stats grid      
-    fn = file.path( p$savedir, paste( "stm.statistics", "rdata", sep=".") )
-    if (file.exists(fn)) load(fn)
-    S = stm_attach( p$storage.backend, p$ptr$S )
-    S[] = stats[]
 
   }  else {
     # not a restart .. new instance:
