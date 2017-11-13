@@ -1,7 +1,7 @@
 
 
 
-bioLibrary( "stm")
+project.library( "stm")
 
 datafile = file.path( "c:", "nurses.data.r" )
 # datafile = file.path( "~", "nath", "geocoding", "nurses.data.r" )

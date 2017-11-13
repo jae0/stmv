@@ -23,7 +23,7 @@ stm__inla = function( p, dat, pa ) {
   if ( !exists("predict.in.one.go", p)) p$predict.in.one.go = FALSE # use false, one go is very very slow and a resource expensive method
   if ( !exists("predict.quantiles", p)) p$predict.quantiles = c(0.025, 0.975 )  # posterior predictions robustified by trimming extreme values 
   
-  if ( !exists("debug.file", p)) p$debug.file = file.path( bio.workdirectory, "inla.debug.out" )
+  if ( !exists("debug.file", p)) p$debug.file = file.path( emaf_workdir, "inla.debug.out" )
 
   # priors
   # kappa0 = sqrt(8)/p$expected.range

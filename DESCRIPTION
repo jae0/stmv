@@ -23,11 +23,11 @@ Imports:
   parallel, 
   bigmemory,
   devtools, 
-  stmenv
+  emaf_base
 Suggests: 
   INLA,
   knitr, 
-  stmdat,
+  emaf,
   rmarkdown
 LinkingTo: 
   Rcpp, 

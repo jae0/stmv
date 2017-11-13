@@ -28,7 +28,7 @@ plot( gstat.pred$log_zinc.pred ~ log(meuse$zinc) )
 
 # ---------------------------------------------------
 # Universal Kriging with prediction via LaplacesDemon
-bioLibrary( "stm" )
+project.library( "stm" )
 
 require(LaplacesDemonCpp)
 

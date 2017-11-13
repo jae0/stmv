@@ -7,7 +7,7 @@
   #\\ http://www.statsref.com/HTML/index.html?temporal_autocorrelation.html
 
 
-  bioLibrary( "stm" )
+  project.library( "stm" )
 
   #sunspot data
   o = timeseries_simulator( DS="sunspots.seasonal" )
