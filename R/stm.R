@@ -14,7 +14,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
 
   p$savedir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
   if ( !file.exists(p$savedir)) dir.create( p$savedir, recursive=TRUE, showWarnings=FALSE )
-  message( "||| stm: In case something should go wrong, intermediary outputs will be placed at:" )
+  message( "||| In case something should go wrong, intermediary outputs will be placed at:" )
   message( "|||",  p$savedir  )
 
   # determine storage format
@@ -24,7 +24,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
   if (any( grepl ("bigmemory", p$storage.backend)))  p$libs = c( p$libs, "bigmemory" )
   if (p$storage.backend=="bigmemory.ram") {
     if ( length( unique(p$clusters)) > 1 ) {
-      stop( "||| stm: More than one unique cluster server was specified .. the RAM-based method only works within one server." )
+      stop( "||| More than one unique cluster server was specified .. the RAM-based method only works within one server." )
     }
   }
   
@@ -48,9 +48,9 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
   
   if (is.null(DATA) ) {
     # in here as it assumes that initiation of process (save of data files) is complete and "saved" objects are present
-    message( "||| stm: No DATA provided, assuming we are continuing from an interrupted start" )
-    message( "||| stm:  and using parameters from saved configuration:", file.path( p$savedir, 'p.rdata' ) )
-    message( "||| stm:  Delete this if you want to over-ride these settings.")
+    message( "||| No DATA provided, assuming we are continuing from an interrupted start" )
+    message( "|||  and using parameters from saved configuration:", file.path( p$savedir, 'p.rdata' ) )
+    message( "|||  Delete this if you want to over-ride these settings.")
 
     p = stm_db( p=p, DS="load.parameters" )  
     stm_db(p=p, DS="statistics.status.reset" )
@@ -109,9 +109,9 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
     if (exists("TIME", p$variables) )  othervars = c( "ar_timerange", "ar_1" )
     p$statsvars = unique( c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "range", "phi", "nu", othervars ) )
 
-    message("||| stm: ")
-    message( "||| stm: Initializing temporary storage of data and outputs files... ")
-    message( "||| stm: These are large files (4 to 6 X 5GB), it will take a minute ... ")
+    message("||| ")
+    message( "||| Initializing temporary storage of data and outputs files... ")
+    message( "||| These are large files (4 to 6 X 5GB), it will take a minute ... ")
     stm_db( p=p, DS="cleanup" )
   
     p$nloccov = 0
@@ -386,9 +386,9 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
         P=NULL; gc()
 
         # test to see if all covars are static as this can speed up the initial predictions
-        message("||| stm: ")
-        message( "||| stm: Predicting global effect of covariates at each prediction location ... ")
-        message( "||| stm: depending upon the size of the prediction grid and number of cpus (~1hr?).. ")
+        message("||| ")
+        message( "||| Predicting global effect of covariates at each prediction location ... ")
+        message( "||| depending upon the size of the prediction grid and number of cpus (~1hr?).. ")
 
         p$timec_covariates_0 =  Sys.time()
         nc_cov =NULL
@@ -402,7 +402,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
         pc = make.list( list( tindex=1:pc$nt) , Y=pc ) # takes about 28 GB per run .. adjust cluster number temporarily
         suppressMessages( parallel.run( stm_db, p=pc, DS="global.prediction.surface" ) )
         p$time_covariates = round(difftime( Sys.time(), p$timec_covariates_0 , units="hours"), 3)
-        message( paste( "||| stm: Time taken to predict covariate surface (hours):", p$time_covariates ) )
+        message( paste( "||| Time taken to predict covariate surface (hours):", p$time_covariates ) )
       }
 
       P = NULL; gc() # yes, repeat in case covs are not modelled
@@ -459,7 +459,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
       if ( !exists("stm_distance_scale", p)) {
         Yloc = stm_attach( p$storage.backend, p$ptr$Yloc )
         p$stm_distance_scale = min( diff(range( Yloc[,1]) ), diff(range( Yloc[,2]) ) ) / 10
-        message( paste( "||| stm: Crude distance scale:", p$stm_distance_scale, "" ) )
+        message( paste( "||| Crude distance scale:", p$stm_distance_scale, "" ) )
       }
 
       if ( !exists("stm_distance_min", p)) p$stm_distance_min = mean( c(p$stm_distance_prediction, p$stm_distance_scale /20 ) )
@@ -474,7 +474,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
       #browser()
 
       stm_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
-      message( "||| stm: Finished. Moving onto analysis... ")
+      message( "||| Finished. Moving onto analysis... ")
       p <<- p  # push to parent in case a manual restart is needed
       gc()
       
@@ -483,13 +483,13 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
 
   # -------------------------------------
   # localized space-time modelling/interpolation/prediction
-  message("||| stm: to view maps from an external R session: ") 
+  message("||| to view maps from an external R session: ") 
   message("|||   stm(p=p, runmode='debug_pred_static_map', debug_plot_variable_index=1) ") 
   message("|||   stm(p=p, runmode='debug_pred_static_log_map', debug_plot_variable_index=1)") 
   message("|||   stm(p=p, runmode='debug_pred_dynamic_map', debug_plot_variable_index=1)") 
   message("|||   stm(p=p, runmode='debug_stats_map', debug_plot_variable_index=1)") 
-  message("||| stm: Monitor the status of modelling by looking at the output of the following file:")
-  message("||| stm: in linux, you can issue the following command:" )
+  message("||| Monitor the status of modelling by looking at the output of the following file:")
+  message("||| in linux, you can issue the following command:" )
   message("|||   watch -n 60 cat ",  p$stm_current_status  )
 
   if ( "debug_pred_static_map" == runmode) {  
@@ -538,8 +538,8 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
     p <<- p  # push to parent in case a manual restart is possible
     suppressMessages( parallel.run( stm_interpolate, p=p ) )
     p$time_default = round( difftime( Sys.time(), timei1, units="hours" ), 3 )
-    message("||| stm: ")
-    message( paste( "||| stm: Time taken for main stage 1, interpolations (hours):", p$time_default, "" ) )
+    message("||| ")
+    message( paste( "||| Time taken for main stage 1, interpolations (hours):", p$time_default, "" ) )
     currentstatus = stm_db( p=p, DS="statistics.status" )
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     gc()
@@ -548,8 +548,8 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
 
   if ( runmode %in% c("stage2", "stage3" ) ) {  
     timei2 =  Sys.time()
-    message("||| stm: ")
-    message( "||| stm: Starting stage 2: more permisssive distance settings (spatial extent) " )
+    message("||| ")
+    message( "||| Starting stage 2: more permisssive distance settings (spatial extent) " )
 
     for ( mult in p$stm_multiplier_stage2 ) { 
       currentstatus = stm_db(p=p, DS="statistics.status.reset" ) 
@@ -562,8 +562,8 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
       }
     }
     p$time_stage2 = round( difftime( Sys.time(), timei2, units="hours" ), 3)
-    message("||| stm: ---")
-    message( paste( "||| stm: Time taken to stage 2 interpolations (hours):", p$time_stage2, "" ) )
+    message("||| ---")
+    message( paste( "||| Time taken to stage 2 interpolations (hours):", p$time_stage2, "" ) )
     currentstatus = stm_db( p=p, DS="statistics.status" )
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     gc()
@@ -572,8 +572,8 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
 
   if ( runmode %in% c( "stage3" ) ) {  
     timei3 =  Sys.time()
-    message("||| stm: ---")
-    message( "||| stm: Starting stage 3: simple TPS-based failsafe method to interpolate all the remaining locations " )
+    message("||| ---")
+    message( "||| Starting stage 3: simple TPS-based failsafe method to interpolate all the remaining locations " )
     toredo = stm_db( p=p, DS="flag.incomplete.predictions" )
     if ( !is.null(toredo) && length(toredo) > 0) { 
       Sflag = stm_attach( p$storage.backend, p$ptr$Sflag )
@@ -585,7 +585,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
       parallel.run( stm_interpolate, p=p )
     }
     p$time_stage3 = round( difftime( Sys.time(), timei3, units="hours" ), 3)
-    message( paste( "||| stm: Time taken to stage3 interpolations (hours):", p$time_stage3, "" ) )
+    message( paste( "||| Time taken to stage3 interpolations (hours):", p$time_stage3, "" ) )
     currentstatus = stm_db( p=p, DS="statistics.status" )
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     gc()
@@ -598,33 +598,33 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
 
 
   # save solutions to disk (again .. overwrite)
-  message("||| stm: ")
-  message( "||| stm: Saving predictions to disk .. " )
+  message("||| ")
+  message( "||| Saving predictions to disk .. " )
   stm_db( p=p, DS="stm.prediction.redo" ) # save to disk for use outside stm*
 
-  message( "||| stm: Saving statistics to disk .. " )
+  message( "||| Saving statistics to disk .. " )
   stm_db( p=p, DS="stats.to.prediction.grid.redo") # save to disk for use outside stm*
 
-  message ("||| stm: Finished! ")
+  message ("||| Finished! ")
 
 
   if ( p$storage.backend !="bigmemory.ram" ) {
-    resp = readline( "||| stm: To delete temporary files, type <YES>:  ")
+    resp = readline( "||| To delete temporary files, type <YES>:  ")
     if (resp=="YES") {
       stm_db( p=p, DS="cleanup" )
     } else {
-      message("||| stm: ")
-      message( "||| stm: Leaving temporary files alone in case you need to examine them or restart a process. ")
-      message( "||| stm: You can delete them by running: stm_db( p=p, DS='cleanup' ), once you are done. ")
+      message("||| ")
+      message( "||| Leaving temporary files alone in case you need to examine them or restart a process. ")
+      message( "||| You can delete them by running: stm_db( p=p, DS='cleanup' ), once you are done. ")
     }
   }
 
   p$time_total = round( difftime( Sys.time(), p$time.start, units="hours" ),3)
-  message("||| stm: ")
-  message( paste( "||| stm: Time taken for ", runmode, " (hours):", p$time_total, "\n" ) )
+  message("||| ")
+  message( paste( "||| Time taken for ", runmode, " (hours):", p$time_total, "\n" ) )
 
-  message( paste( "||| stm: Your parameter 'p' has been updated in case you need to re-run something like, etc:\n" ) )
-  message( paste( "||| stm: stm(p=p, runmode='stage3') :\n" ) )
+  message( paste( "||| Your parameter 'p' has been updated in case you need to re-run something like, etc:\n" ) )
+  message( paste( "||| stm(p=p, runmode='stage3') :\n" ) )
   p <<- p  # push to parent in case a manual restart is possible
 
   invisible()

@@ -310,7 +310,7 @@
       }  
 
       if ( file.exists( fn.global_model ) ) {
-        resp = readline( "||| stm: A global model already exists, to skip press ENTER, otherwise to overwrite type <YES>:  ")
+        resp = readline( "||| A global model already exists, to skip press ENTER, otherwise to overwrite type <YES>:  ")
         if (resp=="YES") {
           good = which( is.finite (rowSums(B[ , c(p$variables$Y,p$variables$COV) ])) )
           if (length(good)>0) B= B[good,]
