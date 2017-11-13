@@ -12,7 +12,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
 
   if (!exists("time.start", p) ) p$time.start = Sys.time()
 
-  p$savedir = file.path(p$project.root, "modelled", p$variables$Y, p$spatial.domain )
+  p$savedir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
   if ( !file.exists(p$savedir)) dir.create( p$savedir, recursive=TRUE, showWarnings=FALSE )
   message( "||| stm: In case something should go wrong, intermediary outputs will be placed at:" )
   message( "|||",  p$savedir  )

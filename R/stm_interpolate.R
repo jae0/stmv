@@ -71,7 +71,7 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
       nrate = currentstatus["n.complete"]/ as.numeric(dtimehr)
       tmore = currentstatus["n.todo"] / nrate
       tall = (currentstatus["n.todo"]+currentstatus["n.complete"]) / nrate
-      cat( paste( "---", p$project.root, p$variables$Y, p$spatial.domain, "--- \n\n"), file=p$stm_current_status, append=FALSE )
+      cat( paste( "---", p$data_root, p$variables$Y, p$spatial.domain, "--- \n\n"), file=p$stm_current_status, append=FALSE )
       cat( paste( "Start time :  ", stime, "\n"), file=p$stm_current_status, append=TRUE )
       cat( paste( "Current time :", Sys.time(), "\n"), file=p$stm_current_status, append=TRUE )
       cat( paste( "Elapsed time :", format(dtime), "\n" ), file=p$stm_current_status, append=TRUE)
