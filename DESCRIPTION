@@ -22,12 +22,11 @@ Imports:
   RandomFields,
   parallel, 
   bigmemory,
-  devtools, 
-  emaf_base
+  devtools,
+  emaf.base 
 Suggests: 
   INLA,
   knitr, 
-  emaf,
   rmarkdown
 LinkingTo: 
   Rcpp, 
