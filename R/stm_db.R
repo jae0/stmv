@@ -311,39 +311,42 @@
 
       if ( file.exists( fn.global_model ) ) {
         resp = readline( "||| A global model already exists, to skip press ENTER, otherwise to overwrite type <YES>:  ")
-        if (resp=="YES") {
-          good = which( is.finite (rowSums(B[ , c(p$variables$Y,p$variables$COV) ])) )
-          if (length(good)>0) B= B[good,]
-
-          # as a first pass, model the time-independent factors as a user-defined model
-          if (p$stm_global_modelengine=="glm") {
-            if (!exists("wt", B)) B$wt=1
-            require(mgcv)
-            global_model = try( 
-              glm( formula=p$stm_global_modelformula, data=B, family=p$stm_global_family, weights=wt )
-            ) 
-          } 
-
-          if (p$stm_global_modelengine=="gam") {
-            if (!exists("wt", B)) B$wt=1
-            require(mgcv)
-            global_model = try( 
-              gam( formula=p$stm_global_modelformula, data=B, optimizer=c("outer","bfgs"), family=p$stm_global_family , weights=wt )
-            ) 
-          } 
-
-          if (p$stm_global_modelengine=="bayesx") {
-            require(mgcv)
-            global_model = try( 
-              bayesx( formula=p$stm_global_modelformula, data=B, family=p$stm_global_family ) ) 
-          } 
-
-          if ( "try-error" %in% class(global_model) ) stop( "The covariate model was problematic" )
-          print( summary( global_model ) )
-          save( global_model, file= fn.global_model, compress=TRUE )
-
-        } 
+        
+        if (resp!="YES") {
+          message( "File not overwritten:")
+          stop( fn.global_model )
+        }
       }
+
+      good = which( is.finite (rowSums(B[ , c(p$variables$Y,p$variables$COV) ])) )
+      if (length(good)>0) B= B[good,]
+
+      # as a first pass, model the time-independent factors as a user-defined model
+      if (p$stm_global_modelengine=="glm") {
+        if (!exists("wt", B)) B$wt=1
+        require(mgcv)
+        global_model = try( 
+          glm( formula=p$stm_global_modelformula, data=B, family=p$stm_global_family, weights=wt )
+        ) 
+      } 
+
+      if (p$stm_global_modelengine=="gam") {
+        if (!exists("wt", B)) B$wt=1
+        require(mgcv)
+        global_model = try( 
+          gam( formula=p$stm_global_modelformula, data=B, optimizer=c("outer","bfgs"), family=p$stm_global_family , weights=wt )
+        ) 
+      } 
+
+      if (p$stm_global_modelengine=="bayesx") {
+        require(mgcv)
+        global_model = try( 
+          bayesx( formula=p$stm_global_modelformula, data=B, family=p$stm_global_family ) ) 
+      } 
+
+      if ( "try-error" %in% class(global_model) ) stop( "The covariate model was problematic" )
+      print( summary( global_model ) )
+      save( global_model, file= fn.global_model, compress=TRUE )
 
       return (fn.global_model)
     }
