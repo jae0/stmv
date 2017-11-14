@@ -1,5 +1,5 @@
 
-stm_variogram_optimization = function( vg, vx, nu, plotvgm=FALSE, eps=1e-9, stm_internal_scale=NA ) {
+stm_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, eps=1e-9, stm_internal_scale=NA ) {
   #\\ simple nonlinear least squares fit 
   
   if (is.na(stm_internal_scale)) stm_internal_scale= max(vx)/2
@@ -14,7 +14,7 @@ stm_variogram_optimization = function( vg, vx, nu, plotvgm=FALSE, eps=1e-9, stm_
   vgm_var_max = max(vg)
   vgm_dist_max = max(vx)
   
-  if (exists("nu")) {
+  if (!is.null(nu)) {  # ie. nu is fixed
     vario_function = function(par, vg, vx, nu){ 
       vgm = par["tau.sq"] + par["sigma.sq"]*(1-stm_matern(distance=vx, mRange=par["phi"], mSmooth=nu) )
       obj = sum( (vg - vgm)^2, na.rm=TRUE) # vario normal errors, no weights , etc.. just the line

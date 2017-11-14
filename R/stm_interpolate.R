@@ -111,26 +111,26 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
       if (ndata < p$n.max ) {
         # nothing to do
       } else {
-        if ( ndata <= p$n.max * 1.5 ) { 
+        # if ( ndata <= p$n.max * 1.5 ) { 
           # if close to p$n.max, subsample quickly 
           U = U[ .Internal( sample( length(U), p$n.max, replace=FALSE, prob=NULL)) ] 
           ndata = p$n.max
-        } else {
-          # need to downsample
-          for ( dsamp in downsampling )  { # lots of data .. downsample
-            stm_distance_cur = p$stm_distance_scale * dsamp
-            U = which( dlon < stm_distance_cur & dlat < stm_distance_cur )# faster to take a block 
-            ndata = length(U)
-            if ( ndata <= p$n.max ) break()
-            if ( stm_distance_cur <= p$stm_distance_min ) {
-              # reached lower limit in distance, taking a subsample instead
-              U = which( dlon < p$stm_distance_min & dlat < p$stm_distance_min ) # faster to take a block 
-              U = U[ .Internal( sample( length(U), p$n.max, replace=FALSE, prob=NULL)) ]
-              ndata = length(U)
-              break()
-            }
-          }
-        }
+        # } else {
+        #   # need to downsample
+        #   for ( dsamp in downsampling )  { # lots of data .. downsample
+        #     stm_distance_cur = p$stm_distance_scale * dsamp
+        #     U = which( dlon < stm_distance_cur & dlat < stm_distance_cur )# faster to take a block 
+        #     ndata = length(U)
+        #     if ( ndata <= p$n.max ) break()
+        #     if ( stm_distance_cur <= p$stm_distance_min ) {
+        #       # reached lower limit in distance, taking a subsample instead
+        #       U = which( dlon < p$stm_distance_min & dlat < p$stm_distance_min ) # faster to take a block 
+        #       U = U[ .Internal( sample( length(U), p$n.max, replace=FALSE, prob=NULL)) ]
+        #       ndata = length(U)
+        #       break()
+        #     }
+        #   }
+        # }
       }
     } else {
       # need to upsample
@@ -148,7 +148,9 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
       }
     }
 
-   if (ndata < p$n.min)  next() # check in case a fault in logic, above
+   # should not be required ...check in case a fault in logic, above
+   if (ndata < p$n.min)  { warning("check logic 1"); next() } 
+   if (ndata > p$n.max)  { warning("check logic 2"); next() }
 
    # crude (mean) variogram across all time slices
     o = try( stm_variogram( xy=Yloc[U,], z=Y[U], methods=p$stm_variogram_method  ) )

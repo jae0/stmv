@@ -316,6 +316,14 @@
           if (length(good)>0) B= B[good,]
 
           # as a first pass, model the time-independent factors as a user-defined model
+          if (p$stm_global_modelengine=="glm") {
+            if (!exists("wt", B)) B$wt=1
+            require(mgcv)
+            global_model = try( 
+              glm( formula=p$stm_global_modelformula, data=B, family=p$stm_global_family, weights=wt )
+            ) 
+          } 
+
           if (p$stm_global_modelengine=="gam") {
             if (!exists("wt", B)) B$wt=1
             require(mgcv)
@@ -392,7 +400,7 @@
           names(pa) = c( npa, "dyear" )
         }
 
-        if (p$stm_global_modelengine=="gam") {
+        if (p$stm_global_modelengine %in% c("glm", "gam") ) {
           Pbaseline = try( predict( global_model, newdata=pa, type="response", se.fit=TRUE ) ) 
           pa = NULL
           gc()

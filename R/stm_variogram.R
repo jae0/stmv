@@ -201,7 +201,7 @@ stm_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, inla.edge=c(1/3, 1), 
                        maxdist=out$distance_cutoff/out$stm_internal_scale, numbins=nbreaks, type="lorelogram") 
     vg = vario$variograms
     vx = vario$centers
-    fit = stm_variogram_optimization( vx=vx, vg=vg, nu=0.5, plotvgm=plotdata, stm_internal_scale=out$stm_internal_scale  ) # nu=0.5 == exponential variogram 
+    fit = stm_variogram_optimization( vx=vx, vg=vg, plotvgm=plotdata, stm_internal_scale=out$stm_internal_scale  ) # nu=0.5 == exponential variogram 
     out$CompRandFld = fit$summary
     if( 0) {
       xlim= c(0, fit$summary$vgm_dist_max*1.1)
@@ -229,7 +229,7 @@ stm_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, inla.edge=c(1/3, 1), 
     vario = vgram( loc=xy, y=z, dmax=out$distance_cutoff, N=nbreaks)
     vx=vario$centers
     vg=vario$stats["mean",]
-    fit = stm_variogram_optimization( vx=vx, vg=vg, nu=0.5, plotvgm=plotdata, stm_internal_scale=out$stm_internal_scale ) # nu=0.5 == exponential variogram 
+    fit = stm_variogram_optimization( vx=vx, vg=vg, plotvgm=plotdata, stm_internal_scale=out$stm_internal_scale ) # nu=0.5 == exponential variogram 
     out$fast = fit$summary
     return(out)
     if( 0) {
@@ -266,7 +266,7 @@ stm_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, inla.edge=c(1/3, 1), 
     todrop = unique( c(1, todrop) )
     vg = vario@emp.vario[-todrop]
     vx = vario@centers[-todrop]
-    fit = stm_variogram_optimization( vx=vx, vg=vg, nu=0.5, plotvgm=plotdata, stm_internal_scale=out$stm_internal_scale ) 
+    fit = stm_variogram_optimization( vx=vx, vg=vg, plotvgm=plotdata, stm_internal_scale=out$stm_internal_scale ) 
     out$fast.rf = fit$summary
 
     if( 0) {
