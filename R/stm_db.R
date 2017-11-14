@@ -318,7 +318,15 @@
         }
       }
 
-      good = which( is.finite (rowSums(B[ , c(p$variables$Y,p$variables$COV) ])) )
+      
+      
+
+      if ( length( p$variables$COV ) > 0 ) {
+        good = which( is.finite (rowSums(B[ , c(p$variables$Y,p$variables$COV) ])) )
+      } else {
+        good = which( is.finite (B[,p$variables$Y ] ) )
+      }
+
       if (length(good)>0) B= B[good,]
 
       # as a first pass, model the time-independent factors as a user-defined model
