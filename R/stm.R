@@ -135,7 +135,6 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
           } else {
             stop( "modelformula, modelengine and family need to be specified. They were not.")
           }
-        }
     }
 
 
