@@ -27,7 +27,7 @@ Imports:
 Suggests: 
   INLA,
   knitr,
-  bigglm,
+  biglm,
   rmarkdown
 LinkingTo: 
   Rcpp, 
