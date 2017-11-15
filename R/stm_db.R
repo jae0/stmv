@@ -337,7 +337,7 @@
       if (p$stm_global_modelengine=="bigglm") {
         if (!exists("wt", B)) B$wt=1
         global_model = try(
-          bigglm::glm( formula=p$stm_global_modelformula, data=B, family=p$stm_global_family, weights=wt )
+          biglm::bigglm( formula=p$stm_global_modelformula, data=B, family=p$stm_global_family, weights=wt )
         )
       }
 
