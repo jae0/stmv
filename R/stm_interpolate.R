@@ -180,6 +180,7 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
       next()
     }
 
+    # should not be needed:
     if (ndata > p$n.max & ndata <= p$n.max * 1.5) {
       U = U[ .Internal( sample( length(U), p$n.max, replace=FALSE, prob=NULL)) ] 
       ndata = p$n.max
@@ -243,7 +244,12 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
     if ( exists("varObs", ores)  && is.finite(ores$varObs) && ores$varObs > p$eps ) varObs = ores$varObs
   
     if (is.null(nu)) nu = p$stm_lowpass_nu
+    if (is.null(nu)) nu = 0.5 
+    if (!is.finite(nu)) nu = 0.5 
+    
     if (is.null(phi)) phi = stm_distance_cur/sqrt(8*nu) # crude estimate of phi based upon current scaling  distance approximates the range at 90% autocorrelation(e.g., see Lindgren et al. 2011)
+    if (!is.finite(phi)) phi = stm_distance_cur/sqrt(8*nu)
+
     if (is.null(varSpatial)) varSpatial =0.5 * var( dat[, p$variables$Y], na.rm=TRUE)
     if (is.null(varObs)) varObs = varSpatial
     

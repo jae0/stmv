@@ -25,7 +25,7 @@ matern_find_range_fast = function( xy, z, nu=0.5 ) {
   if ( vo$summary$range_ok ) autocorrelation_range = vo$summary$range
 
   cnt = 0
-  while ( cnt < 7  ) {
+  while ( cnt < 5  ) {
     maxdist = maxdist * 1.25
     if ( maxdist > drange ) {
       # message ( "Autocorrelation range greater than data range .. retrying a last time at max dist with more data")
