@@ -550,9 +550,9 @@
           P = p$stm_global_family$linkinv( P )
 
           if (exists("stm_Y_transform", p)) {
-            Pl = p$stm_Y_transform[2] (Pl)  # p$stm_Y_transform[2] is the inverse transform
-            Pu = p$stm_Y_transform[2] (Pu)
-            P = p$stm_Y_transform[2] (P)
+            Pl = p$stm_Y_transform[[2]] (Pl)  # p$stm_Y_transform[2] is the inverse transform
+            Pu = p$stm_Y_transform[[2]] (Pu)
+            P = p$stm_Y_transform[[2]] (P)
           }
 
           save( P, file=fn_P, compress=T )

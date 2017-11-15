@@ -130,21 +130,15 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
     # construct prediction/output grid area ('pa')
     p$windowsize.half = floor(p$stm_distance_prediction/p$pres) # convert distance to discretized increments of row/col indices
 
+    if (exists("stm_Y_transform", p)) {
+      DATA$input[, p$variables$Y ] = p$stm_Y_transform[[1]] (DATA$input[, p$variables$Y ] )
+    }
 
-    if (  exists("stm_global_modelformula", p) 
-        | exists("stm_global_modelengine", p)
-        | exists("stm_global_family", p) 
-        ) {
-       if ( exists("stm_global_modelformula", p) 
-          & exists("stm_global_modelengine", p)
-          & exists("stm_global_family", p)
-       ) {
-          # to add global covariate model (hierarchical) 
-          # .. simplistic this way but faster ~ kriging with external drift
-            stm_db( p=p, DS="global_model.redo", B=DATA$input )
-          } else {
-            stop( "modelformula, modelengine and family need to be specified. They were not.")
-          }
+
+    if (  exists("stm_global_modelformula", p) ) {
+      # to add global covariate model (hierarchical) 
+      # .. simplistic this way but faster ~ kriging with external drift
+        stm_db( p=p, DS="global_model.redo", B=DATA$input )
     }
 
 
@@ -206,9 +200,6 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
 
 
       # data to be worked upon .. either the raw data or covariate-residuals
-      if (exists("stm_Y_transform", p)) {
-        DATA$input[, p$variables$Y ] = p$stm_Y_transform[1] (DATA$input[, p$variables$Y ] )
-      }
 
       Ydata = as.matrix(DATA$input[, p$variables$Y ])
       if (exists("stm_global_modelengine", p)) {
