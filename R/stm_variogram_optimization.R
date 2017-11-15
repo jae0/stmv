@@ -33,8 +33,8 @@ stm_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, eps=1e-9,
       obj = sum( (vg - vgm)^2, na.rm=TRUE) # vario normal errors, no weights , etc.. just the line
       return(obj)
     }
-    par = c(tau.sq=vgm_var_max*0.2, sigma.sq=vgm_var_max*0.8, phi=1, nu=nu) 
-    lower =c(0, 0, eps, 0.01 )
+    par = c(tau.sq=vgm_var_max*0.2, sigma.sq=vgm_var_max*0.8, phi=1, nu=0.5) 
+    lower =c(0, 0, 0.1, 0.1 )
     upper =c(vgm_var_max*2, vgm_var_max*2, 5, 5)
     
     fit = try( optim( par=par, vg=vg, vx=vx, method="L-BFGS-B", lower=lower, upper=upper, fn=vario_function ) ) 
