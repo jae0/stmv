@@ -42,6 +42,10 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
   if (p$stm_local_modelengine %in% c("stan") ) p$libs = c( p$libs, "rstan" )
   # if (p$stm_local_modelengine %in% c("spate") )  p$libs = c( p$libs, "spate" ) # now copied directly into stm
 
+  if (p$stm_global_modelengine %in% c("gam", "mgcv") ) p$libs = c( p$libs, "mgcv" )
+  if (p$stm_global_modelengine %in% c("bigglm", "biglm") ) p$libs = c( p$libs, "biglm" )
+
+
   p$libs = unique( p$libs )
   suppressMessages( RLibrary( p$libs ) )
 
@@ -196,6 +200,10 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
 
 
       # data to be worked upon .. either the raw data or covariate-residuals
+      if (exists("stm_Y_transform", p)) {
+        DATA$input[, p$variables$Y ] = p$stm_Y_transform[1] (DATA$input[, p$variables$Y ] )
+      }
+
       Ydata = as.matrix(DATA$input[, p$variables$Y ])
       if (exists("stm_global_modelengine", p)) {
         covmodel = stm_db( p=p, DS="global_model")
@@ -611,7 +619,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
   # save solutions to disk (again .. overwrite)
   message("||| ")
   message( "||| Saving predictions to disk .. " )
-  stm_db( p=p, DS="stm.prediction.redo" ) # save to disk for use outside stm*
+  stm_db( p=p, DS="stm.prediction.redo" ) # save to disk for use outside stm*, returning to user scale
 
   message( "||| Saving statistics to disk .. " )
   stm_db( p=p, DS="stats.to.prediction.grid.redo") # save to disk for use outside stm*

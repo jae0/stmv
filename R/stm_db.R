@@ -324,30 +324,44 @@
         good = which( is.finite (B[,p$variables$Y ] ) )
       }
 
-      if (length(good)>0) B= B[good,]
+      ngood = length(good)
+      if ( ngood > 0 ) {
+        if ( ngood < nrow(B) ) {
+          B = B[good,]
+        }
+      }
 
       # as a first pass, model the time-independent factors as a user-defined model
       if (p$stm_global_modelengine=="glm") {
-        if (!exists("wt", B)) B$wt=1
-        global_model = try(
-          glm( formula=p$stm_global_modelformula, data=B, family=p$stm_global_family, weights=wt )
-        )
+        if (!exists("wt", B)) {
+          global_model = try(
+            glm( formula=p$stm_global_modelformula, data=B, family=p$stm_global_family ) )
+        } else {
+          global_model = try(
+            glm( formula=p$stm_global_modelformula, data=B, family=p$stm_global_family, weights=wt ) )
+        }
       }
 
       if (p$stm_global_modelengine=="bigglm") {
-        if (!exists("wt", B)) B$wt=1
-        global_model = try(
-          biglm::bigglm( formula=p$stm_global_modelformula, data=B, family=p$stm_global_family, weights=wt )
-        )
+        if (!exists("wt", B)) {
+          global_model = try(
+            bigglm( formula=p$stm_global_modelformula, data=B, family=p$stm_global_family ))
+        } else {
+          global_model = try(
+            bigglm( formula=p$stm_global_modelformula, data=B, family=p$stm_global_family, weights=~wt ))
+        }
       }
 
 
       if (p$stm_global_modelengine=="gam") {
-        if (!exists("wt", B)) B$wt=1
         require(mgcv)
-        global_model = try(
-          gam( formula=p$stm_global_modelformula, data=B, optimizer=c("outer","bfgs"), family=p$stm_global_family , weights=wt )
-        )
+        if (!exists("wt", B)) {
+          global_model = try(
+            gam( formula=p$stm_global_modelformula, data=B, optimizer=c("outer","bfgs"), family=p$stm_global_family) )
+        } else {
+          global_model = try(
+            gam( formula=p$stm_global_modelformula, data=B, optimizer=c("outer","bfgs"), family=p$stm_global_family, weights=wt ) )
+        } 
       }
 
       if (p$stm_global_modelengine=="bayesx") {
@@ -509,6 +523,7 @@
             V = PPsd[,r]
           }
 
+
           if (exists("stm_global_modelengine", p) ) {
             ## maybe add via simulation ? ...
             uu = which(!is.finite(P[]))
@@ -533,6 +548,12 @@
           Pl = p$stm_global_family$linkinv( P + 1.96* V )
           Pu = p$stm_global_family$linkinv( P - 1.96* V )
           P = p$stm_global_family$linkinv( P )
+
+          if (exists("stm_Y_transform", p)) {
+            Pl = p$stm_Y_transform[2] (Pl)  # p$stm_Y_transform[2] is the inverse transform
+            Pu = p$stm_Y_transform[2] (Pu)
+            P = p$stm_Y_transform[2] (P)
+          }
 
           save( P, file=fn_P, compress=T )
           save( Pl, file=fn_Pl, compress=T )
