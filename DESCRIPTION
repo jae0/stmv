@@ -26,7 +26,8 @@ Imports:
   emaf.base 
 Suggests: 
   INLA,
-  knitr, 
+  knitr,
+  bigglm,
   rmarkdown
 LinkingTo: 
   Rcpp, 
