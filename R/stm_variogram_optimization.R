@@ -57,7 +57,7 @@ stm_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, eps=1e-9,
 
   if ( !inherits(fit, "try-error")) { 
    if ( fit$convergence==0 ) {
-      fit$summary$nu = ifelse( exists("nu"), nu, fit$par[["nu"]] )
+      fit$summary$nu = ifelse( !is.null(nu), nu, fit$par[["nu"]] )
       fit$summary$phi=fit$par[["phi"]]
       fit$summary$varSpatial=fit$par[["sigma.sq"]]
       fit$summary$varObs=fit$par[["tau.sq"]] 
