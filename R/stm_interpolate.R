@@ -97,7 +97,6 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
       points( Sloc[Si,2] ~ Sloc[Si,1], pch=20, cex=5, col="blue" )
     }
 
-    o = ores = NULL
 
     if (ndata > p$n.min ) {
       if (ndata < p$n.max ) {
@@ -145,27 +144,28 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
    if (ndata > p$n.max)  { warning("check logic 2"); next() }
 
    # crude (mean) variogram across all time slices
+    o = ores = NULL
     o = try( stm_variogram( xy=Yloc[U,], z=Y[U], methods=p$stm_variogram_method  ) )
-      if ( !is.null(o)) {
-        if (!inherits(o, "try-error")) {
-          if (exists(p$stm_variogram_method, o)) {
-            ores = o[[p$stm_variogram_method]] # store current best estimate of variogram characteristics
-            if (exists("range_ok", ores) & exists("range", ores) ) {
-              if (ores[["range_ok"]] ) {
-                if ( (ores[["range"]] > p$stm_distance_min) & (ores[["range"]] <= p$stm_distance_max) ) {
-                  stm_distance_cur = ores[["range"]]
-                  vario_U  = which( dlon  <= ores[["range"]]  & dlat <= ores[["range"]] )
-                  vario_ndata =length(vario_U)                
-                  if ((vario_ndata > p$n.min) & (vario_ndata < p$n.max) ) { 
-                    U  = vario_U
-                    ndata = vario_ndata
-                  }  
-                }
+    if ( !is.null(o)) {
+      if (!inherits(o, "try-error")) {
+        if (exists(p$stm_variogram_method, o)) {
+          ores = o[[p$stm_variogram_method]] # store current best estimate of variogram characteristics
+          if (exists("range_ok", ores) & exists("range", ores) ) {
+            if (ores[["range_ok"]] ) {
+              if ( (ores[["range"]] > p$stm_distance_min) & (ores[["range"]] <= p$stm_distance_max) ) {
+                stm_distance_cur = ores[["range"]]
+                vario_U  = which( dlon  <= ores[["range"]]  & dlat <= ores[["range"]] )
+                vario_ndata =length(vario_U)                
+                if ((vario_ndata > p$n.min) & (vario_ndata < p$n.max) ) { 
+                  U  = vario_U
+                  ndata = vario_ndata
+                }  
               }
-            } 
-          }
-        }   
-      }
+            }
+          } 
+        }
+      }   
+    }
 
     if (is.null(ores)) {
       ndata = U = o = NULL
@@ -211,7 +211,8 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
 
     # prep dependent data 
     # reconstruct data for modelling (dat) and data for prediction purposes (pa)
-    dat_names = c( p$variables$Y, "plon", "plat", "weights", p$variables$local_cov )
+    dat_names = c( p$variables$Y, "plon", "plat", "weights")
+    if (p$nloccov > 0) dat_names = c( dat_names, p$variables$local_cov )
     if (exists("TIME", p$variables)) dat_names = c( dat_names, p$variables$TIME, p$variables$local_all ) 
     
     dat = matrix( NA, nrow=ndata, ncol=length(dat_names) )
@@ -231,7 +232,8 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
       dat[, itime+(1:length(p$variables$local_all))] = stm_timecovars( vars=p$variables$local_all, ti=dat[,p$variables$TIME] ) 
     }
 
-    dat = as.data.frame(dat, col.names=dat_names)
+    dat = as.data.frame(dat)
+    names(dat) = dat_names
 
     nu = phi = varSpatial = varObs = NULL
     if ( exists("nu", ores)  && is.finite(ores$nu) ) nu = ores$nu
@@ -306,7 +308,7 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
       if (length( toolow) > 0)  res$predictions$mean[ toolow] = tq[1]
       if (length( toohigh) > 0) res$predictions$mean[ toohigh] = tq[2]
     }
-    
+
     ii = which( is.finite(res$predictions$mean ))
     if (length(ii) < 5) {
       dat = pa = res = NULL

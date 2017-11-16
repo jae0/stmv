@@ -544,7 +544,6 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
     stm_interpolate (p=p )
   }
 
-            
 
   if ( runmode %in% c("default", "stage2", "stage3" ) ) {  
     # this is the basic run
