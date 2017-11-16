@@ -43,6 +43,17 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
 
   stime = Sys.time()
 
+  # pre-calculate indices and dim for data to use inside the loop 
+  dat_names = c(  p$variables$local_all,  "weights")
+  dat_nc = length( dat_names )
+  iY = which(dat_names== p$variables$Y)
+  ilocs = which( dat_names %in% p$variable$LOCS )
+  iwei = which( dat_names %in% "weights" )
+  if (p$nloccov > 0) icov = which( dat_names %in% p$variables$local_cov )
+  if (exists("TIME", p$variables)) {
+    ti_cov = setdiff(p$variables$local_all, c(p$variables$Y, p$variables$LOCS, p$variables$local_cov ) ) 
+    itime_cov = which(dat_names %in% ti_cov)
+  }
 
   if (p$stm_local_modelengine %in% c("stan", "gaussianprocess")) stanmodel = gaussian_process_stanmodel()  # precompile outside of the loop to speed the rest
 
@@ -211,49 +222,32 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
 
     # prep dependent data 
     # reconstruct data for modelling (dat) and data for prediction purposes (pa)
-    dat_names = c(  p$variables$local_all,  "weights")
-    dat_nc = length( dat_names )
-    iY = which(dat_names== p$variables$Y)
-    ilocs = which( dat_names %in% p$variable$LOCS )
-    iwei = which( dat_names %in% "weights" )
-    if (p$nloccov > 0) icov = which( dat_names %in% p$variables$local_cov )
-    if (exists("TIME", p$variables)) {
-      ti_cov = setdiff(p$variables$local_all, c(p$variables$Y, p$variables$LOCS, p$variables$local_cov ) ) 
-      itime_cov = which(dat_names %in% ti_cov)
-    }
-
-    dat = matrix( NA, nrow=ndata, ncol=dat_nc )
+    dat = matrix( 1, nrow=ndata, ncol=dat_nc )
     dat[,iY] = Y[YiU] # these are residuals if there is a global model
     dat[,ilocs] = Yloc[YiU,]
-    dat[,iwei]  = 1
-
+    # dat[,iwei]  = 1  # filled with 1's at init above
     # dat[,iwei] = 1 / (( Sloc[Si,2] - dat$plat)**2 + (Sloc[Si,1] - dat$plon)**2 )# weight data in space: inverse distance squared
     # dat[ which( dat[,iwei] < 1e-4 ), iwei ] = 1e-4
     # dat[ which( dat[,iwei] > 1 ) , iwei ] = 1
-    
     if (p$nloccov > 0) dat[,icov] = Ycov[YiU,] # no need for other dim checks as this is user provided 
-    
-    if (exists("TIME", p$variables)) {
-      dat[, itime_cov] = as.matrix(stm_timecovars( vars=p$variables$local_all, ti=Ytime[YiU, ] )[,ti_cov])
-    }
-
+    if (exists("TIME", p$variables)) dat[, itime_cov] = as.matrix(stm_timecovars( vars=ti_cov, ti=Ytime[YiU, ] ) )
     dat = as.data.frame(dat)
     names(dat) = dat_names
 
     nu = phi = varSpatial = varObs = NULL
     if ( exists("nu", ores)  && is.finite(ores$nu) ) nu = ores$nu
-    if ( exists("phi", ores) && is.finite(ores$phi) ) if ( ores$phi > (p$pres/2) ) phi = ores$phi 
-    if ( exists("varSpatial", ores)  && is.finite(ores$varSpatial) ) varSpatial = ores$varSpatial
-    if ( exists("varObs", ores)  && is.finite(ores$varObs) && ores$varObs > p$eps ) varObs = ores$varObs
-  
     if (is.null(nu)) nu = p$stm_lowpass_nu
     if (is.null(nu)) nu = 0.5 
     if (!is.finite(nu)) nu = 0.5 
-    
+
+    if ( exists("phi", ores) && is.finite(ores$phi) ) if ( ores$phi > (p$pres/2) ) phi = ores$phi 
     if (is.null(phi)) phi = stm_distance_cur/sqrt(8*nu) # crude estimate of phi based upon current scaling  distance approximates the range at 90% autocorrelation(e.g., see Lindgren et al. 2011)
     if (!is.finite(phi)) phi = stm_distance_cur/sqrt(8*nu)
 
+    if ( exists("varSpatial", ores)  && is.finite(ores$varSpatial) ) varSpatial = ores$varSpatial
     if (is.null(varSpatial)) varSpatial =0.5 * var( dat[, p$variables$Y], na.rm=TRUE)
+
+    if ( exists("varObs", ores)  && is.finite(ores$varObs) && ores$varObs > p$eps ) varObs = ores$varObs
     if (is.null(varObs)) varObs = varSpatial
     
     ores$vgm = NULL # can be large

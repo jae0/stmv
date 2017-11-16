@@ -3,33 +3,33 @@
 
 stm_predictionarea = function(p, sloc, windowsize.half ) {
 
-  pa_w = - windowsize.half : windowsize.half # default window size 
+
+  pa_w = -windowsize.half : windowsize.half # default window size 
   pa_w_n = length(pa_w)
 
   # determine prediction locations and time slices
-  iwplon = round( (sloc[1]-p$origin[1]) / p$pres + 1 + pa_w )
-  iwplat = round( (sloc[2]-p$origin[2]) / p$pres + 1 + pa_w )
+  iwplon = round( {sloc[1]-p$origin[1]}/p$pres + 1 + pa_w )
+  iwplat = round( {sloc[2]-p$origin[2]}/p$pres + 1 + pa_w )
 
-  pa = NULL
   pa = data.frame( iplon = rep.int(iwplon, pa_w_n) , 
                    iplat = rep.int(iwplat, rep.int(pa_w_n, pa_w_n)) )
 
-  bad = which( (pa$iplon < 1 & pa$iplon > p$nplons) | (pa$iplat < 1 & pa$iplat > p$nplats) )
-  if (length(bad) > 0 ) pa = pa[-bad,]
-  if (nrow(pa)< 5) return(NULL)
+  bad = which( {pa$iplon < 1 & pa$iplon > p$nplons} | {pa$iplat < 1 & pa$iplat > p$nplats} )
+  if (length(bad) > 0 ) pa = pa[-bad,] 
+  if (nrow(pa) < 5) return(NULL) 
 
   Ploc = stm_attach( p$storage.backend, p$ptr$Ploc )
   ploc_ids = array_map( "xy->1", Ploc[], gridparams=p$gridparams )
 
   pa$i = match( array_map( "2->1", pa[, c("iplon", "iplat")], gridparams=p$gridparams ), ploc_ids )
-      
-  bad = which( !is.finite(pa$i))
+
+  bad = which( !is.finite(pa$i) )
   if (length(bad) > 0 ) pa = pa[-bad,]
   pa_n = nrow(pa)
   if ( pa_n < 5) return(NULL)
 
-  pa$plon = Ploc[ pa$i, 1]
-  pa$plat = Ploc[ pa$i, 2]
+  pa$plon = Ploc[ pa$i, 1 ]
+  pa$plat = Ploc[ pa$i, 2 ]
 
   # prediction covariates i.e., independent variables/ covariates
   pvars = c("plon", "plat", "i")
@@ -42,7 +42,7 @@ stm_predictionarea = function(p, sloc, windowsize.half ) {
       nts = ncol(pu)
       if ( nts== 1 ) {
         pvars = c( pvars, vn )
-        pa[,vn] = pu[pa$i]  # ie. a static variable
+        pa[,vn] = pu[pa$i]  # i.e., a static variable
       }
     }
   }
@@ -67,7 +67,7 @@ stm_predictionarea = function(p, sloc, windowsize.half ) {
           pa[,vn] = pu[ cbind(pa$i, pa$iy) ]  
           message("Need to check that data order is correct")
         } else if ( nts == p$nt ) {
-          pa$it = p$nw*(pa$tiyr - p$yrs[1] - p$tres/2) + 1 #ts index
+          pa$it = p$nw*{pa$tiyr - p$yrs[1] - p$tres/2} + 1 #ts index
           pa[,vn] = pu[ cbind(pa$i, pa$it) ]  
           message("Need to check that data order is correct")
         } else if (nts==1) { } #nothing to do .. already processed above }
@@ -77,9 +77,5 @@ stm_predictionarea = function(p, sloc, windowsize.half ) {
   rownames(pa) = NULL
   return(pa)
 }
-
-
-
-
 
 

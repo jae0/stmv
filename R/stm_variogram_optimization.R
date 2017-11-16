@@ -16,8 +16,8 @@ stm_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, eps=1e-9,
   
   if (!is.null(nu)) {  # ie. nu is fixed
     vario_function = function(par, vg, vx, nu){ 
-      vgm = par["tau.sq"] + par["sigma.sq"]*(1-stm_matern(distance=vx, mRange=par["phi"], mSmooth=nu) )
-      obj = sum( (vg - vgm)^2, na.rm=TRUE) # vario normal errors, no weights , etc.. just the line
+      vgm = par["tau.sq"] + par["sigma.sq"]*{ 1-stm_matern(distance=vx, mRange=par["phi"], mSmooth=nu) }
+      obj = sum( {vg - vgm}^2, na.rm=TRUE) # vario normal errors, no weights , etc.. just the line
       return(obj)
     }
     par = c(tau.sq=vgm_var_max*0.05, sigma.sq=vgm_var_max*0.95, phi=1 ) 
@@ -29,8 +29,8 @@ stm_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, eps=1e-9,
   } else {
   
     vario_function = function(par, vg, vx){ 
-      vgm = par["tau.sq"] + par["sigma.sq"]*(1-stm_matern(distance=vx, mRange=par["phi"], mSmooth=par["nu"]) )
-      obj = sum( (vg - vgm)^2, na.rm=TRUE) # vario normal errors, no weights , etc.. just the line
+      vgm = par["tau.sq"] + par["sigma.sq"]*{ 1-stm_matern(distance=vx, mRange=par["phi"], mSmooth=par["nu"]) }
+      obj = sum( {vg - vgm}^2, na.rm=TRUE) # vario normal errors, no weights , etc.. just the line
       return(obj)
     }
     par = c(tau.sq=vgm_var_max*0.2, sigma.sq=vgm_var_max*0.8, phi=1, nu=0.5) 
