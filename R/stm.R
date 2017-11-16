@@ -534,7 +534,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
       lattice::levelplot(S[,debug_plot_variable_index]~Sloc[,1]+Sloc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
   }
 
-  if ("serial_debug" == runmode) {
+  if ( runmode %in% c("serial_debug", "debug") ) {
     currentstatus = stm_db( p=p, DS="statistics.status" )
     p = make.list( list( locs=sample( currentstatus$todo )) , Y=p ) # random order helps use all cpus
     p <<- p  # push to parent in case a manual restart is possible
@@ -608,23 +608,24 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
 
   # save again, in case some timings/etc needed in a restart
   p <<- p  # push to parent in case a manual restart is possible
-  
+
   stm_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
 
+  resp = readline( "||| Save predictions and statistics, overwriting previous results? If you are sure type <YES>:  ")
+  if (resp=="YES") {
+    # save solutions to disk (again .. overwrite)
+    message("||| ")
+    message( "||| Saving predictions to disk .. " )
+    stm_db( p=p, DS="stm.prediction.redo" ) # save to disk for use outside stm*, returning to user scale
 
-  # save solutions to disk (again .. overwrite)
-  message("||| ")
-  message( "||| Saving predictions to disk .. " )
-  stm_db( p=p, DS="stm.prediction.redo" ) # save to disk for use outside stm*, returning to user scale
+    message( "||| Saving statistics to disk .. " )
+    stm_db( p=p, DS="stats.to.prediction.grid.redo") # save to disk for use outside stm*
 
-  message( "||| Saving statistics to disk .. " )
-  stm_db( p=p, DS="stats.to.prediction.grid.redo") # save to disk for use outside stm*
-
-  message ("||| Finished! ")
-
+    message ("||| Finished! ")
+  }
 
   if ( p$storage.backend !="bigmemory.ram" ) {
-    resp = readline( "||| To delete temporary files, type <YES>:  ")
+    resp = readline( "||| Delete temporary files? Type to confirm <YES>:  ")
     if (resp=="YES") {
       stm_db( p=p, DS="cleanup" )
     } else {

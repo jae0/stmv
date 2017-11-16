@@ -211,25 +211,30 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
 
     # prep dependent data 
     # reconstruct data for modelling (dat) and data for prediction purposes (pa)
-    dat_names = c( p$variables$Y, "plon", "plat", "weights")
-    if (p$nloccov > 0) dat_names = c( dat_names, p$variables$local_cov )
-    if (exists("TIME", p$variables)) dat_names = c( dat_names, p$variables$TIME, p$variables$local_all ) 
-    
-    dat = matrix( NA, nrow=ndata, ncol=length(dat_names) )
-    dat[,1] = Y[YiU] # these are residuals if there is a global model
-    dat[,2:3] = Yloc[YiU,]
-    dat[,4]   = 1
-
-    # dat[,4] = 1 / (( Sloc[Si,2] - dat$plat)**2 + (Sloc[Si,1] - dat$plon)**2 )# weight data in space: inverse distance squared
-    # dat[ which( dat[,4] < 1e-4 ), 4 ] = 1e-4
-    # dat[ which( dat[,4] > 1 ) ,4 ] = 1
-    
-    if (p$nloccov > 0) dat[, 4+(1:p$nloccov) ] = Ycov[YiU,] # no need for other dim checks as this is user provided 
-     
+    dat_names = c(  p$variables$local_all,  "weights")
+    dat_nc = length( dat_names )
+    iY = which(dat_names== p$variables$Y)
+    ilocs = which( dat_names %in% p$variable$LOCS )
+    iwei = which( dat_names %in% "weights" )
+    if (p$nloccov > 0) icov = which( dat_names %in% p$variables$local_cov )
     if (exists("TIME", p$variables)) {
-      itime = which(dat_names==p$variables$TIME)
-      dat[, itime ] = Ytime[YiU, ] 
-      dat[, itime+(1:length(p$variables$local_all))] = stm_timecovars( vars=p$variables$local_all, ti=dat[,p$variables$TIME] ) 
+      ti_cov = setdiff(p$variables$local_all, c(p$variables$Y, p$variables$LOCS, p$variables$local_cov ) ) 
+      itime_cov = which(dat_names %in% ti_cov)
+    }
+
+    dat = matrix( NA, nrow=ndata, ncol=dat_nc )
+    dat[,iY] = Y[YiU] # these are residuals if there is a global model
+    dat[,ilocs] = Yloc[YiU,]
+    dat[,iwei]  = 1
+
+    # dat[,iwei] = 1 / (( Sloc[Si,2] - dat$plat)**2 + (Sloc[Si,1] - dat$plon)**2 )# weight data in space: inverse distance squared
+    # dat[ which( dat[,iwei] < 1e-4 ), iwei ] = 1e-4
+    # dat[ which( dat[,iwei] > 1 ) , iwei ] = 1
+    
+    if (p$nloccov > 0) dat[,icov] = Ycov[YiU,] # no need for other dim checks as this is user provided 
+    
+    if (exists("TIME", p$variables)) {
+      dat[, itime_cov] = as.matrix(stm_timecovars( vars=p$variables$local_all, ti=Ytime[YiU, ] )[,ti_cov])
     }
 
     dat = as.data.frame(dat)
