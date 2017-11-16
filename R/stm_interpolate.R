@@ -1,7 +1,7 @@
 
 
 stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
-  #\\ core function to intepolate (model and predict) in parllel
+  #\\ core function to interpolate (model and predict) in parallel
 
   if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) ) 
  
@@ -31,15 +31,7 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
     Ytime = stm_attach( p$storage.backend, p$ptr$Ytime )
   }
 
-  if ( p$storage.backend != "bigmemory.ram" ) {
-    # force copy into RAM to reduce thrashing ?
-    # Sloc = Sloc[]
-    # Yloc = Yloc[]
-    # Y = Y[]
-  }
-
   Yi = stm_attach( p$storage.backend, p$ptr$Yi )
-  # Yi = as.vector(Yi[])  #force copy to RAM as a vector
 
   # misc intermediate calcs to be done outside of parallel loops
   upsampling = sort( p$sampling[ which( p$sampling > 1 ) ] )
@@ -52,7 +44,7 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
   stime = Sys.time()
 
 
-  if (p$stm_local_modelengine %in% c("stan", "gaussianprocess")) stanmodel = gaussian_process_stanmodel()  # precompile to speed the rest
+  if (p$stm_local_modelengine %in% c("stan", "gaussianprocess")) stanmodel = gaussian_process_stanmodel()  # precompile outside of the loop to speed the rest
 
 
 # main loop over each output location in S (stats output locations)
@@ -94,7 +86,7 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
     # find data nearest S[Si,] and with sufficient data
     dlon = abs( Sloc[Si,1] - Yloc[Yi[],1] ) 
     dlat = abs( Sloc[Si,2] - Yloc[Yi[],2] ) 
-    U =  which( (dlon  <= p$stm_distance_scale)  & (dlat <= p$stm_distance_scale) )
+    U =  which( {dlon  <= p$stm_distance_scale}  & {dlat <= p$stm_distance_scale} )
     stm_distance_cur = p$stm_distance_scale
     ndata = length(U)
 
@@ -219,23 +211,27 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
 
     # prep dependent data 
     # reconstruct data for modelling (dat) and data for prediction purposes (pa)
-    dat = data.frame( Y[YiU] ) # these are residuals if there is a global model
-    names(dat) = p$variables$Y
-    dat$plon = Yloc[YiU,1]
-    dat$plat = Yloc[YiU,2]
-    dat$weights = 1
-    # dat$weights = 1 / (( Sloc[Si,2] - dat$plat)**2 + (Sloc[Si,1] - dat$plon)**2 )# weight data in space: inverse distance squared
-    # dat$weights[ which( dat$weights < 1e-4 ) ] = 1e-4
-    # dat$weights[ which( dat$weights > 1 ) ] = 1
+    dat_names = c( p$variables$Y, "plon", "plat", "weights", p$variables$local_cov )
+    if (exists("TIME", p$variables)) dat_names = c( dat_names, p$variables$TIME, p$variables$local_all ) 
     
-    if (p$nloccov > 0) {
-      for (i in 1:p$nloccov) dat[, p$variables$local_cov[i] ] = Ycov[YiU,i] # no need for other dim checks as this is user provided 
-    }
+    dat = matrix( NA, nrow=ndata, ncol=length(dat_names) )
+    dat[,1] = Y[YiU] # these are residuals if there is a global model
+    dat[,2:3] = Yloc[YiU,]
+    dat[,4]   = 1
+
+    # dat[,4] = 1 / (( Sloc[Si,2] - dat$plat)**2 + (Sloc[Si,1] - dat$plon)**2 )# weight data in space: inverse distance squared
+    # dat[ which( dat[,4] < 1e-4 ), 4 ] = 1e-4
+    # dat[ which( dat[,4] > 1 ) ,4 ] = 1
+    
+    if (p$nloccov > 0) dat[, 4+(1:p$nloccov) ] = Ycov[YiU,] # no need for other dim checks as this is user provided 
      
     if (exists("TIME", p$variables)) {
-      dat[, p$variables$TIME ] = Ytime[YiU,] 
-      dat = cbind( dat, stm_timecovars ( vars=p$variables$local_all, ti=dat[,p$variables$TIME]  ) )
+      itime = which(dat_names==p$variables$TIME)
+      dat[, itime ] = Ytime[YiU, ] 
+      dat[, itime+(1:length(p$variables$local_all))] = stm_timecovars( vars=p$variables$local_all, ti=dat[,p$variables$TIME] ) 
     }
+
+    dat = as.data.frame(dat, col.names=dat_names)
 
     nu = phi = varSpatial = varObs = NULL
     if ( exists("nu", ores)  && is.finite(ores$nu) ) nu = ores$nu
