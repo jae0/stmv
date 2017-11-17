@@ -44,7 +44,7 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
   stime = Sys.time()
 
   # pre-calculate indices and dim for data to use inside the loop 
-  dat_names = c(  p$variables$local_all,  "weights")
+  dat_names = unique( c(  p$variables$Y, p$variable$LOCS, p$variables$local_all,  "weights") ) 
   dat_nc = length( dat_names )
   iY = which(dat_names== p$variables$Y)
   ilocs = which( dat_names %in% p$variable$LOCS )
