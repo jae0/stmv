@@ -35,8 +35,10 @@
       p$cache$Ploc =  file.path( p$stloc, "predictions_loc.cache" )
 
       if (exists("stm_global_modelengine", p) ) {
-        p$cache$P0 = file.path( p$stloc, "P0.cache" )
-        p$cache$P0sd = file.path( p$stloc, "P0sd.cache" )
+        if (p$stm_global_modelengine !="none" ) {
+          p$cache$P0 = file.path( p$stloc, "P0.cache" )
+          p$cache$P0sd = file.path( p$stloc, "P0sd.cache" )
+        }
       }
 
       p$cache$S =     file.path( p$stloc, "statistics.cache" )

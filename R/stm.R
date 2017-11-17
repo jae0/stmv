@@ -10,10 +10,6 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
   #       .. the convoSPAT seems almost fast enough
   # TODO: MBA mba.surf method? ... seems very fast
 
-  if (runmode != "continue") {
-
-      if (!exists("time.start", p) ) p$time.start = Sys.time()
-
       p$savedir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
       if ( !file.exists(p$savedir)) dir.create( p$savedir, recursive=TRUE, showWarnings=FALSE )
       message( "||| In case something should go wrong, intermediary outputs will be placed at:" )
@@ -54,6 +50,12 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
 
       p$libs = unique( p$libs )
       suppressMessages( RLibrary( p$libs ) )
+
+
+
+  if (runmode != "continue") {
+
+      if (!exists("time.start", p) ) p$time.start = Sys.time()
 
       
       if (is.null(DATA) ) {
@@ -206,10 +208,12 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
 
           Ydata = as.matrix(DATA$input[, p$variables$Y ])
           if (exists("stm_global_modelengine", p)) {
-            covmodel = stm_db( p=p, DS="global_model")
-            Ypreds = predict(covmodel, type="link", se.fit=FALSE )  ## TODO .. keep track of the SE 
-            Ydata  = residuals(covmodel, type="deviance") # ie. link scale .. this is the default but make it explicit 
-            covmodel =NULL; gc()
+            if (p$stm_global_modelengine !="none" ) {
+              covmodel = stm_db( p=p, DS="global_model")
+              Ypreds = predict(covmodel, type="link", se.fit=FALSE )  ## TODO .. keep track of the SE 
+              Ydata  = residuals(covmodel, type="deviance") # ie. link scale .. this is the default but make it explicit 
+              covmodel =NULL; gc()
+            }
           }
           Ypreds = NULL
           
@@ -374,54 +378,57 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
           Ploc = DATA = NULL; gc()
 
           if (exists("stm_global_modelengine", p) ) {
-          # create prediction suface with covariate-based additive offsets
+            if (p$stm_global_modelengine ~="none" ) {
 
-            if (p$storage.backend == "bigmemory.ram" ) {
-              tmp_P0= big.matrix( nrow=nrow(P), ncol=ncol(P) , type="double" )
-              tmp_P0[] = P
-              p$ptr$P0 = bigmemory::describe(tmp_P0 )
-            }
-            if (p$storage.backend == "bigmemory.filebacked" ) {
-              p$ptr$P0  = p$cache$P0
-              bigmemory::as.big.matrix( P, type="double", backingfile=basename(p$bm$P0), descriptorfile=basename(p$cache$P0), backingpath=p$savedir )
-            }
-            if (p$storage.backend == "ff" ) {
-              p$ptr$P0 = ff( P, dim=dim(P), file=p$cache$P0, overwrite=TRUE )
-            }
+              # create prediction suface with covariate-based additive offsets
 
-            if (p$storage.backend == "bigmemory.ram" ) {
-              tmp_P0sd= big.matrix( nrow=nrow(P), ncol=ncol(P) , type="double" )
-              tmp_P0sd[] = P
-              p$ptr$P0sd = bigmemory::describe(tmp_P0sd )
-            }
-            if (p$storage.backend == "bigmemory.filebacked" ) {
-              p$ptr$P0sd  = p$cache$P0sd
-              bigmemory::as.big.matrix( P, type="double", backingfile=basename(p$bm$P0sd), descriptorfile=basename(p$cache$P0sd), backingpath=p$savedir )
-            }
-            if (p$storage.backend == "ff" ) {
-              p$ptr$P0sd = ff( P, dim=dim(P), file=p$cache$P0sd, overwrite=TRUE )
-            }
+              if (p$storage.backend == "bigmemory.ram" ) {
+                tmp_P0= big.matrix( nrow=nrow(P), ncol=ncol(P) , type="double" )
+                tmp_P0[] = P
+                p$ptr$P0 = bigmemory::describe(tmp_P0 )
+              }
+              if (p$storage.backend == "bigmemory.filebacked" ) {
+                p$ptr$P0  = p$cache$P0
+                bigmemory::as.big.matrix( P, type="double", backingfile=basename(p$bm$P0), descriptorfile=basename(p$cache$P0), backingpath=p$savedir )
+              }
+              if (p$storage.backend == "ff" ) {
+                p$ptr$P0 = ff( P, dim=dim(P), file=p$cache$P0, overwrite=TRUE )
+              }
 
-            P=NULL; gc()
+              if (p$storage.backend == "bigmemory.ram" ) {
+                tmp_P0sd= big.matrix( nrow=nrow(P), ncol=ncol(P) , type="double" )
+                tmp_P0sd[] = P
+                p$ptr$P0sd = bigmemory::describe(tmp_P0sd )
+              }
+              if (p$storage.backend == "bigmemory.filebacked" ) {
+                p$ptr$P0sd  = p$cache$P0sd
+                bigmemory::as.big.matrix( P, type="double", backingfile=basename(p$bm$P0sd), descriptorfile=basename(p$cache$P0sd), backingpath=p$savedir )
+              }
+              if (p$storage.backend == "ff" ) {
+                p$ptr$P0sd = ff( P, dim=dim(P), file=p$cache$P0sd, overwrite=TRUE )
+              }
 
-            # test to see if all covars are static as this can speed up the initial predictions
-            message(" ")
-            message( "||| Predicting global effect of covariates at each prediction location ... ")
-            message( "||| depending upon the size of the prediction grid and number of cpus (~1hr?).. ")
+              P=NULL; gc()
 
-            p$timec_covariates_0 =  Sys.time()
-            nc_cov =NULL
-            for (i in p$variables$COV ) {
-              pu = stm_attach( p$storage.backend, p$ptr$Pcov[[i]] )
-              nc_cov = c( nc_cov,  ncol(pu) )
+              # test to see if all covars are static as this can speed up the initial predictions
+              message(" ")
+              message( "||| Predicting global effect of covariates at each prediction location ... ")
+              message( "||| depending upon the size of the prediction grid and number of cpus (~1hr?).. ")
+
+              p$timec_covariates_0 =  Sys.time()
+              nc_cov =NULL
+              for (i in p$variables$COV ) {
+                pu = stm_attach( p$storage.backend, p$ptr$Pcov[[i]] )
+                nc_cov = c( nc_cov,  ncol(pu) )
+              }
+              p$all.covars.static = ifelse( any(nc_cov > 1),  FALSE, TRUE )
+              pc = p # copy
+              if (!pc$all.covars.static) if (exists("clusters.covars", pc) ) pc$clusters = pc$clusters.covars
+              pc = make.list( list( tindex=1:pc$nt) , Y=pc ) # takes about 28 GB per run .. adjust cluster number temporarily
+              suppressMessages( parallel.run( stm_db, p=pc, DS="global.prediction.surface" ) )
+              p$time_covariates = round(difftime( Sys.time(), p$timec_covariates_0 , units="hours"), 3)
+              message( paste( "||| Time taken to predict covariate surface (hours):", p$time_covariates ) )
             }
-            p$all.covars.static = ifelse( any(nc_cov > 1),  FALSE, TRUE )
-            pc = p # copy
-            if (!pc$all.covars.static) if (exists("clusters.covars", pc) ) pc$clusters = pc$clusters.covars
-            pc = make.list( list( tindex=1:pc$nt) , Y=pc ) # takes about 28 GB per run .. adjust cluster number temporarily
-            suppressMessages( parallel.run( stm_db, p=pc, DS="global.prediction.surface" ) )
-            p$time_covariates = round(difftime( Sys.time(), p$timec_covariates_0 , units="hours"), 3)
-            message( paste( "||| Time taken to predict covariate surface (hours):", p$time_covariates ) )
           }
 
           P = NULL; gc() # yes, repeat in case covs are not modelled
