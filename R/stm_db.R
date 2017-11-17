@@ -310,11 +310,15 @@
       }
 
       if ( file.exists( fn.global_model ) ) {
-        resp = readline( "||| A global model already exists, to skip press ENTER, otherwise to overwrite type <YES>:  ")
-
-        if (resp!="YES") {
-          message( "File not overwritten:")
-          stop( fn.global_model )
+        resp = readline( "||| A global model already exists. To use saved model, type <SKIP>. To overwrite type <OVERWRITE>:  ")
+        if (resp=="SKIP") {
+          message( "File not overwritten, continuing with saved model ...")
+          return (fn.global_model)
+        } else if ( resp=="OVERWRITE") {
+          message( "OK, overwriting")
+        } else {
+          message( "OK, stopping" )
+          stop(fn.global_model)
         }
       }
 
