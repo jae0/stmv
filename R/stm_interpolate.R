@@ -97,7 +97,7 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
     # find data nearest S[Si,] and with sufficient data
     dlon = abs( Sloc[Si,1] - Yloc[Yi[],1] ) 
     dlat = abs( Sloc[Si,2] - Yloc[Yi[],2] ) 
-    U =  which( {dlon  <= p$stm_distance_scale}  & {dlat <= p$stm_distance_scale} )
+    U =  which( {dlon  <= p$stm_distance_scale} & {dlat <= p$stm_distance_scale} )
     stm_distance_cur = p$stm_distance_scale
     ndata = length(U)
 
@@ -138,7 +138,7 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
       # need to upsample
       for ( usamp in upsampling )  {
         stm_distance_cur = p$stm_distance_scale * usamp
-        U = which( dlon < stm_distance_cur & dlat < stm_distance_cur ) # faster to take a block 
+        U = which( {dlon < stm_distance_cur} & {dlat < stm_distance_cur} ) # faster to take a block 
         ndata = length(U)
         if ( ndata >= p$n.min ) {
           if (ndata >= p$n.max) {
@@ -163,11 +163,11 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
           ores = o[[p$stm_variogram_method]] # store current best estimate of variogram characteristics
           if (exists("range_ok", ores) & exists("range", ores) ) {
             if (ores[["range_ok"]] ) {
-              if ( (ores[["range"]] > p$stm_distance_min) & (ores[["range"]] <= p$stm_distance_max) ) {
+              if ( {ores[["range"]] > p$stm_distance_min} & {ores[["range"]] <= p$stm_distance_max} ) {
                 stm_distance_cur = ores[["range"]]
-                vario_U  = which( dlon  <= ores[["range"]]  & dlat <= ores[["range"]] )
+                vario_U  = which( {dlon  <= ores[["range"]] } & {dlat <= ores[["range"]]} )
                 vario_ndata =length(vario_U)                
-                if ((vario_ndata > p$n.min) & (vario_ndata < p$n.max) ) { 
+                if ({vario_ndata > p$n.min} & {vario_ndata < p$n.max} ) { 
                   U  = vario_U
                   ndata = vario_ndata
                 }  
