@@ -80,9 +80,10 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
     p$variables$all = NULL
     if (exists("stm_local_modelformula", p))  {
       p$variables$local_all = all.vars( p$stm_local_modelformula )
-      p$variables$local_cov = intersect( p$variables$local_all, p$variables$COV ) 
+      p$variables$local_cov = intersect( p$variables$local_all, p$variables$COV )
       p$variables$all = unique( c( p$variables$all, p$variables$local_all ) )
-    }
+    } 
+    
     if (exists("stm_global_modelformula", p)) {
       p$variables$global_all = all.vars( p$stm_global_modelformula )
       p$variables$global_cov = intersect( p$variables$global_all, p$variables$COV )      
@@ -119,7 +120,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
     if (exists("TIME", p$variables) )  othervars = c( "ar_timerange", "ar_1" )
     p$statsvars = unique( c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "range", "phi", "nu", othervars ) )
 
-    message("||| ")
+    message(" ")
     message( "||| Initializing temporary storage of data and outputs files... ")
     message( "||| These are large files (4 to 6 X 5GB), it will take a minute ... ")
     stm_db( p=p, DS="cleanup" )
@@ -402,7 +403,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
         P=NULL; gc()
 
         # test to see if all covars are static as this can speed up the initial predictions
-        message("||| ")
+        message(" ")
         message( "||| Predicting global effect of covariates at each prediction location ... ")
         message( "||| depending upon the size of the prediction grid and number of cpus (~1hr?).. ")
 
@@ -539,7 +540,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
     p = make.list( list( locs=sample( currentstatus$todo )) , Y=p ) # random order helps use all cpus
     p <<- p  # push to parent in case a manual restart is possible
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
-    message( "Entering browser mode ...")
+    message( "||| Entering browser mode ...")
     browser()
     stm_interpolate (p=p )
   }
@@ -553,7 +554,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
     p <<- p  # push to parent in case a manual restart is possible
     suppressMessages( parallel.run( stm_interpolate, p=p ) )
     p$time_default = round( difftime( Sys.time(), timei1, units="hours" ), 3 )
-    message("||| ")
+    message(" ")
     message( paste( "||| Time taken for main stage 1, interpolations (hours):", p$time_default, "" ) )
     currentstatus = stm_db( p=p, DS="statistics.status" )
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
@@ -563,7 +564,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
 
   if ( runmode %in% c("stage2", "stage3" ) ) {  
     timei2 =  Sys.time()
-    message("||| ")
+    message(" ")
     message( "||| Starting stage 2: more permisssive distance settings (spatial extent) " )
 
     for ( mult in p$stm_multiplier_stage2 ) { 
@@ -577,7 +578,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
       }
     }
     p$time_stage2 = round( difftime( Sys.time(), timei2, units="hours" ), 3)
-    message("||| ---")
+    message(" ")
     message( paste( "||| Time taken to stage 2 interpolations (hours):", p$time_stage2, "" ) )
     currentstatus = stm_db( p=p, DS="statistics.status" )
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
@@ -587,7 +588,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
 
   if ( runmode %in% c( "stage3" ) ) {  
     timei3 =  Sys.time()
-    message("||| ---")
+    message(" ")
     message( "||| Starting stage 3: simple TPS-based failsafe method to interpolate all the remaining locations " )
     toredo = stm_db( p=p, DS="flag.incomplete.predictions" )
     if ( !is.null(toredo) && length(toredo) > 0) { 
@@ -614,7 +615,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
   resp = readline( "||| Save predictions and statistics, overwriting previous results? If you are sure type <YES>:  ")
   if (resp=="YES") {
     # save solutions to disk (again .. overwrite)
-    message("||| ")
+    message(" ")
     message( "||| Saving predictions to disk .. " )
     stm_db( p=p, DS="stm.prediction.redo" ) # save to disk for use outside stm*, returning to user scale
 
@@ -629,14 +630,14 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
     if (resp=="YES") {
       stm_db( p=p, DS="cleanup" )
     } else {
-      message("||| ")
+      message(" ")
       message( "||| Leaving temporary files alone in case you need to examine them or restart a process. ")
       message( "||| You can delete them by running: stm_db( p=p, DS='cleanup' ), once you are done. ")
     }
   }
 
   p$time_total = round( difftime( Sys.time(), p$time.start, units="hours" ),3)
-  message("||| ")
+  message(" ")
   message( paste( "||| Time taken for ", runmode, " (hours):", p$time_total, "\n" ) )
 
   message( paste( "||| Your parameter 'p' has been updated in case you need to re-run something like, etc:\n" ) )

@@ -66,7 +66,7 @@
     if (DS=="save.parameters")  {
       fns = file.path( p$savedir, "p.rdata" )
       save( p, file=fns )
-      message( "Saved parameters to file:")
+      message( "||| Saved parameters to file:")
       message( fns )
     }
 
@@ -114,7 +114,7 @@
       }
 
       out$prop_incomp=round( out$n.todo / ( out$n.todo + out$n.complete), 3)
-      message( paste("Proportion to do:", out$prop_incomp, "\n" ))
+      message( paste("||| Proportion to do:", out$prop_incomp, "\n" ))
       return( out )
 
       if (0) {
@@ -159,8 +159,8 @@
       if (exists( "boundary", p) && p$boundary) {
         timeb0 =  Sys.time()
         message("\n")
-        message( "Defining boundary polygon for data .. this reduces the number of points to analyse")
-        message( "but takes a few minutes to set up ...")
+        message( "||| Defining boundary polygon for data .. this reduces the number of points to analyse")
+        message( "||| but takes a few minutes to set up ...")
         stm_db( p=p, DS="boundary.redo" ) # ~ 5 min on nfs
       # last set of filters to reduce problem size
         Sflag = stm_attach( p$storage.backend, p$ptr$Sflag )
@@ -171,7 +171,7 @@
             if (length(outside)>0) Sflag[outside] = 2L
         }}
         bnds = NULL
-        message( paste( "Time taken to estimate spatial bounds (mins):", round( difftime( Sys.time(), timeb0, units="mins" ),3) ) )
+        message( paste( "||| Time taken to estimate spatial bounds (mins):", round( difftime( Sys.time(), timeb0, units="mins" ),3) ) )
       }
 
       if ( exists("depth.filter", p) && is.finite(p$depth.filter) ) {
@@ -291,9 +291,9 @@
       plot( Yloc[ii,], pch=".", col="grey" ) # data locations
       points( Sloc[which(boundary$inside.polygon==1),], pch=".", col="orange" )
       lines( boundary$polygon[] , col="green", pch=2 )
-      message( "Check the map of data and boundaries. ")
-      message( "If not suitable, set another value for p$stm_nonconvexhull_alpha value (radius; distance) ")
-      message( "and re-run stm() " )
+      message( "||| Check the map of data and boundaries. ")
+      message( "||| If not suitable, set another value for p$stm_nonconvexhull_alpha value (radius; distance) ")
+      message( "||| and re-run stm() " )
       return( fn )
     }
 
@@ -312,12 +312,12 @@
       if ( file.exists( fn.global_model ) ) {
         resp = readline( "||| A global model already exists. To use saved model, type <SKIP>. To overwrite type <OVERWRITE>:  ")
         if (resp=="SKIP") {
-          message( "File not overwritten, continuing with saved model ...")
+          message( "||| File not overwritten, continuing with saved model ...")
           return (fn.global_model)
         } else if ( resp=="OVERWRITE") {
-          message( "OK, overwriting")
+          message( "||| OK, overwriting")
         } else {
-          message( "OK, stopping" )
+          message( "||| OK, stopping" )
           stop(fn.global_model)
         }
       }
@@ -472,7 +472,7 @@
         }
       } # end each timeslice
       global_model =NULL
-      message( "Done ... moving onto the rest of the analysis...")
+      message( "||| Done ... moving onto the rest of the analysis...")
     }
 
 
