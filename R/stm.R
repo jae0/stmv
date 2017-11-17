@@ -140,10 +140,12 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
         }
 
 
-        if (  exists("stm_global_modelformula", p) ) {
+        if (  exists("stm_global_modelengine", p) ) {
+          if ( p$stm_global_modelengine !="none" ) {
           # to add global covariate model (hierarchical) 
           # .. simplistic this way but faster ~ kriging with external drift
             stm_db( p=p, DS="global_model.redo", B=DATA$input )
+          }
         }
 
 
@@ -378,7 +380,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
           Ploc = DATA = NULL; gc()
 
           if (exists("stm_global_modelengine", p) ) {
-            if (p$stm_global_modelengine ~="none" ) {
+            if (p$stm_global_modelengine !="none" ) {
 
               # create prediction suface with covariate-based additive offsets
 
