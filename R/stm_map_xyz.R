@@ -34,7 +34,7 @@ stm_map_xyz = function( x, y, z, ncolors=100, color.code.type="seis", color.sequ
 
   if (0) {
   # example usage
-    project.library( "emaf.base", "stm")
+    project.library( "aegis.env", "stm")
     require(sp)
     require(lattice)
     data(meuse)

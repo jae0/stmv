@@ -23,7 +23,7 @@ Imports:
   parallel, 
   bigmemory,
   devtools,
-  emaf.base 
+  aegis.env 
 Suggests: 
   INLA,
   knitr,

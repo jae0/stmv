@@ -17,8 +17,8 @@ stm_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, inla.edge=c(1/3, 1), 
       if ( 0 ) {
         # debugging / comparison of results
         
-        # project.library("emaf.base", "emaf", "stm"  )
-        loadfunctions( c("emaf.base", "emaf", "stm" ))
+        # project.library("aegis.env", "aegis", "stm"  )
+        loadfunctions( c("aegis.env", "aegis", "stm" ))
         xyz = stm_test_data( datasource="swiss" )
         xy = xyz[, c("x", "y")]
         mz = log( xyz$rain )

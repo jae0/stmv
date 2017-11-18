@@ -112,7 +112,7 @@
         }
 
         #coastline
-        coast = emaf::coastline.db(p=pp, crs=pp$internal.crs, DS="gshhg coastline highres" )
+        coast = aegis::coastline.db(p=pp, crs=pp$internal.crs, DS="gshhg coastline highres" )
         sp.polygons( coast, col = "black", cex=1 ,fill='grey')
 
          

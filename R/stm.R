@@ -12,8 +12,10 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
 
       p$savedir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
       if ( !file.exists(p$savedir)) dir.create( p$savedir, recursive=TRUE, showWarnings=FALSE )
+      message( " ")
       message( "||| In case something should go wrong, intermediary outputs will be placed at:" )
       message( "|||",  p$savedir  )
+      message( " ")
 
       # determine storage format
       p$libs = unique( c( p$libs, "sp", "rgdal", "parallel", "RandomFields", "geoR" ) )
@@ -609,7 +611,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
       Sflag = stm_attach( p$storage.backend, p$ptr$Sflag )
       Sflag[toredo]=0L
       p$stm_local_modelengine = "tps"  
-      p = indicators.parameters( p=p, DS="bathymetry" )
+      p = aegis.parameters( p=p, DS="bathymetry" )
       p = make.list( list( locs=sample( toredo )) , Y=p ) # random order helps use all cpus
       p <<- p  # push to parent in case a manual restart is possible
       parallel.run( stm_interpolate, p=p )

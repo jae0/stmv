@@ -24,7 +24,7 @@ spbuffer =  floor( min(drange)/ 25 )
 meuse.boundary = gBuffer( gUnaryUnion( gBuffer( meuse, width=spbuffer, byid=TRUE) ), width=spbuffer)
 plot(meuse.boundary)
 
-meuse.boundary2 = emaf::concave.hull( coordinates(meuse), ub=500 )
+meuse.boundary2 = aegis::concave.hull( coordinates(meuse), ub=500 )
 plot(meuse.boundary2)
 
 # triangulate and tessilate
