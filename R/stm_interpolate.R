@@ -211,7 +211,7 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
         points( Yloc[YiU,2] ~ Yloc[YiU,1], col="green" )  # with covars and no other data issues
         points( Sloc[Si,2] ~ Sloc[Si,1], col="blue" ) # statistical locations
         # statistical output locations
-        grids= spatial_grid(p, DS="planar.coords" )
+        grids= aegis::spatial_grid(p, DS="planar.coords" )
         points( grids$plat[round( (Sloc[Si,2]-p$origin[2])/p$pres) + 1] 
               ~ grids$plon[round( (Sloc[Si,1]-p$origin[1])/p$pres) + 1] , col="purple", pch=25, cex=5 ) 
 
