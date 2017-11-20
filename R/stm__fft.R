@@ -5,7 +5,6 @@ stm__fft = function( p, dat, pa, nu=NULL, phi=NULL ) {
   #\\ note: time is not being modelled and treated independently 
   #\\      .. you had better have enough data in each time slice
   #\\ first a low-pass filter as defined by p$stm_lowpass_nu, p$stm_lowpass_phi, then a simple covariance filter determined by nu,phi
-  # varObs=varObs, varSpatial=varSpatial
   
   sdTotal=sd(dat[,p$variable$Y], na.rm=T)
 

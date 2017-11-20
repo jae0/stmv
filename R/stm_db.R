@@ -378,6 +378,8 @@
 
       if ( "try-error" %in% class(global_model) ) stop( "The covariate model was problematic" )
       print( summary( global_model ) )
+      global_model$model= NULL # drop large data matrices
+       
       save( global_model, file= fn.global_model, compress=TRUE )
 
       return (fn.global_model)
