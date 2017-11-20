@@ -611,7 +611,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
       Sflag = stm_attach( p$storage.backend, p$ptr$Sflag )
       Sflag[toredo]=0L
       p$stm_local_modelengine = "tps"  
-      p = aegis.parameters( p=p, DS="bathymetry" )
+      p = aegis_parameters( p=p, DS="bathymetry" )
       p = make.list( list( locs=sample( toredo )) , Y=p ) # random order helps use all cpus
       p <<- p  # push to parent in case a manual restart is possible
       parallel.run( stm_interpolate, p=p )
