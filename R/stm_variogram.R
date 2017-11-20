@@ -13,7 +13,6 @@ stm_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, inla.edge=c(1/3, 1), 
   #\\   where K_{nu} is the Bessel function with smooth nu and phi is known as the range parameter  
   # -------------------------
 
-  require(geoR)
 
       if ( 0 ) {
         # debugging / comparison of results
@@ -89,6 +88,7 @@ stm_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, inla.edge=c(1/3, 1), 
         #   acov = gr$geoR$varObs +  gr$geoR$varSpatial * (1- acor)
         #   lines( acov ~ x , col="blue", lwd=2 )
 
+        microbenchmark::microbenchmark( {gr = stm_variogram( xy, z, methods="geoR.ML", plotdata=FALSE )}, times= 10 )
         gr = stm_variogram( xy, z, methods="geoR.ML", plotdata=TRUE ) # ml
         # $geoR.ML$range: 76096
         # $geoR.ML$varSpatial: 0.714
@@ -230,11 +230,8 @@ stm_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, inla.edge=c(1/3, 1), 
 
   if ( "fast" %in% methods)  {
     # gives a fast stable empirical variogram using nl least squares
-    require( fields ) 
-    vario = vgram( loc=xy, y=z, dmax=out$distance_cutoff, N=nbreaks)
-    vx=vario$centers
-    vg=vario$stats["mean",]
-    fit = stm_variogram_optimization( vx=vx, vg=vg, plotvgm=plotdata, stm_internal_scale=out$stm_internal_scale ) # nu=0.5 == exponential variogram 
+    vario = fields::vgram( loc=xy, y=z, dmax=out$distance_cutoff, N=nbreaks)
+    fit = stm_variogram_optimization( vx=vario$centers, vg=vario$stats["mean",], plotvgm=plotdata, stm_internal_scale=out$stm_internal_scale ) # nu=0.5 == exponential variogram 
     out$fast = fit$summary
     return(out)
     if( 0) {

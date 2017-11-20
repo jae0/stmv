@@ -30,7 +30,7 @@ stm_matern= function( distance=NULL, mRange, mSmooth=0.5, parameterization="stm"
     ac = {1+u+{u^2}/3} * exp(-u)
   } else {
     u = sqrt(2*mSmooth)*r
-    ac = {2^(1-mSmooth) / gamma(mSmooth)} * u^mSmooth * besselK(u, mSmooth) 
+    ac = {2^{1-mSmooth} / {gamma(mSmooth)} * u^mSmooth * besselK(u, mSmooth)} 
   }    
 
   zerodist = which( distance == 0 )

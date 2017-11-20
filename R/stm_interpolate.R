@@ -156,7 +156,7 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
 
    # crude (mean) variogram across all time slices
     o = ores = NULL
-    o = try( stm_variogram( xy=Yloc[U,], z=Y[U], methods=p$stm_variogram_method  ) )
+    o = try( stm_variogram( xy=Yloc[U,], z=Y[U], methods=p$stm_variogram_method, distance_cutoff=stm_distance_cur, nbreaks=13 ) )
     if ( !is.null(o)) {
       if (!inherits(o, "try-error")) {
         if (exists(p$stm_variogram_method, o)) {
