@@ -778,7 +778,14 @@ stm_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, inla.edge=c(1/3, 1), 
     res = c(min(resx, resy), min(resx, resy))
     xy_blocked = stm::array_map( "xy->2", xy, res=res, origin=origin ) * res[1]
     xy_blocked = xy_blocked / out$stm_internal_scale
-    xyz = stm::block.spatial( cbind(xy_blocked, z), stm::block.mean ) 
+    
+    m = tapply( X=z, INDEX=list(xy_blocked[,1], xy_blocked[,2]),
+        FUN = function(w) {mean(w, na.rm=TRUE)}, 
+        simplify=TRUE )
+    xyz = as.data.frame( as.table (m) )
+    xyz[,1] = as.numeric(as.character( xyz[,1] ))
+    xyz[,2] = as.numeric(as.character( xyz[,2] ))
+    xyz = xyz[ which( is.finite( xyz[,3] )) ,]  
     xyz = rasterFromXYZ( xyz ) 
 
     fit = geostatsp::lgcp( 
