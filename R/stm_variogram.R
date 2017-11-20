@@ -13,6 +13,7 @@ stm_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, inla.edge=c(1/3, 1), 
   #\\   where K_{nu} is the Bessel function with smooth nu and phi is known as the range parameter  
   # -------------------------
 
+  require(geoR)
 
       if ( 0 ) {
         # debugging / comparison of results
@@ -32,6 +33,7 @@ stm_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, inla.edge=c(1/3, 1), 
         nbreaks = 15
         family="gaussian"  
         
+        microbenchmark::microbenchmark( {gr = stm_variogram( xy, z, methods="fast", plotdata=FALSE )}, times= 10 )
         # tests
         gr = stm_variogram( xy, z, methods="fast", plotdata=TRUE ) # nls
         # $fast$vgm_var_max: 0.6522
@@ -93,7 +95,9 @@ stm_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, inla.edge=c(1/3, 1), 
         # $geoR.ML$varObs: 0
         # $geoR.ML$nu: 0.7882
         # $geoR.ML$phi: 26385
-
+ 
+        microbenchmark::microbenchmark( {gr = stm_variogram( xy, z, methods="gstat", plotdata=FALSE )}, times= 10 )
+ 
         gr = stm_variogram( xy, z, methods="gstat", plotdata=TRUE ) # ml
         # $gstat$range: 67543
         # $gstat$nu: 1.1
@@ -128,7 +132,8 @@ stm_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, inla.edge=c(1/3, 1), 
         # hist( out$spBayes$recover$p.theta.samples[,2] ) # "tau.sq"
         # hist( out$spBayes$recover$p.theta.samples[,3] ) # 1/phi
         # hist( out$spBayes$recover$p.theta.samples[,4] ) # nu
-
+ 
+        microbenchmark::microbenchmark( {gr = stm_variogram( xy, z, methods="inla", plotdata=FALSE )}, times= 10 )
         gr = stm_variogram( xy, z, methods="inla", plotdata=TRUE )
         # $inla$range.inla.practical: 53148
         # $inla$varSpatial: 0.6556
@@ -520,14 +525,6 @@ stm_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, inla.edge=c(1/3, 1), 
   # -------------------------
   # ------------------------
  
-    vMod = try( variofit( vEm, nugget=0.5*out$varZ, kappa=0.5, cov.model="matern", 
-      ini.cov.pars=c(0.5*out$varZ, 1 ) ,
-      fix.kappa=FALSE, fix.nugget=FALSE, max.dist=out$distance_cutoff/out$stm_internal_scale, weights="cressie" ) )
-      # kappa is the smoothness parameter , also called "nu" by others incl. RF
-    if  (inherits(vMod, "try-error") )  return(NULL)
-    scale = matern_phi2phi( mRange=vMod$cov.pars[2], mSmooth=vMod$kappa, 
-      parameterization_input="geoR", parameterization_output="stm" ) * out$stm_internal_scale
-
 
 
   if ("geoR.ML" %in% methods) {
