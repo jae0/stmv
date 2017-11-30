@@ -4,10 +4,10 @@ gaussian_process_stanmodel = function(){
     rstan::stan_model( model_code= "
 
       functions{
-        
+
         matrix matern_covariance( int N, matrix dist, real phi, real sigma_sq, real tau_sq, real eps, int COVFN) {
           matrix[N,N] S;
-          real dist_phi; 
+          real dist_phi;
           real sqrt3;
           real sqrt5;
           sqrt3=sqrt(3.0);
@@ -17,17 +17,17 @@ gaussian_process_stanmodel = function(){
             for(i in 1:(N-1)){
               for(j in (i+1):N){
                 dist_phi = fabs(dist[i,j])/phi;
-                S[i,j] = sigma_sq * exp(- dist_phi ); 
+                S[i,j] = sigma_sq * exp(- dist_phi );
             }}
 
-          
+
           } else if (COVFN==2) { // Matern nu= 3/2 covariance
             for(i in 1:(N-1)){
               for(j in (i+1):N){
                dist_phi = fabs(dist[i,j])/phi;
                S[i,j] = sigma_sq * (1 + sqrt3 * dist_phi) * exp(-sqrt3 * dist_phi);
             }}
-          
+
 
           } else if (COVFN==3) { // Matern nu=5/2 covariance
             for(i in 1:(N-1)){
@@ -35,23 +35,23 @@ gaussian_process_stanmodel = function(){
                 dist_phi = fabs(dist[i,j])/phi;
                 S[i,j] = sigma_sq * (1 + sqrt5 *dist_phi + 5* pow(dist_phi,2)/3) * exp(-sqrt5 *dist_phi);
             }}
-        
+
           } else if (COVFN==4) { // Matern as nu->Inf become Gaussian (aka squared exponential cov)
             for(i in 1:(N-1)){
               for(j in (i+1):N){
                 dist_phi = fabs(dist[i,j])/phi;
                 S[i,j] = sigma_sq * exp( -pow(dist_phi,2)/2 ) ;
             }}
-          } 
+          }
 
-             
+
           for(i in 1:(N-1)){
           for(j in (i+1):N){
             S[j,i] = S[i,j];  // fill upper triangle
           }}
 
           // create diagonal: nugget(nonspatial) + spatial variance +  eps ensures positive definiteness
-          for(i in 1:N) S[i,i] = sigma_sq + tau_sq + eps;            
+          for(i in 1:N) S[i,i] = sigma_sq + tau_sq + eps;
           return(S)   ;
         }
 
@@ -67,7 +67,7 @@ gaussian_process_stanmodel = function(){
         real eps;
         // real sigma_sq0;
         // real tau_sq0;
-        int<lower=1,upper=4> COVFN;  // Choice of Matern covariance function: 
+        int<lower=1,upper=4> COVFN;  // Choice of Matern covariance function:
         // 1:nu=1/2 (exponential); 2:nu=3/2; 3:nu=5/2; 4:nu->Inf (gaussian)
       }
 
@@ -79,24 +79,24 @@ gaussian_process_stanmodel = function(){
 
      // ---------------
       parameters{
-        real<lower=0, upper=10> sigma_sq; 
-        real<lower=0, upper=10> tau_sq; 
+        real<lower=0, upper=10> sigma_sq;
+        real<lower=0, upper=10> tau_sq;
         real<lower=0, upper=10> phi;
         vector [N] spatialError;
       }
-  
+
      // ---------------
       transformed parameters{
       }
-  
+
      // ---------------
       model{
         matrix[N,N] S; // Covariance
         S = matern_covariance( N, dist, phi, sigma_sq, tau_sq, eps, COVFN );
         Y ~ multi_normal_cholesky( spatialError, cholesky_decompose(S) ) ;
-        tau_sq ~ cauchy( 0, 0.5) ;  
-        sigma_sq ~ cauchy( 0, 0.5) ;  
-        phi ~ normal( 1, 1 ) ; 
+        tau_sq ~ cauchy( 0, 0.5) ;
+        sigma_sq ~ cauchy( 0, 0.5) ;
+        phi ~ normal( 1, 1 ) ;
       }
 
      // ---------------
@@ -109,4 +109,3 @@ gaussian_process_stanmodel = function(){
 
   )
 }
-

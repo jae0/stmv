@@ -54,7 +54,6 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
     itime_cov = which(dat_names %in% ti_cov)
   }
 
-  if (p$stm_local_modelengine %in% c("stan", "gaussianprocess")) stanmodel = gaussian_process_stanmodel()  # precompile outside of the loop to speed the rest
 
   stime = Sys.time()
 
@@ -202,12 +201,13 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
       gstat = stm__gstat( p, dat, pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ),
       krige = stm__krige( p, dat, pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ),
       LaplacesDemon = stm__LaplacesDemon( p, dat, pa ),
-      stan = stm__stan( p, dat, pa, stanmodel=stanmodel ),  ## todo
+      stan = stm__stan( p, dat, pa, stanmodel=p$stanmodel ),  ## todo
       splancs = stm__splancs( p, dat, pa ), # TODO
       spate = stm__spate( p, dat, pa, sloc=Sloc[Si,], distance=stm_distance_cur, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial),
       fft = stm__fft( p, dat, pa, nu=nu, phi=phi ),
       tps = stm__tps( p, dat, pa, lambda=varObs/varSpatial ),
-      twostep = stm__twostep( p, dat, pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial )
+      twostep = stm__twostep( p, dat, pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ),
+      userdefined = p$stm_local_modelengine_userdefined(p=p, dat=dat, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial, sloc=Sloc[Si,], distance=stm_distance_cur )
     ) )
 
 

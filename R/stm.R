@@ -2,7 +2,7 @@
 
 stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram",  debug_plot_variable_index=1 ) {
 
-  #\\ localized modelling of space and time data to predict/interpolate upon a grid 
+  #\\ localized modelling of space and time data to predict/interpolate upon a grid
   #\\ speed ratings: bigmemory.ram (1), ff (2), bigmemory.filebacked (3)
 
   # TODO: splancs::kernel3d as a method ? .. for count data?
@@ -27,7 +27,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
           stop( "||| More than one unique cluster server was specified .. the RAM-based method only works within one server." )
         }
       }
-      
+
       # other libs
       if (exists("stm_local_modelengine", p)) {
         if (p$stm_local_modelengine=="bayesx")  p$libs = c( p$libs, "R2BayesX" )
@@ -42,6 +42,11 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
         if (p$stm_local_modelengine %in% c("gstat") ) p$libs = c( p$libs, "gstat" )
         if (p$stm_local_modelengine %in% c("stan") ) p$libs = c( p$libs, "rstan" )
         # if (p$stm_local_modelengine %in% c("spate") )  p$libs = c( p$libs, "spate" ) # now copied directly into stm
+
+        if (p$stm_local_modelengine %in% c("stan", "gaussianprocess")) {
+          message( "Precompiling stan program ... ")
+          p$stanmodel = gaussian_process_stanmodel()  # precompile outside of the loop to speed the rest
+        }
       }
 
       if (exists("stm_global_modelengine", p)) {
@@ -59,20 +64,20 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
 
       if (!exists("time.start", p) ) p$time.start = Sys.time()
 
-      
+
       if (is.null(DATA) ) {
         # in here as it assumes that initiation of process (save of data files) is complete and "saved" objects are present
         message( "||| No DATA provided, assuming we are continuing from an interrupted start" )
         message( "|||  and using parameters from saved configuration:", file.path( p$savedir, 'p.rdata' ) )
         message( "|||  Delete this if you want to over-ride these settings.")
 
-        p = stm_db( p=p, DS="load.parameters" )  
+        p = stm_db( p=p, DS="load.parameters" )
         stm_db(p=p, DS="statistics.status.reset" )
 
       }  else {
         # not a restart .. new instance:
 
-        p$stm_current_status = file.path( p$savedir, "stm_current_status" ) 
+        p$stm_current_status = file.path( p$savedir, "stm_current_status" )
 
         p = stm_parameters(p=p) # fill in parameters with defaults where possible
         p = stm_db( p=p, DS="filenames" )
@@ -88,11 +93,11 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
           p$variables$local_all = all.vars( p$stm_local_modelformula )
           p$variables$local_cov = intersect( p$variables$local_all, p$variables$COV )
           p$variables$all = unique( c( p$variables$all, p$variables$local_all ) )
-        } 
-        
+        }
+
         if (exists("stm_global_modelformula", p)) {
           p$variables$global_all = all.vars( p$stm_global_modelformula )
-          p$variables$global_cov = intersect( p$variables$global_all, p$variables$COV )      
+          p$variables$global_cov = intersect( p$variables$global_all, p$variables$COV )
           p$variables$all = unique( c( p$variables$all, p$variables$global_all ) )
         }
 
@@ -103,7 +108,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
         if (length(withdata) < 1) stop( "Missing data or insufficient data")
         DATA$input = DATA$input[withdata, ]
         rm(withdata)
-        
+
 
         # number of time slices
         if (!exists("nt", p)) {
@@ -119,8 +124,8 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
         othervars = c( )
         if (exists("stm_local_modelengine", p)) {
           if (p$stm_local_modelengine == "habitat") othervars = c( )
-          if (p$stm_local_modelengine == "spate") othervars = c( 
-            "rho_0",  "zeta", "rho_1", "gamma", "alpha", "mu_x", "mu_y", "sigma^2", "tau^2", 
+          if (p$stm_local_modelengine == "spate") othervars = c(
+            "rho_0",  "zeta", "rho_1", "gamma", "alpha", "mu_x", "mu_y", "sigma^2", "tau^2",
             "rho_0.sd", "zeta.sd", "rho_1.sd", "gamma.sd", "alpha.sd", "mu_x.sd", "mu_y.sd" )
         }
         if (exists("TIME", p$variables) )  othervars = c( "ar_timerange", "ar_1" )
@@ -130,7 +135,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
         message( "||| Initializing temporary storage of data and outputs files... ")
         message( "||| These are large files (4 to 6 X 5GB), it will take a minute ... ")
         stm_db( p=p, DS="cleanup" )
-      
+
         p$nloccov = 0
         if (exists("local_cov", p$variables)) p$nloccov = length(p$variables$local_cov)
 
@@ -144,19 +149,19 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
 
         if (  exists("stm_global_modelengine", p) ) {
           if ( p$stm_global_modelengine !="none" ) {
-          # to add global covariate model (hierarchical) 
+          # to add global covariate model (hierarchical)
           # .. simplistic this way but faster ~ kriging with external drift
             stm_db( p=p, DS="global_model.redo", B=DATA$input )
           }
         }
 
 
-        # NOTE:: must not sink the following memory allocation into a deeper funcion as 
-        # NOTE:: bigmemory RAM seems to lose the pointers if they are not made simultaneously 
-     
+        # NOTE:: must not sink the following memory allocation into a deeper funcion as
+        # NOTE:: bigmemory RAM seems to lose the pointers if they are not made simultaneously
+
         # init output data objects
         # statistics storage matrix ( aggregation window, coords ) .. no inputs required
-        sbox = list( 
+        sbox = list(
           plats = seq( p$corners$plat[1], p$corners$plat[2], by=p$stm_distance_statsgrid ),
           plons = seq( p$corners$plon[1], p$corners$plon[2], by=p$stm_distance_statsgrid ) )
 
@@ -214,13 +219,13 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
           if (exists("stm_global_modelengine", p)) {
             if (p$stm_global_modelengine !="none" ) {
               covmodel = stm_db( p=p, DS="global_model")
-              Ypreds = predict(covmodel, type="link", se.fit=FALSE )  ## TODO .. keep track of the SE 
-              Ydata  = residuals(covmodel, type="deviance") # ie. link scale .. this is the default but make it explicit 
+              Ypreds = predict(covmodel, type="link", se.fit=FALSE )  ## TODO .. keep track of the SE
+              Ydata  = residuals(covmodel, type="deviance") # ie. link scale .. this is the default but make it explicit
               covmodel =NULL; gc()
             }
           }
           Ypreds = NULL
-          
+
           Ydata = as.matrix( Ydata )
             if (p$storage.backend == "bigmemory.ram" ) {
               tmp_Y = big.matrix( nrow=nrow(Ydata), ncol=1, type="double"  )
@@ -298,7 +303,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
             # this needs to be done as Prediction covars need to be structured as lists
             if (!exists("Pcov", p$ptr) ) p$ptr$Pcov = list()
             tmp_Pcov = list()
-           
+
             for ( covname in p$variables$COV ) {
               Pcovdata = as.matrix( DATA$output$COV[[covname]] )
               attr( Pcovdata, "dimnames" ) = NULL
@@ -436,7 +441,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
           }
 
           P = NULL; gc() # yes, repeat in case covs are not modelled
-        
+
           stm_db( p=p, DS="statistics.Sflag" )
 
           Y = stm_attach( p$storage.backend, p$ptr$Y )
@@ -507,37 +512,37 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
           message( "||| Finished. Moving onto analysis... ")
           p <<- p  # push to parent in case a manual restart is needed
           gc()
-          
+
       }  # end of intialization of data structures
 
 
       # -------------------------------------
       # localized space-time modelling/interpolation/prediction
-      message("||| to view maps from an external R session: ") 
-      message("|||   stm(p=p, runmode='debug_pred_static_map', debug_plot_variable_index=1) ") 
-      message("|||   stm(p=p, runmode='debug_pred_static_log_map', debug_plot_variable_index=1)") 
-      message("|||   stm(p=p, runmode='debug_pred_dynamic_map', debug_plot_variable_index=1)") 
-      message("|||   stm(p=p, runmode='debug_stats_map', debug_plot_variable_index=1)") 
+      message("||| to view maps from an external R session: ")
+      message("|||   stm(p=p, runmode='debug_pred_static_map', debug_plot_variable_index=1) ")
+      message("|||   stm(p=p, runmode='debug_pred_static_log_map', debug_plot_variable_index=1)")
+      message("|||   stm(p=p, runmode='debug_pred_dynamic_map', debug_plot_variable_index=1)")
+      message("|||   stm(p=p, runmode='debug_stats_map', debug_plot_variable_index=1)")
       message("||| Monitor the status of modelling by looking at the output of the following file:")
       message("||| in linux, you can issue the following command:" )
       message("|||   watch -n 60 cat ",  p$stm_current_status  )
-  
-  }  # end of runmode = !continue 
+
+  }  # end of runmode = !continue
 
 
-  if ( "debug_pred_static_map" == runmode) {  
+  if ( "debug_pred_static_map" == runmode) {
       Ploc = stm_attach( p$storage.backend, p$ptr$Ploc )
       P = stm_attach( p$storage.backend, p$ptr$P )
       lattice::levelplot( (P[,debug_plot_variable_index])~Ploc[,1]+Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
   }
 
-  if ( "debug_pred_static_log_map" == runmode) {  
+  if ( "debug_pred_static_log_map" == runmode) {
       Ploc = stm_attach( p$storage.backend, p$ptr$Ploc )
       P = stm_attach( p$storage.backend, p$ptr$P )
       lattice::levelplot( log(P[,debug_plot_variable_index])~Ploc[,1]+Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
   }
 
-  if ( "debug_pred_dynamic_map" == runmode) {  
+  if ( "debug_pred_dynamic_map" == runmode) {
       Ploc = stm_attach( p$storage.backend, p$ptr$Ploc )
       P = stm_attach( p$storage.backend, p$ptr$P )
       for (i in 1:p$nt) {
@@ -545,7 +550,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
       }
   }
 
-  if ( "debug_stats_map" == runmode) {  
+  if ( "debug_stats_map" == runmode) {
       Sloc = stm_attach( p$storage.backend, p$ptr$Sloc )
       S = stm_attach( p$storage.backend, p$ptr$S )
       lattice::levelplot(S[,debug_plot_variable_index]~Sloc[,1]+Sloc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
@@ -562,7 +567,7 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
   }
 
 
-  if ( runmode %in% c("default", "stage2", "stage3" ) ) {  
+  if ( runmode %in% c("default", "stage2", "stage3" ) ) {
     # this is the basic run
     timei1 =  Sys.time()
     currentstatus = stm_db( p=p, DS="statistics.status" )
@@ -576,18 +581,18 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     gc()
   }
-  
 
-  if ( runmode %in% c("stage2", "stage3" ) ) {  
+
+  if ( runmode %in% c("stage2", "stage3" ) ) {
     timei2 =  Sys.time()
     message(" ")
     message( "||| Starting stage 2: more permisssive distance settings (spatial extent) " )
 
-    for ( mult in p$stm_multiplier_stage2 ) { 
-      currentstatus = stm_db(p=p, DS="statistics.status.reset" ) 
+    for ( mult in p$stm_multiplier_stage2 ) {
+      currentstatus = stm_db(p=p, DS="statistics.status.reset" )
       if (length(currentstatus$todo) > 0) {
         p$stm_distance_max = p$stm_distance_max * mult
-        p$stm_distance_scale = p$stm_distance_scale*mult # km ... approx guess of 95% AC range 
+        p$stm_distance_scale = p$stm_distance_scale*mult # km ... approx guess of 95% AC range
         p = make.list( list( locs=sample( currentstatus$todo )) , Y=p ) # random order helps use all cpus
         p <<- p  # push to parent in case a manual restart is possible
         suppressMessages( parallel.run( stm_interpolate, p=p ) )
@@ -602,15 +607,15 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
   }
 
 
-  if ( runmode %in% c( "stage3" ) ) {  
+  if ( runmode %in% c( "stage3" ) ) {
     timei3 =  Sys.time()
     message(" ")
     message( "||| Starting stage 3: simple TPS-based failsafe method to interpolate all the remaining locations " )
     toredo = stm_db( p=p, DS="flag.incomplete.predictions" )
-    if ( !is.null(toredo) && length(toredo) > 0) { 
+    if ( !is.null(toredo) && length(toredo) > 0) {
       Sflag = stm_attach( p$storage.backend, p$ptr$Sflag )
       Sflag[toredo]=0L
-      p$stm_local_modelengine = "tps"  
+      p$stm_local_modelengine = "tps"
       p = aegis_parameters( p=p, DS="bathymetry" )
       p = make.list( list( locs=sample( toredo )) , Y=p ) # random order helps use all cpus
       p <<- p  # push to parent in case a manual restart is possible
@@ -662,4 +667,3 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
 
   invisible()
 }
-
