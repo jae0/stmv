@@ -192,18 +192,12 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
     res =NULL
     res = try( switch( p$stm_local_modelengine,
       bayesx = stm__bayesx( p, dat, pa ),
-      habitat = stm__habitat( p, dat, pa ), # TODO
+      gaussianprocess2Dt = stm__gaussianprocess2Dt( p, dat, pa ),
       inla = stm__inla( p, dat, pa ),
       gam = stm__gam( p, dat, pa ),
-      gaussianprocess2Dt = stm__gaussianprocess2Dt( p, dat, pa ),
-      gaussianprocess = stm__gaussianprocess( p, dat, pa ),  # TODO
       glm = stm__glm( p, dat, pa),
       gstat = stm__gstat( p, dat, pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ),
       krige = stm__krige( p, dat, pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ),
-      LaplacesDemon = stm__LaplacesDemon( p, dat, pa ),
-      stan = stm__stan( p, dat, pa, stanmodel=p$stanmodel ),  ## todo
-      splancs = stm__splancs( p, dat, pa ), # TODO
-      spate = stm__spate( p, dat, pa, sloc=Sloc[Si,], distance=stm_distance_cur, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial),
       fft = stm__fft( p, dat, pa, nu=nu, phi=phi ),
       tps = stm__tps( p, dat, pa, lambda=varObs/varSpatial ),
       twostep = stm__twostep( p, dat, pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ),

@@ -5,11 +5,6 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
   #\\ localized modelling of space and time data to predict/interpolate upon a grid
   #\\ speed ratings: bigmemory.ram (1), ff (2), bigmemory.filebacked (3)
 
-  # TODO: splancs::kernel3d as a method ? .. for count data?
-  # TODO: gaussian process // see stm_interpolate_xy_simple
-  #       .. the convoSPAT seems almost fast enough
-  # TODO: MBA mba.surf method? ... seems very fast
-
       p$savedir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
       if ( !file.exists(p$savedir)) dir.create( p$savedir, recursive=TRUE, showWarnings=FALSE )
       message( " ")
@@ -32,21 +27,11 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
       if (exists("stm_local_modelengine", p)) {
         if (p$stm_local_modelengine=="bayesx")  p$libs = c( p$libs, "R2BayesX" )
         if (p$stm_local_modelengine %in% c("gam", "mgcv", "habitat") )  p$libs = c( p$libs, "mgcv" )
-        if (p$stm_local_modelengine %in% c("LaplacesDemon") )  p$libs = c( p$libs, "LaplacesDemonCpp" )
         if (p$stm_local_modelengine %in% c("inla") )  p$libs = c( p$libs, "INLA" )
         if (p$stm_local_modelengine %in% c("fft", "gaussianprocess2Dt") )  p$libs = c( p$libs, "fields" )
-        if (p$stm_local_modelengine %in% c("gaussianprocess") )  p$libs = c( p$libs  )
-        if (p$stm_local_modelengine %in% c("splancs") )  p$libs = c( p$libs, "splancs" )
         if (p$stm_local_modelengine %in% c("twostep") )  p$libs = c( p$libs, "mgcv", "fields" )
         if (p$stm_local_modelengine %in% c("krige") ) p$libs = c( p$libs, "fields" )
         if (p$stm_local_modelengine %in% c("gstat") ) p$libs = c( p$libs, "gstat" )
-        if (p$stm_local_modelengine %in% c("stan") ) p$libs = c( p$libs, "rstan" )
-        # if (p$stm_local_modelengine %in% c("spate") )  p$libs = c( p$libs, "spate" ) # now copied directly into stm
-
-        if (p$stm_local_modelengine %in% c("stan", "gaussianprocess")) {
-          message( "Precompiling stan program ... ")
-          p$stanmodel = gaussian_process_stanmodel()  # precompile outside of the loop to speed the rest
-        }
       }
 
       if (exists("stm_global_modelengine", p)) {
@@ -122,12 +107,6 @@ stm = function( p, runmode="default", DATA=NULL, storage.backend="bigmemory.ram"
 
         # require knowledge of size of stats output before create S, which varies with a given type of analysis
         othervars = c( )
-        if (exists("stm_local_modelengine", p)) {
-          if (p$stm_local_modelengine == "habitat") othervars = c( )
-          if (p$stm_local_modelengine == "spate") othervars = c(
-            "rho_0",  "zeta", "rho_1", "gamma", "alpha", "mu_x", "mu_y", "sigma^2", "tau^2",
-            "rho_0.sd", "zeta.sd", "rho_1.sd", "gamma.sd", "alpha.sd", "mu_x.sd", "mu_y.sd" )
-        }
         if (exists("TIME", p$variables) )  othervars = c( "ar_timerange", "ar_1" )
         p$statsvars = unique( c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "range", "phi", "nu", othervars ) )
 

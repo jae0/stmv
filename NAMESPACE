@@ -1,5 +1,4 @@
-useDynLib(stm)
 exportPattern("^[[:alpha:]]+")
 import("mvtnorm")
 import("truncnorm")
-import(parallel, Rcpp, RcppZiggurat)
+import(parallel)

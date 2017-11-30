@@ -1,44 +1,36 @@
 Package: stm
-Title: Ecological model estimation and inference   
+Title: Spatiotemporal modelling
 Version: 0.1
-Authors@R: c( person("Jae", "Choi", email="choijaeseok@gmail.com", role=c("aut", "cre")) ) 
-Description: Ecosystem models using constrained kernel-based approximations to estimate and develop statistical inference of space-time hierarchical models. This package interacts with other em* projects.
-Depends: R (>= 3.0.0), 
-  mvtnorm, 
+Authors@R: c( person("Jae", "Choi", email="choijaeseok@gmail.com", role=c("aut", "cre")) )
+Description: Spatio-temporal models using constrained kernel-based approximations to estimate and develop statistical inference of space-time hierarchical models. This package interacts with other aegis* projects.
+Depends: R (>= 3.0.0),
+  mvtnorm,
   truncnorm
-Imports: 
+Imports:
   lubridate,
   alphahull,
   parallel,
-  Rcpp, 
-  RcppZiggurat,
-  RcppArmadillo,
-  inline,
   sp,
   mgcv,
   lattice,
+  geoR,
   gstat,
   fields,
   RandomFields,
-  parallel, 
+  RandomFieldsUtils,
+  parallel,
   bigmemory,
   devtools,
-  aegis.env 
-Suggests: 
+  aegis,
+  aegis.env
+Suggests:
   INLA,
   knitr,
   biglm,
   rmarkdown
-LinkingTo: 
-  Rcpp, 
-  RcppZiggurat,
-  RcppArmadillo
-NeedsCompilation: yes
-SystemRequirements: fftw3 (>= 3.1.2)
+NeedsCompilation: no
 ByteCompile: TRUE
 VignetteBuilder: knitr
 License: MIT
 LazyData: true
 URL: https://github.com/jae0/stm/
-
-

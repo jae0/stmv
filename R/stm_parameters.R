@@ -1,8 +1,14 @@
 
 
-stm_parameters = function( p=NULL  ) {
-  # some generic defaults
-  if (is.null(p)) stop( "Parameter list is not structured properly" )
+stm_parameters = function( p=NULL, ... ) {
+
+  # ---------------------
+  # deal with additional passed parameters
+  if ( is.null(p) ) p=list()
+  p_add = list(...)
+  if (length(p_add) > 0 ) p = c(p, p_add)
+  i = which(duplicated(names(p), fromLast=TRUE))
+  if ( length(i) > 0 ) p = p[-i] # give any passed parameters a higher priority, overwriting pre-existing variable
 
   if (!exists("stm_current_status", p))  p$stm_current_status = file.path( p$savedir, "stm_current_status" )
 
@@ -19,7 +25,7 @@ stm_parameters = function( p=NULL  ) {
   if (!exists( "stm_multiplier_stage2", p) ) p$stm_multiplier_stage2 = c( 1.1, 1.25 ) # distance multiplier for stage 2 interpolations
 
   # used by "fields" GRMF functions
-  if ( p$stm_local_modelengine %in% c("gaussianprocess2Dt", "gaussianprocess" )) {
+  if ( p$stm_local_modelengine %in% c("gaussianprocess2Dt")) {
     if (!exists("phi.grid", p) ) p$phi.grid = 10^seq( -6, 6, by=0.5) * p$stm_distance_scale # maxdist is aprox magnitude of the phi parameter
     if (!exists("lambda.grid", p) ) p$lambda.grid = 10^seq( -9, 3, by=0.5) # ratio of tau sq to sigma sq
   }
@@ -34,15 +40,6 @@ stm_parameters = function( p=NULL  ) {
      # nothing to add yet ..
   }
 
-  if ( p$stm_local_modelengine %in% c("spate")) {
-    if (!exists( "stm_spate_method", p)) p$stm_spate_method = "mcmc_fast"  # "mcmc" is too slow for temperature
-    if (!exists( "stm_spate_boost_timeseries", p)) p$stm_spate_boost_timeseries = TRUE 
-    if (!exists( "stm_spate_nburnin", p)) p$stm_spate_nburnin =1000
-    if (!exists( "stm_spate_nposteriors", p)) p$stm_spate_nposteriors = 4000
-    if (!exists( "stm_spate_nCovUpdates", p)) p$stm_spate_nCovUpdates = 20 # no of times to update cov matrix during simulations
-  }
 
   return(p)
 }
-
-

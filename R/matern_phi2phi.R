@@ -8,7 +8,7 @@ matern_phi2phi = function( mRange, mSmooth, parameterization_input="stm", parame
   #\\   where K_{nu} is the Bessel function with smooth nu and phi is known as the range parameter  
   # -------------------------
 
-  need.more.testing = c("geostatsp", "spate") 
+  need.more.testing = c("geostatsp") 
   of = grepl(parameterization_input, need.more.testing)
   ot = grepl(parameterization_output, need.more.testing)
   oo = of | ot
