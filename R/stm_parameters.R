@@ -24,6 +24,11 @@ stm_parameters = function( p=NULL, ... ) {
   if (!exists( "stm_kernelmethods_use_all_data", p)) p$stm_kernelmethods_use_all_data =TRUE ## speed and RAM usage improvement is minimal (if any) when off, leave on or remove option and fix as on
   if (!exists( "stm_multiplier_stage2", p) ) p$stm_multiplier_stage2 = c( 1.1, 1.25 ) # distance multiplier for stage 2 interpolations
 
+  if ( !exists("sampling", p))  {
+    # fractions of distance scale  to try in local block search
+    p$sampling = c( 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.1, 1.2, 1.5, 1.75, 2 )
+  }
+
   # used by "fields" GRMF functions
   if ( p$stm_local_modelengine %in% c("gaussianprocess2Dt")) {
     if (!exists("phi.grid", p) ) p$phi.grid = 10^seq( -6, 6, by=0.5) * p$stm_distance_scale # maxdist is aprox magnitude of the phi parameter
