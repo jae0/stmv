@@ -47,7 +47,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
   suppressMessages( RLibrary( p$libs ) )
 
   # -----------------------------------------------------
-  if ( "intialize" %in% runmode ) {
+  if ( "initialize" %in% runmode ) {
     message( "||| Initializing data files ... " )
 
     p$stm_current_status = file.path( p$stmSaveDir, "stm_current_status" )
