@@ -49,7 +49,8 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
   # -----------------------------------------------------
   if ( "initialize" %in% runmode ) {
     message( "||| Initializing data files ... " )
-
+    p$time.start = Sys.time()
+    
     p$stm_current_status = file.path( p$stmSaveDir, "stm_current_status" )
     p = stm_parameters(p=p) # fill in parameters with defaults where possible
     p = stm_db( p=p, DS="filenames" )
