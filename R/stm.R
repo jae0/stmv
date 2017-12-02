@@ -5,7 +5,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
   #\\ localized modelling of space and time data to predict/interpolate upon a grid
   #\\ speed ratings: bigmemory.ram (1), ff (2), bigmemory.filebacked (3)
 
-  if (length(setdiff( c("initialize", "globalmodel", "stage1", "stage2", "stage3", "save"), runmode)) > 0) {
+  if (length(setdiff( c("initialize", "globalmodel", "stage1", "stage2", "stage3", "save"), runmode)) == 6) {
     stop("runmode must be one or more of: initialize, globalmodel, stage1, stage2, stage3, save ")
   }
 
@@ -607,7 +607,6 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
     message( "||| Saving statistics to disk .. " )
     stm_db( p=p, DS="stats.to.prediction.grid.redo") # save to disk for use outside stm*
     message ("||| Finished! ")
-
     stm_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
 
     if ( p$storage.backend !="bigmemory.ram" ) {
