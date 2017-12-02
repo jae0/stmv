@@ -5,8 +5,8 @@
     #// B is the xyz or xytz data or the function to get the data to work upon
 
     # --------------------------
-    if (!exists("savedir", p)) {
-      p$savedir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
+    if (!exists("stmSaveDir", p)) {
+      p$stmSaveDir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
     }
 
     if (DS %in% "filenames" ) {
@@ -66,14 +66,14 @@
     # --------------------------
 
     if (DS=="save.parameters")  {
-      fns = file.path( p$savedir, "p.rdata" )
+      fns = file.path( p$stmSaveDir, "p.rdata" )
       save( p, file=fns )
       message( "||| Saved parameters to file:")
       message( fns )
     }
 
     if (DS=="load.parameters")  {
-      fns = file.path( p$savedir, "p.rdata" )
+      fns = file.path( p$stmSaveDir, "p.rdata" )
       if (file.exists( fns)) load( fns )
       return(p)
     }
@@ -248,7 +248,7 @@
 
     if (DS %in% c( "boundary.redo", "boundary" ) )  {
 
-      fn =  file.path(p$savedir, "boundary.rdata" )
+      fn =  file.path(p$stmSaveDir, "boundary.rdata" )
       if (DS=="boundary") {
         boundary = NULL
         if( file.exists(fn)) load( fn)
@@ -303,7 +303,7 @@
 
     if (DS %in% c("global_model", "global_model.redo") ) {
 
-      fn.global_model = file.path( p$savedir, paste( "global_model", p$stm_global_modelengine, "rdata", sep=".") )
+      fn.global_model = file.path( p$stmSaveDir, paste( "global_model", p$stm_global_modelengine, "rdata", sep=".") )
 
       if (DS =="global_model") {
         global_model = NULL
@@ -367,7 +367,7 @@
         } else {
           global_model = try(
             gam( formula=p$stm_global_modelformula, data=B, optimizer=c("outer","bfgs"), family=p$stm_global_family, weights=wt ) )
-        } 
+        }
       }
 
       if (p$stm_global_modelengine=="bayesx") {
@@ -379,7 +379,7 @@
       if ( "try-error" %in% class(global_model) ) stop( "The covariate model was problematic" )
       print( summary( global_model ) )
       global_model$model= NULL # drop large data matrices
-       
+
       save( global_model, file= fn.global_model, compress=TRUE )
 
       return (fn.global_model)
@@ -457,6 +457,8 @@
           # }
           # Pbaseline = NULL; gc()
 
+        } else if (p$stm_global_modelengine =="none") {
+          # nothing to do
         } else  {
           stop ("This global model method requires a bit more work .. ")
         }
@@ -486,9 +488,9 @@
 
       if (DS=="stm.prediction") {
         if (! exists("TIME", p$variables)) {
-          fn = file.path( p$savedir, paste("stm.prediction",  ret, "rdata", sep="." ) )
+          fn = file.path( p$stmSaveDir, paste("stm.prediction",  ret, "rdata", sep="." ) )
         } else {
-          fn = file.path( p$savedir, paste("stm.prediction",  ret, yr, "rdata", sep="." ) )
+          fn = file.path( p$stmSaveDir, paste("stm.prediction",  ret, yr, "rdata", sep="." ) )
         }
         if (file.exists(fn) ) load(fn)
         if (ret=="mean") return (P)
@@ -500,8 +502,10 @@
       PP = stm_attach( p$storage.backend, p$ptr$P )
       PPsd = stm_attach( p$storage.backend, p$ptr$Psd )
       if (exists("stm_global_modelengine", p)) {
-        P0 = stm_attach( p$storage.backend, p$ptr$P0 )
-        P0sd = stm_attach( p$storage.backend, p$ptr$P0sd )
+        if (p$stm_global_modelengine !="none" ) {
+          P0 = stm_attach( p$storage.backend, p$ptr$P0 )
+          P0sd = stm_attach( p$storage.backend, p$ptr$P0sd )
+        }
       }
 
       shallower = NULL
@@ -518,9 +522,9 @@
         # outputs are on yearly breakdown
         for ( r in 1:p$ny ) {
           y = p$yrs[r]
-          fn_P = file.path( p$savedir, paste("stm.prediction", "mean", y, "rdata", sep="." ) )
-          fn_Pl = file.path( p$savedir, paste("stm.prediction", "lb",   y, "rdata", sep="." ) )
-          fn_Pu = file.path( p$savedir, paste("stm.prediction", "ub",   y, "rdata", sep="." ) )
+          fn_P = file.path( p$stmSaveDir, paste("stm.prediction", "mean", y, "rdata", sep="." ) )
+          fn_Pl = file.path( p$stmSaveDir, paste("stm.prediction", "lb",   y, "rdata", sep="." ) )
+          fn_Pu = file.path( p$stmSaveDir, paste("stm.prediction", "ub",   y, "rdata", sep="." ) )
           vv = ncol(PP)
           if ( vv > p$ny ) {
             col.ranges = (r-1) * p$nw + (1:p$nw)
@@ -533,13 +537,15 @@
 
 
           if (exists("stm_global_modelengine", p) ) {
-            ## maybe add via simulation ? ...
-            uu = which(!is.finite(P[]))
-            if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
-            P = P[] + P0[,r]
-            vv = which(!is.finite(V[]))
-            if (length(vv)>0) V[vv] = 0 # permit covariate-base predictions to pass through ..
-            V = sqrt( V[]^2 + P0sd[,r]^2) # simple additive independent errors assumed
+            if (p$stm_global_modelengine !="none" ) {
+              ## maybe add via simulation ? ...
+              uu = which(!is.finite(P[]))
+              if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
+              P = P[] + P0[,r]
+              vv = which(!is.finite(V[]))
+              if (length(vv)>0) V[vv] = 0 # permit covariate-base predictions to pass through ..
+              V = sqrt( V[]^2 + P0sd[,r]^2) # simple additive independent errors assumed
+            }
           }
 
           if ( !is.null(shallower) ){
@@ -569,19 +575,21 @@
           print ( paste("Year:", y)  )
         }
       } else {
-          fn_P = file.path( p$savedir, paste("stm.prediction", "mean", "rdata", sep="." ) )
-          fn_Pl = file.path( p$savedir, paste("stm.prediction", "lb", "rdata", sep="." ) )
-          fn_Pu = file.path( p$savedir, paste("stm.prediction", "ub", "rdata", sep="." ) )
+          fn_P = file.path( p$stmSaveDir, paste("stm.prediction", "mean", "rdata", sep="." ) )
+          fn_Pl = file.path( p$stmSaveDir, paste("stm.prediction", "lb", "rdata", sep="." ) )
+          fn_Pu = file.path( p$stmSaveDir, paste("stm.prediction", "ub", "rdata", sep="." ) )
 
           P = PP[]
           V = PPsd[]
           if (exists("stm_global_modelengine", p) ) {
-            uu = which(!is.finite(P[]))
-            if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
-            P = P[] + P0[]
-            vv = which(!is.finite(V[]))
-            if (length(vv)>0) V[vv] = 0 # permit covariate-base predictions to pass through ..
-            V = sqrt( V[]^2 + P0sd[]^2) # simple additive independent errors assumed
+            if (p$stm_global_modelengine !="none" ) {
+              uu = which(!is.finite(P[]))
+              if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
+              P = P[] + P0[]
+              vv = which(!is.finite(V[]))
+              if (length(vv)>0) V[vv] = 0 # permit covariate-base predictions to pass through ..
+              V = sqrt( V[]^2 + P0sd[]^2) # simple additive independent errors assumed
+            }
           }
           if ( !is.null(shallower) ){
             P[shallower,] = NA
@@ -615,7 +623,7 @@
 
       # TODO:: parallelize this
 
-      fn = file.path( p$savedir, paste( "stm.statistics", "rdata", sep=".") )
+      fn = file.path( p$stmSaveDir, paste( "stm.statistics", "rdata", sep=".") )
       if (DS=="stats.to.prediction.grid") {
         stats = NULL
         if (file.exists(fn)) load(fn)
@@ -702,5 +710,3 @@
     }
 
   }
-
-

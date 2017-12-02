@@ -1,8 +1,7 @@
 # stm
 
-Spatiotemporal models in a lattice-based approach -- Simple divide and conquer space-time modelling and prediction problems via a local space-time operator/filter.
+Core functions and the data architecture required for prediction and inference of spatiotemporal models: kernal-based lattice models that divide and conquer large space-time modelling and prediction problems. A local space-time operator/filter is used with a global covariate model. It is therefore, an hierarchical model.
 
 ```
-require( devtools ) # or install.packages( "devtools", dependencies=TRUE )
-install_github( "jae0/stm" )
+devtools::install_github( "jae0/stm" )
 ```

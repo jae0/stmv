@@ -9,11 +9,11 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
     stop("runmode must be one or more of: initialize, globalmodel, stage1, stage2, stage3, save ")
   }
 
-  p$savedir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
-  if ( !file.exists(p$savedir)) dir.create( p$savedir, recursive=TRUE, showWarnings=FALSE )
+  if (!exists("stmSaveDir", p)) p$stmSaveDir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
+  if ( !file.exists(p$stmSaveDir)) dir.create( p$stmSaveDir, recursive=TRUE, showWarnings=FALSE )
   message( " ")
   message( "||| In case something should go wrong, intermediary outputs will be placed at:" )
-  message( "|||",  p$savedir  )
+  message( "|||",  p$stmSaveDir  )
   message( " ")
 
   # determine storage format
@@ -50,7 +50,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
   if ( "intialize" %in% runmode ) {
     message( "||| Initializing data files ... " )
 
-    p$stm_current_status = file.path( p$savedir, "stm_current_status" )
+    p$stm_current_status = file.path( p$stmSaveDir, "stm_current_status" )
     p = stm_parameters(p=p) # fill in parameters with defaults where possible
     p = stm_db( p=p, DS="filenames" )
     p$ptr = list() # location for data pointers
@@ -73,15 +73,22 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
     # permit passing a function rather than data directly .. less RAM usage in parent call
     if (is.null(DATA) ) {
       if (exists("DATA", p)) {
-        if (class(p$DATA)=="character") assign("DATA", eval(parse(text=p$DATA) ) )
+        if (class(p$DATA)=="character") {
+          assign("DATA", eval(parse(text=p$DATA) ) )
+        } else {
+          DATA = p$DATA
+        }
       }
     } else {
-      if (class(DATA)=="character") assign("DATA", eval(parse(text=DATA) ) )
+      if (class(DATA)=="character") {
+        assign("DATA", eval(parse(text=DATA) ) )
+      } else {
+        # nothing to do as we assume DATA is a list
+      }
     }
 
-    if (is.null(DATA)) {
-      stop( "||| something went wrong with DATA inputs ... ")
-    }
+    if (is.null(DATA)) stop( "||| something went wrong with DATA inputs ... ")
+    if (class(DATA) != "list") stop( "||| DATA should a list ... ")
 
     testvars = c(p$variables$Y, p$variables$COV, p$variables$TIME, p$variables$LOC)
     withdata = which(is.finite( (rowSums(DATA$input[, testvars] )) ) )
@@ -148,7 +155,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
       }
       if (p$storage.backend == "bigmemory.filebacked" ) {
         p$ptr$Sloc  = p$cache$Sloc
-        bigmemory::as.big.matrix( Sloc, type="double", backingfile=basename(p$bm$Sloc), descriptorfile=basename(p$cache$Sloc), backingpath=p$savedir )
+        bigmemory::as.big.matrix( Sloc, type="double", backingfile=basename(p$bm$Sloc), descriptorfile=basename(p$cache$Sloc), backingpath=p$stmSaveDir )
       }
       if (p$storage.backend == "ff" ) {
         p$ptr$Sloc = ff( Sloc, dim=dim(Sloc), file=p$cache$Sloc, overwrite=TRUE )
@@ -163,7 +170,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
       }
       if (p$storage.backend == "bigmemory.filebacked" ) {
         p$ptr$S  = p$cache$S
-        bigmemory::as.big.matrix( S, type="double", backingfile=basename(p$bm$S), descriptorfile=basename(p$cache$S), backingpath=p$savedir )
+        bigmemory::as.big.matrix( S, type="double", backingfile=basename(p$bm$S), descriptorfile=basename(p$cache$S), backingpath=p$stmSaveDir )
       }
       if (p$storage.backend == "ff" ) {
         p$ptr$S = ff( S, dim=dim(S), file=p$cache$S, overwrite=TRUE )
@@ -177,7 +184,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
       }
       if (p$storage.backend == "bigmemory.filebacked" ) {
         p$ptr$Sflag  = p$cache$Sflag
-        bigmemory::as.big.matrix( Sflag, type="double", backingfile=basename(p$bm$Sflag), descriptorfile=basename(p$cache$Sflag), backingpath=p$savedir )
+        bigmemory::as.big.matrix( Sflag, type="double", backingfile=basename(p$bm$Sflag), descriptorfile=basename(p$cache$Sflag), backingpath=p$stmSaveDir )
       }
       if (p$storage.backend == "ff" ) {
         p$ptr$Sflag = ff( Sflag, dim=dim(Sflag), file=p$cache$Sflag, overwrite=TRUE )
@@ -203,7 +210,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
       }
       if (p$storage.backend == "bigmemory.filebacked" ) {
         p$ptr$Y  = p$cache$Y
-        bigmemory::as.big.matrix( Ydata, type="double", backingfile=basename(p$bm$Y), descriptorfile=basename(p$cache$Y), backingpath=p$savedir )
+        bigmemory::as.big.matrix( Ydata, type="double", backingfile=basename(p$bm$Y), descriptorfile=basename(p$cache$Y), backingpath=p$stmSaveDir )
       }
       if (p$storage.backend == "ff" ) {
         p$ptr$Y = ff( Ydata, dim=dim(Ydata), file=p$cache$Y, overwrite=TRUE )
@@ -221,7 +228,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
       }
       if (p$storage.backend == "bigmemory.filebacked" ) {
         p$ptr$Yloc  = p$cache$Yloc
-        bigmemory::as.big.matrix( Yloc, type="double", backingfile=basename(p$bm$Yloc), descriptorfile=basename(p$cache$Yloc), backingpath=p$savedir )
+        bigmemory::as.big.matrix( Yloc, type="double", backingfile=basename(p$bm$Yloc), descriptorfile=basename(p$cache$Yloc), backingpath=p$stmSaveDir )
       }
       if (p$storage.backend == "ff" ) {
         p$ptr$Yloc = ff( Yloc, dim=dim(Yloc), file=p$cache$Yloc, overwrite=TRUE )
@@ -238,7 +245,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
         }
         if (p$storage.backend == "bigmemory.filebacked" ) {
           p$ptr$Ycov  = p$cache$Ycov
-          bigmemory::as.big.matrix( Ycov, type="double", backingfile=basename(p$bm$Ycov), descriptorfile=basename(p$cache$Ycov), backingpath=p$savedir )
+          bigmemory::as.big.matrix( Ycov, type="double", backingfile=basename(p$bm$Ycov), descriptorfile=basename(p$cache$Ycov), backingpath=p$stmSaveDir )
         }
         if (p$storage.backend == "ff" ) {
           p$ptr$Ycov = ff( Ycov, dim=dim(Ycov), file=p$cache$Ycov, overwrite=TRUE )
@@ -256,7 +263,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
         }
         if (p$storage.backend == "bigmemory.filebacked" ) {
           p$ptr$Ytime  = p$cache$Ytime
-          bigmemory::as.big.matrix( Ytime, type="double", backingfile=basename(p$bm$Ytime), descriptorfile=basename(p$cache$Ytime), backingpath=p$savedir )
+          bigmemory::as.big.matrix( Ytime, type="double", backingfile=basename(p$bm$Ytime), descriptorfile=basename(p$cache$Ytime), backingpath=p$stmSaveDir )
         }
         if (p$storage.backend == "ff" ) {
           p$ptr$Ytime = ff( Ytime, dim=dim(Ytime), file=p$cache$Ytime, overwrite=TRUE )
@@ -278,7 +285,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
         }
         if (p$storage.backend == "bigmemory.filebacked" ) {
           p$ptr$Pcov[[covname]]  = p$cache$Pcov[[covname]]
-          bigmemory::as.big.matrix( Pcovdata, type="double", backingfile=basename(p$bm$Pcov[[covname]]), descriptorfile=basename(p$cache$Pcov[[covname]]), backingpath=p$savedir )
+          bigmemory::as.big.matrix( Pcovdata, type="double", backingfile=basename(p$bm$Pcov[[covname]]), descriptorfile=basename(p$cache$Pcov[[covname]]), backingpath=p$stmSaveDir )
         }
         if (p$storage.backend == "ff" ) {
           p$ptr$Pcov[[covname]] = ff( Pcovdata, dim=dim(Pcovdata), file=p$cache$Pcov[[covname]], overwrite=TRUE )
@@ -297,7 +304,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
       }
       if (p$storage.backend == "bigmemory.filebacked" ) {
         p$ptr$P  = p$cache$P
-        bigmemory::as.big.matrix( P, type="double", backingfile=basename(p$bm$P), descriptorfile=basename(p$cache$P), backingpath=p$savedir )
+        bigmemory::as.big.matrix( P, type="double", backingfile=basename(p$bm$P), descriptorfile=basename(p$cache$P), backingpath=p$stmSaveDir )
       }
       if (p$storage.backend == "ff" ) {
         p$ptr$P = ff( P, dim=dim(P), file=p$cache$P, overwrite=TRUE )
@@ -311,7 +318,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
       }
       if (p$storage.backend == "bigmemory.filebacked" ) {
         p$ptr$Pn  = p$cache$Pn
-        bigmemory::as.big.matrix( P, type="double", backingfile=basename(p$bm$Pn), descriptorfile=basename(p$cache$Pn), backingpath=p$savedir )
+        bigmemory::as.big.matrix( P, type="double", backingfile=basename(p$bm$Pn), descriptorfile=basename(p$cache$Pn), backingpath=p$stmSaveDir )
       }
       if (p$storage.backend == "ff" ) {
         p$ptr$Pn = ff( P, dim=dim(P), file=p$cache$Pn, overwrite=TRUE )
@@ -325,7 +332,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
       }
       if (p$storage.backend == "bigmemory.filebacked" ) {
         p$ptr$Psd  = p$cache$Psd
-        bigmemory::as.big.matrix( P, type="double", backingfile=basename(p$bm$Psd), descriptorfile=basename(p$cache$Psd), backingpath=p$savedir )
+        bigmemory::as.big.matrix( P, type="double", backingfile=basename(p$bm$Psd), descriptorfile=basename(p$cache$Psd), backingpath=p$stmSaveDir )
       }
       if (p$storage.backend == "ff" ) {
         p$ptr$Psd = ff( P, dim=dim(P), file=p$cache$Psd, overwrite=TRUE )
@@ -341,7 +348,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
       }
       if (p$storage.backend == "bigmemory.filebacked" ) {
         p$ptr$Ploc  = p$cache$Ploc
-        bigmemory::as.big.matrix( Ploc, type="double", backingfile=basename(p$bm$Ploc), descriptorfile=basename(p$cache$Ploc), backingpath=p$savedir )
+        bigmemory::as.big.matrix( Ploc, type="double", backingfile=basename(p$bm$Ploc), descriptorfile=basename(p$cache$Ploc), backingpath=p$stmSaveDir )
       }
       if (p$storage.backend == "ff" ) {
         p$ptr$Ploc = ff( Ploc, dim=dim(Ploc), file=p$cache$Ploc, overwrite=TRUE )
@@ -358,7 +365,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
         }
         if (p$storage.backend == "bigmemory.filebacked" ) {
           p$ptr$P0  = p$cache$P0
-          bigmemory::as.big.matrix( P, type="double", backingfile=basename(p$bm$P0), descriptorfile=basename(p$cache$P0), backingpath=p$savedir )
+          bigmemory::as.big.matrix( P, type="double", backingfile=basename(p$bm$P0), descriptorfile=basename(p$cache$P0), backingpath=p$stmSaveDir )
         }
         if (p$storage.backend == "ff" ) {
           p$ptr$P0 = ff( P, dim=dim(P), file=p$cache$P0, overwrite=TRUE )
@@ -371,7 +378,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
         }
         if (p$storage.backend == "bigmemory.filebacked" ) {
           p$ptr$P0sd  = p$cache$P0sd
-          bigmemory::as.big.matrix( P, type="double", backingfile=basename(p$bm$P0sd), descriptorfile=basename(p$cache$P0sd), backingpath=p$savedir )
+          bigmemory::as.big.matrix( P, type="double", backingfile=basename(p$bm$P0sd), descriptorfile=basename(p$cache$P0sd), backingpath=p$stmSaveDir )
         }
         if (p$storage.backend == "ff" ) {
           p$ptr$P0sd = ff( P, dim=dim(P), file=p$cache$P0sd, overwrite=TRUE )
@@ -440,7 +447,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
       }
       if (p$storage.backend == "bigmemory.filebacked" ) {
         p$ptr$Yi  = p$cache$Yi
-        bigmemory::as.big.matrix( Yi, type="double", backingfile=basename(p$bm$Yi), descriptorfile=basename(p$cache$Yi), backingpath=p$savedir )
+        bigmemory::as.big.matrix( Yi, type="double", backingfile=basename(p$bm$Yi), descriptorfile=basename(p$cache$Yi), backingpath=p$stmSaveDir )
       }
       if (p$storage.backend == "ff" ) {
         p$ptr$Yi = ff( Yi, dim=dim(Yi), file=p$cache$Yi, overwrite=TRUE )
@@ -464,7 +471,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
 
     if (!exists("time.start", p) ) p$time.start = Sys.time()
     message( "||| Continuing from an interrupted start" )
-    message( "|||  with parameters from saved configuration:", file.path( p$savedir, 'p.rdata' ) )
+    message( "|||  with parameters from saved configuration:", file.path( p$stmSaveDir, 'p.rdata' ) )
     p = stm_db( p=p, DS="load.parameters" )
     stm_db(p=p, DS="statistics.status.reset" )
 
@@ -594,17 +601,14 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
 
   # -----------------------------------------------------
   if ( "save" %in% runmode ) {
+    message(" ")
+    message( "||| Saving predictions to disk .. " )
+    stm_db( p=p, DS="stm.prediction.redo" ) # save to disk for use outside stm*, returning to user scale
+    message( "||| Saving statistics to disk .. " )
+    stm_db( p=p, DS="stats.to.prediction.grid.redo") # save to disk for use outside stm*
+    message ("||| Finished! ")
+
     stm_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
-    resp = readline( "||| Save predictions and statistics, overwriting previous results? If you are sure type <YES>:  ")
-    if (resp=="YES") {
-      # save solutions to disk (again .. overwrite)
-      message(" ")
-      message( "||| Saving predictions to disk .. " )
-      stm_db( p=p, DS="stm.prediction.redo" ) # save to disk for use outside stm*, returning to user scale
-      message( "||| Saving statistics to disk .. " )
-      stm_db( p=p, DS="stats.to.prediction.grid.redo") # save to disk for use outside stm*
-      message ("||| Finished! ")
-    }
 
     if ( p$storage.backend !="bigmemory.ram" ) {
       resp = readline( "||| Delete temporary files? Type to confirm <YES>:  ")

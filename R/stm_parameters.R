@@ -10,7 +10,7 @@ stm_parameters = function( p=NULL, ... ) {
   i = which(duplicated(names(p), fromLast=TRUE))
   if ( length(i) > 0 ) p = p[-i] # give any passed parameters a higher priority, overwriting pre-existing variable
 
-  if (!exists("stm_current_status", p))  p$stm_current_status = file.path( p$savedir, "stm_current_status" )
+  if (!exists("stm_current_status", p))  p$stm_current_status = file.path( p$stmSaveDir, "stm_current_status" )
 
   if (!exists("clusters", p)) p$clusters = rep("localhost", detectCores() )  # default if not given
   if( !exists( "storage.backend", p))  p$storage.backend="bigmemory.ram"
