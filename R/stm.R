@@ -5,10 +5,6 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
   #\\ localized modelling of space and time data to predict/interpolate upon a grid
   #\\ speed ratings: bigmemory.ram (1), ff (2), bigmemory.filebacked (3)
 
-  if (length(setdiff( c("initialize", "globalmodel", "stage1", "stage2", "stage3", "save"), runmode)) == 6) {
-    stop("runmode must be one or more of: initialize, globalmodel, stage1, stage2, stage3, save ")
-  }
-
   if (!exists("stmSaveDir", p)) p$stmSaveDir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
   if ( !file.exists(p$stmSaveDir)) dir.create( p$stmSaveDir, recursive=TRUE, showWarnings=FALSE )
   message( " ")
