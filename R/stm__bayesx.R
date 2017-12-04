@@ -1,10 +1,11 @@
 
-stm__bayesx = function( p, dat, pa ) {
+stm__bayesx = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE ) {
   #\\ this is the core engine of stm .. localised space-time modelling interpolation and prediction .. using bayesx 
    
   # EG: see: bayesx.term.options( bs="kr", method="REML" )  
   #  logzinc ~  sx( x,y, nu=1.5, bs="kr")  # "kr" is perhaps overly smooth  ..  ie guassian process  .. kriging
   #  logzinc ~  sx( x,y, bs="te")  # more detail .. "te" is preferred
+  if (variablelist)  return( c() )
 
   sdTotal=sd(dat[,p$variable$Y], na.rm=T)
 

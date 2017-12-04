@@ -4,49 +4,13 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
 
   #\\ localized modelling of space and time data to predict/interpolate upon a grid
   #\\ speed ratings: bigmemory.ram (1), ff (2), bigmemory.filebacked (3)
-
-  if (!exists("stmSaveDir", p)) p$stmSaveDir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
-  if ( !file.exists(p$stmSaveDir)) dir.create( p$stmSaveDir, recursive=TRUE, showWarnings=FALSE )
-  message( " ")
-  message( "||| In case something should go wrong, intermediary outputs will be placed at:" )
-  message( "|||",  p$stmSaveDir  )
-  message( " ")
-
-  # determine storage format
-  p$libs = unique( c( p$libs, "sp", "rgdal", "parallel", "RandomFields", "geoR" ) )
-  if (!exists("storage.backend", p)) p$storage.backend = storage.backend
-  if (any( grepl ("ff", p$storage.backend)))         p$libs = c( p$libs, "ff", "ffbase" )
-  if (any( grepl ("bigmemory", p$storage.backend)))  p$libs = c( p$libs, "bigmemory" )
-  if (p$storage.backend=="bigmemory.ram") {
-    if ( length( unique(p$clusters)) > 1 ) {
-      stop( "||| More than one unique cluster server was specified .. the bigmemory RAM-based method only works within one server." )
-    }
-  }
-
-  # other libs
-  if (exists("stm_local_modelengine", p)) {
-    if (p$stm_local_modelengine=="bayesx")  p$libs = c( p$libs, "R2BayesX" )
-    if (p$stm_local_modelengine %in% c("gam", "mgcv", "habitat") )  p$libs = c( p$libs, "mgcv" )
-    if (p$stm_local_modelengine %in% c("inla") )  p$libs = c( p$libs, "INLA" )
-    if (p$stm_local_modelengine %in% c("fft", "gaussianprocess2Dt") )  p$libs = c( p$libs, "fields" )
-    if (p$stm_local_modelengine %in% c("twostep") )  p$libs = c( p$libs, "mgcv", "fields" )
-    if (p$stm_local_modelengine %in% c("krige") ) p$libs = c( p$libs, "fields" )
-    if (p$stm_local_modelengine %in% c("gstat") ) p$libs = c( p$libs, "gstat" )
-  }
-
-  if (exists("stm_global_modelengine", p)) {
-    if (p$stm_global_modelengine %in% c("gam", "mgcv") ) p$libs = c( p$libs, "mgcv" )
-    if (p$stm_global_modelengine %in% c("bigglm", "biglm") ) p$libs = c( p$libs, "biglm" )
-  }
-
-  p$libs = unique( p$libs )
-  suppressMessages( RLibrary( p$libs ) )
-
   # -----------------------------------------------------
+  
   if ( "initialize" %in% runmode ) {
+
     message( "||| Initializing data files ... " )
     p$time.start = Sys.time()
-    
+  
     p$stm_current_status = file.path( p$stmSaveDir, "stm_current_status" )
     p = stm_parameters(p=p) # fill in parameters with defaults where possible
     p = stm_db( p=p, DS="filenames" )
@@ -103,10 +67,6 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
     # prediction times for space.annual methods, treat time as independent timeslices
     if ( !exists("prediction.ts", p)) p$prediction.ts = 1
 
-    # require knowledge of size of stats output before create S, which varies with a given type of analysis
-    othervars = c( )
-    if (exists("TIME", p$variables) )  othervars = c( "ar_timerange", "ar_1" )
-    p$statsvars = unique( c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "range", "phi", "nu", othervars ) )
 
     message(" ")
     message( "||| Initializing temporary storage of data and outputs files... ")
@@ -623,7 +583,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
   message( paste( "||| Time taken for full analysis (hours):", p$time_total, "\n" ) )
   message( paste( "||| Your parameter 'p' has been updated in case you need to re-run something like, etc:\n" ) )
   message( paste( "||| stm(p=p, runmode='stage3' ) :\n" ) )
-  p <<- p  # push to parent in case a manual restart is possible
+  p <<- p  # push to parent in case a manual restart is possible and we need the timings
 
   invisible()
 }

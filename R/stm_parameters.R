@@ -1,5 +1,4 @@
 
-
 stm_parameters = function( p=NULL, ... ) {
 
   # ---------------------
@@ -45,6 +44,58 @@ stm_parameters = function( p=NULL, ... ) {
      # nothing to add yet ..
   }
 
+  # require knowledge of size of stats output which varies with a given type of analysis
+  p$statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "range", "phi", "nu" ) 
+  if (exists("TIME", p$variables) )  p$statsvars = c( p$statsvars, "ar_timerange", "ar_1" )
+  if (p$stm_local_modelengine == "userdefined" )
+    if (exists("stm_local_modelengine", p) ) {
+      if (exists("stm_local_modelengine_userdefined_function", p) ) {
+        if (class(p$stm_local_modelengine_userdefined_function) == "function" ) {
+          oo = NULL
+          oo = try( p$stm_local_modelengine_userdefined_function(variablelist=TRUE), silent=TRUE )
+          if ( ! inherits(oo, "try-error") ) p$statsvars = unique( c( p$statsvars, oo ) )
+        }
+      }
+    }
+  }
+
+  # determine storage format
+  p$libs = unique( c( p$libs, "sp", "rgdal", "parallel", "RandomFields", "geoR" ) )
+  if (!exists("storage.backend", p)) p$storage.backend = storage.backend
+  if (any( grepl ("ff", p$storage.backend)))         p$libs = c( p$libs, "ff", "ffbase" )
+  if (any( grepl ("bigmemory", p$storage.backend)))  p$libs = c( p$libs, "bigmemory" )
+  if (p$storage.backend=="bigmemory.ram") {
+    if ( length( unique(p$clusters)) > 1 ) {
+      stop( "||| More than one unique cluster server was specified .. the bigmemory RAM-based method only works within one server." )
+    }
+  }
+
+  # other libs
+  if (exists("stm_local_modelengine", p)) {
+    if (p$stm_local_modelengine=="bayesx")  p$libs = c( p$libs, "R2BayesX" )
+    if (p$stm_local_modelengine %in% c("gam", "mgcv") )  p$libs = c( p$libs, "mgcv" )
+    if (p$stm_local_modelengine %in% c("inla") )  p$libs = c( p$libs, "INLA" )
+    if (p$stm_local_modelengine %in% c("fft", "gaussianprocess2Dt") )  p$libs = c( p$libs, "fields" )
+    if (p$stm_local_modelengine %in% c("twostep") )  p$libs = c( p$libs, "mgcv", "fields" )
+    if (p$stm_local_modelengine %in% c("krige") ) p$libs = c( p$libs, "fields" )
+    if (p$stm_local_modelengine %in% c("gstat") ) p$libs = c( p$libs, "gstat" )
+  }
+
+  if (exists("stm_global_modelengine", p)) {
+    if (p$stm_global_modelengine %in% c("gam", "mgcv") ) p$libs = c( p$libs, "mgcv" )
+    if (p$stm_global_modelengine %in% c("bigglm", "biglm") ) p$libs = c( p$libs, "biglm" )
+  }
+
+  p$libs = unique( p$libs )
+  suppressMessages( RLibrary( p$libs ) )
+
+  if (!exists("stmSaveDir", p)) p$stmSaveDir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
+  if ( !file.exists(p$stmSaveDir)) dir.create( p$stmSaveDir, recursive=TRUE, showWarnings=FALSE )
+  message( " ")
+
+  message( "||| In case something should go wrong, intermediary outputs will be placed at:" )
+  message( "|||",  p$stmSaveDir  )
+  message( " ")
 
   return(p)
 }

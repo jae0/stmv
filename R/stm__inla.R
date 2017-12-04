@@ -1,9 +1,10 @@
 
 # NOTE:: not finishe porting fully ... only designed for xy data right no .. no time .. needs more testing
 
-stm__inla = function( p, dat, pa ) {
+stm__inla = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
   #\\ generic spatial and space-time interpolator using inla
   #\\ parameter and data requirements can be seen in bathymetry\src\bathymetry.r
+  if (variablelist)  return( c() )
 
   sdTotal=sd(dat[,p$variable$Y], na.rm=T)
 

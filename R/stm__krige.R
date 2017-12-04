@@ -1,9 +1,10 @@
 
-stm__krige = function( p, dat, pa, nu, phi, varObs, varSpatial ) {
+stm__krige = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varObs=NULL, varSpatial=NULL, variablelist=FALSE, ... ) {
   #\\ this is the core engine of stm .. localised space (no-time) modelling interpolation 
   # \ as a 2D gaussian process (basically, simple krigimg or TPS -- time is treated as being independent)
   #\\ note: time is not being modelled and treated independently 
   #\\      .. you had better have enough data in each time slice ..  essentially this is kriging 
+  if (variablelist)  return( c() )
   
   sdTotal = sd(dat[,p$variable$Y], na.rm=T)
 

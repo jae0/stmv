@@ -1,9 +1,10 @@
 
-stm__gstat = function( p, dat, pa, nu, phi, varObs, varSpatial ) {
+stm__gstat = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varObs=NULL, varSpatial=NULL, variablelist=FALSE, ...  ) {
   #\\ this is the core engine of stm .. localised space (no-time) modelling interpolation 
   #\\ note: time is not being modelled and treated independently 
   #\\      .. you had better have enough data in each time slice ..  essentially this is kriging 
-  
+  if (variablelist)  return( c() )
+
   if (!exists( "stm_gstat_formula", p)) p$stm_gstat_formula = formula( paste( p$variables$Y, "~ 1 ")) 
 
   sdTotal = sd(dat[,p$variable$Y], na.rm=T)

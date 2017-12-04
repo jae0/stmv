@@ -1,11 +1,13 @@
 
-stm__fft = function( p, dat, pa, nu=NULL, phi=NULL ) {
+stm__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist=FALSE, ... ) {
 
   #\\ this is the core engine of stm .. localised space (no-time) modelling interpolation 
   #\\ note: time is not being modelled and treated independently 
   #\\      .. you had better have enough data in each time slice
   #\\ first a low-pass filter as defined by p$stm_lowpass_nu, p$stm_lowpass_phi, then a simple covariance filter determined by nu,phi
   
+  if (variablelist)  return( c() )
+
   sdTotal=sd(dat[,p$variable$Y], na.rm=T)
 
   x_r = range(dat[,p$variables$LOCS[1]])

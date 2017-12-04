@@ -7,6 +7,7 @@ stm__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpatia
   # step 1 -- timeseries modelling
   # use all available data in 'dat' to get a time trend .. and assume it applies to the prediction area of interest 'pa' 
      # some methods require a uniform (temporal with associated covariates) prediction grid based upon all dat locations 
+  if (variablelist)  return( c() )
 
   px = dat # only the static parts .. time has to be a uniform grid so reconstruct below
 

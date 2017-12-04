@@ -1,9 +1,10 @@
 
-stm__gaussianprocess2Dt = function( p, dat, pa ) {
+stm__gaussianprocess2Dt = function(p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ...  ) {
   #\\ this is the core engine of stm .. localised space (no-time) modelling interpolation 
   # \ as a 2D gaussian process (basically, simple krigimg or TPS -- time is treated as being independent)
   #\\ note: time is not being modelled and treated independently 
   #\\      .. you had better have enough data in each time slice ..  essentially this is kriging 
+  if (variablelist)  return( c() )
 
   if (!exists("fields.cov.function", p)) p$fields.cov.function="stationary.cov"
   if (!exists("fields.cov.args", p) & p$fields.Covariance=="Matern") {

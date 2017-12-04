@@ -193,15 +193,15 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
     res = try( switch( p$stm_local_modelengine,
       bayesx = stm__bayesx( p, dat, pa ),
       gaussianprocess2Dt = stm__gaussianprocess2Dt( p, dat, pa ),
-      inla = stm__inla( p, dat, pa ),
-      gam = stm__gam( p, dat, pa ),
-      glm = stm__glm( p, dat, pa),
-      gstat = stm__gstat( p, dat, pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ),
-      krige = stm__krige( p, dat, pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ),
-      fft = stm__fft( p, dat, pa, nu=nu, phi=phi ),
-      tps = stm__tps( p, dat, pa, lambda=varObs/varSpatial ),
-      twostep = stm__twostep( p, dat, pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ),
-      userdefined = p$stm_local_modelengine_userdefined(p=p, dat=dat, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial, sloc=Sloc[Si,], distance=stm_distance_cur )
+      inla = stm__inla( p=p, dat=dat, pa=pa ),
+      gam = stm__gam( p=p, dat=dat, pa=pa ),
+      glm = stm__glm( p=p, dat=dat, pa=pa ),
+      gstat = stm__gstat( p=p, dat=dat, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ),
+      krige = stm__krige( p=p, dat=dat, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ),
+      fft = stm__fft( p=p, dat=dat, pa=pa, nu=nu, phi=phi ),
+      tps = stm__tps( p=p, dat=dat, pa=pa, lambda=varObs/varSpatial ),
+      twostep = stm__twostep( p=p, dat=dat, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ),
+      userdefined = p$stm_local_modelengine_userdefined_function(p=p, dat=dat, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial, sloc=Sloc[Si,], distance=stm_distance_cur )
     ) )
 
 
