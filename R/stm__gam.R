@@ -3,7 +3,6 @@ stm__gam = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
   #\\ this is the core engine of stm .. localised space-time modelling interpolation and prediction
   #\\ simple GAM with spatial weights (inverse distance squared) and ts harmonics 
   if (variablelist)  return( c() )
-  require(gam)
   
   sdTotal=sd(dat[,p$variable$Y], na.rm=T)
 
