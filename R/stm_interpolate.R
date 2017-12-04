@@ -201,7 +201,7 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
       fft = stm__fft( p=p, dat=dat, pa=pa, nu=nu, phi=phi ),
       tps = stm__tps( p=p, dat=dat, pa=pa, lambda=varObs/varSpatial ),
       twostep = stm__twostep( p=p, dat=dat, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ),
-      userdefined = eval( parse( text=paste( p$stm_local_modelengine_userdefined_function, "(p=p, dat=dat, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial, sloc=Sloc[Si,], distance=stm_distance_cur )" ) ))
+      userdefined = eval( parse( text={paste( p$stm_local_modelengine_userdefined_function, '(p=p, dat=dat, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial, sloc=Sloc[Si,], distance=stm_distance_cur )' ) } ))
     ) )
 
 
