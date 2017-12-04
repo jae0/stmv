@@ -44,6 +44,8 @@ stm_parameters = function( p=NULL, ... ) {
      # nothing to add yet ..
   }
 
+
+
   # require knowledge of size of stats output which varies with a given type of analysis
   p$statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "range", "phi", "nu" ) 
   if (exists("TIME", p$variables) )  p$statsvars = c( p$statsvars, "ar_timerange", "ar_1" )
@@ -86,16 +88,26 @@ stm_parameters = function( p=NULL, ... ) {
     if (p$stm_global_modelengine %in% c("bigglm", "biglm") ) p$libs = c( p$libs, "biglm" )
   }
 
+
   p$libs = unique( p$libs )
   suppressMessages( RLibrary( p$libs ) )
 
-  if (!exists("stmSaveDir", p)) p$stmSaveDir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
-  if ( !file.exists(p$stmSaveDir)) dir.create( p$stmSaveDir, recursive=TRUE, showWarnings=FALSE )
-  message( " ")
+  p$variables$all = NULL
+  if (exists("stm_local_modelformula", p))  {
+    p$variables$local_all = all.vars( p$stm_local_modelformula )
+    p$variables$local_cov = intersect( p$variables$local_all, p$variables$COV )
+    p$variables$all = unique( c( p$variables$all, p$variables$local_all ) )
+  }
+  if (exists("stm_global_modelformula", p)) {
+    p$variables$global_all = all.vars( p$stm_global_modelformula )
+    p$variables$global_cov = intersect( p$variables$global_all, p$variables$COV )
+    p$variables$all = unique( c( p$variables$all, p$variables$global_all ) )
+  }
+  p$stm_current_status = file.path( p$stmSaveDir, "stm_current_status" )
 
-  message( "||| In case something should go wrong, intermediary outputs will be placed at:" )
-  message( "|||",  p$stmSaveDir  )
-  message( " ")
+
+
+
 
   return(p)
 }

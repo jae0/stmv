@@ -5,32 +5,30 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
   #\\ localized modelling of space and time data to predict/interpolate upon a grid
   #\\ speed ratings: bigmemory.ram (1), ff (2), bigmemory.filebacked (3)
   # -----------------------------------------------------
-  
+  if (!exists("stmSaveDir", p)) p$stmSaveDir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
+
+  if ( !file.exists(p$stmSaveDir)) dir.create( p$stmSaveDir, recursive=TRUE, showWarnings=FALSE )
+
   if ( "initialize" %in% runmode ) {
 
     message( "||| Initializing data files ... " )
     p$time.start = Sys.time()
-  
-    p$stm_current_status = file.path( p$stmSaveDir, "stm_current_status" )
+
+    message( " ")
+    message( "||| In case something should go wrong, intermediary outputs will be placed at:" )
+    message( "|||",  p$stmSaveDir  )
+    message( " ")
+
     p = stm_parameters(p=p) # fill in parameters with defaults where possible
     p = stm_db( p=p, DS="filenames" )
+    
+
     p$ptr = list() # location for data pointers
 
     # set up the data and problem using data objects
     tmpfiles = unlist( p$cache)
     for (tf in tmpfiles) if (file.exists( tf)) file.remove(tf)
-    p$variables$all = NULL
-    if (exists("stm_local_modelformula", p))  {
-      p$variables$local_all = all.vars( p$stm_local_modelformula )
-      p$variables$local_cov = intersect( p$variables$local_all, p$variables$COV )
-      p$variables$all = unique( c( p$variables$all, p$variables$local_all ) )
-    }
-    if (exists("stm_global_modelformula", p)) {
-      p$variables$global_all = all.vars( p$stm_global_modelformula )
-      p$variables$global_cov = intersect( p$variables$global_all, p$variables$COV )
-      p$variables$all = unique( c( p$variables$all, p$variables$global_all ) )
-    }
-
+    
     # permit passing a function rather than data directly .. less RAM usage in parent call
     if (is.null(DATA) ) {
       if (exists("DATA", p)) {
