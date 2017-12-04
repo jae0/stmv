@@ -47,7 +47,7 @@ stm_parameters = function( p=NULL, ... ) {
   # require knowledge of size of stats output which varies with a given type of analysis
   p$statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "range", "phi", "nu" ) 
   if (exists("TIME", p$variables) )  p$statsvars = c( p$statsvars, "ar_timerange", "ar_1" )
-  if (p$stm_local_modelengine == "userdefined" )
+  if (p$stm_local_modelengine == "userdefined" ) {
     if (exists("stm_local_modelengine", p) ) {
       if (exists("stm_local_modelengine_userdefined_function", p) ) {
         if (class(p$stm_local_modelengine_userdefined_function) == "function" ) {
