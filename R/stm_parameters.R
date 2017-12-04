@@ -71,7 +71,7 @@ stm_parameters = function( p=NULL, ... ) {
       stop( "||| More than one unique cluster server was specified .. the bigmemory RAM-based method only works within one server." )
     }
   }
-
+ 
   # other libs
   if (exists("stm_local_modelengine", p)) {
     if (p$stm_local_modelengine=="bayesx")  p$libs = c( p$libs, "R2BayesX" )
@@ -88,6 +88,7 @@ stm_parameters = function( p=NULL, ... ) {
     if (p$stm_global_modelengine %in% c("bigglm", "biglm") ) p$libs = c( p$libs, "biglm" )
   }
 
+  if (exists("TIME", p$variables) )  p$libs = c( p$libs, "mgcv" ) # default uses GAM smooths
 
   p$libs = unique( p$libs )
   suppressMessages( RLibrary( p$libs ) )
