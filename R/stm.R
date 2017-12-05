@@ -21,7 +21,6 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
 
     p = stm_parameters(p=p) # fill in parameters with defaults where possible
     p = stm_db( p=p, DS="filenames" )
-    
 
     p$ptr = list() # location for data pointers
 

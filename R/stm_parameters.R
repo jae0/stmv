@@ -107,8 +107,5 @@ stm_parameters = function( p=NULL, ... ) {
   p$stm_current_status = file.path( p$stmSaveDir, "stm_current_status" )
 
 
-
-
-
   return(p)
 }
