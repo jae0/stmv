@@ -51,10 +51,10 @@ stm_parameters = function( p=NULL, ... ) {
   if (exists("TIME", p$variables) )  p$statsvars = c( p$statsvars, "ar_timerange", "ar_1" )
   if (p$stm_local_modelengine == "userdefined" ) {
     if (exists("stm_local_modelengine", p) ) {
-      if (exists("stm_local_modelengine_userdefined_function", p) ) {
-        if (class(p$stm_local_modelengine_userdefined_function) == "function" ) {
+      if (exists("stm_local_modelengine_userdefined", p) ) {
+        if (class(p$stm_local_modelengine_userdefined) == "function" ) {
           oo = NULL
-          oo = try( p$stm_local_modelengine_userdefined_function(variablelist=TRUE), silent=TRUE )
+          oo = try( p$stm_local_modelengine_userdefined(variablelist=TRUE), silent=TRUE )
           if ( ! inherits(oo, "try-error") ) p$statsvars = unique( c( p$statsvars, oo ) )
         }
       }

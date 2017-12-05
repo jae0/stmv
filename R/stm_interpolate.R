@@ -54,7 +54,6 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
     itime_cov = which(dat_names %in% ti_cov)
   }
 
-
   stime = Sys.time()
 
   local_fn = switch( p$stm_local_modelengine,
@@ -68,8 +67,8 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
     fft = stm__fft,
     tps = stm__tps,
     twostep = stm__twostep,
-    userdefined = as.expression(parse(text=p$stm_local_modelengine_userdefined_function))
-  ) 
+    userdefined = p$stm_local_modelengine_userdefined
+  )
   
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
