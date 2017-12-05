@@ -188,6 +188,8 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
     # model and prediction .. outputs are in scale of the link (and not response)
     # the following permits user-defined models (might want to use compiler::cmpfun )
 
+browser()
+
     gc()
     res =NULL
     res = try( switch( p$stm_local_modelengine,
