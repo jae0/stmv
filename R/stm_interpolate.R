@@ -68,7 +68,7 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
     fft = stm__fft,
     tps = stm__tps,
     twostep = stm__twostep,
-    userdefined = eval(as.expression(parse(text=p$stm_local_modelengine_userdefined_function)))
+    userdefined = as.expression(parse(text=p$stm_local_modelengine_userdefined_function))
   ) 
   
 # main loop over each output location in S (stats output locations)
