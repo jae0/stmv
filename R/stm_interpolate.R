@@ -57,6 +57,20 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
 
   stime = Sys.time()
 
+  local_fn = switch( p$stm_local_modelengine,
+    bayesx = stm__bayesx,
+    gaussianprocess2Dt = stm__gaussianprocess2Dt,
+    inla = stm__inla,
+    gam = stm__gam,
+    glm = stm__glm,
+    gstat = stm__gstat,
+    krige = stm__krige,
+    fft = stm__fft,
+    tps = stm__tps,
+    twostep = stm__twostep,
+    userdefined = eval(as.expression(parse(text=p$stm_local_modelengine_userdefined_function)))
+  ) 
+  
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
 
@@ -187,25 +201,12 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
 
     # model and prediction .. outputs are in scale of the link (and not response)
     # the following permits user-defined models (might want to use compiler::cmpfun )
-
-browser()
-
     gc()
     res =NULL
-    res = try( switch( p$stm_local_modelengine,
-      bayesx = stm__bayesx( p, dat, pa ),
-      gaussianprocess2Dt = stm__gaussianprocess2Dt( p, dat, pa ),
-      inla = stm__inla( p=p, dat=dat, pa=pa ),
-      gam = stm__gam( p=p, dat=dat, pa=pa ),
-      glm = stm__glm( p=p, dat=dat, pa=pa ),
-      gstat = stm__gstat( p=p, dat=dat, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ),
-      krige = stm__krige( p=p, dat=dat, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ),
-      fft = stm__fft( p=p, dat=dat, pa=pa, nu=nu, phi=phi ),
-      tps = stm__tps( p=p, dat=dat, pa=pa, lambda=varObs/varSpatial ),
-      twostep = stm__twostep( p=p, dat=dat, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ),
-      userdefined = p$stm_local_modelengine_userdefined_function(p=p, dat=dat, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial, sloc=Sloc[Si,], distance=stm_distance_cur)
-    ) )
-
+    res = try( 
+      local_fn(p=p, dat=dat, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial, sloc=Sloc[Si,], distance=stm_distance_cur
+      )
+    )
 
     if (debug) print( str(res))
 
