@@ -315,7 +315,7 @@
         message( "||| A global model already exists. It will be overwritten in 10 seconds.")
         message( "|||   Type <ctrl-c> or <esc> to interrupt. To reuse the saved model ")
         message( "|||   leave out 'globalmodel' as a runmode option ... overwriting in:")
-        for (1 in 10:1) {
+        for (i in 10:1) {
           Sys.sleep(1)
           print(i)
         }
