@@ -23,6 +23,6 @@ stm_timecovars = function( vars, ti) {
   if ("sin.w2" %in% vars) out$sin.w2 = sin( 2*ti )
   if ("cos.w3" %in% vars) out$cos.w3 = cos( 3*ti )
   if ("sin.w3" %in% vars) out$sin.w3 = sin( 3*ti )
-  # out$ti = NULL  # retain ti as it can be used for windowed averaging methods (e.g. with tps)
+  out$ti = NULL
   return(out)
 }
