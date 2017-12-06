@@ -149,6 +149,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
     Ydata = as.matrix(DATA$input[, p$variables$Y ])
     if (exists("stm_global_modelengine", p)) {
       if (p$stm_global_modelengine !="none" ) {
+        # at present only those that have a predict and residuals methods ... 
         covmodel = stm_db( p=p, DS="global_model")
         Ypreds = predict(covmodel, type="link", se.fit=FALSE )  ## TODO .. keep track of the SE
         Ydata  = residuals(covmodel, type="deviance") # ie. link scale .. this is the default but make it explicit
