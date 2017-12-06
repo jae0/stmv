@@ -312,15 +312,12 @@
       }
 
       if ( file.exists( fn.global_model ) ) {
-        resp = readline( "||| A global model already exists. To use saved model, type <SKIP>. To redo the model type <OVERWRITE>:  ")
-        if (resp=="SKIP") {
-          message( "||| File not overwritten, continuing with saved model ...")
-          return (fn.global_model)
-        } else if ( resp=="OVERWRITE") {
-          message( "||| OK, overwriting")
-        } else {
-          message( "||| OK, stopping" )
-          stop(fn.global_model)
+        message( "||| A global model already exists. It will be overwritten in 10 seconds.")
+        message( "|||   Type <ctrl-c> or <esc> to interrupt. To reuse the saved model ")
+        message( "|||   leave out 'globalmodel' as a runmode option ... overwriting in:")
+        for (1 in 10:1) {
+          Sys.sleep(1)
+          print(i)
         }
       }
 
