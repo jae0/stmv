@@ -1,5 +1,5 @@
 
-stm__bayesx = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE ) {
+stm__bayesx = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
   #\\ this is the core engine of stm .. localised space-time modelling interpolation and prediction .. using bayesx 
    
   # EG: see: bayesx.term.options( bs="kr", method="REML" )  
