@@ -16,7 +16,7 @@ stm__tps = function( p=NULL, dat=NULL, pa=NULL, lambda=NULL, variablelist=FALSE,
     
     if ( exists("TIME", p$variables) ) {
       xi = which( dat[ , p$variables$TIME ] == p$prediction.ts[ti] )
-      pa_i = which( pa[, p$variables$TIME]==p$prediction.ts[ti])
+      pa_i = which( pa[, p$variables$TIME] == p$prediction.ts[ti])
     } else {
       xi = 1:nrow(dat) # all data as p$nt==1
       pa_i = 1:nrow(pa)

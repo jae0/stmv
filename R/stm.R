@@ -503,6 +503,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
     gc()
   }
 
+
   # -----------------------------------------------------
   if ( "stage2" %in% runmode ) {
     timei2 =  Sys.time()
@@ -513,11 +514,11 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
     for ( mult in p$stm_multiplier_stage2 ) {
       currentstatus = stm_db(p=p, DS="statistics.status.reset" )
       if (length(currentstatus$todo) > 0) {
-        p$stm_distance_max = p$stm_distance_max * mult
-        p$stm_distance_scale = p$stm_distance_scale * mult # km ... approx guess of 95% AC range
         p = make.list( list( locs=sample( currentstatus$todo )) , Y=p ) # random order helps use all cpus
-        p <<- p  # push to parent in case a manual restart is possible
-        suppressMessages( parallel.run( stm_interpolate, p=p ) )
+        suppressMessages( parallel.run( stm_interpolate, p=p, 
+          stm_distance_max=p$stm_distance_max*mult, 
+          stm_distance_scale=p$stm_distance_scale*mult
+        ))
       }
     }
 
@@ -539,9 +540,8 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
       Sflag = stm_attach( p$storage.backend, p$ptr$Sflag )
       Sflag[toredo]=0L
       p$stm_local_modelengine = "tps"
-      p = aegis_parameters( p=p, DS="bathymetry" )
+      # ?? why is this here ? p = aegis_parameters( p=p, DS="bathymetry" )
       p = make.list( list( locs=sample( toredo )) , Y=p ) # random order helps use all cpus
-      p <<- p  # push to parent in case a manual restart is possible
       parallel.run( stm_interpolate, p=p )
     }
     p$time_stage3 = round( difftime( Sys.time(), timei3, units="hours" ), 3)
@@ -581,7 +581,5 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
   message( paste( "||| Time taken for full analysis (hours):", p$time_total, "\n" ) )
   message( paste( "||| Your parameter 'p' has been updated in case you need to re-run something like, etc:\n" ) )
   message( paste( "||| stm(p=p, runmode='stage3' ) :\n" ) )
-  p <<- p  # push to parent in case a manual restart is possible and we need the timings
-
   invisible()
 }

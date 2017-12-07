@@ -1,7 +1,15 @@
 
 
-stm_interpolate = function( ip=NULL, p, debug=FALSE ) {
+stm_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
   #\\ core function to interpolate (model and predict) in parallel
+
+  # ---------------------
+  # deal with additional passed parameters
+  if ( is.null(p) ) p=list()
+  p_add = list(...)
+  if (length(p_add) > 0 ) p = c(p, p_add)
+  i = which(duplicated(names(p), fromLast=TRUE))
+  if ( length(i) > 0 ) p = p[-i] # give any passed parameters a higher priority, overwriting pre-existing variable
 
   if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
 
