@@ -315,9 +315,9 @@
         message( "||| A global model already exists. It will be overwritten in 10 seconds.")
         message( "|||   Type <ctrl-c> or <esc> to interrupt. To reuse the saved model ")
         message( "|||   leave out 'globalmodel' as a runmode option ... overwriting in:")
-        for (i in 10:1) {
+        for (i in 9:0) {
           Sys.sleep(1)
-          print(i)
+          cat(i)
         }
       }
 
@@ -354,7 +354,6 @@
             bigglm( formula=p$stm_global_modelformula, data=B, family=p$stm_global_family, weights=~wt ))
         }
       }
-
 
       if (p$stm_global_modelengine=="gam") {
         require(mgcv)
