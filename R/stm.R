@@ -493,7 +493,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
     timei1 =  Sys.time()
     currentstatus = stm_db( p=p, DS="statistics.status" )
     p <<- p  # push to parent in case a manual restart is possible
-    suppressMessages( parallel_run( stm_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) ), # random order helps use all cpus )
+    suppressMessages( parallel_run( stm_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) )) # random order helps use all cpus )
     p$time_default = round( difftime( Sys.time(), timei1, units="hours" ), 3 )
     message(" ")
     message( paste( "||| Time taken to complete stage 1 interpolations (hours):", p$time_default, "" ) )
