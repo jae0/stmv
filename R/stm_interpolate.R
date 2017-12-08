@@ -447,6 +447,6 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
 
   }  # end for loop
 
-  invisible()
+  return(NULL)
 
 }

@@ -354,8 +354,8 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
         p$all.covars.static = ifelse( any(nc_cov > 1),  FALSE, TRUE )
         pc = p # copy
         if (!pc$all.covars.static) if (exists("clusters.covars", pc) ) pc$clusters = pc$clusters.covars
-        pc = make.list( list( tindex=1:pc$nt) , Y=pc ) # takes about 28 GB per run .. adjust cluster number temporarily
-        suppressMessages( parallel.run( stm_db, p=pc, DS="global.prediction.surface" ) )
+        # takes about 28 GB per run .. adjust cluster number temporarily
+        suppressMessages( stm_db( p=pc, DS="global.prediction.surface" ) )
         p$time_covariates = round(difftime( Sys.time(), p$timec_covariates_0 , units="hours"), 3)
         message( paste( "||| Time taken to predict covariate surface (hours):", p$time_covariates ) )
       }
@@ -478,7 +478,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
   # -----------------------------------------------------
   if ( "debug" %in% runmode ) {
     currentstatus = stm_db( p=p, DS="statistics.status" )
-    p = make.list( list( locs=sample( currentstatus$todo )) , Y=p ) # random order helps use all cpus
+    p$runindex = list( locs=sample( currentstatus$todo )) # random order helps use all cpus
     p <<- p  # push to parent in case a manual restart is possible
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     message( "||| Entering browser mode ...")
@@ -492,9 +492,8 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
     # this is the basic run
     timei1 =  Sys.time()
     currentstatus = stm_db( p=p, DS="statistics.status" )
-    p = make.list( list( locs=sample( currentstatus$todo )) , Y=p ) # random order helps use all cpus
     p <<- p  # push to parent in case a manual restart is possible
-    suppressMessages( parallel.run( stm_interpolate, p=p ) )
+    suppressMessages( parallel_run( stm_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) ), # random order helps use all cpus )
     p$time_default = round( difftime( Sys.time(), timei1, units="hours" ), 3 )
     message(" ")
     message( paste( "||| Time taken to complete stage 1 interpolations (hours):", p$time_default, "" ) )
@@ -514,10 +513,10 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
     for ( mult in p$stm_multiplier_stage2 ) {
       currentstatus = stm_db(p=p, DS="statistics.status.reset" )
       if (length(currentstatus$todo) > 0) {
-        p = make.list( list( locs=sample( currentstatus$todo )) , Y=p ) # random order helps use all cpus
-        suppressMessages( parallel.run( stm_interpolate, p=p, 
+        suppressMessages( parallel_run( stm_interpolate, p=p, 
           stm_distance_max=p$stm_distance_max*mult, 
-          stm_distance_scale=p$stm_distance_scale*mult
+          stm_distance_scale=p$stm_distance_scale*mult,
+          runindex=list( locs=sample( currentstatus$todo ) ) # random order helps use all cpus
         ))
       }
     }
@@ -541,8 +540,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
       Sflag[toredo]=0L
       p$stm_local_modelengine = "tps"
       # ?? why is this here ? p = aegis_parameters( p=p, DS="bathymetry" )
-      p = make.list( list( locs=sample( toredo )) , Y=p ) # random order helps use all cpus
-      parallel.run( stm_interpolate, p=p )
+      parallel_run( stm_interpolate, p=p, runindex=list( locs=sample( toredo )) ) # random order helps use all cpus
     }
     p$time_stage3 = round( difftime( Sys.time(), timei3, units="hours" ), 3)
     message( paste( "||| Time taken to complete stage3 interpolations (hours):", p$time_stage3, "" ) )
@@ -581,5 +579,5 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
   message( paste( "||| Time taken for full analysis (hours):", p$time_total, "\n" ) )
   message( paste( "||| Your parameter 'p' has been updated in case you need to re-run something like, etc:\n" ) )
   message( paste( "||| stm(p=p, runmode='stage3' ) :\n" ) )
-  invisible()
+  return(NULL)
 }

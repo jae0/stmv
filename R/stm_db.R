@@ -1,5 +1,5 @@
 
-  stm_db = function( ip=NULL, DS, p, B=NULL, yr=NULL, ret="mean" ) {
+  stm_db = function( DS, p, B=NULL, yr=NULL, ret="mean" ) {
     #// usage: low level function to convert data into file-based data obects to permit parallel
     #// data access and manipulation and deletes/updates
     #// B is the xyz or xytz data or the function to get the data to work upon
@@ -384,96 +384,102 @@
     # -----
 
     if (DS %in% c("global.prediction.surface") ) {
-      if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
-      if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
-      global_model = stm_db( p=p, DS="global_model")
-      if (is.null(global_model)) stop("Covariate model not found.")
-
-      P0 = stm_attach( p$storage.backend, p$ptr$P0 )
-      P0sd = stm_attach( p$storage.backend, p$ptr$P0sd )
-
-      for ( iip in ip ) {
-        it = p$runs$tindex[iip]
-        pa = NULL # construct prediction surface
-        for (i in p$variables$COV ) {
-          pu = stm_attach( p$storage.backend, p$ptr$Pcov[[i]] )
-          nc = ncol(pu)
-          if ( nc== 1 ) {
-            pa = cbind( pa, pu[] ) # ie. a static variable (space)
-          } else if ( nc == p$nt & nc == p$ny) {
-            pa = cbind( pa, pu[,it] ) # ie. same time dimension as predictive data (space.annual.seasonal)
-          } else if ( nc == p$ny & p$nt > p$ny)  {
-            iy = round( (it-1) / p$nw ) + 1
-            pa = cbind( pa, pu[,iy] ) # ie., annual data (space.annual)
-          } else if ( nc == p$nt & p$nt > p$ny) {
-            pa = cbind( pa, pu[,it] ) # ie. same time dimension as predictive data (space.annual.seasonal)
-          } else {
-            stop( "Erroneous data dimension")
-          }
-        }
-        pa = as.data.frame( pa )
-        names(pa) = p$variables$COV
-
-        if ( any( p$variables$LOCS %in%  all.vars( p$stm_global_modelformula ) ) ) {
-          Ploc = stm_attach( p$storage.backend, p$ptr$Ploc )
-          pa = cbind(pa, Ploc[])
-          names(pa) = c( p$variables$COV, p$variables$LOCS )
-        }
-
-
-        if ( "yr" %in%  all.vars( p$stm_global_modelformula ) ) {
-          npa = names(pa)
-          pa = cbind(pa, p$yrs[it] )
-          names(pa) = c( npa, "yr" )
-        }
-
-        if ( "dyear" %in%  all.vars( p$stm_global_modelformula ) ) {
-          npa = names(pa)
-          pa = cbind(pa, p$prediction.dyear )
-          names(pa) = c( npa, "dyear" )
-        }
-
-        if (p$stm_global_modelengine %in% c("glm", "bigglm", "gam") ) {
-          Pbaseline = try( predict( global_model, newdata=pa, type="response", se.fit=TRUE ) )
-          pa = NULL
-          gc()
-          if (!inherits(Pbaseline, "try-error")) {
-            P0[,it] = Pbaseline$fit
-            P0sd[,it] = Pbaseline$se.fit
-          }
-          Pbaseline = NULL; gc()
-        } else if (p$stm_global_modelengine =="bayesx") {
-          stop( "not yet tested" ) # TODO
-          # Pbaseline = try( predict( global_model, newdata=pa, type="response", se.fit=TRUE ) )
-          # pa = NULL
-          # gc()
-          # if (!inherits(Pbaseline, "try-error")) {
-          #   P0[,it] = Pbaseline$fit
-          #   P0sd[,it] = Pbaseline$se.fit
-          # }
-          # Pbaseline = NULL; gc()
-
-        } else if (p$stm_global_modelengine =="none") {
-          # nothing to do
-        } else  {
-          stop ("This global model method requires a bit more work .. ")
-        }
-
-        if (p$all.covars.static) {
-          # if this is true then this is a single cpu run and all predictions for each time slice is the same
-          # could probably catch this and keep storage small but that would make the update math a little more complex
-          # this keeps it simple with a quick copy
-          if (p$nt  > 1 ) {
-            for (j in ip[2:p$nruns]){
-              P0[,j] = P0[,1]
-              P0sd[,j] = P0sd[,1]
+  
+      parallel_run(
+        p=p, 
+        runindex=list(tindex=1:p$nt),
+        FUNC = function( ip=NULL, p ) {
+          if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
+          if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
+          global_model = stm_db( p=p, DS="global_model")
+          if (is.null(global_model)) stop("Global model not found.")
+          P0 = stm_attach( p$storage.backend, p$ptr$P0 )
+          P0sd = stm_attach( p$storage.backend, p$ptr$P0sd )
+          for ( ii in ip ) {
+            # downscale and warp from p(0) -> p1
+            it = p$runs$tindex[ii]
+            pa = NULL # construct prediction surface
+            for (i in p$variables$COV ) {
+              pu = stm_attach( p$storage.backend, p$ptr$Pcov[[i]] )
+              nc = ncol(pu)
+              if ( nc== 1 ) {
+                pa = cbind( pa, pu[] ) # ie. a static variable (space)
+              } else if ( nc == p$nt & nc == p$ny) {
+                pa = cbind( pa, pu[,it] ) # ie. same time dimension as predictive data (space.annual.seasonal)
+              } else if ( nc == p$ny & p$nt > p$ny)  {
+                iy = round( (it-1) / p$nw ) + 1
+                pa = cbind( pa, pu[,iy] ) # ie., annual data (space.annual)
+              } else if ( nc == p$nt & p$nt > p$ny) {
+                pa = cbind( pa, pu[,it] ) # ie. same time dimension as predictive data (space.annual.seasonal)
+              } else {
+                stop( "Erroneous data dimension")
+              }
             }
-          }
+            pa = as.data.frame( pa )
+            names(pa) = p$variables$COV
+
+            if ( any( p$variables$LOCS %in%  all.vars( p$stm_global_modelformula ) ) ) {
+              Ploc = stm_attach( p$storage.backend, p$ptr$Ploc )
+              pa = cbind(pa, Ploc[])
+              names(pa) = c( p$variables$COV, p$variables$LOCS )
+            }
+
+            if ( "yr" %in%  all.vars( p$stm_global_modelformula ) ) {
+              npa = names(pa)
+              pa = cbind(pa, p$yrs[it] )
+              names(pa) = c( npa, "yr" )
+            }
+
+            if ( "dyear" %in%  all.vars( p$stm_global_modelformula ) ) {
+              npa = names(pa)
+              pa = cbind(pa, p$prediction.dyear )
+              names(pa) = c( npa, "dyear" )
+            }
+
+            if (p$stm_global_modelengine %in% c("glm", "bigglm", "gam") ) {
+              Pbaseline = try( predict( global_model, newdata=pa, type="response", se.fit=TRUE ) )
+              pa = NULL
+              gc()
+              if (!inherits(Pbaseline, "try-error")) {
+                P0[,it] = Pbaseline$fit
+                P0sd[,it] = Pbaseline$se.fit
+              }
+              Pbaseline = NULL; gc()
+            } else if (p$stm_global_modelengine =="bayesx") {
+              stop( "not yet tested" ) # TODO
+              # Pbaseline = try( predict( global_model, newdata=pa, type="response", se.fit=TRUE ) )
+              # pa = NULL
+              # gc()
+              # if (!inherits(Pbaseline, "try-error")) {
+              #   P0[,it] = Pbaseline$fit
+              #   P0sd[,it] = Pbaseline$se.fit
+              # }
+              # Pbaseline = NULL; gc()
+
+            } else if (p$stm_global_modelengine =="none") {
+              # nothing to do
+            } else  {
+              stop ("This global model method requires a bit more work .. ")
+            }
+
+            if (p$all.covars.static) {
+              # if this is true then this is a single cpu run and all predictions for each time slice is the same
+              # could probably catch this and keep storage small but that would make the update math a little more complex
+              # this keeps it simple with a quick copy
+              if (p$nt  > 1 ) {
+                for (j in ip[2:p$nruns]){
+                  P0[,j] = P0[,1]
+                  P0sd[,j] = P0sd[,1]
+                }
+              }
+              global_model =NULL
+              return(NULL)
+            }
+          } # end each timeslice
           global_model =NULL
           return(NULL)
         }
-      } # end each timeslice
-      global_model =NULL
+      )
       message( "||| Done ... moving onto the rest of the analysis...")
     }
 
