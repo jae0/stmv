@@ -317,7 +317,8 @@
         message( "|||   leave out 'globalmodel' as a runmode option ... overwriting in:")
         for (i in 9:0) {
           Sys.sleep(1)
-          cat(i)
+          cat( i)
+          cat(" . ")
         }
       }
 
@@ -380,7 +381,7 @@
       return (fn.global_model)
     }
 
-    # -----
+    # -----cpu
 
     if (DS %in% c("global.prediction.surface") ) {
   
@@ -411,7 +412,9 @@
               } else if ( nc == p$nt & p$nt > p$ny) {
                 pa = cbind( pa, pu[,it] ) # ie. same time dimension as predictive data (space.annual.seasonal)
               } else {
-                stop( "Erroneous data dimension")
+                print(i)
+                print(nc)
+                stop( "Erroneous data dimension ... the dataset for the above variable looks to be incomplete?")
               }
             }
             pa = as.data.frame( pa )
@@ -485,6 +488,7 @@
 
     # -----
 
+
     if (DS %in% c("stm.prediction.redo", "stm.prediction") )  {
 
       if (DS=="stm.prediction") {
@@ -497,17 +501,8 @@
         if (ret=="mean") return (P)
         if (ret=="lb") return( Pl)
         if (ret=="ub") return( Pu)
-       }
-
-
-      PP = stm_attach( p$storage.backend, p$ptr$P )
-      PPsd = stm_attach( p$storage.backend, p$ptr$Psd )
-      if (exists("stm_global_modelengine", p)) {
-        if (p$stm_global_modelengine !="none" ) {
-          P0 = stm_attach( p$storage.backend, p$ptr$P0 )
-          P0sd = stm_attach( p$storage.backend, p$ptr$P0sd )
-        }
       }
+
 
       shallower = NULL
       if ( exists("depth.filter", p) && is.finite( p$depth.filter) ) {
@@ -520,103 +515,132 @@
       }
 
       if ( exists("TIME", p$variables)) {
-        # outputs are on yearly breakdown
-        for ( r in 1:p$ny ) {
-          y = p$yrs[r]
-          fn_P = file.path( p$stmSaveDir, paste("stm.prediction", "mean", y, "rdata", sep="." ) )
-          fn_Pl = file.path( p$stmSaveDir, paste("stm.prediction", "lb",   y, "rdata", sep="." ) )
-          fn_Pu = file.path( p$stmSaveDir, paste("stm.prediction", "ub",   y, "rdata", sep="." ) )
-          vv = ncol(PP)
-          if ( vv > p$ny ) {
-            col.ranges = (r-1) * p$nw + (1:p$nw)
-            P = PP  [,col.ranges]
-            V = PPsd[,col.ranges] # simpleadditive independent errors assumed
-          } else if ( vv==p$ny) {
-            P = PP[,r]
-            V = PPsd[,r]
-          }
-
-
-          if (exists("stm_global_modelengine", p) ) {
-            if (p$stm_global_modelengine !="none" ) {
-              ## maybe add via simulation ? ...
-              uu = which(!is.finite(P[]))
-              if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
-              P = P[] + P0[,r]
-              vv = which(!is.finite(V[]))
-              if (length(vv)>0) V[vv] = 0 # permit covariate-base predictions to pass through ..
-              V = sqrt( V[]^2 + P0sd[,r]^2) # simple additive independent errors assumed
-            }
-          }
-
-          if ( !is.null(shallower) ){
-            if ( is.vector(P) ) {
-              P[shallower] = NA
-              V[shallower] = NA
-            } else {
-              P[shallower,] = NA
-              V[shallower,] = NA
-            }
-          }
-
-          # return to user scale (that of Y)
-          Pl = p$stm_global_family$linkinv( P + 1.96* V )
-          Pu = p$stm_global_family$linkinv( P - 1.96* V )
-          P = p$stm_global_family$linkinv( P )
-
-          if (exists("stm_Y_transform", p)) {
-            Pl = p$stm_Y_transform[[2]] (Pl)  # p$stm_Y_transform[2] is the inverse transform
-            Pu = p$stm_Y_transform[[2]] (Pu)
-            P = p$stm_Y_transform[[2]] (P)
-          }
-
-          save( P, file=fn_P, compress=T )
-          save( Pl, file=fn_Pl, compress=T )
-          save( Pu, file=fn_Pu, compress=T )
-          print ( paste("Year:", y)  )
-        }
+        clusters = p$clusters
+        runindex = list( tindex=1:p$ny ) # annual only
       } else {
-          fn_P = file.path( p$stmSaveDir, paste("stm.prediction", "mean", "rdata", sep="." ) )
-          fn_Pl = file.path( p$stmSaveDir, paste("stm.prediction", "lb", "rdata", sep="." ) )
-          fn_Pu = file.path( p$stmSaveDir, paste("stm.prediction", "ub", "rdata", sep="." ) )
+        clusters = p$clusters[1]  # force serial mode
+        runindex = list( tindex=1 )  # dummy value
+      }
 
-          P = PP[]
-          V = PPsd[]
-          if (exists("stm_global_modelengine", p) ) {
+      parallel_run(
+        p=p, 
+        clusters=clusters, # override
+        runindex=runindex,
+        shallower=shallower,
+        FUNC = function( ip=NULL, p, shallower ) {
+          if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
+          if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
+
+          PP = stm_attach( p$storage.backend, p$ptr$P )
+          PPsd = stm_attach( p$storage.backend, p$ptr$Psd )
+          if (exists("stm_global_modelengine", p)) {
             if (p$stm_global_modelengine !="none" ) {
-              uu = which(!is.finite(P[]))
-              if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
-              P = P[] + P0[]
-              vv = which(!is.finite(V[]))
-              if (length(vv)>0) V[vv] = 0 # permit covariate-base predictions to pass through ..
-              V = sqrt( V[]^2 + P0sd[]^2) # simple additive independent errors assumed
+              P0 = stm_attach( p$storage.backend, p$ptr$P0 )
+              P0sd = stm_attach( p$storage.backend, p$ptr$P0sd )
             }
           }
-          if ( !is.null(shallower) ){
-            P[shallower,] = NA
-            V[shallower,] = NA
-          }
 
-          # return to user scale
-          Pl = p$stm_global_family$linkinv( P + 1.96* V )
-          Pu = p$stm_global_family$linkinv( P - 1.96* V )
-          P = p$stm_global_family$linkinv( P )
+          if ( exists("TIME", p$variables)) {
+            
+            for ( ii in ip ) { # outputs are on yearly breakdown
+              y = p$runs[ii, "tindex"]
+              fn_P = file.path( p$stmSaveDir, paste("stm.prediction", "mean",  y, "rdata", sep="." ) )
+              fn_Pl = file.path( p$stmSaveDir, paste("stm.prediction", "lb",   y, "rdata", sep="." ) )
+              fn_Pu = file.path( p$stmSaveDir, paste("stm.prediction", "ub",   y, "rdata", sep="." ) )
+              vv = ncol(PP)
+              if ( vv > p$ny ) {
+                col.ranges = (r-1) * p$nw + (1:p$nw)
+                P = PP  [,col.ranges]
+                V = PPsd[,col.ranges] # simpleadditive independent errors assumed
+              } else if ( vv==p$ny) {
+                P = PP[,r]
+                V = PPsd[,r]
+              }
 
-          save( P, file=fn_P, compress=T )
-          save( Pl, file=fn_Pl, compress=T )
-          save( Pu, file=fn_Pu, compress=T )
+              if (exists("stm_global_modelengine", p) ) {
+                if (p$stm_global_modelengine !="none" ) {
+                  ## maybe add via simulation ? ...
+                  uu = which(!is.finite(P[]))
+                  if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
+                  P = P[] + P0[,r]
+                  vv = which(!is.finite(V[]))
+                  if (length(vv)>0) V[vv] = 0 # permit covariate-base predictions to pass through ..
+                  V = sqrt( V[]^2 + P0sd[,r]^2) # simple additive independent errors assumed
+                }
+              }
 
+              if ( !is.null(shallower) ){
+                if ( is.vector(P) ) {
+                  P[shallower] = NA
+                  V[shallower] = NA
+                } else {
+                  P[shallower,] = NA
+                  V[shallower,] = NA
+                }
+              }
+
+              # return to user scale (that of Y)
+              Pl = p$stm_global_family$linkinv( P + 1.96* V )
+              Pu = p$stm_global_family$linkinv( P - 1.96* V )
+              P = p$stm_global_family$linkinv( P )
+
+              if (exists("stm_Y_transform", p)) {
+                Pl = p$stm_Y_transform[[2]] (Pl)  # p$stm_Y_transform[2] is the inverse transform
+                Pu = p$stm_Y_transform[[2]] (Pu)
+                P = p$stm_Y_transform[[2]] (P)
+              }
+
+              save( P, file=fn_P, compress=T )
+              save( Pl, file=fn_Pl, compress=T )
+              save( Pu, file=fn_Pu, compress=T )
+              print ( paste("Year:", y)  )
+            }
+
+          } else {
+            # serial run only ... 
+            
+              fn_P = file.path( p$stmSaveDir, paste("stm.prediction", "mean", "rdata", sep="." ) )
+              fn_Pl = file.path( p$stmSaveDir, paste("stm.prediction", "lb", "rdata", sep="." ) )
+              fn_Pu = file.path( p$stmSaveDir, paste("stm.prediction", "ub", "rdata", sep="." ) )
+
+              P = PP[]
+              V = PPsd[]
+              if (exists("stm_global_modelengine", p) ) {
+                if (p$stm_global_modelengine !="none" ) {
+                  uu = which(!is.finite(P[]))
+                  if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
+                  P = P[] + P0[]
+                  vv = which(!is.finite(V[]))
+                  if (length(vv)>0) V[vv] = 0 # permit covariate-base predictions to pass through ..
+                  V = sqrt( V[]^2 + P0sd[]^2) # simple additive independent errors assumed
+                }
+              }
+              if ( !is.null(shallower) ){
+                P[shallower,] = NA
+                V[shallower,] = NA
+              }
+
+              # return to user scale
+              Pl = p$stm_global_family$linkinv( P + 1.96* V )
+              Pu = p$stm_global_family$linkinv( P - 1.96* V )
+              P = p$stm_global_family$linkinv( P )
+
+              save( P, file=fn_P, compress=T )
+              save( Pl, file=fn_Pl, compress=T )
+              save( Pu, file=fn_Pu, compress=T )
+          } # end if TIME
+        } # end FUNC
+      ) # end parallel_run
+    
+      if(0) {
+        i = 1
+        Ploc = stm_attach( p$storage.backend, p$ptr$Ploc )
+
+        Z = smooth.2d( Y=P[], x=Ploc[], ncol=p$nplats, nrow=p$nplons, cov.function=stationary.cov, Covariance="Matern", range=p$stm_lowpass_phi, nu=p$stm_lowpass_nu )
+        lattice::levelplot( P[] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
       }
+    
     }
-
-    if(0) {
-      i = 1
-      Ploc = stm_attach( p$storage.backend, p$ptr$Ploc )
-
-      Z = smooth.2d( Y=P[], x=Ploc[], ncol=p$nplats, nrow=p$nplons, cov.function=stationary.cov, Covariance="Matern", range=p$stm_lowpass_phi, nu=p$stm_lowpass_nu )
-      lattice::levelplot( P[] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
-    }
-    #
 
     # ----------------
 
