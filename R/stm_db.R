@@ -67,7 +67,7 @@
 
     if (DS=="save.parameters")  {
       fns = file.path( p$stmSaveDir, "p.rdata" )
-      save( p, file=fns. compress=TRUE )
+      save( p, file=fns, compress=TRUE )
       message( "||| Saved parameters to file:")
       message( fns )
     }
