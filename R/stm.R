@@ -417,9 +417,19 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
     if ( !exists("stm_distance_min", p)) p$stm_distance_min = mean( c(p$stm_distance_prediction, p$stm_distance_scale /20 ) )
     if ( !exists("stm_distance_max", p)) p$stm_distance_max = mean( c(p$stm_distance_prediction*10, p$stm_distance_scale * 2 ) )
 
-    stm_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
-    message( "||| Finished. Moving onto analysis... ")
+    message("||| Finished. ")
+    message("||| Once analyses begin, you can view maps from an external R session: ")
+    message("|||   p = stm_db( p=p, DS='load.parameters' )" ) 
+    message("|||   stm(p=p, runmode='debug_pred_static_map', debug_plot_variable_index=1) ")
+    message("|||   stm(p=p, runmode='debug_pred_static_log_map', debug_plot_variable_index=1)")
+    message("|||   stm(p=p, runmode='debug_pred_dynamic_map', debug_plot_variable_index=1)")
+    message("|||   stm(p=p, runmode='debug_stats_map', debug_plot_variable_index=1)")
+    message("||| Monitor the status of modelling by looking at the output of the following file:")
+    message("||| in linux, you can issue the following command:" )
+    message("|||   watch -n 60 cat ",  p$stm_current_status  )
+
     p <<- p  # push to parent in case a manual restart is needed
+    stm_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
     gc()
 
   } else {
@@ -431,18 +441,6 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
     stm_db(p=p, DS="statistics.status.reset" )
 
   }  # end of intialization of data structures
-
-
-  # -------------------------------------
-  # localized space-time modelling/interpolation/prediction
-  message("||| to view maps from an external R session: ")
-  message("|||   stm(p=p, runmode='debug_pred_static_map', debug_plot_variable_index=1) ")
-  message("|||   stm(p=p, runmode='debug_pred_static_log_map', debug_plot_variable_index=1)")
-  message("|||   stm(p=p, runmode='debug_pred_dynamic_map', debug_plot_variable_index=1)")
-  message("|||   stm(p=p, runmode='debug_stats_map', debug_plot_variable_index=1)")
-  message("||| Monitor the status of modelling by looking at the output of the following file:")
-  message("||| in linux, you can issue the following command:" )
-  message("|||   watch -n 60 cat ",  p$stm_current_status  )
 
 
   if ( "debug_pred_static_map" %in% runmode) {
@@ -478,7 +476,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
   # -----------------------------------------------------
   if ( "debug" %in% runmode ) {
     currentstatus = stm_db( p=p, DS="statistics.status" )
-    p$runindex = list( locs=sample( currentstatus$todo )) # random order helps use all cpus
+    p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) ) # random order helps use all cpus
     p <<- p  # push to parent in case a manual restart is possible
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     message( "||| Entering browser mode ...")
@@ -492,7 +490,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
     # this is the basic run
     timei1 =  Sys.time()
     currentstatus = stm_db( p=p, DS="statistics.status" )
-    p <<- p  # push to parent in case a manual restart is possible
+    # p <<- p  # push to parent in case a manual restart is possible
     suppressMessages( parallel_run( stm_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) )) # random order helps use all cpus )
     p$time_default = round( difftime( Sys.time(), timei1, units="hours" ), 3 )
     message(" ")
@@ -576,8 +574,8 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
 
   p$time_total = round( difftime( Sys.time(), p$time.start, units="hours" ),3)
   message(" ")
-  message( paste( "||| Time taken for full analysis (hours):", p$time_total, "\n" ) )
-  message( paste( "||| Your parameter 'p' has been updated in case you need to re-run something like, etc:\n" ) )
-  message( paste( "||| stm(p=p, runmode='stage3' ) :\n" ) )
-  return(NULL)
+  message( paste( "||| Time taken for full analysis (hours):", p$time_total ) )
+  message( paste( "||| Your parameter 'p' has been updated in case you need to re-run something like, etc:" ) )
+  message( paste( "||| stm(p=p, runmode='stage3' )" ) )
+  return( "" )
 }

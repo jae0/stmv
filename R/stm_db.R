@@ -318,7 +318,7 @@
         for (i in 9:0) {
           Sys.sleep(1)
           cat( i)
-          cat(" . ")
+          cat(" ")
         }
       }
 

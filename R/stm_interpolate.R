@@ -14,7 +14,8 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
   if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
 
   if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
-
+  if (is.null(ip)) ip = p$runindex[[1]]
+  
   #---------------------
   # data for modelling
   S = stm_attach( p$storage.backend, p$ptr$S )
