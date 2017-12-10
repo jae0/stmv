@@ -67,10 +67,12 @@
 
     if (DS=="save.parameters")  {
       fns = file.path( p$stmSaveDir, "p.rdata" )
-      save( p, file=fns )
+      save( p, file=fns. compress=TRUE )
       message( "||| Saved parameters to file:")
       message( fns )
     }
+
+    # --------------------------
 
     if (DS=="load.parameters")  {
       fns = file.path( p$stmSaveDir, "p.rdata" )

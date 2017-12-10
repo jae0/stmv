@@ -434,20 +434,25 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
     message("||| in linux, you can issue the following command:" )
     message("|||   watch -n 60 cat ",  p$stm_current_status  )
 
+    p$intialized = TRUE
+    p <<- p  # push to parent in case a manual restart is needed
+    
     stm_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
     gc()
 
   } else {
 
     if (!exists("time.start", p) ) p$time.start = Sys.time()
-    message( "||| Continuing from an interrupted start" )
-    message( "|||  with parameters from saved configuration:", file.path( p$stmSaveDir, 'p.rdata' ) )
-    p = stm_db( p=p, DS="load.parameters" )
-
+    message( "||| Continuing from an interrupted start ..." )
+    if (!p$intialized) {
+      message( "||| Loading parameters from a saved configuration:", file.path( p$stmSaveDir, 'p.rdata' ) )
+      p = stm_db( p=p, DS="load.parameters" )
+      p <<- p  # push to parent in case a manual restart is needed
+    }
   }  # end of intialization of data structures
 
-  p <<- p  # push to parent in case a manual restart is needed
-
+  if (!p$intialized) stop( "||| stm was not initialized properly" )
+    
   if ( "debug_pred_static_map" %in% runmode) {
     # -----------------------------------------------------
       Ploc = stm_attach( p$storage.backend, p$ptr$Ploc )
@@ -482,7 +487,6 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
   if ( "debug" %in% runmode ) {
     currentstatus = stm_db( p=p, DS="statistics.status" )
     p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) ) # random order helps use all cpus
-    # p <<- p  # push to parent in case a manual restart is possible
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     message( "||| Entering browser mode ...")
     browser()
@@ -502,7 +506,6 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
     message( paste( "||| Time taken to complete stage 1 interpolations (hours):", p$time_default, "" ) )
     currentstatus = stm_db( p=p, DS="statistics.status" )
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
-    p <<- p  # push to parent in case a manual restart is needed
     gc()
   }
 
@@ -524,13 +527,11 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
         ))
       }
     }
-
     p$time_stage2 = round( difftime( Sys.time(), timei2, units="hours" ), 3)
     message(" ")
     message( paste( "||| Time taken to complete stage 2 interpolations (hours):", p$time_stage2, "" ) )
     currentstatus = stm_db( p=p, DS="statistics.status" )
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
-    p <<- p  # push to parent in case a manual restart is needed
     gc()
   }
 
