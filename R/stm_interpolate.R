@@ -211,10 +211,7 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
     # the following permits user-defined models (might want to use compiler::cmpfun )
     gc()
     res =NULL
-    res = try( 
-      local_fn(p=p, dat=dat, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial, sloc=Sloc[Si,], distance=stm_distance_cur
-      )
-    )
+    res = try( local_fn( p=p, dat=dat, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial, sloc=Sloc[Si,], distance=stm_distance_cur ) )
 
     if (debug) print( str(res))
 
