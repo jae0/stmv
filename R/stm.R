@@ -2,6 +2,11 @@
 
 stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_plot_variable_index=1 ) {
 
+  if (0) {
+    DATA=NULL
+    storage.backend="bigmemory.ram"
+    debug_plot_variable_index=1
+  }
   #\\ localized modelling of space and time data to predict/interpolate upon a grid
   #\\ speed ratings: bigmemory.ram (1), ff (2), bigmemory.filebacked (3)
   # -----------------------------------------------------
@@ -438,7 +443,6 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
     message( "||| Continuing from an interrupted start" )
     message( "|||  with parameters from saved configuration:", file.path( p$stmSaveDir, 'p.rdata' ) )
     p = stm_db( p=p, DS="load.parameters" )
-    stm_db(p=p, DS="statistics.status.reset" )
 
   }  # end of intialization of data structures
 

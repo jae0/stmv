@@ -113,9 +113,7 @@
           out$todo = which( Sflag[]==0L )
           out$n.todo = length(which( Sflag[]==0L ))
         }
-        return()
       }
-
       out$prop_incomp=round( out$n.todo / ( out$n.todo + out$n.complete), 3)
       message( paste("||| Proportion to do:", out$prop_incomp, "\n" ))
       return( out )
