@@ -481,7 +481,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
   if ( "debug" %in% runmode ) {
     currentstatus = stm_db( p=p, DS="statistics.status" )
     p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) ) # random order helps use all cpus
-    p <<- p  # push to parent in case a manual restart is possible
+    # p <<- p  # push to parent in case a manual restart is possible
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     message( "||| Entering browser mode ...")
     browser()
@@ -552,7 +552,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
   }
 
   # save again, in case some timings/etc needed in a restart
-  p <<- p  # push to parent in case a manual restart is possible
+  # p <<- p  # push to parent in case a manual restart is possible
 
   # -----------------------------------------------------
   if ( "save" %in% runmode ) {
