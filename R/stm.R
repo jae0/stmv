@@ -452,9 +452,25 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
   }  # end of intialization of data structures
 
   if (!p$intialized) stop( "||| stm was not initialized properly" )
+
+  # -----------------------------------------------------
+  if ( "debug" %in% runmode ) {
+    if (!p$intialized) {
+      message( "||| Loading parameters from a saved configuration:", file.path( p$stmSaveDir, 'p.rdata' ) )
+      p = stm_db( p=p, DS="load.parameters" )
+      p <<- p  # push to parent in case a manual restart is needed
+    }
+    currentstatus = stm_db( p=p, DS="statistics.status" )
+    p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) ) # random order helps use all cpus
+    print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
+    message( "||| Entering browser mode ...")
+    browser()
+    stm_interpolate (p=p )
+  }
     
+  # -----------------------------------------------------
+
   if ( "debug_pred_static_map" %in% runmode) {
-    # -----------------------------------------------------
       Ploc = stm_attach( p$storage.backend, p$ptr$Ploc )
       P = stm_attach( p$storage.backend, p$ptr$P )
       lattice::levelplot( (P[,debug_plot_variable_index])~Ploc[,1]+Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
@@ -483,15 +499,6 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
       lattice::levelplot(S[,debug_plot_variable_index]~Sloc[,1]+Sloc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
   }
 
-  # -----------------------------------------------------
-  if ( "debug" %in% runmode ) {
-    currentstatus = stm_db( p=p, DS="statistics.status" )
-    p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) ) # random order helps use all cpus
-    print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
-    message( "||| Entering browser mode ...")
-    browser()
-    stm_interpolate (p=p )
-  }
 
 
   # -----------------------------------------------------
