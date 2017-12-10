@@ -7,6 +7,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
     storage.backend="bigmemory.ram"
     debug_plot_variable_index=1
   }
+  
   #\\ localized modelling of space and time data to predict/interpolate upon a grid
   #\\ speed ratings: bigmemory.ram (1), ff (2), bigmemory.filebacked (3)
   # -----------------------------------------------------
@@ -433,7 +434,6 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
     message("||| in linux, you can issue the following command:" )
     message("|||   watch -n 60 cat ",  p$stm_current_status  )
 
-    p <<- p  # push to parent in case a manual restart is needed
     stm_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
     gc()
 
@@ -446,6 +446,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
 
   }  # end of intialization of data structures
 
+  p <<- p  # push to parent in case a manual restart is needed
 
   if ( "debug_pred_static_map" %in% runmode) {
     # -----------------------------------------------------
@@ -501,6 +502,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
     message( paste( "||| Time taken to complete stage 1 interpolations (hours):", p$time_default, "" ) )
     currentstatus = stm_db( p=p, DS="statistics.status" )
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
+    p <<- p  # push to parent in case a manual restart is needed
     gc()
   }
 
@@ -528,6 +530,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
     message( paste( "||| Time taken to complete stage 2 interpolations (hours):", p$time_stage2, "" ) )
     currentstatus = stm_db( p=p, DS="statistics.status" )
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
+    p <<- p  # push to parent in case a manual restart is needed
     gc()
   }
 
@@ -548,6 +551,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
     message( paste( "||| Time taken to complete stage3 interpolations (hours):", p$time_stage3, "" ) )
     currentstatus = stm_db( p=p, DS="statistics.status" )
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
+    p <<- p  # push to parent in case a manual restart is needed
     gc()
   }
 
@@ -574,12 +578,11 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
         message( "||| You can delete them by running: stm_db( p=p, DS='cleanup' ), once you are done. ")
       }
     }
+    p <<- p  # push to parent in case a manual restart is needed
   }
 
   p$time_total = round( difftime( Sys.time(), p$time.start, units="hours" ),3)
-  message(" ")
   message( paste( "||| Time taken for full analysis (hours):", p$time_total ) )
-  message( paste( "||| Your parameter 'p' has been updated in case you need to re-run something like, etc:" ) )
-  message( paste( "||| stm(p=p, runmode='stage3' )" ) )
-  return( "" )
+  message( paste( "||| Your parameter 'p' has been updated in case you need to re-run something" ) )
+  p <<- p
 }
