@@ -451,6 +451,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
     }
   }  # end of intialization of data structures
 
+  if (!exists("initialized", p)) stop( "||| stm was not initialized properly" )
   if (!p$intialized) stop( "||| stm was not initialized properly" )
 
   # -----------------------------------------------------
