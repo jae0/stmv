@@ -1,10 +1,10 @@
 
-stm__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist=FALSE, ... ) {
+stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist=FALSE, ... ) {
 
-  #\\ this is the core engine of stm .. localised space (no-time) modelling interpolation 
+  #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation 
   #\\ note: time is not being modelled and treated independently 
   #\\      .. you had better have enough data in each time slice
-  #\\ first a low-pass filter as defined by p$stm_lowpass_nu, p$stm_lowpass_phi, then a simple covariance filter determined by nu,phi
+  #\\ first a low-pass filter as defined by p$stmv_lowpass_nu, p$stmv_lowpass_phi, then a simple covariance filter determined by nu,phi
   
   if (variablelist)  return( c() )
 
@@ -42,23 +42,23 @@ stm__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist=
   mC = matrix(0, nrow = nr2, ncol = nc2)
   mC[nr, nc] = 1
  
-  if (!exists("stm_fft_filter",p) ) p$stm_fft_filter="lowpass" # default in case of no specification
+  if (!exists("stmv_fft_filter",p) ) p$stmv_fft_filter="lowpass" # default in case of no specification
 
-  if ( p$stm_fft_filter == "lowpass") {
-    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", range=p$stm_lowpass_phi, nu=p$stm_lowpass_nu )
+  if ( p$stmv_fft_filter == "lowpass") {
+    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", range=p$stmv_lowpass_phi, nu=p$stmv_lowpass_nu )
     sp.covar.surf = as.surface(dgrid, c(sp.covar))$z
     sp.covar.kernel = fft(sp.covar.surf) / ( fft(mC) * nr2 * nc2 )
   }
 
-  if (p$stm_fft_filter == "spatial.process") {
+  if (p$stmv_fft_filter == "spatial.process") {
     sp.covar = stationary.cov( dgrid, center, Covariance="Matern", range=phi, nu=nu )
     sp.covar.surf = as.surface(dgrid, c(sp.covar))$z
     sp.covar.kernel = fft(sp.covar.surf) / ( fft(mC) * nr2 * nc2 )
   }
 
-  if (p$stm_fft_filter == "lowpass_spatial.process") {
+  if (p$stmv_fft_filter == "lowpass_spatial.process") {
     # both ..
-    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", range=p$stm_lowpass_phi, nu=p$stm_lowpass_nu )
+    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", range=p$stmv_lowpass_phi, nu=p$stmv_lowpass_nu )
     sp.covar.surf = as.surface(dgrid, c(sp.covar))$z
     sp.covar2 = stationary.cov( dgrid, center, Covariance="Matern", range=phi, nu=nu )
     sp.covar.surf2 = as.surface(dgrid, c(sp.covar2))$z
@@ -121,10 +121,10 @@ stm__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist=
   }
 
 
-  stm_stats = list( sdTotal=sdTotal, rsquared=NA, ndata=nrow(dat) ) # must be same order as p$statsvars
+  stmv_stats = list( sdTotal=sdTotal, rsquared=NA, ndata=nrow(dat) ) # must be same order as p$statsvars
   
   # lattice::levelplot( mean ~ plon + plat, data=pa, col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
 
-  return( list( predictions=pa, stm_stats=stm_stats ) )  
+  return( list( predictions=pa, stmv_stats=stmv_stats ) )  
 }
 

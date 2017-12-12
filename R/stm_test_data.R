@@ -1,6 +1,6 @@
 
 
-stm_test_data = function( datasource="swiss" ) {
+stmv_test_data = function( datasource="swiss" ) {
 
   if ( datasource == "swiss" ) {
     require(geostatsp)
@@ -25,7 +25,7 @@ stm_test_data = function( datasource="swiss" ) {
 
 
   if ( datasource == "binomial" ) {
-    xy = stm_test_data( "swiss")
+    xy = stmv_test_data( "swiss")
     # mimic binomial data from rain values
     xy = as.list(xy)
     xy$N=length(xy$rain)
@@ -41,7 +41,7 @@ stm_test_data = function( datasource="swiss" ) {
 
 
   if ( datasource == "poisson" ) {
-    xy = stm_test_data( "swiss")
+    xy = stmv_test_data( "swiss")
     # mimic poisson data from rain values
     xy = as.list(xy)
     xy$N=length(xy$rain)
@@ -58,7 +58,7 @@ stm_test_data = function( datasource="swiss" ) {
 
 
   if ( datasource == "gaussian" ) {
-    xy = stm_test_data( "swiss")
+    xy = stmv_test_data( "swiss")
     # mimic binomial data from rain values
     xy = as.list(xy)
     xy$N=length(xy$rain)

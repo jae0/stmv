@@ -1,7 +1,7 @@
 
 # NOTE:: not finishe porting fully ... only designed for xy data right no .. no time .. needs more testing
 
-stm__inla = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
+stmv__inla = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
   #\\ generic spatial and space-time interpolator using inla
   #\\ parameter and data requirements can be seen in bathymetry\src\bathymetry.r
   if (variablelist)  return( c() )
@@ -9,15 +9,15 @@ stm__inla = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
   sdTotal=sd(dat[,p$variable$Y], na.rm=T)
 
   # the following parameters are for inside and outside ... do not make them exact multiples as this seems to make things hang ..
-  if ( !exists("inla.mesh.max.edge", p))  p$inla.mesh.max.edge = c(  0.025,   0.04 )    # proportion of 2*p$stm_distance_scale or equivalent: c(inside,outside) -- must be positive valued
-  if ( !exists("inla.mesh.offset", p))  p$inla.mesh.offset   = c( - 0.025,  - 0.05 )   # how much to extend inside and outside of boundary: proportion of stm_distance_scale .. neg val = proportion
-  if ( !exists("inla.mesh.cutoff", p)) p$inla.mesh.cutoff   = c( - 0.05,   - 0.5 )    ## min distance allowed between points: proportion of stm_distance_scale ; neg val = proportion
+  if ( !exists("inla.mesh.max.edge", p))  p$inla.mesh.max.edge = c(  0.025,   0.04 )    # proportion of 2*p$stmv_distance_scale or equivalent: c(inside,outside) -- must be positive valued
+  if ( !exists("inla.mesh.offset", p))  p$inla.mesh.offset   = c( - 0.025,  - 0.05 )   # how much to extend inside and outside of boundary: proportion of stmv_distance_scale .. neg val = proportion
+  if ( !exists("inla.mesh.cutoff", p)) p$inla.mesh.cutoff   = c( - 0.05,   - 0.5 )    ## min distance allowed between points: proportion of stmv_distance_scale ; neg val = proportion
 
   if ( !exists("inla.mesh.hull.radius", p)) p$inla.mesh.hull.radius = c( -0.04, - 0.08 ) ## radius of boundary finding algorythm ; neg val = proportion
 
   if ( !exists("inla.mesh.hull.resolution", p)) p$inla.mesh.hull.resolution = 125  ## resolution for discretization to find boundary
 
-  if ( !exists("stm_eps", p)) p$stm_eps = p$pres / 10  # add a little noise to coordinates to prevent a race condition
+  if ( !exists("stmv_eps", p)) p$stmv_eps = p$pres / 10  # add a little noise to coordinates to prevent a race condition
 
   if ( !exists("inla.alpha", p)) p$inla.alpha = 1.5 # alpha-1 = nu of bessel function curviness
   if ( !exists("inla.nsamples", p)) p$inla.nsamples = 5000 # posterior similations 
@@ -32,9 +32,9 @@ stm__inla = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
 
   #-----------------
   # row, col indices
-  if ( !exists("stm.posterior.extract", p)) {
+  if ( !exists("stmv.posterior.extract", p)) {
     # example for simplest form 
-    p$stm.posterior.extract = function(s, rnm) {
+    p$stmv.posterior.extract = function(s, rnm) {
       # rnm are the rownames that will contain info about the indices ..
       # optimally the grep search should only be done once but doing so would
       # make it difficult to implement in a simple structure/manner ...
@@ -45,12 +45,12 @@ stm__inla = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
     }
   }
 
-  locs_noise = runif( nrow(dat)*2, min=-p$pres*p$stm_eps, max=p$pres*p$stm_eps ) # add  noise  to prevent a race condition
+  locs_noise = runif( nrow(dat)*2, min=-p$pres*p$stmv_eps, max=p$pres*p$stmv_eps ) # add  noise  to prevent a race condition
 
   # also sending direct distances rather than proportion seems to cause issues..
-  MESH = stm_mesh_inla( locs=dat[,p$variables$LOC] + locs_noise,
-    # lengthscale=p$stm_distance_prediction*2,  
-    # max.edge=p$inla.mesh.max.edge * p$stm_distance_prediction*2,
+  MESH = stmv_mesh_inla( locs=dat[,p$variables$LOC] + locs_noise,
+    # lengthscale=p$stmv_distance_prediction*2,  
+    # max.edge=p$inla.mesh.max.edge * p$stmv_distance_prediction*2,
     bnd.offset=p$inla.mesh.offset,
     cutoff=p$inla.mesh.cutoff,
     convex=p$inla.mesh.hull.radius,
@@ -59,7 +59,7 @@ stm__inla = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
 
   rm(locs_noise)
 
-  if (0)  plot( MESH )  # or ... stm_plot( p=p, "mesh", MESH=MESH )
+  if (0)  plot( MESH )  # or ... stmv_plot( p=p, "mesh", MESH=MESH )
 
   SPDE = inla.spde2.matern( MESH,
     alpha=p$inla.alpha #, # alpha is the Bessel smoothness factor - 1
@@ -121,10 +121,10 @@ stm__inla = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
   preds_stack_index = inla.stack.index( DATA, "preds")$data  # indices of predictions in stacked data
   rm ( preds_eff, preds_ydata, preds_A, PREDS, preds_index, preds_locs ); gc()
 
-  if (!exists("stm_local_modelformula", p) )  p$stm_local_modelformula = formula( z ~ -1 + intercept + f( spatial.field, model=SPDE ) ) # SPDE is the spatial covariance model .. defined in 
+  if (!exists("stmv_local_modelformula", p) )  p$stmv_local_modelformula = formula( z ~ -1 + intercept + f( spatial.field, model=SPDE ) ) # SPDE is the spatial covariance model .. defined in 
 
   RES = NULL
-  RES = stm_inla_call( FM=p$stm_local_modelformula, DATA=DATA, SPDE=SPDE, FAMILY=p$inla_family )
+  RES = stmv_inla_call( FM=p$stmv_local_modelformula, DATA=DATA, SPDE=SPDE, FAMILY=p$inla_family )
 
   if (is.null(RES))  return(NULL)
 
@@ -144,21 +144,21 @@ stm__inla = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
   # predictions
   
   preds = NULL
-  if (! exists("stm_inla_prediction", p) ) p$stm_inla_prediction="direct"
+  if (! exists("stmv_inla_prediction", p) ) p$stmv_inla_prediction="direct"
 
-  if ( p$stm_inla_prediction=="direct" ) {
+  if ( p$stmv_inla_prediction=="direct" ) {
     # precomputed ... slow and expensive in RAM/CPU, just extract from tag indices
     pa$mean = RES$summary.fitted.values[ preds_stack_index, "mean"]
     pa$sd = RES$summary.fitted.values[ preds_stack_index, "sd"]
   }
 
-  if ( p$stm_inla_prediction=="projected") {
+  if ( p$stmv_inla_prediction=="projected") {
     #\\ note this method only works with simple additive models 
     #\\ when smoothes are involved, it becomes very complicated and direct estimation is probably faster/easier
     pG = inla.mesh.projector( MESH, loc=as.matrix( pa[,p$variables$LOC]) )
     posterior.samples = inla.posterior.sample(n=p$inla.nsamples, RES)
     rnm = rownames(posterior.samples[[1]]$latent )  
-    posterior = sapply( posterior.samples, p$stm.posterior.extract, rnm=rnm )
+    posterior = sapply( posterior.samples, p$stmv.posterior.extract, rnm=rnm )
     rm(posterior.samples); 
     # robustify the predictions by trimming extreme values .. will have minimal effect upon mean
     # but variance estimates should be useful/more stable as the tails are sometimes quite long 
@@ -183,7 +183,7 @@ stm__inla = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
   rm(MESH)
 
 # bathymetry.figures( DS="predictions", p=p ) # to debug
-  inla.summary = stm_summary_inla_spde2 ( RES, SPDE )
+  inla.summary = stmv_summary_inla_spde2 ( RES, SPDE )
   # save statistics last as this is an indicator of completion of all tasks .. restarts would be broken otherwise
   stats = list()
   stats$sdTotal=sdTotal
@@ -195,7 +195,7 @@ stm__inla = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
   stats$phi = matern_phi2phi( inla.summary[["kappa","mean"]], stats$nu, "inla" )
   stats$range = matern_phi2distance(phi=stats$phi, nu=stats$nu) #95%
   # stats$range = geoR::practicalRange("matern", phi=stats$phi, kappa=stats$nu  )
-  return (list(predictions=pa, stm_stats=stats))
+  return (list(predictions=pa, stmv_stats=stats))
 }
 
 

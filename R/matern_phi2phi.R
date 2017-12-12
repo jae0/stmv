@@ -1,6 +1,6 @@
 
-matern_phi2phi = function( mRange, mSmooth, parameterization_input="stm", parameterization_output="stm" ) {
-  # convert range parameter to/from stm form:
+matern_phi2phi = function( mRange, mSmooth, parameterization_input="stmv", parameterization_output="stmv" ) {
+  # convert range parameter to/from stmv form:
 
   #\\ NOTE:: the default parameterization is Wikipedia's paramterization:
   #\\ == Rasmussen, Carl Edward (2006) Gaussian Processes for Machine Learning
@@ -17,8 +17,8 @@ matern_phi2phi = function( mRange, mSmooth, parameterization_input="stm", parame
     warning( "Need to check parameterization of ", io)
   }
   
-  mRange_stm = switch(parameterization_input,
-      stm = mRange , 
+  mRange_stmv = switch(parameterization_input,
+      stmv = mRange , 
       wikipedia = mRange,  
       RandomFields = mRange ,
       geoR = mRange * sqrt(2*mSmooth ),
@@ -32,20 +32,20 @@ matern_phi2phi = function( mRange, mSmooth, parameterization_input="stm", parame
   )
 
   mRange_output = switch( parameterization_output,
-      stm = mRange_stm,
-      wikipedia = mRange_stm,
-      RandomFields = mRange_stm ,
-      geoR = mRange_stm * sqrt(2*mSmooth ),
-      fields = mRange_stm * sqrt(2*mSmooth ), 
-      gstat = mRange_stm * sqrt(2*mSmooth ), 
-      spBayes = sqrt(2*mSmooth) /mRange_stm  ,
-      bayesx = sqrt(2*mSmooth ) / mRange_stm ,
-      inla = sqrt(2*mSmooth) / mRange_stm  ,   
-      geostatsp = 2*mRange_stm,  #   sqrt(8*mSmooth) = 2 * sqrt(2*mSmooth) 
+      stmv = mRange_stmv,
+      wikipedia = mRange_stmv,
+      RandomFields = mRange_stmv ,
+      geoR = mRange_stmv * sqrt(2*mSmooth ),
+      fields = mRange_stmv * sqrt(2*mSmooth ), 
+      gstat = mRange_stmv * sqrt(2*mSmooth ), 
+      spBayes = sqrt(2*mSmooth) /mRange_stmv  ,
+      bayesx = sqrt(2*mSmooth ) / mRange_stmv ,
+      inla = sqrt(2*mSmooth) / mRange_stmv  ,   
+      geostatsp = 2*mRange_stmv,  #   sqrt(8*mSmooth) = 2 * sqrt(2*mSmooth) 
      "not found"
   )
 
-  if ("not found" %in% c(mRange_stm, mRange_output) ) warning("Parameterization not found:", parameterization_input, parameterization_output)
+  if ("not found" %in% c(mRange_stmv, mRange_output) ) warning("Parameterization not found:", parameterization_input, parameterization_output)
 
   return(mRange_output)
 }

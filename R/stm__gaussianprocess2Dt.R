@@ -1,6 +1,6 @@
 
-stm__gaussianprocess2Dt = function(p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ...  ) {
-  #\\ this is the core engine of stm .. localised space (no-time) modelling interpolation 
+stmv__gaussianprocess2Dt = function(p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ...  ) {
+  #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation 
   # \ as a 2D gaussian process (basically, simple krigimg or TPS -- time is treated as being independent)
   #\\ note: time is not being modelled and treated independently 
   #\\      .. you had better have enough data in each time slice ..  essentially this is kriging 
@@ -45,7 +45,7 @@ stm__gaussianprocess2Dt = function(p=NULL, dat=NULL, pa=NULL, variablelist=FALSE
     ss = lm( dat$mean[xi] ~ dat[xi,p$variables$Y], na.action=na.omit)
     if ( "try-error" %in% class( ss ) ) next()
     rsquared = summary(ss)$r.squared
-    if (rsquared < p$stm_rsquared_threshold ) next()
+    if (rsquared < p$stmv_rsquared_threshold ) next()
 
     if ( exists("TIME", p$variables) ) {
       pa_i = which( pa[, p$variables$TIME]==p$prediction.ts[ti])
@@ -72,14 +72,14 @@ stm__gaussianprocess2Dt = function(p=NULL, dat=NULL, pa=NULL, variablelist=FALSE
   ss = lm( dat$mean ~ dat[,p$variables$Y], na.action=na.omit)
   if ( "try-error" %in% class( ss ) ) return( NULL )
   rsquared = summary(ss)$r.squared
-  if (rsquared < p$stm_rsquared_threshold ) return(NULL)
+  if (rsquared < p$stmv_rsquared_threshold ) return(NULL)
 
   # TODO:: add some more stats: eg. range estimates, nugget/sill, etc..
 
-  stm_stats = list( sdTotal=sdTotal, rsquared=rsquared, ndata=nrow(dat) ) # must be same order as p$statsvars
+  stmv_stats = list( sdTotal=sdTotal, rsquared=rsquared, ndata=nrow(dat) ) # must be same order as p$statsvars
   
   # lattice::levelplot( mean ~ plon + plat, data=pa, col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
 
-  return( list( predictions=pa, stm_stats=stm_stats ) )  
+  return( list( predictions=pa, stmv_stats=stmv_stats ) )  
 }
 

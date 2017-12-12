@@ -1,4 +1,4 @@
-Package: stm
+Package: stmv
 Title: Spatiotemporal modelling
 Version: 0.1
 Authors@R: c( person("Jae", "Choi", email="choijaeseok@gmail.com", role=c("aut", "cre")) )
@@ -33,4 +33,4 @@ ByteCompile: TRUE
 VignetteBuilder: knitr
 License: MIT
 LazyData: true
-URL: https://github.com/jae0/stm/
+URL: https://github.com/jae0/stmv/

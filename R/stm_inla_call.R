@@ -1,6 +1,6 @@
 
-  stm_inla_call = function( FM, DATA, SPDE, FAMILY ) {
-    #\\ call inla using stm expected data objects: 
+  stmv_inla_call = function( FM, DATA, SPDE, FAMILY ) {
+    #\\ call inla using stmv expected data objects: 
     #\\   FM is the model formula
     #\\   DATA is the "stacked" data
     #\\   SPDE is the SPDE spatial covariance data object (Matern)

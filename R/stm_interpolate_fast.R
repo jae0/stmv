@@ -1,22 +1,22 @@
 
-stm_interpolate_fast = function( ip=NULL, p ) {
+stmv_interpolate_fast = function( ip=NULL, p ) {
 
-  #// designed to be called from stm_interpolate
+  #// designed to be called from stmv_interpolate
   #// for the sake of speed and parallelization, the kernel density method via fft is written out again .. it is taken from fields::smooth.2d
   #// the spatial interpolation is smoother than what is expected from a kriging covariance
 
   if (exists( "libs", p)) RLibrary( p$libs )
   if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
 
-  S = stm_attach( p$storage.backend, p$ptr$S )
+  S = stmv_attach( p$storage.backend, p$ptr$S )
 
   # do this here as the Stats are from the most reliable estimates
   nu = median(  S[,which( p$statsvars=="nu" )], na.rm=TRUE )
   phi = median(  S[,which( p$statsvars=="phi" )], na.rm=TRUE )
 
-  P = stm_attach( p$storage.backend, p$ptr$P )
-  Psd = stm_attach( p$storage.backend, p$ptr$Psd )
-  Ploc = stm_attach( p$storage.backend, p$ptr$Ploc )
+  P = stmv_attach( p$storage.backend, p$ptr$P )
+  Psd = stmv_attach( p$storage.backend, p$ptr$Psd )
+  Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
 
   dx = dy = p$pres
   nr = p$nplons

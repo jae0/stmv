@@ -1,7 +1,7 @@
 
 
 
-stm_predictionarea = function(p, sloc, windowsize.half ) {
+stmv_predictionarea = function(p, sloc, windowsize.half ) {
 
 
   pa_w = -windowsize.half : windowsize.half # default window size 
@@ -18,7 +18,7 @@ stm_predictionarea = function(p, sloc, windowsize.half ) {
   if (length(bad) > 0 ) pa = pa[-bad,] 
   if (nrow(pa) < 5) return(NULL) 
 
-  Ploc = stm_attach( p$storage.backend, p$ptr$Ploc )
+  Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
   ploc_ids = array_map( "xy->1", Ploc[], gridparams=p$gridparams )
 
   pa$i = match( array_map( "2->1", pa[, c("iplon", "iplat")], gridparams=p$gridparams ), ploc_ids )
@@ -38,7 +38,7 @@ stm_predictionarea = function(p, sloc, windowsize.half ) {
     for (ci in 1:p$nloccov) {
       vn = p$variables$local_cov[ci]
       pu = NULL
-      pu = stm_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
+      pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
       nts = ncol(pu)
       if ( nts== 1 ) {
         pvars = c( pvars, vn )
@@ -53,14 +53,14 @@ stm_predictionarea = function(p, sloc, windowsize.half ) {
                     rep.int(p$prediction.ts, rep(pa_n, p$nt )) )
     names(pa) = c( pvars, p$variables$TIME )
 
-    pa = cbind( pa, stm_timecovars ( vars=p$variables$local_all, ti=pa[,p$variables$TIME]  ) )
+    pa = cbind( pa, stmv_timecovars ( vars=p$variables$local_all, ti=pa[,p$variables$TIME]  ) )
 
     if (p$nloccov > 0) {
       # add time-varying covars .. not necessary except when covars are modelled locally
       for (ci in 1:p$nloccov) {
         vn = p$variables$local_cov[ci]
         pu = NULL
-        pu = stm_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
+        pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
         nts = ncol(pu)
         if ( nts == p$ny )  {
           pa$iy = pa$yr - p$yrs[1] + 1 #yr index

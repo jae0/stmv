@@ -1,6 +1,6 @@
 
 
-stm_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
+stmv_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
   #\\ core function to interpolate (model and predict) in parallel
 
   # ---------------------
@@ -18,35 +18,35 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
   
   #---------------------
   # data for modelling
-  S = stm_attach( p$storage.backend, p$ptr$S )
-  Sflag = stm_attach( p$storage.backend, p$ptr$Sflag )
+  S = stmv_attach( p$storage.backend, p$ptr$S )
+  Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
 
-  Sloc = stm_attach( p$storage.backend, p$ptr$Sloc )
-  Ploc = stm_attach( p$storage.backend, p$ptr$Ploc )
-  Yloc = stm_attach( p$storage.backend, p$ptr$Yloc )
+  Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
+  Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+  Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
 
-  Y = stm_attach( p$storage.backend, p$ptr$Y )
+  Y = stmv_attach( p$storage.backend, p$ptr$Y )
 
-  P = stm_attach( p$storage.backend, p$ptr$P )
-  Pn = stm_attach( p$storage.backend, p$ptr$Pn )
-  Psd = stm_attach( p$storage.backend, p$ptr$Psd )
+  P = stmv_attach( p$storage.backend, p$ptr$P )
+  Pn = stmv_attach( p$storage.backend, p$ptr$Pn )
+  Psd = stmv_attach( p$storage.backend, p$ptr$Psd )
 
 
   if (p$nloccov > 0) {
-    Ycov = stm_attach( p$storage.backend, p$ptr$Ycov )
+    Ycov = stmv_attach( p$storage.backend, p$ptr$Ycov )
   }
 
   if ( exists("TIME", p$variables) ) {
-    Ytime = stm_attach( p$storage.backend, p$ptr$Ytime )
+    Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )
   }
 
-  Yi = stm_attach( p$storage.backend, p$ptr$Yi )
+  Yi = stmv_attach( p$storage.backend, p$ptr$Yi )
 
   # misc intermediate calcs to be done outside of parallel loops
   upsampling = sort( p$sampling[ which( p$sampling > 1 ) ] )
-  upsampling = upsampling[ which(upsampling*p$stm_distance_scale <= p$stm_distance_max )]
+  upsampling = upsampling[ which(upsampling*p$stmv_distance_scale <= p$stmv_distance_max )]
   downsampling = sort( p$sampling[ which( p$sampling < 1) ] , decreasing=TRUE )
-  downsampling = downsampling[ which(downsampling*p$stm_distance_scale >= p$stm_distance_min )]
+  downsampling = downsampling[ which(downsampling*p$stmv_distance_scale >= p$stmv_distance_min )]
 
   localcount = -1
 
@@ -65,25 +65,25 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
 
   stime = Sys.time()
 
-  local_fn = switch( p$stm_local_modelengine,
-    bayesx = stm__bayesx,
-    gaussianprocess2Dt = stm__gaussianprocess2Dt,
-    inla = stm__inla,
-    gam = stm__gam,
-    glm = stm__glm,
-    gstat = stm__gstat,
-    krige = stm__krige,
-    fft = stm__fft,
-    tps = stm__tps,
-    twostep = stm__twostep,
-    userdefined = p$stm_local_modelengine_userdefined
+  local_fn = switch( p$stmv_local_modelengine,
+    bayesx = stmv__bayesx,
+    gaussianprocess2Dt = stmv__gaussianprocess2Dt,
+    inla = stmv__inla,
+    gam = stmv__gam,
+    glm = stmv__glm,
+    gstat = stmv__gstat,
+    krige = stmv__krige,
+    fft = stmv__fft,
+    tps = stmv__tps,
+    twostep = stmv__twostep,
+    userdefined = p$stmv_local_modelengine_userdefined
   )
   
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
 
     localcount = localcount + 1
-    if (( localcount %% 20 )== 0) currentstatus = stm_logfile(p=p, stime=stime)
+    if (( localcount %% 20 )== 0) currentstatus = stmv_logfile(p=p, stime=stime)
 
     Si = p$runs[ iip, "locs" ]
 
@@ -95,8 +95,8 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
     # find data nearest S[Si,] and with sufficient data
     dlon = abs( Sloc[Si,1] - Yloc[Yi[],1] )
     dlat = abs( Sloc[Si,2] - Yloc[Yi[],2] )
-    U =  which( {dlon  <= p$stm_distance_scale} & {dlat <= p$stm_distance_scale} )
-    stm_distance_cur = p$stm_distance_scale
+    U =  which( {dlon  <= p$stmv_distance_scale} & {dlat <= p$stmv_distance_scale} )
+    stmv_distance_cur = p$stmv_distance_scale
     ndata = length(U)
 
     if (0) {
@@ -110,8 +110,8 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
     if (ndata < p$n.min) {
       # need to upsample
       for ( usamp in upsampling )  {
-        stm_distance_cur = p$stm_distance_scale * usamp
-        U = which( {dlon < stm_distance_cur} & {dlat < stm_distance_cur} ) # faster to take a block
+        stmv_distance_cur = p$stmv_distance_scale * usamp
+        U = which( {dlon < stmv_distance_cur} & {dlat < stmv_distance_cur} ) # faster to take a block
         ndata = length(U)
         if ( ndata >= p$n.min ) break()
       }
@@ -125,18 +125,18 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
 
     # crude (mean) variogram across all time slices
     o = NULL
-    o = try( stm_variogram( xy=Yloc[U,], z=Y[U], methods=p$stm_variogram_method,
-      distance_cutoff=stm_distance_cur, nbreaks=13 ) )
+    o = try( stmv_variogram( xy=Yloc[U,], z=Y[U], methods=p$stmv_variogram_method,
+      distance_cutoff=stmv_distance_cur, nbreaks=13 ) )
     if ( is.null(o)) next()
     if ( inherits(o, "try-error")) next()
-    if ( !exists(p$stm_variogram_method, o)) next()
+    if ( !exists(p$stmv_variogram_method, o)) next()
 
     ores = NULL
-    ores = o[[p$stm_variogram_method]] # store current best estimate of variogram characteristics
+    ores = o[[p$stmv_variogram_method]] # store current best estimate of variogram characteristics
     if ( !exists("range_ok", ores) ) next()
     if ( !ores[["range_ok"]] ) next()
-    if ( {ores[["range"]] > p$stm_distance_min} & {ores[["range"]] <= p$stm_distance_max} ) {
-      stm_distance_cur = ores[["range"]]
+    if ( {ores[["range"]] > p$stmv_distance_min} & {ores[["range"]] <= p$stmv_distance_max} ) {
+      stmv_distance_cur = ores[["range"]]
       vario_U  = which( {dlon  <= ores[["range"]] } & {dlat <= ores[["range"]]} )
       vario_ndata =length(vario_U)
       if (vario_ndata < p$n.min) next()
@@ -152,14 +152,14 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
 
     dlon=dlat=o=NULL; gc()
 
-    YiU = Yi[U] # YiU and p$stm_distance_prediction determine the data entering into local model construction
-    pa = stm_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=p$windowsize.half )
+    YiU = Yi[U] # YiU and p$stmv_distance_prediction determine the data entering into local model construction
+    pa = stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=p$windowsize.half )
     if (is.null(pa)) next()
 
       if (debug) {
         # check that position indices are working properly
-        Sloc = stm_attach( p$storage.backend, p$ptr$Sloc )
-        Yloc = stm_attach( p$storage.backend, p$ptr$Yloc )
+        Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
+        Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
         plot( Yloc[U,2]~ Yloc[U,1], col="red", pch=".",
           ylim=range(c(Yloc[U,2], Sloc[Si,2], Ploc[pa$i,2]) ),
           xlim=range(c(Yloc[U,1], Sloc[Si,1], Ploc[pa$i,1]) ) ) # all data
@@ -185,19 +185,19 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
     # dat[ which( dat[,iwei] < 1e-4 ), iwei ] = 1e-4
     # dat[ which( dat[,iwei] > 1 ) , iwei ] = 1
     if (p$nloccov > 0) dat[,icov] = Ycov[YiU,] # no need for other dim checks as this is user provided
-    if (exists("TIME", p$variables)) dat[, itime_cov] = as.matrix(stm_timecovars( vars=ti_cov, ti=Ytime[YiU, ] ) )
+    if (exists("TIME", p$variables)) dat[, itime_cov] = as.matrix(stmv_timecovars( vars=ti_cov, ti=Ytime[YiU, ] ) )
     dat = as.data.frame(dat)
     names(dat) = dat_names
 
     nu = phi = varSpatial = varObs = NULL
     if ( exists("nu", ores)  && is.finite(ores$nu) ) nu = ores$nu
-    if (is.null(nu)) nu = p$stm_lowpass_nu
+    if (is.null(nu)) nu = p$stmv_lowpass_nu
     if (is.null(nu)) nu = 0.5
     if (!is.finite(nu)) nu = 0.5
 
     if ( exists("phi", ores) && is.finite(ores$phi) ) if ( ores$phi > (p$pres/2) ) phi = ores$phi
-    if (is.null(phi)) phi = stm_distance_cur/sqrt(8*nu) # crude estimate of phi based upon current scaling  distance approximates the range at 90% autocorrelation(e.g., see Lindgren et al. 2011)
-    if (!is.finite(phi)) phi = stm_distance_cur/sqrt(8*nu)
+    if (is.null(phi)) phi = stmv_distance_cur/sqrt(8*nu) # crude estimate of phi based upon current scaling  distance approximates the range at 90% autocorrelation(e.g., see Lindgren et al. 2011)
+    if (!is.finite(phi)) phi = stmv_distance_cur/sqrt(8*nu)
 
     if ( exists("varSpatial", ores)  && is.finite(ores$varSpatial) ) varSpatial = ores$varSpatial
     if (is.null(varSpatial)) varSpatial =0.5 * var( dat[, p$variables$Y], na.rm=TRUE)
@@ -211,7 +211,7 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
     # the following permits user-defined models (might want to use compiler::cmpfun )
     gc()
     res =NULL
-    res = try( local_fn( p=p, dat=dat, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial, sloc=Sloc[Si,], distance=stm_distance_cur ) )
+    res = try( local_fn( p=p, dat=dat, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial, sloc=Sloc[Si,], distance=stmv_distance_cur ) )
 
     if (debug) print( str(res))
 
@@ -236,8 +236,8 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
       next()
     }
 
-    if (exists( "stm_quantile_bounds", p)) {
-      tq = quantile( Y[YiU], probs=p$stm_quantile_bounds, na.rm=TRUE  )
+    if (exists( "stmv_quantile_bounds", p)) {
+      tq = quantile( Y[YiU], probs=p$stmv_quantile_bounds, na.rm=TRUE  )
       toolow  = which( res$predictions$mean < tq[1] )
       toohigh = which( res$predictions$mean > tq[2] )
       if (length( toolow) > 0)  res$predictions$mean[ toolow] = tq[1]
@@ -251,24 +251,24 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
     }
 
     # stats collator
-    if (!exists("stm_stats",  res) ) res$stm_stats = list()
+    if (!exists("stmv_stats",  res) ) res$stmv_stats = list()
 
-    if (!exists("sdSpatial", res$stm_stats)) {
+    if (!exists("sdSpatial", res$stmv_stats)) {
       # some methods can generate spatial stats simultaneously ..
       # it is faster to keep them all together instead of repeating here
       # field and RandomFields gaussian processes seem most promising ...
       # default to fields for speed:
-      res$stm_stats["sdSpatial"] = NA
-      res$stm_stats["sdObs"] = NA
-      res$stm_stats["range"] = NA
-      res$stm_stats["phi"] = NA
-      res$stm_stats["nu"] = NA
+      res$stmv_stats["sdSpatial"] = NA
+      res$stmv_stats["sdObs"] = NA
+      res$stmv_stats["range"] = NA
+      res$stmv_stats["phi"] = NA
+      res$stmv_stats["nu"] = NA
       if ( !is.null(ores)) {
-        if ( exists("varSpatial", ores) ) res$stm_stats["sdSpatial"] = sqrt( ores[["varSpatial"]] )
-        if ( exists("varObs", ores) ) res$stm_stats["sdObs"] = sqrt(ores[["varObs"]])
-        if ( exists("range", ores) ) res$stm_stats["range"] = ores[["range"]]
-        if ( exists("phi", ores) ) res$stm_stats["phi"] = ores[["phi"]]
-        if ( exists("nu", ores) ) res$stm_stats["nu"] = ores[["nu"]]
+        if ( exists("varSpatial", ores) ) res$stmv_stats["sdSpatial"] = sqrt( ores[["varSpatial"]] )
+        if ( exists("varObs", ores) ) res$stmv_stats["sdObs"] = sqrt(ores[["varObs"]])
+        if ( exists("range", ores) ) res$stmv_stats["range"] = ores[["range"]]
+        if ( exists("phi", ores) ) res$stmv_stats["phi"] = ores[["phi"]]
+        if ( exists("nu", ores) ) res$stmv_stats["nu"] = ores[["nu"]]
       }
     }
 
@@ -278,8 +278,8 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
       pac_i = which( res$predictions$plon==Sloc[Si,1] & res$predictions$plat==Sloc[Si,2] )
       # plot( mean~tiyr, res$predictions[pac_i,])
       # plot( mean~tiyr, res$predictions, pch="." )
-      res$stm_stats["ar_timerange"] = NA
-      res$stm_stats["ar_1"] = NA
+      res$stmv_stats["ar_timerange"] = NA
+      res$stmv_stats["ar_1"] = NA
 
       if (length(pac_i) > 5) {
         pac = res$predictions[ pac_i, ]
@@ -289,9 +289,9 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
         pac = pac[ order(pac[,p$variables$TIME]),]
         if (length(piid) > 5 ) {
           ts.stat = NULL
-          ts.stat = try( stm_timeseries( pac$mean, method="fft" ) )
+          ts.stat = try( stmv_timeseries( pac$mean, method="fft" ) )
           if (!is.null(ts.stat) && !inherits(ts.stat, "try-error") ) {
-            res$stm_stats["ar_timerange"] = ts.stat$quantilePeriod
+            res$stmv_stats["ar_timerange"] = ts.stat$quantilePeriod
             if (all( is.finite(pac$mean))) {
               afin = which (is.finite(pac$mean) )
               if (length(afin) > 5 && var( pac$mean, na.rm=TRUE) > p$eps ) {
@@ -299,19 +299,19 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
                 ar1 = try( ar( pac$mean, order.max=1 ) )
                 if (!inherits(ar1, "try-error")) {
                   if ( length(ar1$ar) == 1 ) {
-                    res$stm_stats["ar_1"] = ar1$ar
+                    res$stmv_stats["ar_1"] = ar1$ar
                   }
                 }
               }
             }
-            if ( !is.finite(res$stm_stats[["ar_1"]]) ) {
+            if ( !is.finite(res$stmv_stats[["ar_1"]]) ) {
               ar1 = try( cor( pac$mean[1:(length(piid) - 1)], pac$mean[2:(length(piid))], use="pairwise.complete.obs" ) )
-              if (!inherits(ar1, "try-error")) res$stm_stats["ar_1"] = ar1
+              if (!inherits(ar1, "try-error")) res$stmv_stats["ar_1"] = ar1
             }
           }
 
           ### Do the logistic model here ! -- if not already done ..
-          if (!exists("ts_K", res$stm_stats)) {
+          if (!exists("ts_K", res$stmv_stats)) {
             # model as a logistic with ts_r, ts_K, etc .. as stats outputs
 
           }
@@ -407,8 +407,8 @@ stm_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
 
     # save stats
     for ( k in 1: length(p$statsvars) ) {
-      if (exists( p$statsvars[k], res$stm_stats )) {
-        S[Si,k] = res$stm_stats[[ p$statsvars[k] ]]
+      if (exists( p$statsvars[k], res$stmv_stats )) {
+        S[Si,k] = res$stmv_stats[[ p$statsvars[k] ]]
       }
     }
 

@@ -1,6 +1,6 @@
 
 
-stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_plot_variable_index=1 ) {
+stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_plot_variable_index=1 ) {
 
   if (0) {
     DATA=NULL
@@ -11,9 +11,9 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
   #\\ localized modelling of space and time data to predict/interpolate upon a grid
   #\\ speed ratings: bigmemory.ram (1), ff (2), bigmemory.filebacked (3)
   # -----------------------------------------------------
-  if (!exists("stmSaveDir", p)) p$stmSaveDir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
+  if (!exists("stmvSaveDir", p)) p$stmvSaveDir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
 
-  if ( !file.exists(p$stmSaveDir)) dir.create( p$stmSaveDir, recursive=TRUE, showWarnings=FALSE )
+  if ( !file.exists(p$stmvSaveDir)) dir.create( p$stmvSaveDir, recursive=TRUE, showWarnings=FALSE )
 
   if ( "initialize" %in% runmode ) {
 
@@ -22,11 +22,11 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
 
     message( " ")
     message( "||| In case something should go wrong, intermediary outputs will be placed at:" )
-    message( "|||",  p$stmSaveDir  )
+    message( "|||",  p$stmvSaveDir  )
     message( " ")
 
-    p = stm_parameters(p=p) # fill in parameters with defaults where possible
-    p = stm_db( p=p, DS="filenames" )
+    p = stmv_parameters(p=p) # fill in parameters with defaults where possible
+    p = stmv_db( p=p, DS="filenames" )
 
     p$ptr = list() # location for data pointers
 
@@ -74,25 +74,25 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
     message(" ")
     message( "||| Initializing temporary storage of data and outputs files... ")
     message( "||| These are large files (4 to 6 X 5GB), it will take a minute ... ")
-    stm_db( p=p, DS="cleanup" )
+    stmv_db( p=p, DS="cleanup" )
 
     p$nloccov = 0
     if (exists("local_cov", p$variables)) p$nloccov = length(p$variables$local_cov)
 
     # construct prediction/output grid area ('pa')
-    p$windowsize.half = floor(p$stm_distance_prediction/p$pres) # convert distance to discretized increments of row/col indices
+    p$windowsize.half = floor(p$stmv_distance_prediction/p$pres) # convert distance to discretized increments of row/col indices
 
-    if (exists("stm_Y_transform", p)) {
-      DATA$input[, p$variables$Y ] = p$stm_Y_transform[[1]] (DATA$input[, p$variables$Y ] )
+    if (exists("stmv_Y_transform", p)) {
+      DATA$input[, p$variables$Y ] = p$stmv_Y_transform[[1]] (DATA$input[, p$variables$Y ] )
     }
 
 
-    if (  exists("stm_global_modelengine", p) ) {
-      if ( p$stm_global_modelengine !="none" ) {
+    if (  exists("stmv_global_modelengine", p) ) {
+      if ( p$stmv_global_modelengine !="none" ) {
       # to add global covariate model (hierarchical)
       # .. simplistic this way but faster ~ kriging with external drift
         if ("globalmodel" %in% runmode) {
-          stm_db( p=p, DS="global_model.redo", B=DATA$input )
+          stmv_db( p=p, DS="global_model.redo", B=DATA$input )
         }
       }
     }
@@ -103,8 +103,8 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
     # init output data objects
     # statistics storage matrix ( aggregation window, coords ) .. no inputs required
     sbox = list(
-      plats = seq( p$corners$plat[1], p$corners$plat[2], by=p$stm_distance_statsgrid ),
-      plons = seq( p$corners$plon[1], p$corners$plon[2], by=p$stm_distance_statsgrid ) )
+      plats = seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ),
+      plons = seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ) )
 
     # statistics coordinates
     Sloc = as.matrix( expand.grid( sbox$plons, sbox$plats ))
@@ -115,7 +115,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
       }
       if (p$storage.backend == "bigmemory.filebacked" ) {
         p$ptr$Sloc  = p$cache$Sloc
-        bigmemory::as.big.matrix( Sloc, type="double", backingfile=basename(p$bm$Sloc), descriptorfile=basename(p$cache$Sloc), backingpath=p$stmSaveDir )
+        bigmemory::as.big.matrix( Sloc, type="double", backingfile=basename(p$bm$Sloc), descriptorfile=basename(p$cache$Sloc), backingpath=p$stmvSaveDir )
       }
       if (p$storage.backend == "ff" ) {
         p$ptr$Sloc = ff( Sloc, dim=dim(Sloc), file=p$cache$Sloc, overwrite=TRUE )
@@ -130,7 +130,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
       }
       if (p$storage.backend == "bigmemory.filebacked" ) {
         p$ptr$S  = p$cache$S
-        bigmemory::as.big.matrix( S, type="double", backingfile=basename(p$bm$S), descriptorfile=basename(p$cache$S), backingpath=p$stmSaveDir )
+        bigmemory::as.big.matrix( S, type="double", backingfile=basename(p$bm$S), descriptorfile=basename(p$cache$S), backingpath=p$stmvSaveDir )
       }
       if (p$storage.backend == "ff" ) {
         p$ptr$S = ff( S, dim=dim(S), file=p$cache$S, overwrite=TRUE )
@@ -144,7 +144,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
       }
       if (p$storage.backend == "bigmemory.filebacked" ) {
         p$ptr$Sflag  = p$cache$Sflag
-        bigmemory::as.big.matrix( Sflag, type="double", backingfile=basename(p$bm$Sflag), descriptorfile=basename(p$cache$Sflag), backingpath=p$stmSaveDir )
+        bigmemory::as.big.matrix( Sflag, type="double", backingfile=basename(p$bm$Sflag), descriptorfile=basename(p$cache$Sflag), backingpath=p$stmvSaveDir )
       }
       if (p$storage.backend == "ff" ) {
         p$ptr$Sflag = ff( Sflag, dim=dim(Sflag), file=p$cache$Sflag, overwrite=TRUE )
@@ -153,10 +153,10 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
 
     # data to be worked upon .. either the raw data or covariate-residuals
     Ydata = as.matrix(DATA$input[, p$variables$Y ])
-    if (exists("stm_global_modelengine", p)) {
-      if (p$stm_global_modelengine !="none" ) {
+    if (exists("stmv_global_modelengine", p)) {
+      if (p$stmv_global_modelengine !="none" ) {
         # at present only those that have a predict and residuals methods ... 
-        covmodel = stm_db( p=p, DS="global_model")
+        covmodel = stmv_db( p=p, DS="global_model")
         Ypreds = predict(covmodel, type="link", se.fit=FALSE )  ## TODO .. keep track of the SE
         Ydata  = residuals(covmodel, type="deviance") # ie. link scale .. this is the default but make it explicit
         covmodel =NULL; gc()
@@ -171,14 +171,14 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
       }
       if (p$storage.backend == "bigmemory.filebacked" ) {
         p$ptr$Y  = p$cache$Y
-        bigmemory::as.big.matrix( Ydata, type="double", backingfile=basename(p$bm$Y), descriptorfile=basename(p$cache$Y), backingpath=p$stmSaveDir )
+        bigmemory::as.big.matrix( Ydata, type="double", backingfile=basename(p$bm$Y), descriptorfile=basename(p$cache$Y), backingpath=p$stmvSaveDir )
       }
       if (p$storage.backend == "ff" ) {
         p$ptr$Y = ff( Ydata, dim=dim(Ydata), file=p$cache$Y, overwrite=TRUE )
       }
     rm(Ydata)
 
-    Y = stm_attach( p$storage.backend, p$ptr$Y )
+    Y = stmv_attach( p$storage.backend, p$ptr$Y )
 
    # data coordinates
     Yloc = as.matrix( DATA$input[, p$variables$LOCS ])
@@ -189,7 +189,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
       }
       if (p$storage.backend == "bigmemory.filebacked" ) {
         p$ptr$Yloc  = p$cache$Yloc
-        bigmemory::as.big.matrix( Yloc, type="double", backingfile=basename(p$bm$Yloc), descriptorfile=basename(p$cache$Yloc), backingpath=p$stmSaveDir )
+        bigmemory::as.big.matrix( Yloc, type="double", backingfile=basename(p$bm$Yloc), descriptorfile=basename(p$cache$Yloc), backingpath=p$stmvSaveDir )
       }
       if (p$storage.backend == "ff" ) {
         p$ptr$Yloc = ff( Yloc, dim=dim(Yloc), file=p$cache$Yloc, overwrite=TRUE )
@@ -206,7 +206,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
         }
         if (p$storage.backend == "bigmemory.filebacked" ) {
           p$ptr$Ycov  = p$cache$Ycov
-          bigmemory::as.big.matrix( Ycov, type="double", backingfile=basename(p$bm$Ycov), descriptorfile=basename(p$cache$Ycov), backingpath=p$stmSaveDir )
+          bigmemory::as.big.matrix( Ycov, type="double", backingfile=basename(p$bm$Ycov), descriptorfile=basename(p$cache$Ycov), backingpath=p$stmvSaveDir )
         }
         if (p$storage.backend == "ff" ) {
           p$ptr$Ycov = ff( Ycov, dim=dim(Ycov), file=p$cache$Ycov, overwrite=TRUE )
@@ -224,7 +224,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
         }
         if (p$storage.backend == "bigmemory.filebacked" ) {
           p$ptr$Ytime  = p$cache$Ytime
-          bigmemory::as.big.matrix( Ytime, type="double", backingfile=basename(p$bm$Ytime), descriptorfile=basename(p$cache$Ytime), backingpath=p$stmSaveDir )
+          bigmemory::as.big.matrix( Ytime, type="double", backingfile=basename(p$bm$Ytime), descriptorfile=basename(p$cache$Ytime), backingpath=p$stmvSaveDir )
         }
         if (p$storage.backend == "ff" ) {
           p$ptr$Ytime = ff( Ytime, dim=dim(Ytime), file=p$cache$Ytime, overwrite=TRUE )
@@ -246,7 +246,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
         }
         if (p$storage.backend == "bigmemory.filebacked" ) {
           p$ptr$Pcov[[covname]]  = p$cache$Pcov[[covname]]
-          bigmemory::as.big.matrix( Pcovdata, type="double", backingfile=basename(p$bm$Pcov[[covname]]), descriptorfile=basename(p$cache$Pcov[[covname]]), backingpath=p$stmSaveDir )
+          bigmemory::as.big.matrix( Pcovdata, type="double", backingfile=basename(p$bm$Pcov[[covname]]), descriptorfile=basename(p$cache$Pcov[[covname]]), backingpath=p$stmvSaveDir )
         }
         if (p$storage.backend == "ff" ) {
           p$ptr$Pcov[[covname]] = ff( Pcovdata, dim=dim(Pcovdata), file=p$cache$Pcov[[covname]], overwrite=TRUE )
@@ -265,7 +265,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
       }
       if (p$storage.backend == "bigmemory.filebacked" ) {
         p$ptr$P  = p$cache$P
-        bigmemory::as.big.matrix( P, type="double", backingfile=basename(p$bm$P), descriptorfile=basename(p$cache$P), backingpath=p$stmSaveDir )
+        bigmemory::as.big.matrix( P, type="double", backingfile=basename(p$bm$P), descriptorfile=basename(p$cache$P), backingpath=p$stmvSaveDir )
       }
       if (p$storage.backend == "ff" ) {
         p$ptr$P = ff( P, dim=dim(P), file=p$cache$P, overwrite=TRUE )
@@ -279,7 +279,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
       }
       if (p$storage.backend == "bigmemory.filebacked" ) {
         p$ptr$Pn  = p$cache$Pn
-        bigmemory::as.big.matrix( P, type="double", backingfile=basename(p$bm$Pn), descriptorfile=basename(p$cache$Pn), backingpath=p$stmSaveDir )
+        bigmemory::as.big.matrix( P, type="double", backingfile=basename(p$bm$Pn), descriptorfile=basename(p$cache$Pn), backingpath=p$stmvSaveDir )
       }
       if (p$storage.backend == "ff" ) {
         p$ptr$Pn = ff( P, dim=dim(P), file=p$cache$Pn, overwrite=TRUE )
@@ -293,7 +293,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
       }
       if (p$storage.backend == "bigmemory.filebacked" ) {
         p$ptr$Psd  = p$cache$Psd
-        bigmemory::as.big.matrix( P, type="double", backingfile=basename(p$bm$Psd), descriptorfile=basename(p$cache$Psd), backingpath=p$stmSaveDir )
+        bigmemory::as.big.matrix( P, type="double", backingfile=basename(p$bm$Psd), descriptorfile=basename(p$cache$Psd), backingpath=p$stmvSaveDir )
       }
       if (p$storage.backend == "ff" ) {
         p$ptr$Psd = ff( P, dim=dim(P), file=p$cache$Psd, overwrite=TRUE )
@@ -309,15 +309,15 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
       }
       if (p$storage.backend == "bigmemory.filebacked" ) {
         p$ptr$Ploc  = p$cache$Ploc
-        bigmemory::as.big.matrix( Ploc, type="double", backingfile=basename(p$bm$Ploc), descriptorfile=basename(p$cache$Ploc), backingpath=p$stmSaveDir )
+        bigmemory::as.big.matrix( Ploc, type="double", backingfile=basename(p$bm$Ploc), descriptorfile=basename(p$cache$Ploc), backingpath=p$stmvSaveDir )
       }
       if (p$storage.backend == "ff" ) {
         p$ptr$Ploc = ff( Ploc, dim=dim(Ploc), file=p$cache$Ploc, overwrite=TRUE )
       }
     Ploc = DATA = NULL; gc()
 
-    if (exists("stm_global_modelengine", p) ) {
-      if (p$stm_global_modelengine !="none" ) {
+    if (exists("stmv_global_modelengine", p) ) {
+      if (p$stmv_global_modelengine !="none" ) {
         # create prediction suface with covariate-based additive offsets
         if (p$storage.backend == "bigmemory.ram" ) {
           tmp_P0= big.matrix( nrow=nrow(P), ncol=ncol(P) , type="double" )
@@ -326,7 +326,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
         }
         if (p$storage.backend == "bigmemory.filebacked" ) {
           p$ptr$P0  = p$cache$P0
-          bigmemory::as.big.matrix( P, type="double", backingfile=basename(p$bm$P0), descriptorfile=basename(p$cache$P0), backingpath=p$stmSaveDir )
+          bigmemory::as.big.matrix( P, type="double", backingfile=basename(p$bm$P0), descriptorfile=basename(p$cache$P0), backingpath=p$stmvSaveDir )
         }
         if (p$storage.backend == "ff" ) {
           p$ptr$P0 = ff( P, dim=dim(P), file=p$cache$P0, overwrite=TRUE )
@@ -339,7 +339,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
         }
         if (p$storage.backend == "bigmemory.filebacked" ) {
           p$ptr$P0sd  = p$cache$P0sd
-          bigmemory::as.big.matrix( P, type="double", backingfile=basename(p$bm$P0sd), descriptorfile=basename(p$cache$P0sd), backingpath=p$stmSaveDir )
+          bigmemory::as.big.matrix( P, type="double", backingfile=basename(p$bm$P0sd), descriptorfile=basename(p$cache$P0sd), backingpath=p$stmvSaveDir )
         }
         if (p$storage.backend == "ff" ) {
           p$ptr$P0sd = ff( P, dim=dim(P), file=p$cache$P0sd, overwrite=TRUE )
@@ -354,23 +354,23 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
         p$timec_covariates_0 =  Sys.time()
         nc_cov =NULL
         for (i in p$variables$COV ) {
-          pu = stm_attach( p$storage.backend, p$ptr$Pcov[[i]] )
+          pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[i]] )
           nc_cov = c( nc_cov,  ncol(pu) )
         }
         p$all.covars.static = ifelse( any(nc_cov > 1),  FALSE, TRUE )
         pc = p # copy
         if (!pc$all.covars.static) if (exists("clusters.covars", pc) ) pc$clusters = pc$clusters.covars
         # takes about 28 GB per run .. adjust cluster number temporarily
-        suppressMessages( stm_db( p=pc, DS="global.prediction.surface" ) )
+        suppressMessages( stmv_db( p=pc, DS="global.prediction.surface" ) )
         p$time_covariates = round(difftime( Sys.time(), p$timec_covariates_0 , units="hours"), 3)
         message( paste( "||| Time taken to predict covariate surface (hours):", p$time_covariates ) )
       }
     }
     P = NULL; gc() # yes, repeat in case covs are not modelled
 
-    stm_db( p=p, DS="statistics.Sflag" )
-    Y = stm_attach( p$storage.backend, p$ptr$Y )
-    Yloc = stm_attach( p$storage.backend, p$ptr$Yloc )
+    stmv_db( p=p, DS="statistics.Sflag" )
+    Y = stmv_attach( p$storage.backend, p$ptr$Y )
+    Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
     Yi = 1:length(Y) # index with useable data
     bad = which( !is.finite( Y[]))
     if (length(bad)> 0 ) Yi[bad] = NA
@@ -381,7 +381,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
 
   # data locations
     if (exists("COV", p$variables)) {
-      Ycov = stm_attach( p$storage.backend, p$ptr$Ycov )
+      Ycov = stmv_attach( p$storage.backend, p$ptr$Ycov )
       if (length(p$variables$COV)==1) {
         bad = which( !is.finite( Ycov[] ))
       } else {
@@ -393,7 +393,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
 
     # data locations
     if (exists("TIME", p$variables)) {
-      Ytime = stm_attach( p$storage.backend, p$ptr$Ytime )
+      Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )
       bad = which( !is.finite( Ytime[] ))
       if (length(bad)> 0 ) Yi[bad] = NA
       Yi = na.omit(Yi)
@@ -408,36 +408,36 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
       }
       if (p$storage.backend == "bigmemory.filebacked" ) {
         p$ptr$Yi  = p$cache$Yi
-        bigmemory::as.big.matrix( Yi, type="double", backingfile=basename(p$bm$Yi), descriptorfile=basename(p$cache$Yi), backingpath=p$stmSaveDir )
+        bigmemory::as.big.matrix( Yi, type="double", backingfile=basename(p$bm$Yi), descriptorfile=basename(p$cache$Yi), backingpath=p$stmvSaveDir )
       }
       if (p$storage.backend == "ff" ) {
         p$ptr$Yi = ff( Yi, dim=dim(Yi), file=p$cache$Yi, overwrite=TRUE )
       }
     rm(Yi)
 
-    if ( !exists("stm_distance_scale", p)) {
-      Yloc = stm_attach( p$storage.backend, p$ptr$Yloc )
-      p$stm_distance_scale = min( diff(range( Yloc[,1]) ), diff(range( Yloc[,2]) ) ) / 10
-      message( paste( "||| Crude distance scale:", p$stm_distance_scale, "" ) )
+    if ( !exists("stmv_distance_scale", p)) {
+      Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
+      p$stmv_distance_scale = min( diff(range( Yloc[,1]) ), diff(range( Yloc[,2]) ) ) / 10
+      message( paste( "||| Crude distance scale:", p$stmv_distance_scale, "" ) )
     }
-    if ( !exists("stm_distance_min", p)) p$stm_distance_min = mean( c(p$stm_distance_prediction, p$stm_distance_scale /20 ) )
-    if ( !exists("stm_distance_max", p)) p$stm_distance_max = mean( c(p$stm_distance_prediction*10, p$stm_distance_scale * 2 ) )
+    if ( !exists("stmv_distance_min", p)) p$stmv_distance_min = mean( c(p$stmv_distance_prediction, p$stmv_distance_scale /20 ) )
+    if ( !exists("stmv_distance_max", p)) p$stmv_distance_max = mean( c(p$stmv_distance_prediction*10, p$stmv_distance_scale * 2 ) )
 
     message("||| Finished. ")
     message("||| Once analyses begin, you can view maps from an external R session: ")
-    message("|||   p = stm_db( p=p, DS='load.parameters' )" ) 
-    message("|||   stm(p=p, runmode='debug_pred_static_map', debug_plot_variable_index=1) ")
-    message("|||   stm(p=p, runmode='debug_pred_static_log_map', debug_plot_variable_index=1)")
-    message("|||   stm(p=p, runmode='debug_pred_dynamic_map', debug_plot_variable_index=1)")
-    message("|||   stm(p=p, runmode='debug_stats_map', debug_plot_variable_index=1)")
+    message("|||   p = stmv_db( p=p, DS='load.parameters' )" ) 
+    message("|||   stmv(p=p, runmode='debug_pred_static_map', debug_plot_variable_index=1) ")
+    message("|||   stmv(p=p, runmode='debug_pred_static_log_map', debug_plot_variable_index=1)")
+    message("|||   stmv(p=p, runmode='debug_pred_dynamic_map', debug_plot_variable_index=1)")
+    message("|||   stmv(p=p, runmode='debug_stats_map', debug_plot_variable_index=1)")
     message("||| Monitor the status of modelling by looking at the output of the following file:")
     message("||| in linux, you can issue the following command:" )
-    message("|||   watch -n 60 cat ",  p$stm_current_status  )
+    message("|||   watch -n 60 cat ",  p$stmv_current_status  )
 
     p$intialized = TRUE
     p <<- p  # push to parent in case a manual restart is needed
     
-    stm_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
+    stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
     gc()
 
   } else {
@@ -445,49 +445,49 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
     if (!exists("time.start", p) ) p$time.start = Sys.time()
     message( "||| Continuing from an interrupted start ..." )
     if (!p$intialized) {
-      message( "||| Loading parameters from a saved configuration:", file.path( p$stmSaveDir, 'p.rdata' ) )
-      p = stm_db( p=p, DS="load.parameters" )
+      message( "||| Loading parameters from a saved configuration:", file.path( p$stmvSaveDir, 'p.rdata' ) )
+      p = stmv_db( p=p, DS="load.parameters" )
       p <<- p  # push to parent in case a manual restart is needed
     }
   }  # end of intialization of data structures
 
-  if (!exists("initialized", p)) stop( "||| stm was not initialized properly" )
-  if (!p$intialized) stop( "||| stm was not initialized properly" )
+  if (!exists("initialized", p)) stop( "||| stmv was not initialized properly" )
+  if (!p$intialized) stop( "||| stmv was not initialized properly" )
 
   # -----------------------------------------------------
   if ( "debug" %in% runmode ) {
     if (!p$intialized) {
-      message( "||| Loading parameters from a saved configuration:", file.path( p$stmSaveDir, 'p.rdata' ) )
-      p = stm_db( p=p, DS="load.parameters" )
+      message( "||| Loading parameters from a saved configuration:", file.path( p$stmvSaveDir, 'p.rdata' ) )
+      p = stmv_db( p=p, DS="load.parameters" )
       p <<- p  # push to parent in case a manual restart is needed
     }
-    currentstatus = stm_db( p=p, DS="statistics.status" )
+    currentstatus = stmv_db( p=p, DS="statistics.status" )
     p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) ) # random order helps use all cpus
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     message( "||| Entering browser mode ...")
     browser()
-    stm_interpolate (p=p )
+    stmv_interpolate (p=p )
   }
     
   # -----------------------------------------------------
 
   if ( "debug_pred_static_map" %in% runmode) {
-      Ploc = stm_attach( p$storage.backend, p$ptr$Ploc )
-      P = stm_attach( p$storage.backend, p$ptr$P )
+      Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+      P = stmv_attach( p$storage.backend, p$ptr$P )
       lattice::levelplot( (P[,debug_plot_variable_index])~Ploc[,1]+Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
   }
 
   # -----------------------------------------------------
   if ( "debug_pred_static_log_map" %in% runmode) {
-      Ploc = stm_attach( p$storage.backend, p$ptr$Ploc )
-      P = stm_attach( p$storage.backend, p$ptr$P )
+      Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+      P = stmv_attach( p$storage.backend, p$ptr$P )
       lattice::levelplot( log(P[,debug_plot_variable_index])~Ploc[,1]+Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
   }
 
   # -----------------------------------------------------
   if ( "debug_pred_dynamic_map" %in% runmode) {
-      Ploc = stm_attach( p$storage.backend, p$ptr$Ploc )
-      P = stm_attach( p$storage.backend, p$ptr$P )
+      Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+      P = stmv_attach( p$storage.backend, p$ptr$P )
       for (i in 1:p$nt) {
         print( lattice::levelplot( P[,i] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
       }
@@ -495,8 +495,8 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
 
   # -----------------------------------------------------
   if ( "debug_stats_map" %in% runmode) {
-      Sloc = stm_attach( p$storage.backend, p$ptr$Sloc )
-      S = stm_attach( p$storage.backend, p$ptr$S )
+      Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
+      S = stmv_attach( p$storage.backend, p$ptr$S )
       lattice::levelplot(S[,debug_plot_variable_index]~Sloc[,1]+Sloc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
   }
 
@@ -506,13 +506,13 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
   if ( "stage1" %in% runmode ) {
     # this is the basic run
     timei1 =  Sys.time()
-    currentstatus = stm_db( p=p, DS="statistics.status" )
+    currentstatus = stmv_db( p=p, DS="statistics.status" )
     # p <<- p  # push to parent in case a manual restart is possible
-    suppressMessages( parallel_run( stm_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) )) # random order helps use all cpus )
+    suppressMessages( parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) )) # random order helps use all cpus )
     p$time_default = round( difftime( Sys.time(), timei1, units="hours" ), 3 )
     message(" ")
     message( paste( "||| Time taken to complete stage 1 interpolations (hours):", p$time_default, "" ) )
-    currentstatus = stm_db( p=p, DS="statistics.status" )
+    currentstatus = stmv_db( p=p, DS="statistics.status" )
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     gc()
   }
@@ -523,14 +523,14 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
     timei2 =  Sys.time()
     message(" ")
     message( "||| Starting stage 2: more permisssive distance settings:")
-    message( "|||  i.e., (stm_distance_max and stm_distance_scale) X {", paste0(p$stm_multiplier_stage2, collapse=" "), "}" )
+    message( "|||  i.e., (stmv_distance_max and stmv_distance_scale) X {", paste0(p$stmv_multiplier_stage2, collapse=" "), "}" )
 
-    for ( mult in p$stm_multiplier_stage2 ) {
-      currentstatus = stm_db(p=p, DS="statistics.status.reset" )
+    for ( mult in p$stmv_multiplier_stage2 ) {
+      currentstatus = stmv_db(p=p, DS="statistics.status.reset" )
       if (length(currentstatus$todo) > 0) {
-        suppressMessages( parallel_run( stm_interpolate, p=p, 
-          stm_distance_max=p$stm_distance_max*mult, 
-          stm_distance_scale=p$stm_distance_scale*mult,
+        suppressMessages( parallel_run( stmv_interpolate, p=p, 
+          stmv_distance_max=p$stmv_distance_max*mult, 
+          stmv_distance_scale=p$stmv_distance_scale*mult,
           runindex=list( locs=sample( currentstatus$todo ) ) # random order helps use all cpus
         ))
       }
@@ -538,7 +538,7 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
     p$time_stage2 = round( difftime( Sys.time(), timei2, units="hours" ), 3)
     message(" ")
     message( paste( "||| Time taken to complete stage 2 interpolations (hours):", p$time_stage2, "" ) )
-    currentstatus = stm_db( p=p, DS="statistics.status" )
+    currentstatus = stmv_db( p=p, DS="statistics.status" )
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     gc()
   }
@@ -548,17 +548,17 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
     timei3 =  Sys.time()
     message(" ")
     message( "||| Starting stage 3: simple TPS-based failsafe method to interpolate all the remaining locations " )
-    toredo = stm_db( p=p, DS="flag.incomplete.predictions" )
+    toredo = stmv_db( p=p, DS="flag.incomplete.predictions" )
     if ( !is.null(toredo) && length(toredo) > 0) {
-      Sflag = stm_attach( p$storage.backend, p$ptr$Sflag )
+      Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
       Sflag[toredo]=0L
-      p$stm_local_modelengine = "tps"
+      p$stmv_local_modelengine = "tps"
       # ?? why is this here ? p = aegis_parameters( p=p, DS="bathymetry" )
-      parallel_run( stm_interpolate, p=p, runindex=list( locs=sample( toredo )) ) # random order helps use all cpus
+      parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( toredo )) ) # random order helps use all cpus
     }
     p$time_stage3 = round( difftime( Sys.time(), timei3, units="hours" ), 3)
     message( paste( "||| Time taken to complete stage3 interpolations (hours):", p$time_stage3, "" ) )
-    currentstatus = stm_db( p=p, DS="statistics.status" )
+    currentstatus = stmv_db( p=p, DS="statistics.status" )
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     p <<- p  # push to parent in case a manual restart is needed
     gc()
@@ -571,20 +571,20 @@ stm = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_p
   if ( "save" %in% runmode ) {
     message(" ")
     message( "||| Saving predictions to disk .. " )
-    stm_db( p=p, DS="stm.prediction.redo" ) # save to disk for use outside stm*, returning to user scale
+    stmv_db( p=p, DS="stmv.prediction.redo" ) # save to disk for use outside stmv*, returning to user scale
     message( "||| Saving statistics to disk .. " )
-    stm_db( p=p, DS="stats.to.prediction.grid.redo") # save to disk for use outside stm*
+    stmv_db( p=p, DS="stats.to.prediction.grid.redo") # save to disk for use outside stmv*
     message ("||| Finished! ")
-    stm_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
+    stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
 
     if ( p$storage.backend !="bigmemory.ram" ) {
       resp = readline( "||| Delete temporary files? Type to confirm <YES>:  ")
       if (resp=="YES") {
-        stm_db( p=p, DS="cleanup" )
+        stmv_db( p=p, DS="cleanup" )
       } else {
         message(" ")
         message( "||| Leaving temporary files alone in case you need to examine them or restart a process. ")
-        message( "||| You can delete them by running: stm_db( p=p, DS='cleanup' ), once you are done. ")
+        message( "||| You can delete them by running: stmv_db( p=p, DS='cleanup' ), once you are done. ")
       }
     }
     p <<- p  # push to parent in case a manual restart is needed

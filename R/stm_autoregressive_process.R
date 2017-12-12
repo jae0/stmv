@@ -1,5 +1,5 @@
 
-stm_autoregressive_process = function( yt, lag=1, order=1 ) {
+stmv_autoregressive_process = function( yt, lag=1, order=1 ) {
 
     require(LaplacesDemon)
 

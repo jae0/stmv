@@ -1,6 +1,6 @@
 
 
-stm_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NULL,
+stmv_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NULL,
   trimquants=TRUE, trimprobs=c(0.025, 0.975), 
   nr=NULL, nc=NULL, phi=1, xwidth=phi*10, ywidth=phi*10, nu=0.5 ) {
   #\\ reshape after interpolating to fit the output resolution 
@@ -21,8 +21,8 @@ stm_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NUL
       nr2 = round( nr*2)
       nc2 = round( nc*2)
       
-      (o=stm::stm_variogram( xy=RMprecip$x, z=RMprecip$y, methods="gstat" ) )
-      (o=stm_variogram( xy=RMprecip$x, z=RMprecip$y, methods="fast" ) )
+      (o=stmv::stmv_variogram( xy=RMprecip$x, z=RMprecip$y, methods="gstat" ) )
+      (o=stmv_variogram( xy=RMprecip$x, z=RMprecip$y, methods="fast" ) )
   
       phi = 2.92
       nu= 0.2338
@@ -111,7 +111,7 @@ stm_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NUL
     nu = 0.5
     phi = min(dx, dy) / 10
 
-    o = stm::stm_variogram( xy=cbind(x,y), z=z, methods="gstat" ) 
+    o = stmv::stmv_variogram( xy=cbind(x,y), z=z, methods="gstat" ) 
     # suggest: nu=0.3; phi =1.723903
 
     keep = sample.int( nrow(locsout), 1000 ) 
@@ -119,8 +119,8 @@ stm_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NUL
     y = y[keep]
     z = z[keep]
     
-    o = stm::stm_variogram( xy=cbind(x,y), z=z, methods="gstat" ) 
-    o = stm::stm_variogram( xy=cbind(x,y), z=z, methods="fast" ) 
+    o = stmv::stmv_variogram( xy=cbind(x,y), z=z, methods="gstat" ) 
+    o = stmv::stmv_variogram( xy=cbind(x,y), z=z, methods="fast" ) 
 
   }
 
@@ -141,9 +141,9 @@ stm_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NUL
      nc = length(im2$x)
      pres = min(c(diff( im2$x), diff(im2$y )) )
      
-     a = stm::stm_variogram( data[,c("x","y")], data[,"z"] )
+     a = stmv::stmv_variogram( data[,c("x","y")], data[,"z"] )
 
-     stm::matern_phi2distance( phi=a$fast$phi, nu=a$fast$nu, cor=0.95)
+     stmv::matern_phi2distance( phi=a$fast$phi, nu=a$fast$nu, cor=0.95)
 
 
   }
@@ -203,7 +203,7 @@ stm_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NUL
     fcovar = fft(mcovar)/(fft(mC) * nr2 * nc2)
  
   #  rm(dgrid, covar, mC, mcovar); gc()
-    x_id = stm::array_map( "xy->1", data[,c("x","y")], 
+    x_id = stmv::array_map( "xy->1", data[,c("x","y")], 
       dims=c(nr2,nc2), origin=c(min(data$x), min(data$y)), res=c(pres, pres) )
 
     # data
@@ -258,7 +258,7 @@ stm_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NUL
   if (interp.method == "convoSPAT") {
     require(convoSPAT)
 
-    ## interesting approach similar to stm but too slow to use 
+    ## interesting approach similar to stmv but too slow to use 
     # .. seems to get stuck in optimization .. perhaps use LBFGS?
 
     m <- NSconvo_fit(
@@ -291,7 +291,7 @@ stm_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NUL
     ndata = length(Y)
     noise = lengthscale * 1e-9
     locs = locs + runif( ndata*2, min=-noise, max=noise ) # add  noise  to prevent a race condition .. inla does not like uniform grids
-    MESH = stm_mesh_inla( locs, lengthscale=lengthscale )
+    MESH = stmv_mesh_inla( locs, lengthscale=lengthscale )
     if ( is.null( MESH) ) return( "Mesh Error" )
     SPDE = inla.spde2.matern( MESH,  alpha=2 ) # alpha is 2*nu (Bessel smoothness factor)
     varY = as.character( FM[2] )
@@ -317,9 +317,9 @@ stm_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NUL
       i_data = inla.stack.index( DATA, "preds")$data
     }
     RES = NULL
-    RES = stm_inla_call( FM=FM, DATA=DATA, SPDE=SPDE, FAMILY="gaussian" )
+    RES = stmv_inla_call( FM=FM, DATA=DATA, SPDE=SPDE, FAMILY="gaussian" )
     # extract summary statistics from a spatial (SPDE) analysis and update the output file
-    # inla.summary = stm_summary_inla_spde2 = ( RES, SPDE )
+    # inla.summary = stmv_summary_inla_spde2 = ( RES, SPDE )
     # inla.spde2.matern creates files to disk that are not cleaned up:
     spdetmpfn = SPDE$f$spde2.prefix
     fns = list.files( dirname( spdetmpfn ), all.files=TRUE, full.names=TRUE, recursive=TRUE, include.dirs=TRUE )
@@ -393,7 +393,7 @@ stm_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NUL
 
     pCovars = as.matrix( rep(1, nrow(locsout)))  # in the simplest model, 1 col matrix for the intercept
 
-    stv = stm_variogram( xy, z, methods=method )
+    stv = stmv_variogram( xy, z, methods=method )
     rbounds = stv[[method]]$range * c( 0.01, 1.5 )
     phibounds = range( -log(0.05) / rbounds ) ## approximate
     nubounds = c(1e-3, stv[[method]]$kappa * 1.5 )# Finley et al 2007 suggest limiting this to (0,2)

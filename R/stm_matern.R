@@ -1,7 +1,7 @@
 
 
 
-stm_matern= function( distance=NULL, mRange, mSmooth=0.5, parameterization="stm" ) {
+stmv_matern= function( distance=NULL, mRange, mSmooth=0.5, parameterization="stmv" ) {
   # matern autocorrelation function
   # mSmooth =  Bessl smoothness parameter (aks, "nu")
   # mRange = range parameter (aka "phi", .. not the spatial range)
@@ -15,8 +15,8 @@ stm_matern= function( distance=NULL, mRange, mSmooth=0.5, parameterization="stm"
   
   if ( mSmooth <= 0 ) warning("mSmooth should be positive to be meaningful")
 
-  mRange_stm = matern_phi2phi(mRange, mSmooth, parameterization_input=parameterization, parameterization_output="stm")
-  r = distance / mRange_stm  # distance scaled by range parameter
+  mRange_stmv = matern_phi2phi(mRange, mSmooth, parameterization_input=parameterization, parameterization_output="stmv")
+  r = distance / mRange_stmv  # distance scaled by range parameter
   r[r<1e-9] = 1e-9
   
   if (mSmooth==0.5) {

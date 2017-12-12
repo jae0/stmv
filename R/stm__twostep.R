@@ -1,5 +1,5 @@
 
-stm__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpatial=varSpatial, variablelist=FALSE, ... ) {
+stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpatial=varSpatial, variablelist=FALSE, ... ) {
 
   #\\ twostep modelling time first as a simple ts and then spatial or spatio-temporal interpolation
   #\\ nu is the bessel smooth param
@@ -22,7 +22,7 @@ stm__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpatia
   if (p$nloccov > 0) {
     for (ci in 1:p$nloccov) {
       vn = p$variables$local_cov[ci]
-      pu = stm_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
+      pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
       nts = ncol(pu)
       if ( nts==1 ) tokeep = c(tokeep, vn ) 
     }
@@ -36,14 +36,14 @@ stm__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpatia
     px = cbind( px[ rep.int(1:px_n, p$nt), ], 
                     rep.int(p$prediction.ts, rep(px_n, p$nt )) )
     names(px)[ ncol(px) ] = p$variables$TIME 
-    px = cbind( px, stm_timecovars ( vars=p$variables$local_all, ti=px[,p$variables$TIME]  ) )
+    px = cbind( px, stmv_timecovars ( vars=p$variables$local_all, ti=px[,p$variables$TIME]  ) )
   }
 
   if (p$nloccov > 0) {
     # add time-varying covars .. not necessary except when covars are modelled locally
     for (ci in 1:p$nloccov) {
       vn = p$variables$local_cov[ci]
-      pu = stm_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
+      pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
       nts = ncol(pu)
       if ( nts== 1) {
         # static vars are retained in the previous step
@@ -59,10 +59,10 @@ stm__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpatia
   } # end if
   rownames(px) = NULL
 
-  ts_gam = stm__gam( p, dat, px ) # currently only a GAM is enabled for the TS component
+  ts_gam = stmv__gam( p, dat, px ) # currently only a GAM is enabled for the TS component
 
   if (is.null( ts_gam)) return(NULL)
-  if (ts_gam$stm_stats$rsquared < p$stm_rsquared_threshold ) return(NULL)
+  if (ts_gam$stmv_stats$rsquared < p$stmv_rsquared_threshold ) return(NULL)
 
   # range checks
   rY = range( dat[,p$variables$Y], na.rm=TRUE)
@@ -91,25 +91,25 @@ stm__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpatia
 
   # step 2 :: spatial modelling .. essentially a time-space separable solution
 
-  if (!exists( "stm_twostep_space", p)) p$stm_twostep_space="krige" # default
+  if (!exists( "stmv_twostep_space", p)) p$stmv_twostep_space="krige" # default
   
-  if ( p$stm_twostep_space == "krige" ) {
-    out = stm__krige( p, dat=pxts, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ) 
+  if ( p$stmv_twostep_space == "krige" ) {
+    out = stmv__krige( p, dat=pxts, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ) 
     if (is.null( out)) return(NULL)
   }
 
-  if ( p$stm_twostep_space == "gstat" ) {
-    out = stm__gstat( p, dat=pxts, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ) 
+  if ( p$stmv_twostep_space == "gstat" ) {
+    out = stmv__gstat( p, dat=pxts, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ) 
     if (is.null( out)) return(NULL)
   }
 
-  if (p$stm_twostep_space %in% c("tps") ) {
-    out = stm__tps( p, dat=pxts, pa=pa, lambda=varObs/varSpatial  )  
+  if (p$stmv_twostep_space %in% c("tps") ) {
+    out = stmv__tps( p, dat=pxts, pa=pa, lambda=varObs/varSpatial  )  
     if (is.null( out)) return(NULL)
   }
 
-  if (p$stm_twostep_space %in% c("fft", "lowpass", "spatial.process", "lowpass_spatial.process") ) {
-    out = stm__fft( p, dat=pxts, pa=pa, nu=nu, phi=phi )  
+  if (p$stmv_twostep_space %in% c("fft", "lowpass", "spatial.process", "lowpass_spatial.process") ) {
+    out = stmv__fft( p, dat=pxts, pa=pa, nu=nu, phi=phi )  
     if (is.null( out)) return(NULL)
   }
 

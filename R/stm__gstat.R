@@ -1,11 +1,11 @@
 
-stm__gstat = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varObs=NULL, varSpatial=NULL, variablelist=FALSE, ...  ) {
-  #\\ this is the core engine of stm .. localised space (no-time) modelling interpolation 
+stmv__gstat = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varObs=NULL, varSpatial=NULL, variablelist=FALSE, ...  ) {
+  #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation 
   #\\ note: time is not being modelled and treated independently 
   #\\      .. you had better have enough data in each time slice ..  essentially this is kriging 
   if (variablelist)  return( c() )
 
-  if (!exists( "stm_gstat_formula", p)) p$stm_gstat_formula = formula( paste( p$variables$Y, "~ 1 ")) 
+  if (!exists( "stmv_gstat_formula", p)) p$stmv_gstat_formula = formula( paste( p$variables$Y, "~ 1 ")) 
 
   sdTotal = sd(dat[,p$variable$Y], na.rm=T)
 
@@ -27,14 +27,14 @@ stm__gstat = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varObs=NULL
     xy = dat[xi, c( p$variables$LOCS, p$variables$Y) ]
 
     vMod0 = vgm(psill=varSpatial, model="Mat", range=phi, nugget=varObs, kappa=nu ) # starting model parameters
-    gs = gstat(id = "hmk", formula=p$stm_gstat_formula, locations=~plon+plat, data=xy[xi,], maxdist=approx_range, nmin=p$n.min, nmax=p$n.max, force=TRUE, model=vMod0 )
+    gs = gstat(id = "hmk", formula=p$stmv_gstat_formula, locations=~plon+plat, data=xy[xi,], maxdist=approx_range, nmin=p$n.min, nmax=p$n.max, force=TRUE, model=vMod0 )
     # this step adds a lot of time .. 
     preds = predict(gs, newdata=xy[xi,] )
     dat$mean[xi] = as.vector( preds[,1] )
     ss = lm( dat$mean[xi] ~ dat[xi,p$variables$Y], na.action=na.omit)
     if ( "try-error" %in% class( ss ) ) next()
     rsquared = summary(ss)$r.squared
-    if (rsquared < p$stm_rsquared_threshold ) next()
+    if (rsquared < p$stmv_rsquared_threshold ) next()
     gsp = predict(gs, newdata=pa[pa_i,] ) # slow for large n
     pa$mean[pa_i] = as.vector(gsp[,1] )
     pa$sd[pa_i]   = as.vector(gsp[,2] )
@@ -46,9 +46,9 @@ stm__gstat = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varObs=NULL
   ss = lm( dat$mean ~ dat[,p$variables$Y], na.action=na.omit)
   if ( "try-error" %in% class( ss ) ) return( NULL )
   rsquared = summary(ss)$r.squared
-  if (rsquared < p$stm_rsquared_threshold ) return(NULL)
+  if (rsquared < p$stmv_rsquared_threshold ) return(NULL)
 
-  stm_stats = list( sdTotal=sdTotal, rsquared=rsquared, ndata=nrow(dat) ) # must be same order as p$statsvars
-  return( list( predictions=pa, stm_stats=stm_stats ) )  
+  stmv_stats = list( sdTotal=sdTotal, rsquared=rsquared, ndata=nrow(dat) ) # must be same order as p$statsvars
+  return( list( predictions=pa, stmv_stats=stmv_stats ) )  
 }
 

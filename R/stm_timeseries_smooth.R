@@ -1,5 +1,5 @@
 
-stm_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvarsout=c("id", p$variables$TIME, p$variables$LOCS, p$variables$Y)) {
+stmv_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvarsout=c("id", p$variables$TIME, p$variables$LOCS, p$variables$Y)) {
 
   # static vars .. don't need to look up
     datgridded = dat # only the static parts .. time has to be a uniform grid so reconstruct below
@@ -15,7 +15,7 @@ stm_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvarsou
     if (p$nloccov > 0) {
       for (ci in 1:p$nloccov) {
         vn = p$variables$local_cov[ci]
-        pu = stm_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
+        pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
         nts = ncol(pu)
         if ( nts==1 ) tokeep = c(tokeep, vn ) 
       }
@@ -30,14 +30,14 @@ stm_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvarsou
       datgridded = cbind( datgridded[ rep.int(1:datgridded_n, p$nt), ], 
                       rep.int(p$prediction.ts, rep(datgridded_n, p$nt )) )
       names(datgridded)[ ncol(datgridded) ] = p$variables$TIME 
-      datgridded = cbind( datgridded, stm_timecovars ( vars=p$variables$local_all, ti=datgridded[,p$variables$TIME]  ) )
+      datgridded = cbind( datgridded, stmv_timecovars ( vars=p$variables$local_all, ti=datgridded[,p$variables$TIME]  ) )
     }
 
     if (p$nloccov > 0) {
       # add time-varying covars .. not necessary except when covars are modelled locally
       for (ci in 1:p$nloccov) {
         vn = p$variables$local_cov[ci]
-        pu = stm_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
+        pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
         nts = ncol(pu)
         if ( nts== 1) {
           # static vars are retained in the previous step
@@ -54,10 +54,10 @@ stm_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvarsou
 
     rownames(datgridded) = NULL
 
-    ts_gam = stm__gam( p, dat, datgridded ) # currently only a GAM is enabled for the TS component
+    ts_gam = stmv__gam( p, dat, datgridded ) # currently only a GAM is enabled for the TS component
 
     if (is.null( ts_gam)) return(NULL)
-    if (ts_gam$stm_stats$rsquared < p$stm_rsquared_threshold ) return(NULL)
+    if (ts_gam$stmv_stats$rsquared < p$stmv_rsquared_threshold ) return(NULL)
 
     # range checks
     rY = range( dat[,p$variables$Y], na.rm=TRUE)
@@ -117,7 +117,7 @@ stm_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvarsou
         for (ci in 1:p$nloccov) {
           vn = p$variables$local_cov[ci]
           pu = NULL
-          pu = stm_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
+          pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
           nts = ncol(pu)
           if ( nts== 1 ) {
             pvars = c( pvars, vn )
@@ -126,14 +126,14 @@ stm_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvarsou
         }
       }
       datgridded = datgridded[, pvars]
-      datgridded = cbind( datgridded, stm_timecovars ( vars=p$variables$local_all, ti=datgridded[,p$variables$TIME]  ) )
+      datgridded = cbind( datgridded, stmv_timecovars ( vars=p$variables$local_all, ti=datgridded[,p$variables$TIME]  ) )
 
       if (p$nloccov > 0) {
         # add time-varying covars .. not necessary except when covars are modelled locally
         for (ci in 1:p$nloccov) {
           vn = p$variables$local_cov[ci]
           pu = NULL
-          pu = stm_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
+          pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
           nts = ncol(pu)
           if ( nts == p$ny )  {
             datgridded$iy = datgridded$yr - p$yrs[1] + 1 #yr index

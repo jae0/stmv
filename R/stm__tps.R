@@ -1,6 +1,6 @@
 
-stm__tps = function( p=NULL, dat=NULL, pa=NULL, lambda=NULL, variablelist=FALSE, ...  ) {
-  #\\ this is the core engine of stm .. localised space (no-time) modelling interpolation 
+stmv__tps = function( p=NULL, dat=NULL, pa=NULL, lambda=NULL, variablelist=FALSE, ...  ) {
+  #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation 
   # \ as a 2D gaussian process (basically, simple krigimg or TPS -- time is treated as being independent)
   #\\ note: time is not being modelled and treated independently 
   #\\      .. you had better have enough data in each time slice ..  essentially this is kriging 
@@ -28,7 +28,7 @@ stm__tps = function( p=NULL, dat=NULL, pa=NULL, lambda=NULL, variablelist=FALSE,
     ss = lm( dat$mean[xi] ~ dat[xi,p$variables$Y], na.action=na.omit)
     if ( "try-error" %in% class( ss ) ) next()
     rsquared = summary(ss)$r.squared
-    if (rsquared < p$stm_rsquared_threshold ) next()
+    if (rsquared < p$stmv_rsquared_threshold ) next()
     pa$mean[pa_i] = predict(ftpsmodel, x=pa[pa_i, p$variables$LOCS] )
     pa$sd[pa_i]   = predictSE(ftpsmodel, x=pa[pa_i, p$variables$LOCS] ) # SE estimates are slooow
 
@@ -43,9 +43,9 @@ stm__tps = function( p=NULL, dat=NULL, pa=NULL, lambda=NULL, variablelist=FALSE,
   ss = lm( dat$mean ~ dat[,p$variables$Y], na.action=na.omit)
   if ( "try-error" %in% class( ss ) ) return( NULL )
   rsquared = summary(ss)$r.squared
-  if (rsquared < p$stm_rsquared_threshold ) return(NULL)
+  if (rsquared < p$stmv_rsquared_threshold ) return(NULL)
 
-  stm_stats = list( sdTotal=sdTotal, rsquared=rsquared, ndata=nrow(dat) ) # must be same order as p$statsvars
-  return( list( predictions=pa, stm_stats=stm_stats ) )  
+  stmv_stats = list( sdTotal=sdTotal, rsquared=rsquared, ndata=nrow(dat) ) # must be same order as p$statsvars
+  return( list( predictions=pa, stmv_stats=stmv_stats ) )  
 }
 

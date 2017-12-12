@@ -1,9 +1,9 @@
 
-stm_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, eps=1e-9, stm_internal_scale=NA ) {
+stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, eps=1e-9, stmv_internal_scale=NA ) {
   #\\ simple nonlinear least squares fit 
   
-  if (is.na(stm_internal_scale)) stm_internal_scale= max(vx)/2
-  vx = vx / stm_internal_scale 
+  if (is.na(stmv_internal_scale)) stmv_internal_scale= max(vx)/2
+  vx = vx / stmv_internal_scale 
 
   if (any(!is.finite(vx)) | any(!is.finite(vg))) {
     fit=list()
@@ -16,7 +16,7 @@ stm_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, eps=1e-9,
   
   if (!is.null(nu)) {  # ie. nu is fixed
     vario_function = function(par, vg, vx, nu){ 
-      vgm = par["tau.sq"] + par["sigma.sq"]*{ 1-stm_matern(distance=vx, mRange=par["phi"], mSmooth=nu) }
+      vgm = par["tau.sq"] + par["sigma.sq"]*{ 1-stmv_matern(distance=vx, mRange=par["phi"], mSmooth=nu) }
       obj = sum( {vg - vgm}^2, na.rm=TRUE) # vario normal errors, no weights , etc.. just the line
       return(obj)
     }
@@ -29,7 +29,7 @@ stm_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, eps=1e-9,
   } else {
   
     vario_function = function(par, vg, vx){ 
-      vgm = par["tau.sq"] + par["sigma.sq"]*{ 1-stm_matern(distance=vx, mRange=par["phi"], mSmooth=par["nu"]) }
+      vgm = par["tau.sq"] + par["sigma.sq"]*{ 1-stmv_matern(distance=vx, mRange=par["phi"], mSmooth=par["nu"]) }
       obj = sum( {vg - vgm}^2, na.rm=TRUE) # vario normal errors, no weights , etc.. just the line
       return(obj)
     }
@@ -68,10 +68,10 @@ stm_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, eps=1e-9,
 
   }
 
-  fit$summary$phi = fit$summary$phi * stm_internal_scale
-  fit$summary$range = fit$summary$range * stm_internal_scale
-  fit$summary$vx = fit$summary$vx * stm_internal_scale
-  fit$summary$vgm_dist_max = fit$summary$vgm_dist_max * stm_internal_scale
+  fit$summary$phi = fit$summary$phi * stmv_internal_scale
+  fit$summary$range = fit$summary$range * stmv_internal_scale
+  fit$summary$vx = fit$summary$vx * stmv_internal_scale
+  fit$summary$vgm_dist_max = fit$summary$vgm_dist_max * stmv_internal_scale
   
   # message( " Optim flag (0==all good): ", fit$convergence, " --- ", fit$message ) 
 
@@ -80,7 +80,7 @@ stm_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, eps=1e-9,
     ylim= c(0, vgm_var_max*1.1)
     plot( fit$summary$vx, fit$summary$vg, col="green", xlim=xlim, ylim=ylim )
     ds = seq( 0, fit$summary$vgm_dist_max, length.out=100 )
-    ac = fit$summary$varObs + fit$summary$varSpatial*(1 - stm_matern( ds, fit$summary$phi, fit$summary$nu ) )
+    ac = fit$summary$varObs + fit$summary$varSpatial*(1 - stmv_matern( ds, fit$summary$phi, fit$summary$nu ) )
     lines( ds, ac, col="orange" )
     abline( h=0, lwd=1, col="lightgrey" )
     abline( v=0 ,lwd=1, col="lightgrey" )

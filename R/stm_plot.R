@@ -1,7 +1,7 @@
 
-  stm_plot = function( p, obj, RES=NULL, MESH=NULL, SPDE=NULL, vname=NULL, idat=NULL, nxout=100, nyout=100 ) {
-    #\\ Simple diagnostic plots for stm statistics and predictions
-    #\\   stm_plot( p=p, odb="mesh" ) :: mesh, range, nugget, partial.sill, kappa, intercept, etc
+  stmv_plot = function( p, obj, RES=NULL, MESH=NULL, SPDE=NULL, vname=NULL, idat=NULL, nxout=100, nyout=100 ) {
+    #\\ Simple diagnostic plots for stmv statistics and predictions
+    #\\   stmv_plot( p=p, odb="mesh" ) :: mesh, range, nugget, partial.sill, kappa, intercept, etc
     #\\   RES is the data result from an inla call
     #\\   MESH is the mesh data object
     #\\   vname is the name of the random spatial field in the model formula
@@ -10,9 +10,9 @@
 
     pp = grep("datalocation", obj )
       if ( length(pp) > 0 ) {
-        Y = stm_attach( p$storage.backend, p$ptr$Y )
-        Y0 = stm_attach( p$storage.backend, p$ptr$Y0 )
-        Yloc = stm_attach( p$storage.backend, p$ptr$Yloc )
+        Y = stmv_attach( p$storage.backend, p$ptr$Y )
+        Y0 = stmv_attach( p$storage.backend, p$ptr$Y0 )
+        Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
         lattice::levelplot( Y0 ~ Yloc[,1] + Yloc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
       }
 
@@ -20,8 +20,8 @@
 
       pp = grep("statistics", obj )
       if ( length(pp) > 0 ) {
-        S = stm_attach( p$storage.backend, p$ptr$S )
-        Sloc = stm_attach( p$storage.backend, p$ptr$Sloc )
+        S = stmv_attach( p$storage.backend, p$ptr$S )
+        Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
         # vname = "ar_timerange"
         v = which( p$statsvars == vname)
         lattice::levelplot( (S[,v]) ~ Sloc[,1] + Sloc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
@@ -29,9 +29,9 @@
 
       pp = grep("predictions", obj )
       if ( length(pp) > 0 ) {
-        P = stm_attach( p$storage.backend, p$ptr$P )
-        # P0 = stm_attach( p$storage.backend, p$ptr$P0 )
-        Ploc = stm_attach( p$storage.backend, p$ptr$Ploc )
+        P = stmv_attach( p$storage.backend, p$ptr$P )
+        # P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
+        Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
         lattice::levelplot( (P[,100]) ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
       }
 
@@ -116,7 +116,7 @@
       posterior.samples = inla.posterior.sample( n=1000, RES)
 
       rnm = rownames(posterior.samples[[1]]$latent )
-      posterior = sapply( posterior.samples, p$stm.posterior.extract, rnm=rnm )
+      posterior = sapply( posterior.samples, p$stmv.posterior.extract, rnm=rnm )
 
       out_mean = inla.mesh.project( pG, field=apply( posterior, 1, mean, na.rm=TRUE )  )  # mean
       out_sd   = inla.mesh.project( pG, field=apply( posterior, 1, sd  , na.rm=TRUE )  )  # mean

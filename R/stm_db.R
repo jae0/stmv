@@ -1,12 +1,12 @@
 
-  stm_db = function( DS, p, B=NULL, yr=NULL, ret="mean" ) {
+  stmv_db = function( DS, p, B=NULL, yr=NULL, ret="mean" ) {
     #// usage: low level function to convert data into file-based data obects to permit parallel
     #// data access and manipulation and deletes/updates
     #// B is the xyz or xytz data or the function to get the data to work upon
 
     # --------------------------
-    if (!exists("stmSaveDir", p)) {
-      p$stmSaveDir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
+    if (!exists("stmvSaveDir", p)) {
+      p$stmvSaveDir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
     }
 
     if (DS %in% "filenames" ) {
@@ -34,8 +34,8 @@
 
       p$cache$Ploc =  file.path( p$stloc, "predictions_loc.cache" )
 
-      if (exists("stm_global_modelengine", p) ) {
-        if (p$stm_global_modelengine !="none" ) {
+      if (exists("stmv_global_modelengine", p) ) {
+        if (p$stmv_global_modelengine !="none" ) {
           p$cache$P0 = file.path( p$stloc, "P0.cache" )
           p$cache$P0sd = file.path( p$stloc, "P0sd.cache" )
         }
@@ -66,7 +66,7 @@
     # --------------------------
 
     if (DS=="save.parameters")  {
-      fns = file.path( p$stmSaveDir, "p.rdata" )
+      fns = file.path( p$stmvSaveDir, "p.rdata" )
       save( p, file=fns, compress=TRUE )
       message( "||| Saved parameters to file:")
       message( fns )
@@ -75,7 +75,7 @@
     # --------------------------
 
     if (DS=="load.parameters")  {
-      fns = file.path( p$stmSaveDir, "p.rdata" )
+      fns = file.path( p$stmvSaveDir, "p.rdata" )
       if (file.exists( fns)) load( fns )
       return(p)
     }
@@ -92,7 +92,7 @@
 
     if ( DS %in% c( "statistics.status", "statistics.status.reset") ) {
 
-      Sflag = stm_attach( p$storage.backend, p$ptr$Sflag )
+      Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
       ioutside = which( Sflag[]==2L )
       itodo = which( Sflag[]==0L )       # 0 = TODO
       idone = which( Sflag[]==1L )       # 1 = completed
@@ -121,11 +121,11 @@
       return( out )
 
       if (0) {
-        Yloc = stm_attach( p$storage.backend, p$ptr$Yloc )
-        Sloc = stm_attach( p$storage.backend, p$ptr$Sloc )
+        Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
+        Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
 
         plot( Yloc[], pch=".", col="grey" ) # data locations
-        bnds = try( stm_db( p=p, DS="boundary" ) )
+        bnds = try( stmv_db( p=p, DS="boundary" ) )
         if ( !is.null(bnds)) {
           lines( bnds$polygon[] , col="green", pch=2 )
           points( Sloc[which(bnds$inside.polygon==1),], pch=".", col="orange", cex=5 )
@@ -148,14 +148,14 @@
       # create location specific flags for analysis, etc..
 
       # flag areas overlapping with prediction locations:
-      Ploc = stm_attach( p$storage.backend, p$ptr$Ploc )
-      Sloc = stm_attach( p$storage.backend, p$ptr$Sloc )
+      Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+      Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
 
       pidP = array_map( "xy->1", Ploc, gridparams=p$gridparams )
       pidS = array_map( "xy->1", Sloc, gridparams=p$gridparams )
       overlap = match( pidS, pidP )
       outside = which( !is.finite( overlap ))
-      Sflag = stm_attach( p$storage.backend, p$ptr$Sflag )
+      Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
       if (length(outside)  > 0 ) Sflag[outside] = 4L  # outside of prediction domain
 
       # catch data boundaries if present
@@ -164,10 +164,10 @@
         message("\n")
         message( "||| Defining boundary polygon for data .. this reduces the number of points to analyse")
         message( "||| but takes a few minutes to set up ...")
-        stm_db( p=p, DS="boundary.redo" ) # ~ 5 min on nfs
+        stmv_db( p=p, DS="boundary.redo" ) # ~ 5 min on nfs
       # last set of filters to reduce problem size
-        Sflag = stm_attach( p$storage.backend, p$ptr$Sflag )
-        bnds = try( stm_db( p=p, DS="boundary" ) )
+        Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
+        bnds = try( stmv_db( p=p, DS="boundary" ) )
         if (!is.null(bnds)) {
           if( !("try-error" %in% class(bnds) ) ) {
             outside = which( bnds$inside.polygon == 0 ) # outside boundary
@@ -181,12 +181,12 @@
         # additionaldepth-based filter:
         # assuming that there is depth information in Pcov, match Sloc's and filter out locations that fall on land
         if ( "z" %in% p$variables$COV ){
-          z = stm_attach( p$storage.backend, p$ptr$Pcov[["z"]] )[]
+          z = stmv_attach( p$storage.backend, p$ptr$Pcov[["z"]] )[]
           Pabove = which( z < p$depth.filter ) # negative = above land
           Pbelow = which( z >= p$depth.filter )
 
-          Ploc = stm_attach( p$storage.backend, p$ptr$Ploc )
-          Sloc = stm_attach( p$storage.backend, p$ptr$Sloc )
+          Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+          Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
 
           pidA = array_map( "xy->1", Ploc[Pabove,], gridparams=p$gridparams )
           pidB = array_map( "xy->1", Ploc[Pbelow,], gridparams=p$gridparams )
@@ -195,14 +195,14 @@
           below = which( is.finite( match( sid, pidB ) ))
           above = which( is.finite( match( sid, pidA ) ))
 
-          Sflag = stm_attach( p$storage.backend, p$ptr$Sflag )
+          Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
           if (length(below) > 0 ) Sflag[below] = 0L
           if (length(above) > 0 ) Sflag[above] = 3L
 
           if (0) {
-            Yloc = stm_attach( p$storage.backend, p$ptr$Yloc )
+            Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
             plot( Yloc[], pch=".", col="grey" ) # data locations
-            bnds = try( stm_db( p=p, DS="boundary" ) )
+            bnds = try( stmv_db( p=p, DS="boundary" ) )
             if (!is.null(bnds)) {
               if ( !("try-error" %in% class(bnds) ) ) {
                 points( Sloc[which(bnds$inside.polygon==1),], pch=".", col="orange" )
@@ -222,7 +222,7 @@
 
     if (DS== "flag.incomplete.predictions") {
       # statistics locations where estimations need to be redone
-      P = stm_attach( p$storage.backend, p$ptr$P )
+      P = stmv_attach( p$storage.backend, p$ptr$P )
       if (ncol(P) == 1 ) {
         noP = which( !is.finite( P[]) )
       } else {
@@ -230,14 +230,14 @@
       }
       uP = NULL
       if( length(noP)>0 ) {
-        Sloc = stm_attach( p$storage.backend, p$ptr$Sloc )
+        Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
 
-        Sloc_nplat = ceiling( diff( p$corners$plat) / p$stm_distance_statsgrid)
-        Sloc_nplon = ceiling( diff( p$corners$plon) / p$stm_distance_statsgrid)
+        Sloc_nplat = ceiling( diff( p$corners$plat) / p$stmv_distance_statsgrid)
+        Sloc_nplon = ceiling( diff( p$corners$plon) / p$stmv_distance_statsgrid)
 
-        Ploc = stm_attach( p$storage.backend, p$ptr$Ploc )
-        uS = array_map( "2->1", round( cbind(Sloc[,1]-p$origin[1], Sloc[,2]-p$origin[2])/p$stm_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
-        uP = array_map( "2->1", round( cbind(Ploc[noP,1]-p$origin[1], Ploc[noP,2]-p$origin[2])/p$stm_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
+        Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+        uS = array_map( "2->1", round( cbind(Sloc[,1]-p$origin[1], Sloc[,2]-p$origin[2])/p$stmv_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
+        uP = array_map( "2->1", round( cbind(Ploc[noP,1]-p$origin[1], Ploc[noP,2]-p$origin[2])/p$stmv_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
         inrange = which( (uP >= min(uS)) & (uP <= max(uS)) )
         if (length( inrange) > 0) uP = uP[inrange]
         uP = unique(uP)
@@ -249,7 +249,7 @@
 
     if (DS %in% c( "boundary.redo", "boundary" ) )  {
 
-      fn =  file.path(p$stmSaveDir, "boundary.rdata" )
+      fn =  file.path(p$stmvSaveDir, "boundary.rdata" )
       if (DS=="boundary") {
         boundary = NULL
         if( file.exists(fn)) load( fn)
@@ -257,14 +257,14 @@
       }
 
       # data:
-      Y = stm_attach(  p$storage.backend, p$ptr$Y )
+      Y = stmv_attach(  p$storage.backend, p$ptr$Y )
       hasdata = 1:length(Y)
       bad = which( !is.finite( Y[]))
       if (length(bad)> 0 ) hasdata[bad] = NA
 
       # covariates (independent vars)
       if ( exists( "COV", p$variables) ) {
-        Ycov = stm_attach(  p$storage.backend, p$ptr$Ycov )
+        Ycov = stmv_attach(  p$storage.backend, p$ptr$Ycov )
         if ( length( p$variables$COV ) == 1 ) {
           bad = which( !is.finite( Ycov[]) )
         } else {
@@ -274,7 +274,7 @@
       }
 
       ii = na.omit(hasdata)
-      Yloc = stm_attach(  p$storage.backend, p$ptr$Yloc )
+      Yloc = stmv_attach(  p$storage.backend, p$ptr$Yloc )
       yplon = round( ( Yloc[ii,1] - p$origin[1] )/p$pres) + 1
       yplat = round( ( Yloc[ii,2] - p$origin[2] )/p$pres) + 1
       uu = unique( array_map( "2->1", cbind(yplon, yplat), c(p$nplons, p$nplats) ) )
@@ -282,11 +282,11 @@
 
       ww = cbind( (vv[,1] - 1) * p$pres + p$origin[1], (vv[,2] - 1) * p$pres + p$origin[2] )
 
-      if (!exists("stm_nonconvexhull_alpha", p)) p$stm_nonconvexhull_alpha=20
-      boundary=list( polygon = non_convex_hull( ww, alpha=p$stm_nonconvexhull_alpha, plot=FALSE ) )
+      if (!exists("stmv_nonconvexhull_alpha", p)) p$stmv_nonconvexhull_alpha=20
+      boundary=list( polygon = non_convex_hull( ww, alpha=p$stmv_nonconvexhull_alpha, plot=FALSE ) )
 
       # statistical output locations
-      Sloc = stm_attach(  p$storage.backend, p$ptr$Sloc )
+      Sloc = stmv_attach(  p$storage.backend, p$ptr$Sloc )
       boundary$inside.polygon = point.in.polygon( Sloc[,1], Sloc[,2],
           boundary$polygon[,1], boundary$polygon[,2], mode.checked=TRUE )
 
@@ -295,8 +295,8 @@
       points( Sloc[which(boundary$inside.polygon==1),], pch=".", col="orange" )
       lines( boundary$polygon[] , col="green", pch=2 )
       message( "||| Check the map of data and boundaries. ")
-      message( "||| If not suitable, set another value for p$stm_nonconvexhull_alpha value (radius; distance) ")
-      message( "||| and re-run stm() " )
+      message( "||| If not suitable, set another value for p$stmv_nonconvexhull_alpha value (radius; distance) ")
+      message( "||| and re-run stmv() " )
       return( fn )
     }
 
@@ -304,7 +304,7 @@
 
     if (DS %in% c("global_model", "global_model.redo") ) {
 
-      fn.global_model = file.path( p$stmSaveDir, paste( "global_model", p$stm_global_modelengine, "rdata", sep=".") )
+      fn.global_model = file.path( p$stmvSaveDir, paste( "global_model", p$stmv_global_modelengine, "rdata", sep=".") )
 
       if (DS =="global_model") {
         global_model = NULL
@@ -337,41 +337,41 @@
       }
 
       # as a first pass, model the time-independent factors as a user-defined model
-      if (p$stm_global_modelengine=="glm") {
+      if (p$stmv_global_modelengine=="glm") {
         if (!exists("wt", B)) {
           global_model = try(
-            glm( formula=p$stm_global_modelformula, data=B, family=p$stm_global_family ) )
+            glm( formula=p$stmv_global_modelformula, data=B, family=p$stmv_global_family ) )
         } else {
           global_model = try(
-            glm( formula=p$stm_global_modelformula, data=B, family=p$stm_global_family, weights=wt ) )
+            glm( formula=p$stmv_global_modelformula, data=B, family=p$stmv_global_family, weights=wt ) )
         }
       }
 
-      if (p$stm_global_modelengine=="bigglm") {
+      if (p$stmv_global_modelengine=="bigglm") {
         if (!exists("wt", B)) {
           global_model = try(
-            bigglm( formula=p$stm_global_modelformula, data=B, family=p$stm_global_family ))
+            bigglm( formula=p$stmv_global_modelformula, data=B, family=p$stmv_global_family ))
         } else {
           global_model = try(
-            bigglm( formula=p$stm_global_modelformula, data=B, family=p$stm_global_family, weights=~wt ))
+            bigglm( formula=p$stmv_global_modelformula, data=B, family=p$stmv_global_family, weights=~wt ))
         }
       }
 
-      if (p$stm_global_modelengine=="gam") {
+      if (p$stmv_global_modelengine=="gam") {
         require(mgcv)
         if (!exists("wt", B)) {
           global_model = try(
-            gam( formula=p$stm_global_modelformula, data=B, optimizer=c("outer","bfgs"), family=p$stm_global_family) )
+            gam( formula=p$stmv_global_modelformula, data=B, optimizer=c("outer","bfgs"), family=p$stmv_global_family) )
         } else {
           global_model = try(
-            gam( formula=p$stm_global_modelformula, data=B, optimizer=c("outer","bfgs"), family=p$stm_global_family, weights=wt ) )
+            gam( formula=p$stmv_global_modelformula, data=B, optimizer=c("outer","bfgs"), family=p$stmv_global_family, weights=wt ) )
         }
       }
 
-      if (p$stm_global_modelengine=="bayesx") {
+      if (p$stmv_global_modelengine=="bayesx") {
         require(mgcv)
         global_model = try(
-          bayesx( formula=p$stm_global_modelformula, data=B, family=p$stm_global_family ) )
+          bayesx( formula=p$stmv_global_modelformula, data=B, family=p$stmv_global_family ) )
       }
 
       if ( "try-error" %in% class(global_model) ) stop( "The covariate model was problematic" )
@@ -392,16 +392,16 @@
         FUNC = function( ip=NULL, p ) {
           if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
           if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
-          global_model = stm_db( p=p, DS="global_model")
+          global_model = stmv_db( p=p, DS="global_model")
           if (is.null(global_model)) stop("Global model not found.")
-          P0 = stm_attach( p$storage.backend, p$ptr$P0 )
-          P0sd = stm_attach( p$storage.backend, p$ptr$P0sd )
+          P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
+          P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )
           for ( ii in ip ) {
             # downscale and warp from p(0) -> p1
             it = p$runs$tindex[ii]
             pa = NULL # construct prediction surface
             for (i in p$variables$COV ) {
-              pu = stm_attach( p$storage.backend, p$ptr$Pcov[[i]] )
+              pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[i]] )
               nc = ncol(pu)
               if ( nc== 1 ) {
                 pa = cbind( pa, pu[] ) # ie. a static variable (space)
@@ -421,25 +421,25 @@
             pa = as.data.frame( pa )
             names(pa) = p$variables$COV
 
-            if ( any( p$variables$LOCS %in%  all.vars( p$stm_global_modelformula ) ) ) {
-              Ploc = stm_attach( p$storage.backend, p$ptr$Ploc )
+            if ( any( p$variables$LOCS %in%  all.vars( p$stmv_global_modelformula ) ) ) {
+              Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
               pa = cbind(pa, Ploc[])
               names(pa) = c( p$variables$COV, p$variables$LOCS )
             }
 
-            if ( "yr" %in%  all.vars( p$stm_global_modelformula ) ) {
+            if ( "yr" %in%  all.vars( p$stmv_global_modelformula ) ) {
               npa = names(pa)
               pa = cbind(pa, p$yrs[it] )
               names(pa) = c( npa, "yr" )
             }
 
-            if ( "dyear" %in%  all.vars( p$stm_global_modelformula ) ) {
+            if ( "dyear" %in%  all.vars( p$stmv_global_modelformula ) ) {
               npa = names(pa)
               pa = cbind(pa, p$prediction.dyear )
               names(pa) = c( npa, "dyear" )
             }
 
-            if (p$stm_global_modelengine %in% c("glm", "bigglm", "gam") ) {
+            if (p$stmv_global_modelengine %in% c("glm", "bigglm", "gam") ) {
               Pbaseline = try( predict( global_model, newdata=pa, type="response", se.fit=TRUE ) )
               pa = NULL
               gc()
@@ -448,7 +448,7 @@
                 P0sd[,it] = Pbaseline$se.fit
               }
               Pbaseline = NULL; gc()
-            } else if (p$stm_global_modelengine =="bayesx") {
+            } else if (p$stmv_global_modelengine =="bayesx") {
               stop( "not yet tested" ) # TODO
               # Pbaseline = try( predict( global_model, newdata=pa, type="response", se.fit=TRUE ) )
               # pa = NULL
@@ -459,7 +459,7 @@
               # }
               # Pbaseline = NULL; gc()
 
-            } else if (p$stm_global_modelengine =="none") {
+            } else if (p$stmv_global_modelengine =="none") {
               # nothing to do
             } else  {
               stop ("This global model method requires a bit more work .. ")
@@ -490,13 +490,13 @@
     # -----
 
 
-    if (DS %in% c("stm.prediction.redo", "stm.prediction") )  {
+    if (DS %in% c("stmv.prediction.redo", "stmv.prediction") )  {
 
-      if (DS=="stm.prediction") {
+      if (DS=="stmv.prediction") {
         if (! exists("TIME", p$variables)) {
-          fn = file.path( p$stmSaveDir, paste("stm.prediction",  ret, "rdata", sep="." ) )
+          fn = file.path( p$stmvSaveDir, paste("stmv.prediction",  ret, "rdata", sep="." ) )
         } else {
-          fn = file.path( p$stmSaveDir, paste("stm.prediction",  ret, yr, "rdata", sep="." ) )
+          fn = file.path( p$stmvSaveDir, paste("stmv.prediction",  ret, yr, "rdata", sep="." ) )
         }
         if (file.exists(fn) ) load(fn)
         if (ret=="mean") return (P)
@@ -508,7 +508,7 @@
       shallower = NULL
       if ( exists("depth.filter", p) && is.finite( p$depth.filter) ) {
         if ( "z" %in% p$variables$COV ){
-          depths = stm_attach( p$storage.backend, p$ptr$Pcov[["z"]] )
+          depths = stmv_attach( p$storage.backend, p$ptr$Pcov[["z"]] )
           ii = which( depths[] < p$depth.filter )
           if (length(ii) > 0) shallower = ii
           rm(depths)
@@ -532,12 +532,12 @@
           if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
           if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
 
-          PP = stm_attach( p$storage.backend, p$ptr$P )
-          PPsd = stm_attach( p$storage.backend, p$ptr$Psd )
-          if (exists("stm_global_modelengine", p)) {
-            if (p$stm_global_modelengine !="none" ) {
-              P0 = stm_attach( p$storage.backend, p$ptr$P0 )
-              P0sd = stm_attach( p$storage.backend, p$ptr$P0sd )
+          PP = stmv_attach( p$storage.backend, p$ptr$P )
+          PPsd = stmv_attach( p$storage.backend, p$ptr$Psd )
+          if (exists("stmv_global_modelengine", p)) {
+            if (p$stmv_global_modelengine !="none" ) {
+              P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
+              P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )
             }
           }
 
@@ -545,9 +545,9 @@
             
             for ( ii in ip ) { # outputs are on yearly breakdown
               y = p$runs[ii, "tindex"]
-              fn_P = file.path( p$stmSaveDir, paste("stm.prediction", "mean",  y, "rdata", sep="." ) )
-              fn_Pl = file.path( p$stmSaveDir, paste("stm.prediction", "lb",   y, "rdata", sep="." ) )
-              fn_Pu = file.path( p$stmSaveDir, paste("stm.prediction", "ub",   y, "rdata", sep="." ) )
+              fn_P = file.path( p$stmvSaveDir, paste("stmv.prediction", "mean",  y, "rdata", sep="." ) )
+              fn_Pl = file.path( p$stmvSaveDir, paste("stmv.prediction", "lb",   y, "rdata", sep="." ) )
+              fn_Pu = file.path( p$stmvSaveDir, paste("stmv.prediction", "ub",   y, "rdata", sep="." ) )
               vv = ncol(PP)
               if ( vv > p$ny ) {
                 col.ranges = (r-1) * p$nw + (1:p$nw)
@@ -558,8 +558,8 @@
                 V = PPsd[,r]
               }
 
-              if (exists("stm_global_modelengine", p) ) {
-                if (p$stm_global_modelengine !="none" ) {
+              if (exists("stmv_global_modelengine", p) ) {
+                if (p$stmv_global_modelengine !="none" ) {
                   ## maybe add via simulation ? ...
                   uu = which(!is.finite(P[]))
                   if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
@@ -581,14 +581,14 @@
               }
 
               # return to user scale (that of Y)
-              Pl = p$stm_global_family$linkinv( P + 1.96* V )
-              Pu = p$stm_global_family$linkinv( P - 1.96* V )
-              P = p$stm_global_family$linkinv( P )
+              Pl = p$stmv_global_family$linkinv( P + 1.96* V )
+              Pu = p$stmv_global_family$linkinv( P - 1.96* V )
+              P = p$stmv_global_family$linkinv( P )
 
-              if (exists("stm_Y_transform", p)) {
-                Pl = p$stm_Y_transform[[2]] (Pl)  # p$stm_Y_transform[2] is the inverse transform
-                Pu = p$stm_Y_transform[[2]] (Pu)
-                P = p$stm_Y_transform[[2]] (P)
+              if (exists("stmv_Y_transform", p)) {
+                Pl = p$stmv_Y_transform[[2]] (Pl)  # p$stmv_Y_transform[2] is the inverse transform
+                Pu = p$stmv_Y_transform[[2]] (Pu)
+                P = p$stmv_Y_transform[[2]] (P)
               }
 
               save( P, file=fn_P, compress=T )
@@ -600,14 +600,14 @@
           } else {
             # serial run only ... 
             
-              fn_P = file.path( p$stmSaveDir, paste("stm.prediction", "mean", "rdata", sep="." ) )
-              fn_Pl = file.path( p$stmSaveDir, paste("stm.prediction", "lb", "rdata", sep="." ) )
-              fn_Pu = file.path( p$stmSaveDir, paste("stm.prediction", "ub", "rdata", sep="." ) )
+              fn_P = file.path( p$stmvSaveDir, paste("stmv.prediction", "mean", "rdata", sep="." ) )
+              fn_Pl = file.path( p$stmvSaveDir, paste("stmv.prediction", "lb", "rdata", sep="." ) )
+              fn_Pu = file.path( p$stmvSaveDir, paste("stmv.prediction", "ub", "rdata", sep="." ) )
 
               P = PP[]
               V = PPsd[]
-              if (exists("stm_global_modelengine", p) ) {
-                if (p$stm_global_modelengine !="none" ) {
+              if (exists("stmv_global_modelengine", p) ) {
+                if (p$stmv_global_modelengine !="none" ) {
                   uu = which(!is.finite(P[]))
                   if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
                   P = P[] + P0[]
@@ -622,9 +622,9 @@
               }
 
               # return to user scale
-              Pl = p$stm_global_family$linkinv( P + 1.96* V )
-              Pu = p$stm_global_family$linkinv( P - 1.96* V )
-              P = p$stm_global_family$linkinv( P )
+              Pl = p$stmv_global_family$linkinv( P + 1.96* V )
+              Pu = p$stmv_global_family$linkinv( P - 1.96* V )
+              P = p$stmv_global_family$linkinv( P )
 
               save( P, file=fn_P, compress=T )
               save( Pl, file=fn_Pl, compress=T )
@@ -635,9 +635,9 @@
     
       if(0) {
         i = 1
-        Ploc = stm_attach( p$storage.backend, p$ptr$Ploc )
+        Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
 
-        Z = smooth.2d( Y=P[], x=Ploc[], ncol=p$nplats, nrow=p$nplons, cov.function=stationary.cov, Covariance="Matern", range=p$stm_lowpass_phi, nu=p$stm_lowpass_nu )
+        Z = smooth.2d( Y=P[], x=Ploc[], ncol=p$nplats, nrow=p$nplons, cov.function=stationary.cov, Covariance="Matern", range=p$stmv_lowpass_phi, nu=p$stmv_lowpass_nu )
         lattice::levelplot( P[] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
       }
     
@@ -649,19 +649,19 @@
 
       # TODO:: parallelize this
 
-      fn = file.path( p$stmSaveDir, paste( "stm.statistics", "rdata", sep=".") )
+      fn = file.path( p$stmvSaveDir, paste( "stmv.statistics", "rdata", sep=".") )
       if (DS=="stats.to.prediction.grid") {
         stats = NULL
         if (file.exists(fn)) load(fn)
         return(stats)
       }
 
-      Ploc = stm_attach( p$storage.backend, p$ptr$Ploc )
-      S = stm_attach( p$storage.backend, p$ptr$S )
-      Sloc = stm_attach( p$storage.backend, p$ptr$Sloc )
+      Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+      S = stmv_attach( p$storage.backend, p$ptr$S )
+      Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
 
-      Sloc_nplat = ceiling( diff( p$corners$plat) / p$stm_distance_statsgrid)
-      Sloc_nplon = ceiling( diff( p$corners$plon) / p$stm_distance_statsgrid)
+      Sloc_nplat = ceiling( diff( p$corners$plat) / p$stmv_distance_statsgrid)
+      Sloc_nplon = ceiling( diff( p$corners$plon) / p$stmv_distance_statsgrid)
 
       stats = matrix( NaN, ncol=length( p$statsvars ), nrow=nrow( Ploc) )  # output data .. ff does not handle NA's .. using NaN for now
       colnames(stats)=p$statsvars
@@ -675,7 +675,7 @@
 
       # lattice::levelplot( stats[,1] ~ Ploc[,1]+Ploc[,2])
 
-      boundary = try( stm_db( p=p, DS="boundary" ) )
+      boundary = try( stmv_db( p=p, DS="boundary" ) )
       if (!is.null(boundary)) {
         if( !("try-error" %in% class(boundary) ) ) {
         inside.polygon = point.in.polygon( Ploc[,1], Ploc[,2],
@@ -694,7 +694,7 @@
       if ( exists("depth.filter", p) && is.finite( p$depth.filter) ) {
         # stats is now with the same indices as Pcov, Ploc, etc..
         if ( "z" %in% p$variables$COV ){
-          depths = stm_attach( p$storage.backend, p$ptr$Pcov[["z"]] )
+          depths = stmv_attach( p$storage.backend, p$ptr$Pcov[["z"]] )
           shallower = which( depths[] < p$depth.filter )
           if (length(shallower)>0) stats[shallower,] = NA
           rm(shallower); gc()
@@ -709,7 +709,7 @@
 
     if (DS=="presence.absense") {
 
-      Y = stm_attach( p$storage.backend, p$ptr$Y )
+      Y = stmv_attach( p$storage.backend, p$ptr$Y )
       z = which( Y == 0) # assumed to be real zeros
       i = which( Y >  0)  # positive values
 
