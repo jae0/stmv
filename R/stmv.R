@@ -434,7 +434,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     message("||| in linux, you can issue the following command:" )
     message("|||   watch -n 60 cat ",  p$stmv_current_status  )
 
-    p$intialized = TRUE
+    p$initialized = TRUE
     p <<- p  # push to parent in case a manual restart is needed
     
     stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
@@ -444,7 +444,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
 
     if (!exists("time.start", p) ) p$time.start = Sys.time()
     message( "||| Continuing from an interrupted start ..." )
-    if (!p$intialized) {
+    if (!p$initialized) {
       message( "||| Loading parameters from a saved configuration:", file.path( p$stmvSaveDir, 'p.rdata' ) )
       p = stmv_db( p=p, DS="load.parameters" )
       p <<- p  # push to parent in case a manual restart is needed
@@ -452,11 +452,11 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
   }  # end of intialization of data structures
 
   if (!exists("initialized", p)) stop( "||| stmv was not initialized properly" )
-  if (!p$intialized) stop( "||| stmv was not initialized properly" )
+  if (!p$initialized) stop( "||| stmv was not initialized properly" )
 
   # -----------------------------------------------------
   if ( "debug" %in% runmode ) {
-    if (!p$intialized) {
+    if (!p$initialized) {
       message( "||| Loading parameters from a saved configuration:", file.path( p$stmvSaveDir, 'p.rdata' ) )
       p = stmv_db( p=p, DS="load.parameters" )
       p <<- p  # push to parent in case a manual restart is needed
