@@ -2,7 +2,7 @@ Package: stmv
 Title: Spatiotemporal modelling
 Version: 0.1
 Authors@R: c( person("Jae", "Choi", email="choijaeseok@gmail.com", role=c("aut", "cre")) )
-Description: Spatio-temporal models using constrained kernel-based approximations to estimate and develop statistical inference of space-time hierarchical models. This package interacts with other aegis* projects.
+Description: Spatio-temporal models using constrained kernel-based approximations to estimate and develop statistical inference of space-time hierarchical models. This package interacts with aegis* projects.
 Depends: R (>= 3.0.0),
   mvtnorm,
   truncnorm
@@ -14,7 +14,6 @@ Imports:
   mgcv,
   lattice,
   geoR,
-  gstat,
   fields,
   RandomFields,
   RandomFieldsUtils,
@@ -24,13 +23,9 @@ Imports:
   aegis,
   aegis.env
 Suggests:
-  INLA,
-  knitr,
-  biglm,
-  rmarkdown
+  INLA, gstat
 NeedsCompilation: no
 ByteCompile: TRUE
-VignetteBuilder: knitr
 License: MIT
 LazyData: true
 URL: https://github.com/jae0/stmv/
