@@ -707,32 +707,5 @@
 
     #-------------
 
-    if (DS=="presence.absense") {
-
-      Y = stmv_attach( p$storage.backend, p$ptr$Y )
-      z = which( Y == 0) # assumed to be real zeros
-      i = which( Y >  0)  # positive values
-
-      # determine quantiles ..
-      Yq = rep( 0, length(Y) )
-      Yq[z] = 1
-
-      pr = ecdf(Y[i])( Y[i] )
-      ix = which( pr ==1 )
-      if ( !( length(ix) %in% c(0, length(x)) ))  pr[ix] = max( pr[-ix] )
-      Yq[i] = pr
-
-      s01 = which( Yq < p$habitat.threshold.quantile )  # buffer zone
-      s0 = unique( c(s01, sz ) )
-      s1 = which( Yq >= p$habitat.threshold.quantile )
-
-      # determine presence-absence
-      Ybin =  rep( NA, length(Y) )
-      Ybin[s1] = 1
-      Ybin[s0] = 0
-      Ybin[z] = 0
-
-      return(Ybin)
-    }
 
   }
