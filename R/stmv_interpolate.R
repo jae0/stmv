@@ -56,7 +56,8 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
   dat_nc = length( dat_names )
   iY = which(dat_names== p$variables$Y)
   ilocs = which( dat_names %in% p$variable$LOCS )
-  iwei = which( dat_names %in% "weights" )
+  # iwei = which( dat_names %in% "weights" )
+  
   if (p$nloccov > 0) icov = which( dat_names %in% p$variables$local_cov )
   if (exists("TIME", p$variables)) {
     ti_cov = setdiff(p$variables$local_all, c(p$variables$Y, p$variables$LOCS, p$variables$local_cov ) )
@@ -105,7 +106,6 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
       points( Yloc[U,], pch=20, cex=1, col="yellow" )
       points( Sloc[Si,2] ~ Sloc[Si,1], pch=20, cex=5, col="blue" )
     }
-
 
     if (ndata < p$n.min) {
       # need to upsample
@@ -179,11 +179,13 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
     # reconstruct data for modelling (dat) and data for prediction purposes (pa)
     dat = matrix( 1, nrow=ndata, ncol=dat_nc )
     dat[,iY] = Y[YiU] # these are residuals if there is a global model
-    dat[,ilocs] = Yloc[YiU,]
+    dat[,ilocs] = Yloc[YiU,] + stmv_distance_cur * runif(2*ndata, -1e-6, 1e-6) # add a small error term to prevent some errors when duplicate locations exist
+    
     # dat[,iwei]  = 1  # filled with 1's at init above
     # dat[,iwei] = 1 / (( Sloc[Si,2] - dat$plat)**2 + (Sloc[Si,1] - dat$plon)**2 )# weight data in space: inverse distance squared
     # dat[ which( dat[,iwei] < 1e-4 ), iwei ] = 1e-4
     # dat[ which( dat[,iwei] > 1 ) , iwei ] = 1
+    
     if (p$nloccov > 0) dat[,icov] = Ycov[YiU,] # no need for other dim checks as this is user provided
     if (exists("TIME", p$variables)) dat[, itime_cov] = as.matrix(stmv_timecovars( vars=ti_cov, ti=Ytime[YiU, ] ) )
     dat = as.data.frame(dat)
@@ -221,19 +223,23 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
       for( i in sort(unique(res$predictions[,p$variables$TIME])))  print(lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==i,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
     }
 
-    rm(dat); gc()
-    if ( inherits(res, "try-error") ) {
-      dat = pa = NULL
+    if ( is.null(res)) {
+      dat = pa = res = NULL
       next()
     }
 
-    if ( is.null(res)) {
-      dat = pa = NULL
-      next()
-    }
-    if ( all( !is.finite(res$predictions$mean ))) {
+    if ( inherits(res, "try-error") ) {
       dat = pa = res = NULL
       next()
+    }
+  
+    if (exists("predictions", res)) {
+      if (exists("mean", res$predictions)) {
+        if (length(which( is.finite(res$predictions$mean ))) < 5) {
+          dat = pa = res = NULL
+          next()  # looks to be a faulty solution
+        }
+      }
     }
 
     if (exists( "stmv_quantile_bounds", p)) {
@@ -244,11 +250,6 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
       if (length( toohigh) > 0) res$predictions$mean[ toohigh] = tq[2]
     }
 
-    ii = which( is.finite(res$predictions$mean ))
-    if (length(ii) < 5) {
-      dat = pa = res = NULL
-      next()  # looks to be a faulty solution
-    }
 
     # stats collator
     if (!exists("stmv_stats",  res) ) res$stmv_stats = list()
