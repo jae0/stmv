@@ -136,11 +136,22 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
         p$ptr$S = ff( S, dim=dim(S), file=p$cache$S, overwrite=TRUE )
       }
 
+
     Sflag = matrix( 0L, nrow=nrow(Sloc), ncol=1 )  # 0L is the todo flag
+    # 0=to do
+    # 1=complete
+    # 2=oustide bounds(if any)
+    # 3=shallow(if z is a covariate)
+    # 4=range not ok, 
+    # 5=skipped due to insufficient data, 
+    # 6=skipped .. fast variogram did not work
+    # 7=variogram estimated range not ok
+    # 8=problem with prediction and/or modelling
+    # 9=attempting ... if encountered then it was some general problem  or was interrrupted 
       if (p$storage.backend == "bigmemory.ram" ) {
         tmp_Sflag = big.matrix(nrow=nrow(Sloc), ncol=1, type="double" )
         tmp_Sflag[] = 0L # TODO flag
-        p$ptr$Sflag  = bigmemory::describe( tmp_Sflag )
+s        p$ptr$Sflag  = bigmemory::describe( tmp_Sflag )
       }
       if (p$storage.backend == "bigmemory.filebacked" ) {
         p$ptr$Sflag  = p$cache$Sflag

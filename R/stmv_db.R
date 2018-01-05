@@ -91,6 +91,16 @@
     # -----------------
 
     if ( DS %in% c( "statistics.status", "statistics.status.reset") ) {
+      # 0=to do
+      # 1=complete
+      # 2=oustide bounds(if any)
+      # 3=shallow(if z is a covariate)
+      # 4=range not ok, 
+      # 5=skipped due to insufficient data, 
+      # 6=skipped .. fast variogram did not work
+      # 7=variogram estimated range not ok
+      # 8=problem with prediction and/or modelling
+      # 9=attempting ... if encountered then it was some general problem  or was interrrupted 
 
       Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
       ioutside = which( Sflag[]==2L )
