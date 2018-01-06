@@ -151,7 +151,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
       if (p$storage.backend == "bigmemory.ram" ) {
         tmp_Sflag = big.matrix(nrow=nrow(Sloc), ncol=1, type="double" )
         tmp_Sflag[] = 0L # TODO flag
-s        p$ptr$Sflag  = bigmemory::describe( tmp_Sflag )
+        p$ptr$Sflag  = bigmemory::describe( tmp_Sflag )
       }
       if (p$storage.backend == "bigmemory.filebacked" ) {
         p$ptr$Sflag  = p$cache$Sflag
