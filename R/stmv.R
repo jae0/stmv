@@ -485,14 +485,18 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
   if ( "debug_pred_static_map" %in% runmode) {
       Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
       P = stmv_attach( p$storage.backend, p$ptr$P )
-      lattice::levelplot( (P[,debug_plot_variable_index])~Ploc[,1]+Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
+      print(
+        lattice::levelplot( (P[,debug_plot_variable_index])~Ploc[,1]+Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
+      )
   }
 
   # -----------------------------------------------------
   if ( "debug_pred_static_log_map" %in% runmode) {
       Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
       P = stmv_attach( p$storage.backend, p$ptr$P )
-      lattice::levelplot( log(P[,debug_plot_variable_index])~Ploc[,1]+Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
+      print( 
+        lattice::levelplot( log(P[,debug_plot_variable_index])~Ploc[,1]+Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
+      )
   }
 
   # -----------------------------------------------------
@@ -500,7 +504,9 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
       Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
       P = stmv_attach( p$storage.backend, p$ptr$P )
       for (i in 1:p$nt) {
-        print( lattice::levelplot( P[,i] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
+        print( 
+          lattice::levelplot( P[,i] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) 
+        )
       }
   }
 
@@ -508,7 +514,9 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
   if ( "debug_stats_map" %in% runmode) {
       Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
       S = stmv_attach( p$storage.backend, p$ptr$S )
-      lattice::levelplot(S[,debug_plot_variable_index]~Sloc[,1]+Sloc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
+      print( 
+        lattice::levelplot(S[,debug_plot_variable_index]~Sloc[,1]+Sloc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
+      )
   }
 
 
@@ -538,6 +546,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
 
     for ( mult in p$stmv_multiplier_stage2 ) {
       currentstatus = stmv_db(p=p, DS="statistics.status.reset" )
+      print( paste("Range multiplier:", mult) )
       if (length(currentstatus$todo) > 0) {
         suppressMessages( parallel_run( stmv_interpolate, p=p, 
           stmv_distance_max=p$stmv_distance_max*mult, 
