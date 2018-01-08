@@ -170,7 +170,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
         covmodel = stmv_db( p=p, DS="global_model")
         Ypreds = predict(covmodel, type="link", se.fit=FALSE )  ## TODO .. keep track of the SE
         Ydata  = residuals(covmodel, type="deviance") # ie. link scale .. this is the default but make it explicit
-        covmodel =NULL; gc()
+        covmodel =NULL
       }
     }
     Ypreds = NULL
@@ -240,7 +240,8 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
         if (p$storage.backend == "ff" ) {
           p$ptr$Ytime = ff( Ytime, dim=dim(Ytime), file=p$cache$Ytime, overwrite=TRUE )
         }
-      Ytime =NULL; gc()
+      Ytime =NULL; 
+      
     }
 
     if (exists("COV", p$variables)) {
@@ -262,7 +263,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
         if (p$storage.backend == "ff" ) {
           p$ptr$Pcov[[covname]] = ff( Pcovdata, dim=dim(Pcovdata), file=p$cache$Pcov[[covname]], overwrite=TRUE )
         }
-        Pcovdata = NULL; gc()
+        Pcovdata = NULL
       }
     }
 
@@ -325,7 +326,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
       if (p$storage.backend == "ff" ) {
         p$ptr$Ploc = ff( Ploc, dim=dim(Ploc), file=p$cache$Ploc, overwrite=TRUE )
       }
-    Ploc = DATA = NULL; gc()
+    Ploc = DATA = NULL; 
 
     if (exists("stmv_global_modelengine", p) ) {
       if (p$stmv_global_modelengine !="none" ) {
@@ -355,7 +356,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
         if (p$storage.backend == "ff" ) {
           p$ptr$P0sd = ff( P, dim=dim(P), file=p$cache$P0sd, overwrite=TRUE )
         }
-        P=NULL; gc()
+        P=NULL; 
 
         # test to see if all covars are static as this can speed up the initial predictions
         message(" ")
@@ -377,7 +378,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
         message( paste( "||| Time taken to predict covariate surface (hours):", p$time_covariates ) )
       }
     }
-    P = NULL; gc() # yes, repeat in case covs are not modelled
+    P = NULL; # yes, repeat in case covs are not modelled
 
     stmv_db( p=p, DS="statistics.Sflag" )
     Y = stmv_attach( p$storage.backend, p$ptr$Y )
@@ -449,8 +450,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     p <<- p  # push to parent in case a manual restart is needed
     
     stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
-    gc()
-
+    
   } else {
 
     if (!exists("time.start", p) ) p$time.start = Sys.time()
@@ -470,7 +470,6 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     if (!p$initialized) {
       message( "||| Loading parameters from a saved configuration:", file.path( p$stmvSaveDir, 'p.rdata' ) )
       p = stmv_db( p=p, DS="load.parameters" )
-      p <<- p  # push to parent in case a manual restart is needed
     }
     currentstatus = stmv_db( p=p, DS="statistics.status" )
     p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) ) # random order helps use all cpus
@@ -478,6 +477,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     message( "||| Entering browser mode ...")
     browser()
     stmv_interpolate (p=p )
+    p <<- p
   }
     
   # -----------------------------------------------------
@@ -533,7 +533,8 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     message( paste( "||| Time taken to complete stage 1 interpolations (hours):", p$time_default, "" ) )
     currentstatus = stmv_db( p=p, DS="statistics.status" )
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
-    gc()
+    p <<- p  # push to parent in case a manual restart is needed
+    # gc()
   }
 
 
@@ -560,7 +561,8 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     message( paste( "||| Time taken to complete stage 2 interpolations (hours):", p$time_stage2, "" ) )
     currentstatus = stmv_db( p=p, DS="statistics.status" )
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
-    gc()
+    p <<- p  # push to parent in case a manual restart is needed
+    # gc()
   }
 
   # -----------------------------------------------------
@@ -581,7 +583,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     currentstatus = stmv_db( p=p, DS="statistics.status" )
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     p <<- p  # push to parent in case a manual restart is needed
-    gc()
+    # gc()
   }
 
   # save again, in case some timings/etc needed in a restart
@@ -607,11 +609,10 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
         message( "||| You can delete them by running: stmv_db( p=p, DS='cleanup' ), once you are done. ")
       }
     }
-    p <<- p  # push to parent in case a manual restart is needed
   }
 
-  p$time_total = round( difftime( Sys.time(), p$time.start, units="hours" ),3)
+  p$time_total = round( difftime( Sys.time(), p$time.start, units="hours" ), 3)
   message( paste( "||| Time taken for full analysis (hours):", p$time_total ) )
   message( paste( "||| Your parameter 'p' has been updated in case you need to re-run something" ) )
-  p <<- p
+
 }
