@@ -10,7 +10,7 @@ stmv_timeseries  = function( x, method="spec.pgram", quant=0.95, taper=0.05, ker
  
   if (method=="spec.ar") {
     # with spec.ar -- parametric AR fit/smooth via AIC then compute FFT on modeled results .. z must be ts 
-    if (! is.ts(x) ) stop( "Data must be a ts for this to work" )
+    if (! is.ts(x) ) warning( "Data must be a ts for this to work" )
     u = spec.ar ( x , plot=FALSE, na.action=na.omit )
   }
 
@@ -28,7 +28,7 @@ stmv_timeseries  = function( x, method="spec.pgram", quant=0.95, taper=0.05, ker
 
   if (method=="cpgram") {
     # direct copy from stats::cpgram .. just for reference
-    if (! is.ts(x) ) stop( "Must be ts .. this is just to show method" )
+    if (! is.ts(x) ) warning( "Must be ts .. this is just to show method" )
     z = spec.taper(scale(x, TRUE, FALSE), p=taper )
     y <- Mod(fft(z))^2/length(z)
     y[1L] <- 0

@@ -174,8 +174,9 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
     YiU = Yi[U] # YiU and p$stmv_distance_prediction determine the data entering into local model construction
     pa = stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=p$windowsize.half )
     if (is.null(pa)) {
-      print( Si )
-      stop("Error with issue with prediction grid ... null .. this should not happen")
+      Sflag[Si] = 9L
+      message( Si )
+      message("Error with issue with prediction grid ... null .. this should not happen")
     }
     
     if (debug) {
@@ -408,8 +409,9 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
 
         updates = means_update + stdev_update
         if (!is.matrix(updates)) {
-          print( Si )
-          stop( "update of predictions were problematic ... this should not happen" )
+          Sflag[Si] = 8L
+          message( Si )
+          message( "update of predictions were problematic ... this should not happen" )
         }
 
         mm = which( is.finite( rowSums(updates)))  # created when preds go outside quantile bounds .. this removes all data from a given location rather than the space-time .. severe but likely due to a poor prediction and so remove all (it is also faster this way as few manipulations)
