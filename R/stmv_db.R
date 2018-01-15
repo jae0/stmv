@@ -745,8 +745,8 @@
           y = p$yrs[ii]
           fn_P = file.path( p$stmvSaveDir, paste("stmv.prediction", "mean",  y, "rdata", sep="." ) )
           fn_Pl = file.path( p$stmvSaveDir, paste("stmv.prediction", "lb",   y, "rdata", sep="." ) )
-          if (file.exists(fn_P) ) load(fn_P)
-          if (file.exists(fn_Pl ) load(fn_Pl)
+          if (file.exists(fn_P))  load(fn_P)
+          if (file.exists(fn_Pl))  load(fn_Pl)
 
           if (exists("stmv_Y_transform", p)) {
             Pl = p$stmv_Y_transform[[1]] (Pl)  # p$stmv_Y_transform[2] is the inverse transform
@@ -793,8 +793,8 @@
           fn_P = file.path( p$stmvSaveDir, paste("stmv.prediction", "mean", "rdata", sep="." ) )
           fn_Pl = file.path( p$stmvSaveDir, paste("stmv.prediction", "lb", "rdata", sep="." ) )
 
-          if (file.exists(fn_P) ) load(fn_P)
-          if (file.exists(fn_Pl) ) load(fn_Pl)
+          if (file.exists(fn_P)) load(fn_P)
+          if (file.exists(fn_Pl)) load(fn_Pl)
 
           if (exists("stmv_Y_transform", p)) {
             Pl = p$stmv_Y_transform[[1]] (Pl)  # p$stmv_Y_transform[2] is the inverse transform
