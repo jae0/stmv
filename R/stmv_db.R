@@ -733,6 +733,7 @@
 
       # named differently to avoid collisions 
       S = stmv_attach( p$storage.backend, p$ptr$S )
+      Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
       PP = stmv_attach( p$storage.backend, p$ptr$P )
       PPsd = stmv_attach( p$storage.backend, p$ptr$Psd )
       Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
@@ -835,12 +836,16 @@
       # levelplot( PP[] ~ Ploc[,1] + Ploc[,2], aspect="iso")
 
       # stats
+      pidP = array_map( "xy->1", Ploc, gridparams=p$gridparams )
+      pidS = array_map( "xy->1", Sloc, gridparams=p$gridparams )
+      jj = match( pidS, pidP ) # matches
+
       fn.stats = file.path( p$stmvSaveDir, paste( "stmv.statistics", "rdata", sep=".") )
       if (file.exists(fn.stats) ) {
         load(fn.stats)
         for ( i in 1:length( p$statsvars ) ) {
           print(i)
-          S[,i] = stats[,i] 
+          S[,i] = stats[jj,i] 
         }
       }
     }
