@@ -408,7 +408,7 @@
           P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )
           for ( ii in ip ) {
             # downscale and warp from p(0) -> p1
-            it = p$runs$tindex[ii]
+            it = p$runs$tindex[ii]  # == ii btw
             pa = NULL # construct prediction surface
             for (i in p$variables$COV ) {
               pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[i]] )
@@ -554,18 +554,20 @@
           if ( exists("TIME", p$variables)) {
             
             for ( ii in ip ) { # outputs are on yearly breakdown
-              y = p$runs[ii, "tindex"]
+              it = p$runs[ii, "tindex"] # == ii btw
+              y = p$yrs[it]
+              
               fn_P = file.path( p$stmvSaveDir, paste("stmv.prediction", "mean",  y, "rdata", sep="." ) )
               fn_Pl = file.path( p$stmvSaveDir, paste("stmv.prediction", "lb",   y, "rdata", sep="." ) )
               fn_Pu = file.path( p$stmvSaveDir, paste("stmv.prediction", "ub",   y, "rdata", sep="." ) )
               vv = ncol(PP)
               if ( vv > p$ny ) {
-                col.ranges = (r-1) * p$nw + (1:p$nw)
+                col.ranges = (it-1) * p$nw + (1:p$nw)
                 P = PP  [,col.ranges]
                 V = PPsd[,col.ranges] # simpleadditive independent errors assumed
               } else if ( vv==p$ny) {
-                P = PP[,r]
-                V = PPsd[,r]
+                P = PP[,it]
+                V = PPsd[,it]
               }
 
               if (exists("stmv_global_modelengine", p) ) {
@@ -573,10 +575,10 @@
                   ## maybe add via simulation ? ...
                   uu = which(!is.finite(P[]))
                   if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
-                  P = P[] + P0[,r]
+                  P = P[] + P0[,it]
                   vv = which(!is.finite(V[]))
                   if (length(vv)>0) V[vv] = 0 # permit covariate-base predictions to pass through ..
-                  V = sqrt( V[]^2 + P0sd[,r]^2) # simple additive independent errors assumed
+                  V = sqrt( V[]^2 + P0sd[,it]^2) # simple additive independent errors assumed
                 }
               }
 
@@ -636,6 +638,13 @@
               Pu = p$stmv_global_family$linkinv( P - 1.96* V )
               P = p$stmv_global_family$linkinv( P )
 
+
+              if (exists("stmv_Y_transform", p)) {
+                Pl = p$stmv_Y_transform[[2]] (Pl)  # p$stmv_Y_transform[2] is the inverse transform
+                Pu = p$stmv_Y_transform[[2]] (Pu)
+                P = p$stmv_Y_transform[[2]] (P)
+              }
+
               save( P, file=fn_P, compress=T )
               save( Pl, file=fn_Pl, compress=T )
               save( Pu, file=fn_Pu, compress=T )
@@ -655,52 +664,54 @@
 
     # ----------------
 
+
     if (DS %in% c("stats.to.prediction.grid.redo", "stats.to.prediction.grid") ) {
-
+      
       # TODO:: parallelize this
-
+      
       fn = file.path( p$stmvSaveDir, paste( "stmv.statistics", "rdata", sep=".") )
       if (DS=="stats.to.prediction.grid") {
         stats = NULL
         if (file.exists(fn)) load(fn)
         return(stats)
       }
-
+      
       Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
       S = stmv_attach( p$storage.backend, p$ptr$S )
       Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
-
+      
       Sloc_nplat = ceiling( diff( p$corners$plat) / p$stmv_distance_statsgrid)
       Sloc_nplon = ceiling( diff( p$corners$plon) / p$stmv_distance_statsgrid)
-
+      
       stats = matrix( NaN, ncol=length( p$statsvars ), nrow=nrow( Ploc) )  # output data .. ff does not handle NA's .. using NaN for now
       colnames(stats)=p$statsvars
-
+      
       for ( i in 1:length( p$statsvars ) ) {
         print(i)
         # linear interpolation
         u = as.image( S[,i], x=Sloc[,], na.rm=TRUE, nx=Sloc_nplon, ny=Sloc_nplat )
         stats[,i] = as.vector( fields::interp.surface( u, loc=Ploc[] ) ) # linear interpolation
       }
-
+      
       # lattice::levelplot( stats[,1] ~ Ploc[,1]+Ploc[,2])
-
+      
       boundary = try( stmv_db( p=p, DS="boundary" ) )
       if (!is.null(boundary)) {
-        if( !("try-error" %in% class(boundary) ) ) {
+      if( !("try-error" %in% class(boundary) ) ) {
         inside.polygon = point.in.polygon( Ploc[,1], Ploc[,2],
           boundary$polygon[,1], boundary$polygon[,2], mode.checked=TRUE )
-        o = which( inside.polygon == 0 ) # outside boundary
-        if (length(o) > 0) stats[o,] = NA
-      }}
-
-
+          o = which( inside.polygon == 0 ) # outside boundary
+          if (length(o) > 0) stats[o,] = NA
+        }
+      }
+      
+      
       if (0){
         i = 1
         ii = which (is.finite(stats[,i]))
         lattice::levelplot( stats[ii,i] ~ Ploc[ii,1]+Ploc[ii,2])
       }
-
+      
       if ( exists("depth.filter", p) && is.finite( p$depth.filter) ) {
         # stats is now with the same indices as Pcov, Ploc, etc..
         if ( "z" %in% p$variables$COV ){
@@ -710,12 +721,119 @@
           rm(shallower); gc()
         }
       }
-
+      
       save( stats, file=fn, compress=TRUE )
-
+      
     }
-
+    
     #-------------
 
+    
+    if (DS %in% c("stmv.restart") ) {
+
+      # named differently to avoid collisions 
+      PP = stmv_attach( p$storage.backend, p$ptr$P )
+      PPsd = stmv_attach( p$storage.backend, p$ptr$Psd )
+
+      if ( exists("TIME", p$variables)) {
+
+        runindex = list( tindex=1:p$ny ) # year only .. in case we make this into parallel_run 
+        
+        for ( ii in runindex$tindex ) { # outputs are on yearly breakdown
+
+          it = p$runs$tindex[ii]  # == ii
+          y = p$yrs[ii]
+          fn_P = file.path( p$stmvSaveDir, paste("stmv.prediction", "mean",  y, "rdata", sep="." ) )
+          fn_Pl = file.path( p$stmvSaveDir, paste("stmv.prediction", "lb",   y, "rdata", sep="." ) )
+          if (file.exists(fn_P) ) load(fn_P)
+          if (file.exists(fn_Pl ) load(fn_Pl)
+
+          if (exists("stmv_Y_transform", p)) {
+            Pl = p$stmv_Y_transform[[1]] (Pl)  # p$stmv_Y_transform[2] is the inverse transform
+            P = p$stmv_Y_transform[[1]] (P)
+          }
+
+          # save in model scale 
+          Pl = p$stmv_global_family$link( Pl )
+          P = p$stmv_global_family$link( P )
+
+          V = (P[] - Pl[]) / 1.96  # convert to 1 SD
+
+          if (exists("stmv_global_modelengine", p) ) {
+            if (p$stmv_global_modelengine !="none" ) {
+              P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
+              P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )
+
+              ## maybe add via simulation ? ...
+              uu = which(!is.finite(P[]))
+              if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
+              P = P[] - P0[,it]
+              vv = which(!is.finite(V[]))
+              if (length(vv)>0) V[vv] = 0 # permit covariate-base predictions to pass through ..
+              V = sqrt( V[]^2 - P0sd[,it]^2) # simple additive independent errors assumed
+            }
+          }
+
+          vv = ncol(PP)
+          if ( vv > p$ny ) {
+            col.ranges = (it-1) * p$nw + (1:p$nw)
+            PP[,col.ranges] = P
+            PPsd[,col.ranges] = V 
+          } else if ( vv==p$ny) {
+            PP[,it] = P
+            PPsd[,it] = V
+          }
+
+        }
+
+      } else {
+        # serial run only ... 
+          runindex = list( tindex=1 )  # dummy value
+        
+          fn_P = file.path( p$stmvSaveDir, paste("stmv.prediction", "mean", "rdata", sep="." ) )
+          fn_Pl = file.path( p$stmvSaveDir, paste("stmv.prediction", "lb", "rdata", sep="." ) )
+
+          if (file.exists(fn_P) ) load(fn_P)
+          if (file.exists(fn_Pl) ) load(fn_Pl)
+
+          if (exists("stmv_Y_transform", p)) {
+            Pl = p$stmv_Y_transform[[1]] (Pl)  # p$stmv_Y_transform[2] is the inverse transform
+            P = p$stmv_Y_transform[[1]] (P)
+          }
+
+          # save in model scale 
+          Pl = p$stmv_global_family$link( Pl )
+          P = p$stmv_global_family$link( P )
+
+          V = (P[] - Pl[]) / 1.96  # convert to 1 SD
+
+          if (exists("stmv_global_modelengine", p) ) {
+            if (p$stmv_global_modelengine !="none" ) {
+              P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
+              P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )
+              uu = which(!is.finite(P[]))
+              if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
+              P = P[] - P0[]
+              vv = which(!is.finite(V[]))
+              if (length(vv)>0) V[vv] = 0 # permit covariate-base predictions to pass through ..
+              V = sqrt( V[]^2 - P0sd[]^2) # simple additive independent errors assumed
+            }
+          }
+          PP[] = P[]
+          PPsd[] = V[]
+
+      } # end if TIME
+
+
+      # stats
+      fn.stats = file.path( p$stmvSaveDir, paste( "stmv.statistics", "rdata", sep=".") )
+      if (file.exists(fn.stats) ) load(fn.stats)
+      S = stmv_attach( p$storage.backend, p$ptr$S )
+      for ( i in 1:length( p$statsvars ) ) {
+        print(i)
+        S[,i] = stats[,i] 
+      }
+
+    }
 
   }

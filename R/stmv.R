@@ -454,16 +454,24 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
   } else {
 
     if (!exists("time.start", p) ) p$time.start = Sys.time()
-    message( "||| Continuing from an interrupted start ..." )
-    if (!p$initialized) {
-      message( "||| Loading parameters from a saved configuration:", file.path( p$stmvSaveDir, 'p.rdata' ) )
-      p = stmv_db( p=p, DS="load.parameters" )
-      p <<- p  # push to parent in case a manual restart is needed
-    }
+      
+      message( "||| Continuing from an interrupted start ..." )
+      if (!p$initialized) {
+        message( "||| Loading parameters from a saved configuration:", file.path( p$stmvSaveDir, 'p.rdata' ) )
+        p = stmv_db( p=p, DS="load.parameters" )
+        p <<- p  # push to parent in case a manual restart is needed
+      }
+  
   }  # end of intialization of data structures
 
   if (!exists("initialized", p)) stop( "||| stmv was not initialized properly" )
   if (!p$initialized) stop( "||| stmv was not initialized properly" )
+
+
+  if ( "restart" %in% runmode ) {
+    stmv_db( p=p, DS="stmv.restart" ) # load saved state back into memory .. otherwise use what is in memory
+  } 
+  
 
   # -----------------------------------------------------
   if ( "debug" %in% runmode ) {
@@ -527,13 +535,20 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     timei1 =  Sys.time()
     currentstatus = stmv_db( p=p, DS="statistics.status" )
     # p <<- p  # push to parent in case a manual restart is possible
+
     suppressMessages( parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) )) # random order helps use all cpus )
+
+    message( "||| Saving current results and stats to disk .. " )
+    stmv_db( p=p, DS="stmv.prediction.redo" ) # save to disk for use outside stmv*, returning to user scale
+    stmv_db( p=p, DS="stats.to.prediction.grid.redo") # save to disk for use outside stmv*
+
     p$time_default = round( difftime( Sys.time(), timei1, units="hours" ), 3 )
     message(" ")
     message( paste( "||| Time taken to complete stage 1 interpolations (hours):", p$time_default, "" ) )
     currentstatus = stmv_db( p=p, DS="statistics.status" )
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     p <<- p  # push to parent in case a manual restart is needed
+    stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
     # gc()
   }
 
@@ -556,12 +571,17 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
         ))
       }
     }
+    message( "||| Saving current results and stats to disk .. " )
+    stmv_db( p=p, DS="stmv.prediction.redo" ) # save to disk for use outside stmv*, returning to user scale
+    stmv_db( p=p, DS="stats.to.prediction.grid.redo") # save to disk for use outside stmv*
+
     p$time_stage2 = round( difftime( Sys.time(), timei2, units="hours" ), 3)
     message(" ")
     message( paste( "||| Time taken to complete stage 2 interpolations (hours):", p$time_stage2, "" ) )
     currentstatus = stmv_db( p=p, DS="statistics.status" )
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     p <<- p  # push to parent in case a manual restart is needed
+    stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
     # gc()
   }
 
@@ -570,6 +590,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     timei3 =  Sys.time()
     message(" ")
     message( "||| Starting stage 3: simple TPS-based failsafe method to interpolate all the remaining locations " )
+  
     toredo = stmv_db( p=p, DS="flag.incomplete.predictions" )
     if ( !is.null(toredo) && length(toredo) > 0) {
       Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
@@ -578,11 +599,17 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
       # ?? why is this here ? p = aegis_parameters( p=p, DS="bathymetry" )
       parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( toredo )) ) # random order helps use all cpus
     }
+
+    message( "||| Saving current results and stats to disk .. " )
+    stmv_db( p=p, DS="stmv.prediction.redo" ) # save to disk for use outside stmv*, returning to user scale
+    stmv_db( p=p, DS="stats.to.prediction.grid.redo") # save to disk for use outside stmv*
+
     p$time_stage3 = round( difftime( Sys.time(), timei3, units="hours" ), 3)
     message( paste( "||| Time taken to complete stage3 interpolations (hours):", p$time_stage3, "" ) )
     currentstatus = stmv_db( p=p, DS="statistics.status" )
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     p <<- p  # push to parent in case a manual restart is needed
+    stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
     # gc()
   }
 
@@ -590,14 +617,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
   # p <<- p  # push to parent in case a manual restart is possible
 
   # -----------------------------------------------------
-  if ( "save" %in% runmode ) {
-    message(" ")
-    message( "||| Saving predictions to disk .. " )
-    stmv_db( p=p, DS="stmv.prediction.redo" ) # save to disk for use outside stmv*, returning to user scale
-    message( "||| Saving statistics to disk .. " )
-    stmv_db( p=p, DS="stats.to.prediction.grid.redo") # save to disk for use outside stmv*
-    message ("||| Finished! ")
-    stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
+  if ( "cleanup" %in% runmode ) {
 
     if ( p$storage.backend !="bigmemory.ram" ) {
       resp = readline( "||| Delete temporary files? Type to confirm <YES>:  ")
