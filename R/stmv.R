@@ -449,7 +449,6 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     p$initialized = TRUE
     p <<- p  # push to parent in case a manual restart is needed
     
-    stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
     
   } else {
 
@@ -548,8 +547,6 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     currentstatus = stmv_db( p=p, DS="statistics.status" )
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     p <<- p  # push to parent in case a manual restart is needed
-    stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
-    # gc()
   }
 
 
@@ -581,8 +578,6 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     currentstatus = stmv_db( p=p, DS="statistics.status" )
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     p <<- p  # push to parent in case a manual restart is needed
-    stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
-    # gc()
   }
 
   # -----------------------------------------------------
@@ -609,8 +604,6 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     currentstatus = stmv_db( p=p, DS="statistics.status" )
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     p <<- p  # push to parent in case a manual restart is needed
-    stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
-    # gc()
   }
 
   # save again, in case some timings/etc needed in a restart
@@ -634,5 +627,8 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
   p$time_total = round( difftime( Sys.time(), p$time.start, units="hours" ), 3)
   message( paste( "||| Time taken for full analysis (hours):", p$time_total ) )
   message( paste( "||| Your parameter 'p' has been updated in case you need to re-run something" ) )
+
+  stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
+  # gc()
 
 }
