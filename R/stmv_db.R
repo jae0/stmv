@@ -732,8 +732,10 @@
     if (DS %in% c("stmv.restart") ) {
 
       # named differently to avoid collisions 
+      S = stmv_attach( p$storage.backend, p$ptr$S )
       PP = stmv_attach( p$storage.backend, p$ptr$P )
       PPsd = stmv_attach( p$storage.backend, p$ptr$Psd )
+      Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
 
       if ( exists("TIME", p$variables)) {
 
@@ -788,7 +790,7 @@
 
       } else {
         # serial run only ... 
-          runindex = list( tindex=1 )  # dummy value
+          runindex = list( tindex=p$nt )  # dummy value = 1
         
           fn_P = file.path( p$stmvSaveDir, paste("stmv.prediction", "mean", "rdata", sep="." ) )
           fn_Pl = file.path( p$stmvSaveDir, paste("stmv.prediction", "lb", "rdata", sep="." ) )
@@ -802,8 +804,14 @@
           }
 
           # save in model scale 
-          Pl = p$stmv_global_family$link( Pl )
-          P = p$stmv_global_family$link( P )
+          if (exists("stmv_global_family", p)) {
+            if (exists("link", p$stmv_global_family)) {
+              if ( is.function(p$stmv_global_family$link) ) {
+                Pl = p$stmv_global_family$link( Pl )
+                P = p$stmv_global_family$link( P )
+              }
+            }
+          }
 
           V = (P[] - Pl[]) / 1.96  # convert to 1 SD
 
@@ -824,16 +832,17 @@
 
       } # end if TIME
 
+      # levelplot( PP[] ~ Ploc[,1] + Ploc[,2], aspect="iso")
 
       # stats
       fn.stats = file.path( p$stmvSaveDir, paste( "stmv.statistics", "rdata", sep=".") )
-      if (file.exists(fn.stats) ) load(fn.stats)
-      S = stmv_attach( p$storage.backend, p$ptr$S )
-      for ( i in 1:length( p$statsvars ) ) {
-        print(i)
-        S[,i] = stats[,i] 
+      if (file.exists(fn.stats) ) {
+        load(fn.stats)
+        for ( i in 1:length( p$statsvars ) ) {
+          print(i)
+          S[,i] = stats[,i] 
+        }
       }
-
     }
 
   }
