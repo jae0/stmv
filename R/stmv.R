@@ -468,7 +468,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
 
 
   if ( "restart" %in% runmode ) {
-    stmv_db( p=p, DS="stmv.restart" ) # load saved state back into memory .. otherwise use what is in memory
+    stmv_db( p=p, DS="load_saved_state" ) # load saved state back into memory .. otherwise use what is in memory
   } 
   
 

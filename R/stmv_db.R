@@ -729,125 +729,80 @@
     #-------------
 
     
-    if (DS %in% c("stmv.restart") ) {
+    if (DS %in% c("save_current_state") ) {
 
       # named differently to avoid collisions 
-      S = stmv_attach( p$storage.backend, p$ptr$S )
-      Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
-      PP = stmv_attach( p$storage.backend, p$ptr$P )
-      PPsd = stmv_attach( p$storage.backend, p$ptr$Psd )
-      Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+      P = stmv_attach( p$storage.backend, p$ptr$P )[]
+      Psd = stmv_attach( p$storage.backend, p$ptr$Psd )[]
+      S = stmv_attach( p$storage.backend, p$ptr$S )[]
 
-      if ( exists("TIME", p$variables)) {
-
-        runindex = list( tindex=1:p$ny ) # year only .. in case we make this into parallel_run 
-        
-        for ( ii in runindex$tindex ) { # outputs are on yearly breakdown
-
-          it = p$runs$tindex[ii]  # == ii
-          y = p$yrs[ii]
-          fn_P = file.path( p$stmvSaveDir, paste("stmv.prediction", "mean",  y, "rdata", sep="." ) )
-          fn_Pl = file.path( p$stmvSaveDir, paste("stmv.prediction", "lb",   y, "rdata", sep="." ) )
-          if (file.exists(fn_P))  load(fn_P)
-          if (file.exists(fn_Pl))  load(fn_Pl)
-
-          if (exists("stmv_Y_transform", p)) {
-            Pl = p$stmv_Y_transform[[1]] (Pl)  # p$stmv_Y_transform[2] is the inverse transform
-            P = p$stmv_Y_transform[[1]] (P)
-          }
-
-          # save in model scale 
-          Pl = p$stmv_global_family$link( Pl )
-          P = p$stmv_global_family$link( P )
-
-          V = (P[] - Pl[]) / 1.96  # convert to 1 SD
-
-          if (exists("stmv_global_modelengine", p) ) {
-            if (p$stmv_global_modelengine !="none" ) {
-              P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
-              P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )
-
-              ## maybe add via simulation ? ...
-              uu = which(!is.finite(P[]))
-              if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
-              P = P[] - P0[,it]
-              vv = which(!is.finite(V[]))
-              if (length(vv)>0) V[vv] = 0 # permit covariate-base predictions to pass through ..
-              V = sqrt( V[]^2 - P0sd[,it]^2) # simple additive independent errors assumed
-            }
-          }
-
-          vv = ncol(PP)
-          if ( vv > p$ny ) {
-            col.ranges = (it-1) * p$nw + (1:p$nw)
-            PP[,col.ranges] = P
-            PPsd[,col.ranges] = V 
-          } else if ( vv==p$ny) {
-            PP[,it] = P
-            PPsd[,it] = V
-          }
-
-        }
-
-      } else {
-        # serial run only ... 
-          runindex = list( tindex=p$nt )  # dummy value = 1
-        
-          fn_P = file.path( p$stmvSaveDir, paste("stmv.prediction", "mean", "rdata", sep="." ) )
-          fn_Pl = file.path( p$stmvSaveDir, paste("stmv.prediction", "lb", "rdata", sep="." ) )
-
-          if (file.exists(fn_P)) load(fn_P)
-          if (file.exists(fn_Pl)) load(fn_Pl)
-
-          if (exists("stmv_Y_transform", p)) {
-            Pl = p$stmv_Y_transform[[1]] (Pl)  # p$stmv_Y_transform[2] is the inverse transform
-            P = p$stmv_Y_transform[[1]] (P)
-          }
-
-          # save in model scale 
-          if (exists("stmv_global_family", p)) {
-            if (exists("link", p$stmv_global_family)) {
-              if ( is.function(p$stmv_global_family$link) ) {
-                Pl = p$stmv_global_family$link( Pl )
-                P = p$stmv_global_family$link( P )
-              }
-            }
-          }
-
-          V = (P[] - Pl[]) / 1.96  # convert to 1 SD
-
-          if (exists("stmv_global_modelengine", p) ) {
-            if (p$stmv_global_modelengine !="none" ) {
-              P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
-              P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )
-              uu = which(!is.finite(P[]))
-              if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
-              P = P[] - P0[]
-              vv = which(!is.finite(V[]))
-              if (length(vv)>0) V[vv] = 0 # permit covariate-base predictions to pass through ..
-              V = sqrt( V[]^2 - P0sd[]^2) # simple additive independent errors assumed
-            }
-          }
-          PP[] = P[]
-          PPsd[] = V[]
-
-      } # end if TIME
-
-      # levelplot( PP[] ~ Ploc[,1] + Ploc[,2], aspect="iso")
-
-      # stats
-      pidP = array_map( "xy->1", Ploc, gridparams=p$gridparams )
-      pidS = array_map( "xy->1", Sloc, gridparams=p$gridparams )
-      jj = match( pidS, pidP ) # matches
-
-      fn.stats = file.path( p$stmvSaveDir, paste( "stmv.statistics", "rdata", sep=".") )
-      if (file.exists(fn.stats) ) {
-        load(fn.stats)
-        for ( i in 1:length( p$statsvars ) ) {
-          print(i)
-          S[,i] = stats[jj,i] 
+      if (exists("stmv_global_modelengine", p)) {
+        if (p$stmv_global_modelengine !="none" ) {
+          P0 = stmv_attach( p$storage.backend, p$ptr$P0 )[]
+          P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )[]
         }
       }
+
+      fn_P = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean", "rdata", sep="." ) )
+      fn_Psd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd",   y, "rdata", sep="." ) )
+      fn_stats = file.path( p$stmvSaveDir, paste( "tmp_stmv.statistics", "rdata", sep=".") )
+      save( P, file=fn_P, compress=TRUE )
+      save( Psd, file=fn_Psd, compress=TRUE )
+      save( S, file=fn_stats, compress=TRUE )
+
+      if (exists("stmv_global_modelengine", p)) {
+        if (p$stmv_global_modelengine !="none" ) {
+          fn_P0 = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean0", "rdata", sep="." ) )
+          fn_P0sd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd0",   y, "rdata", sep="." ) )
+          save( P0,   file=fn.P0,   compress=TRUE )
+          save( P0sd, file=fn.P0sd, compress=TRUE )
+        }
+      }
+      
+    }
+
+
+    # ---------------------------
+
+
+    if (DS %in% c("load_saved_state") ) {
+
+      # named differently to avoid collisions 
+
+      # named differently to avoid collisions 
+      PP = stmv_attach( p$storage.backend, p$ptr$P )
+      PPsd = stmv_attach( p$storage.backend, p$ptr$Psd )
+      SS = stmv_attach( p$storage.backend, p$ptr$S )
+
+      if (exists("stmv_global_modelengine", p)) {
+        if (p$stmv_global_modelengine !="none" ) {
+          PP0 = stmv_attach( p$storage.backend, p$ptr$P0 )
+          PP0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )
+        }
+      }
+
+      fn_P = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean", "rdata", sep="." ) )
+      fn_Psd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd",   y, "rdata", sep="." ) )
+      fn_stats = file.path( p$stmvSaveDir, paste( "tmp_stmv.statistics", "rdata", sep=".") )
+      load( fn_P )
+      load( fn_Psd )
+      load( fn_stats )
+
+      PP[] = P[]
+      PPsd[] = Psd[]
+      SS[] = S[]
+      
+      if (exists("stmv_global_modelengine", p)) {
+        if (p$stmv_global_modelengine !="none" ) {
+          fn_P0 = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean0", "rdata", sep="." ) )
+          fn_P0sd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd0",   y, "rdata", sep="." ) )
+          load( fn.P0 )
+          load( fn.P0sd )
+          PP0[] = P0[]
+          PP0sd[] = P0sd[]
+        }
+      }
+
     }
 
   }
