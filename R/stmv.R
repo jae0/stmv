@@ -538,8 +538,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     suppressMessages( parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) )) # random order helps use all cpus )
 
     message( "||| Saving current results and stats to disk .. " )
-    stmv_db( p=p, DS="stmv.prediction.redo" ) # save to disk for use outside stmv*, returning to user scale
-    stmv_db( p=p, DS="stats.to.prediction.grid.redo") # save to disk for use outside stmv*
+    stmv_db( p=p, DS="load_saved_state" ) # load saved state back into memory .. otherwise use what is in memory
 
     p$time_default = round( difftime( Sys.time(), timei1, units="hours" ), 3 )
     message(" ")
@@ -569,8 +568,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
       }
     }
     message( "||| Saving current results and stats to disk .. " )
-    stmv_db( p=p, DS="stmv.prediction.redo" ) # save to disk for use outside stmv*, returning to user scale
-    stmv_db( p=p, DS="stats.to.prediction.grid.redo") # save to disk for use outside stmv*
+    stmv_db( p=p, DS="load_saved_state" ) # load saved state back into memory .. otherwise use what is in memory
 
     p$time_stage2 = round( difftime( Sys.time(), timei2, units="hours" ), 3)
     message(" ")
@@ -596,8 +594,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     }
 
     message( "||| Saving current results and stats to disk .. " )
-    stmv_db( p=p, DS="stmv.prediction.redo" ) # save to disk for use outside stmv*, returning to user scale
-    stmv_db( p=p, DS="stats.to.prediction.grid.redo") # save to disk for use outside stmv*
+    stmv_db( p=p, DS="load_saved_state" ) # load saved state back into memory .. otherwise use what is in memory
 
     p$time_stage3 = round( difftime( Sys.time(), timei3, units="hours" ), 3)
     message( paste( "||| Time taken to complete stage3 interpolations (hours):", p$time_stage3, "" ) )
@@ -609,8 +606,13 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
   # save again, in case some timings/etc needed in a restart
   # p <<- p  # push to parent in case a manual restart is possible
 
+  p$time_total = round( difftime( Sys.time(), p$time.start, units="hours" ), 3)
+  
   # -----------------------------------------------------
-  if ( "cleanup" %in% runmode ) {
+  if ( "finish" %in% runmode ) {
+
+    stmv_db( p=p, DS="stmv.prediction.redo" ) # save to disk for use outside stmv*, returning to user scale
+    stmv_db( p=p, DS="stats.to.prediction.grid.redo") # save to disk for use outside stmv*
 
     if ( p$storage.backend !="bigmemory.ram" ) {
       resp = readline( "||| Delete temporary files? Type to confirm <YES>:  ")
@@ -622,13 +624,13 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
         message( "||| You can delete them by running: stmv_db( p=p, DS='cleanup' ), once you are done. ")
       }
     }
+  
+    stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
   }
 
-  p$time_total = round( difftime( Sys.time(), p$time.start, units="hours" ), 3)
   message( paste( "||| Time taken for full analysis (hours):", p$time_total ) )
   message( paste( "||| Your parameter 'p' has been updated in case you need to re-run something" ) )
 
-  stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
   # gc()
 
 }
