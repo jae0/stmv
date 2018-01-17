@@ -744,7 +744,7 @@
       }
 
       fn_P = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean", "rdata", sep="." ) )
-      fn_Psd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd",   y, "rdata", sep="." ) )
+      fn_Psd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd", "rdata", sep="." ) )
       fn_stats = file.path( p$stmvSaveDir, paste( "tmp_stmv.statistics", "rdata", sep=".") )
       save( P, file=fn_P, compress=TRUE )
       save( Psd, file=fn_Psd, compress=TRUE )
@@ -753,7 +753,7 @@
       if (exists("stmv_global_modelengine", p)) {
         if (p$stmv_global_modelengine !="none" ) {
           fn_P0 = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean0", "rdata", sep="." ) )
-          fn_P0sd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd0",   y, "rdata", sep="." ) )
+          fn_P0sd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd0", "rdata", sep="." ) )
           save( P0,   file=fn.P0,   compress=TRUE )
           save( P0sd, file=fn.P0sd, compress=TRUE )
         }
@@ -782,7 +782,7 @@
       }
 
       fn_P = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean", "rdata", sep="." ) )
-      fn_Psd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd",   y, "rdata", sep="." ) )
+      fn_Psd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd", "rdata", sep="." ) )
       fn_stats = file.path( p$stmvSaveDir, paste( "tmp_stmv.statistics", "rdata", sep=".") )
       load( fn_P )
       load( fn_Psd )
@@ -795,7 +795,7 @@
       if (exists("stmv_global_modelengine", p)) {
         if (p$stmv_global_modelengine !="none" ) {
           fn_P0 = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean0", "rdata", sep="." ) )
-          fn_P0sd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd0",   y, "rdata", sep="." ) )
+          fn_P0sd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd0",  "rdata", sep="." ) )
           load( fn.P0 )
           load( fn.P0sd )
           PP0[] = P0[]

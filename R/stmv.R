@@ -538,7 +538,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     suppressMessages( parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) )) # random order helps use all cpus )
 
     message( "||| Saving current results and stats to disk .. " )
-    stmv_db( p=p, DS="load_saved_state" ) # load saved state back into memory .. otherwise use what is in memory
+    stmv_db( p=p, DS="save_current_state" ) # load saved state back into memory .. otherwise use what is in memory
 
     p$time_default = round( difftime( Sys.time(), timei1, units="hours" ), 3 )
     message(" ")
@@ -568,7 +568,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
       }
     }
     message( "||| Saving current results and stats to disk .. " )
-    stmv_db( p=p, DS="load_saved_state" ) # load saved state back into memory .. otherwise use what is in memory
+    stmv_db( p=p, DS="save_current_state" ) # load saved state back into memory .. otherwise use what is in memory
 
     p$time_stage2 = round( difftime( Sys.time(), timei2, units="hours" ), 3)
     message(" ")
@@ -594,7 +594,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     }
 
     message( "||| Saving current results and stats to disk .. " )
-    stmv_db( p=p, DS="load_saved_state" ) # load saved state back into memory .. otherwise use what is in memory
+    stmv_db( p=p, DS="save_current_state" ) # load saved state back into memory .. otherwise use what is in memory
 
     p$time_stage3 = round( difftime( Sys.time(), timei3, units="hours" ), 3)
     message( paste( "||| Time taken to complete stage3 interpolations (hours):", p$time_stage3, "" ) )
