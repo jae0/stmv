@@ -534,7 +534,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     timei1 =  Sys.time()
     # p <<- p  # push to parent in case a manual restart is possible
 
-    nchunks = 50  # granularity of sequential runs
+    nchunks = 100  # granularity of sequential runs
     for ( chunk in 1:nchunks ) {
       currentstatus = stmv_db( p=p, DS="statistics.status" )
       stmv_logfile(p=p, stime=timei1, currentstatus)
@@ -573,25 +573,28 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     message( "||| Starting stage 2: more permisssive distance settings:")
     message( "|||  i.e., (stmv_distance_max and stmv_distance_scale) X {", paste0(p$stmv_multiplier_stage2, collapse=" "), "}" )
 
+
     for ( mult in p$stmv_multiplier_stage2 ) {
       currentstatus = stmv_db(p=p, DS="statistics.status.reset" )
+      stmv_logfile(p=p, stime=timei2, currentstatus)
       print( paste("Range multiplier:", mult) )
       if (length(currentstatus$todo) > 0) {
-        suppressMessages( parallel_run( stmv_interpolate, p=p, 
+        suppressMessages( parallel_run( 
+          stmv_interpolate, 
+          p=p, 
           stmv_distance_max=p$stmv_distance_max*mult, 
           stmv_distance_scale=p$stmv_distance_scale*mult,
           runindex=list( locs=sample( currentstatus$todo ) ) # random order helps use all cpus
         ))
+        stmv_db( p=p, DS="save_current_state" ) 
       }
     }
-    
-    message( "||| Saving current results and stats to disk .. " )
-    stmv_db( p=p, DS="save_current_state" ) # load saved state back into memory .. otherwise use what is in memory
 
     p$time_stage2 = round( difftime( Sys.time(), timei2, units="hours" ), 3)
     message(" ")
     message( paste( "||| Time taken to complete stage 2 interpolations (hours):", p$time_stage2, "" ) )
     currentstatus = stmv_db( p=p, DS="statistics.status" )
+    stmv_logfile(p=p, stime=timei2, currentstatus)
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     p <<- p  # push to parent in case a manual restart is needed
   }
@@ -606,13 +609,13 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     if ( !is.null(toredo) && length(toredo) > 0) {
       Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
       Sflag[toredo]=0L
-      p$stmv_local_modelengine = "tps"
-      # ?? why is this here ? p = aegis_parameters( p=p, DS="bathymetry" )
-      parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( toredo )) ) # random order helps use all cpus
-    }
+      currentstatus = stmv_db( p=p, DS="statistics.status" )
+      stmv_logfile(p=p, stime=timei3, currentstatus)
 
-    message( "||| Saving current results and stats to disk .. " )
-    stmv_db( p=p, DS="save_current_state" ) # load saved state back into memory .. otherwise use what is in memory
+      p$stmv_local_modelengine = "tps"
+      parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( toredo )) ) # random order helps use all cpus
+      stmv_db( p=p, DS="save_current_state" )
+    }
 
     p$time_stage3 = round( difftime( Sys.time(), timei3, units="hours" ), 3)
     message( paste( "||| Time taken to complete stage3 interpolations (hours):", p$time_stage3, "" ) )
