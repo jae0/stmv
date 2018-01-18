@@ -1,7 +1,7 @@
-stmv_logfile = function(p, stime){
+stmv_logfile = function(p, stime, currentstatus){
 
-  varstoout = c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outsidepreddomain",
-    "n.outside", "n.complete", "prop_incomp" )
+  varstoout = c("n.total", "n.shallow", "n.todo", "n.skipped", "n.rangeissue", "n.nodata", "n.variogramerror",
+    "n.vrangeerror", "n.modelerror", "n.outside", "n.complete", "prop_incomp" )
   header = paste( c( varstoout) )
   currentstatus = stmv_db( p=p, DS="statistics.status" )
   currentstatus = c( unlist( currentstatus[ varstoout ] ) )
@@ -22,3 +22,17 @@ stmv_logfile = function(p, stime){
   # message( readLines( p$stmv_current_status ) )
   return(currentstatus)
 }
+
+
+  # numeric codes .. see stmv_db("statistics.status")
+  #     out$todo = which( Sflag[]==0L )       # 0 = TODO
+  #     out$done = which( Sflag[]==1L )       # 1 = completed
+  #     out$outside = which( Sflag[]==2L )    # 2 = oustide bounds(if any)
+  #     out$shallow = which( Sflag[]==3L )    # 3 = depth shallower than p$depth.filter (if it exists .. z is a covariate)
+  #     out$rangeissue = which( Sflag[]==4L ) # 4=range not ok,
+  #     out$nodata = which( Sflag[]==5L )     # 5=skipped due to insufficient data,
+  #     out$variogramerror = which( Sflag[]==6L ) # 6=skipped .. fast variogram did not work
+  #     out$vrangeerror = which( Sflag[]==7L )     # 7=variogram estimated range not ok
+  #     out$modelerror = which( Sflag[]==8L )     # 8=problem with prediction and/or modelling
+  #     out$skipped = which( Sflag[] == 9L )   # 9 not completed due to a failed attempt
+  # 

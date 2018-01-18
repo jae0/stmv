@@ -532,13 +532,30 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
   if ( "stage1" %in% runmode ) {
     # this is the basic run
     timei1 =  Sys.time()
-    currentstatus = stmv_db( p=p, DS="statistics.status" )
     # p <<- p  # push to parent in case a manual restart is possible
 
-    suppressMessages( parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) )) # random order helps use all cpus )
+    nchunks = 50  # granularity of sequential runs
+    for ( chunk in 1:nchunks ) {
+      currentstatus = stmv_db( p=p, DS="statistics.status" )
+      stmv_logfile(p=p, stime=timei1, currentstatus)
+      ntodo = length( currentstatus$todo )
+      ntodo_chunk = floor(ntodo/10)
+      if ( ntodo_chunk > 0) {
+        todolist = list( locs=currentstatus$todo[sample.int(ntodo, ntodo_chunk)] )
+        suppressMessages( parallel_run( stmv_interpolate, p=p, runindex=todolist )) # random order helps use all cpus )
+        stmv_db( p=p, DS="save_current_state" ) # saved current state
+      }
+    }
 
-    message( "||| Saving current results and stats to disk .. " )
-    stmv_db( p=p, DS="save_current_state" ) # load saved state back into memory .. otherwise use what is in memory
+    # catch any stragglers ..
+    currentstatus = stmv_db( p=p, DS="statistics.status.reset" )
+    stmv_logfile(p=p, stime=timei1, currentstatus)
+    ntodo = length( currentstatus$todo )
+    if ( ntodo > 0) {
+      todolist = list( locs=currentstatus$todo[sample.int(ntodo)] )
+      suppressMessages( parallel_run( stmv_interpolate, p=p, runindex=todolist )) # random order helps use all cpus )
+      stmv_db( p=p, DS="save_current_state" ) # saved current state 
+    }
 
     p$time_default = round( difftime( Sys.time(), timei1, units="hours" ), 3 )
     message(" ")
@@ -567,6 +584,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
         ))
       }
     }
+    
     message( "||| Saving current results and stats to disk .. " )
     stmv_db( p=p, DS="save_current_state" ) # load saved state back into memory .. otherwise use what is in memory
 

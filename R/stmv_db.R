@@ -84,6 +84,14 @@
     if (DS %in% "cleanup" ) {
       for (fn in unlist(p$cache) ) if (length(fn)>0) if (file.exists(fn)) file.remove(fn)
       for (fn in unlist(p$bm) ) if (length(fn)>0)  if (file.exists(fn)) file.remove(fn)
+      snapshots = c(
+        file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean", "rdata", sep="." ) ),
+        file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd", "rdata", sep="." ) ),
+        file.path( p$stmvSaveDir, paste( "tmp_stmv.statistics", "rdata", sep=".") ),
+        file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean0", "rdata", sep="." ) ),
+        file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd0",  "rdata", sep="." ) )
+      )
+      for (fn in snapshots ) if (file.exists(fn)) file.remove(fn)
       return( NULL )
     }
 
@@ -91,42 +99,53 @@
     # -----------------
 
     if ( DS %in% c( "statistics.status", "statistics.status.reset") ) {
-      # 0=to do
-      # 1=complete
-      # 2=oustide bounds(if any)
-      # 3=shallow(if z is a covariate)
-      # 4=range not ok, 
-      # 5=skipped due to insufficient data, 
-      # 6=skipped .. fast variogram did not work
-      # 7=variogram estimated range not ok
-      # 8=problem with prediction and/or modelling
-      # 9=attempting ... if encountered then it was some general problem  or was interrrupted 
-
+    
       Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-      ioutside = which( Sflag[]==2L )
-      itodo = which( Sflag[]==0L )       # 0 = TODO
-      idone = which( Sflag[]==1L )       # 1 = completed
-      ishallow = which( Sflag[]==3L )    # 3 = depth shallower than p$depth.filter (if it exists)
-      ipreddomain = which( Sflag[]==4L ) # not in prediction domain
-      iskipped = which( Sflag[] == 9L )  # 9 not completed due to a failed attempt
-      out = list(skipped=iskipped, todo=itodo, completed=idone, outside=ioutside,
-                 shallow=ishallow, preddomain=ipreddomain,
-                 n.total=length(Sflag), n.shallow=length(ishallow),
-                 n.todo=length(itodo), n.skipped=length(iskipped),
-                 n.outside=length(which(is.finite(ioutside))), n.outsidepreddomain=length(ipreddomain),
-                 n.complete=length(idone) )
-
+      
+      out = list()
+      
+      out$todo = which( Sflag[]==0L )       # 0 = TODO
+      out$done = which( Sflag[]==1L )       # 1 = completed
+      out$outside = which( Sflag[]==2L )    # 2 = oustide bounds(if any)
+      out$shallow = which( Sflag[]==3L )    # 3 = depth shallower than p$depth.filter (if it exists .. z is a covariate)
+      out$rangeissue = which( Sflag[]==4L ) # 4=range not ok,
+      out$nodata = which( Sflag[]==5L )     # 5=skipped due to insufficient data,
+      out$variogramerror = which( Sflag[]==6L ) # 6=skipped .. fast variogram did not work
+      out$vrangeerror = which( Sflag[]==7L )     # 7=variogram estimated range not ok
+      out$modelerror = which( Sflag[]==8L )     # 8=problem with prediction and/or modelling
+      out$skipped = which( Sflag[] == 9L )   # 9 not completed due to a failed attempt
+      
       if ( DS=="statistics.status.reset" ) {
         # to reset all rejected locations
         if (length(which(is.finite(out$skipped))) > 0) {
           Sflag[out$skipped] = 0L  # to reset all the problem flags to todo
-          out$skipped=which( Sflag[] == 9L )
-          out$n.skipped = 0
+            out$skipped = which( Sflag[] == 9L )
+          Sflag[out$rangeissue] = 0L  # to reset all the problem flags to todo
+            out$rangeissue = which( Sflag[] == 4L )
+          Sflag[out$variogramerror] = 0L  # to reset all the problem flags to todo
+            out$variogramerror = which( Sflag[] == 6L )
+          Sflag[out$vrangeerror] = 0L  # to reset all the problem flags to todo
+            out$vrangeerror = which( Sflag[] == 7L )
+          Sflag[out$modelerror] = 0L  # to reset all the problem flags to todo
+            out$modelerror = which( Sflag[] == 8L )
           out$todo = which( Sflag[]==0L )
-          out$n.todo = length(which( Sflag[]==0L ))
         }
       }
-      out$prop_incomp=round( out$n.todo / ( out$n.todo + out$n.complete), 3)
+      
+      # do some counts
+      out$n.todo = length(out$todo)
+      out$n.complete = length(out$done) 
+      out$n.outside = length(out$which(is.finite(out$outside))) 
+      out$n.shallow = length(out$shallow)
+      out$n.rangeissue = length(out$rangeissue)
+      out$n.nodata = length(out$nodata)
+      out$n.variogramerror = length(out$variogramerror)
+      out$n.vrangeerror = length(out$vrangeerror)
+      out$n.modelerror = length(out$modelerror) 
+      out$n.skipped = length(out$skipped)
+      out$n.total = length(Sflag) 
+
+      out$prop_incomp = round( out$n.todo / ( out$n.todo + out$n.complete), 3)
       message( paste("||| Proportion to do:", out$prop_incomp, "\n" ))
       return( out )
 
