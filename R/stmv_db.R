@@ -141,7 +141,7 @@
       # do some counts
       out$n.todo = length(out$todo)
       out$n.complete = length(out$done) 
-      out$n.outside = length(out$which(is.finite(out$outside))) 
+      out$n.outside = length(which(is.finite(out$outside))) 
       out$n.shallow = length(out$shallow)
       out$n.predareaerror = length(out$predareaerror)
       out$n.nodata = length(out$nodata)
