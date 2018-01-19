@@ -469,6 +469,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
 
   if ( "restart" %in% runmode ) {
     stmv_db( p=p, DS="load_saved_state" ) # load saved state back into memory .. otherwise use what is in memory
+    toredo = stmv_db( p=p, DS="flag.incomplete.predictions" )
   } 
   
 

@@ -270,6 +270,7 @@
       uP = NULL
       if( length(noP)>0 ) {
         Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
+        Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
 
         Sloc_nplat = ceiling( diff( p$corners$plat) / p$stmv_distance_statsgrid)
         Sloc_nplon = ceiling( diff( p$corners$plon) / p$stmv_distance_statsgrid)
@@ -280,7 +281,9 @@
         inrange = which( (uP >= min(uS)) & (uP <= max(uS)) )
         if (length( inrange) > 0) uP = uP[inrange]
         uP = unique(uP)
+        Sflag[uP] = 0L  # set to redo
       }
+      
       return(uP)
     }
 
