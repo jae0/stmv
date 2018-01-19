@@ -94,6 +94,7 @@
         file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean", "rdata", sep="." ) ),
         file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd", "rdata", sep="." ) ),
         file.path( p$stmvSaveDir, paste( "tmp_stmv.statistics", "rdata", sep=".") ),
+        file.path( p$stmvSaveDir, paste( "tmp_stmv.sflag", "rdata", sep=".") ),
         file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean0", "rdata", sep="." ) ),
         file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd0",  "rdata", sep="." ) )
       )
@@ -281,7 +282,7 @@
         inrange = which( (uP >= min(uS)) & (uP <= max(uS)) )
         if (length( inrange) > 0) uP = uP[inrange]
         uP = unique(uP)
-        Sflag[uP] = 0L  # set to redo
+        Sflag[uP] = 0L  # force set to redo
       }
       
       return(uP)
@@ -767,6 +768,7 @@
       P = stmv_attach( p$storage.backend, p$ptr$P )[]
       Psd = stmv_attach( p$storage.backend, p$ptr$Psd )[]
       S = stmv_attach( p$storage.backend, p$ptr$S )[]
+      Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )[]
 
       if (exists("stmv_global_modelengine", p)) {
         if (p$stmv_global_modelengine !="none" ) {
@@ -778,9 +780,12 @@
       fn_P = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean", "rdata", sep="." ) )
       fn_Psd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd", "rdata", sep="." ) )
       fn_stats = file.path( p$stmvSaveDir, paste( "tmp_stmv.statistics", "rdata", sep=".") )
+      fn_sflag = file.path( p$stmvSaveDir, paste( "tmp_stmv.sflag", "rdata", sep=".") )
+      
       save( P, file=fn_P, compress=TRUE )
       save( Psd, file=fn_Psd, compress=TRUE )
       save( S, file=fn_stats, compress=TRUE )
+      save( Sflag, file=fn_sflag, compress=TRUE )
 
       if (exists("stmv_global_modelengine", p)) {
         if (p$stmv_global_modelengine !="none" ) {
@@ -805,6 +810,7 @@
       PP = stmv_attach( p$storage.backend, p$ptr$P )
       PPsd = stmv_attach( p$storage.backend, p$ptr$Psd )
       SS = stmv_attach( p$storage.backend, p$ptr$S )
+      SSflag = stmv_attach( p$storage.backend, p$ptr$Sflag )[]
 
       if (exists("stmv_global_modelengine", p)) {
         if (p$stmv_global_modelengine !="none" ) {
@@ -816,13 +822,17 @@
       fn_P = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean", "rdata", sep="." ) )
       fn_Psd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd", "rdata", sep="." ) )
       fn_stats = file.path( p$stmvSaveDir, paste( "tmp_stmv.statistics", "rdata", sep=".") )
+      fn_sflag = file.path( p$stmvSaveDir, paste( "tmp_stmv.sflag", "rdata", sep=".") )
+
       load( fn_P )
       load( fn_Psd )
       load( fn_stats )
+      load( fn_sflag )
 
       PP[] = P[]
       PPsd[] = Psd[]
       SS[] = S[]
+      SSflag[] = Sflag[]
       
       if (exists("stmv_global_modelengine", p)) {
         if (p$stmv_global_modelengine !="none" ) {
