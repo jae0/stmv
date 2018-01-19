@@ -84,6 +84,12 @@
     if (DS %in% "cleanup" ) {
       for (fn in unlist(p$cache) ) if (length(fn)>0) if (file.exists(fn)) file.remove(fn)
       for (fn in unlist(p$bm) ) if (length(fn)>0)  if (file.exists(fn)) file.remove(fn)
+      return( NULL )
+    }
+
+    # --------------------------
+    if (DS %in% "cleanup.all" ) {
+      stmv_db( p=p, DS="cleanup")
       snapshots = c(
         file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean", "rdata", sep="." ) ),
         file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd", "rdata", sep="." ) ),

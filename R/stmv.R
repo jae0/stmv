@@ -638,11 +638,11 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     if ( p$storage.backend !="bigmemory.ram" ) {
       resp = readline( "||| Delete temporary files? Type to confirm <YES>:  ")
       if (resp=="YES") {
-        stmv_db( p=p, DS="cleanup" )
+        stmv_db( p=p, DS="cleanup.all" )
       } else {
         message(" ")
         message( "||| Leaving temporary files alone in case you need to examine them or restart a process. ")
-        message( "||| You can delete them by running: stmv_db( p=p, DS='cleanup' ), once you are done. ")
+        message( "||| You can delete them by running: stmv_db( p=p, DS='cleanup.all' ), once you are done. ")
       }
     }
   
