@@ -87,17 +87,14 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
     # if (( localcount %% 20 )== 0) currentstatus = stmv_logfile(p=p, stime=stime)
 
     Si = p$runs[ iip, "locs" ]
-    print( iip )
-
+    # if (debug) print( paste(iip, Si ) )
 
     if ( Sflag[Si] != 0L ) next()  # previously attempted .. skip
-    
-    Sflag[Si] = 9L   # temporarily mark as problematic here. if not, it be over-written below
       # 0=to do
       # 1=complete
-      # 2=oustide bounds(if any)
-      # 3=shallow(if z is a covariate)
-      # 4=range not ok, 
+      # 2=oustide bounds(if any) -
+      # 3=shallow(if z is a covariate) -
+      # 4=predictionarea not ok, 
       # 5=skipped due to insufficient data, 
       # 6=skipped .. fast variogram did not work
       # 7=variogram estimated range not ok
@@ -142,39 +139,42 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
     if ( is.null(o)) Sflag[Si] = 6L   # fast variogram did not work
     if ( inherits(o, "try-error")) Sflag[Si] = 6L   # fast variogram did not work
     
-    ores = NULL
-    if ( Sflag[Si] == 6L ){
-      if (exists("stmv_rangecheck", p)) if (p$stmv_rangecheck=="paranoid") next()
-    } else {
-      if ( exists(p$stmv_variogram_method, o)) {
-        ores = o[[p$stmv_variogram_method]] # store current best estimate of variogram characteristics
-        if ( !exists("range_ok", ores) ) Sflag[Si] = 7L
-        if ( ores[["range_ok"]] ) {
-          stmv_distance_cur = ores[["range"]]
-          vario_U  = which( {dlon  <= ores[["range"]] } & {dlat <= ores[["range"]]} )
-          vario_ndata =length(vario_U)
-          if (vario_ndata < p$n.min) {
-            Sflag[Si] = 5L # not enough data
-            next()
-          } else if (vario_ndata > p$n.max) {
-            U = vario_U[ .Internal( sample( vario_ndata, p$n.max, replace=FALSE, prob=NULL)) ]
-            ndata = p$n.max
-          } else {
-            U  = vario_U
-            ndata = vario_ndata
-          }
-          vario_U = vario_ndata = NULL
+    if (exists("stmv_rangecheck", p)) {
+      if (p$stmv_rangecheck=="paranoid") {
+        if ( Sflag[Si] == 6L ) {
+          next()
         }
       }
-    } 
-
+    }
+  
+    ores = NULL
+    if ( exists(p$stmv_variogram_method, o)) {
+      ores = o[[p$stmv_variogram_method]] # store current best estimate of variogram characteristics
+      if ( !exists("range_ok", ores) ) Sflag[Si] = 7L
+      if ( ores[["range_ok"]] ) {
+        stmv_distance_cur = ores[["range"]]
+        vario_U  = which( {dlon  <= ores[["range"]] } & {dlat <= ores[["range"]]} )
+        vario_ndata =length(vario_U)
+        if (vario_ndata < p$n.min) {
+          Sflag[Si] = 5L # not enough data
+          next()
+        } else if (vario_ndata > p$n.max) {
+          U = vario_U[ .Internal( sample( vario_ndata, p$n.max, replace=FALSE, prob=NULL)) ]
+          ndata = p$n.max
+        } else {
+          U  = vario_U
+          ndata = vario_ndata
+        }
+        vario_U = vario_ndata = NULL
+      }
+    }
+  
     dlon=dlat=o=NULL; gc()
-
 
     YiU = Yi[U] # YiU and p$stmv_distance_prediction determine the data entering into local model construction
     pa = stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=p$windowsize.half )
     if (is.null(pa)) {
-      Sflag[Si] = 9L
+      Sflag[Si] = 4L
       message( Si )
       message("Error with issue with prediction grid ... null .. this should not happen")
     }

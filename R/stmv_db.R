@@ -108,7 +108,7 @@
       out$done = which( Sflag[]==1L )       # 1 = completed
       out$outside = which( Sflag[]==2L )    # 2 = oustide bounds(if any)
       out$shallow = which( Sflag[]==3L )    # 3 = depth shallower than p$depth.filter (if it exists .. z is a covariate)
-      out$rangeissue = which( Sflag[]==4L ) # 4=range not ok,
+      out$predareaerror = which( Sflag[]==4L ) # 4=predictionarea not ok,
       out$nodata = which( Sflag[]==5L )     # 5=skipped due to insufficient data,
       out$variogramerror = which( Sflag[]==6L ) # 6=skipped .. fast variogram did not work
       out$vrangeerror = which( Sflag[]==7L )     # 7=variogram estimated range not ok
@@ -120,8 +120,8 @@
         if (length(which(is.finite(out$skipped))) > 0) {
           Sflag[out$skipped] = 0L  # to reset all the problem flags to todo
             out$skipped = which( Sflag[] == 9L )
-          Sflag[out$rangeissue] = 0L  # to reset all the problem flags to todo
-            out$rangeissue = which( Sflag[] == 4L )
+          Sflag[out$predareaerror] = 0L  # to reset all the problem flags to todo
+            out$predareaerror = which( Sflag[] == 4L )
           Sflag[out$variogramerror] = 0L  # to reset all the problem flags to todo
             out$variogramerror = which( Sflag[] == 6L )
           Sflag[out$vrangeerror] = 0L  # to reset all the problem flags to todo
@@ -137,7 +137,7 @@
       out$n.complete = length(out$done) 
       out$n.outside = length(out$which(is.finite(out$outside))) 
       out$n.shallow = length(out$shallow)
-      out$n.rangeissue = length(out$rangeissue)
+      out$n.predareaerror = length(out$predareaerror)
       out$n.nodata = length(out$nodata)
       out$n.variogramerror = length(out$variogramerror)
       out$n.vrangeerror = length(out$vrangeerror)
@@ -164,6 +164,10 @@
         points( Sloc[which( Sflag[]== 2L),], pch=".", col="red", cex=5 )
         points( Sloc[which( Sflag[]== 3L),], pch=".", col="yellow", cex=5 )
         points( Sloc[which( Sflag[]== 4L),], pch=".", col="green", cex=5 )
+        points( Sloc[which( Sflag[]== 5L),], pch=".", col="red2", cex=5 )
+        points( Sloc[which( Sflag[]== 6L),], pch=".", col="yellow2", cex=5 )
+        points( Sloc[which( Sflag[]== 7L),], pch=".", col="green2", cex=5 )
+        points( Sloc[which( Sflag[]== 8L),], pch=".", col="green3", cex=5 )
         points( Sloc[which( Sflag[]== 9L),], pch=".", col="magenta", cex=5 )
 
       }
@@ -185,7 +189,7 @@
       overlap = match( pidS, pidP )
       outside = which( !is.finite( overlap ))
       Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-      if (length(outside)  > 0 ) Sflag[outside] = 4L  # outside of prediction domain
+      if (length(outside)  > 0 ) Sflag[outside] = 2L  # outside of prediction domain
 
       # catch data boundaries if present
       if (exists( "boundary", p) && p$boundary) {
