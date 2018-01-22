@@ -551,7 +551,7 @@
       shallower = NULL
       if ( exists("depth.filter", p) && is.finite( p$depth.filter) ) {
         if ( "z" %in% p$variables$COV ){
-          depths = stmv_attach( p$storage.backend, p$ptr$Pcov[["z"]] )
+          depths = stmv_attach( p$storage.backend, p$ptr$Pcov[["z"]] )[]
           ii = which( depths[] < p$depth.filter )
           if (length(ii) > 0) shallower = ii
           rm(depths)
@@ -748,8 +748,8 @@
       if ( exists("depth.filter", p) && is.finite( p$depth.filter) ) {
         # stats is now with the same indices as Pcov, Ploc, etc..
         if ( "z" %in% p$variables$COV ){
-          depths = stmv_attach( p$storage.backend, p$ptr$Pcov[["z"]] )
-          shallower = which( depths[] < p$depth.filter )
+          depths = stmv_attach( p$storage.backend, p$ptr$Pcov[["z"]] )[]
+          shallower = which( depths < p$depth.filter )
           if (length(shallower)>0) stats[shallower,] = NA
           rm(shallower); gc()
         }
