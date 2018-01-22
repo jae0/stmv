@@ -791,8 +791,8 @@
         if (p$stmv_global_modelengine !="none" ) {
           fn_P0 = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean0", "rdata", sep="." ) )
           fn_P0sd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd0", "rdata", sep="." ) )
-          save( P0,   file=fn.P0,   compress=TRUE )
-          save( P0sd, file=fn.P0sd, compress=TRUE )
+          save( P0,   file=fn_P0,   compress=TRUE )
+          save( P0sd, file=fn_P0sd, compress=TRUE )
         }
       }
       
@@ -838,8 +838,8 @@
         if (p$stmv_global_modelengine !="none" ) {
           fn_P0 = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean0", "rdata", sep="." ) )
           fn_P0sd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd0",  "rdata", sep="." ) )
-          load( fn.P0 )
-          load( fn.P0sd )
+          load( fn_P0 )
+          load( fn_P0sd )
           PP0[] = P0[]
           PP0sd[] = P0sd[]
         }
