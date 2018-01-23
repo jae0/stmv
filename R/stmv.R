@@ -550,8 +550,8 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
         # random order helps use all cpus 
         todolist = list( locs=currentstatus$todo[sample.int(ntodo, ntodo_chunk)] )
         p = parallel_run( stmv_interpolate, p=p, runindex=todolist ) 
-        stopCluster( p$cl )
         stmv_db( p=p, DS="save_current_state" ) # saved current state
+        stopCluster( p$cl )
       }
     }
 
@@ -563,8 +563,8 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
       # random order helps use all cpus 
       todolist = list( locs=currentstatus$todo[sample.int(ntodo)] )
       p = parallel_run( stmv_interpolate, p=p, runindex=todolist )
-      stopCluster( p$cl )
       stmv_db( p=p, DS="save_current_state" ) # saved current state 
+      stopCluster( p$cl )
     }
 
     p$time_default = round( difftime( Sys.time(), timei1, units="hours" ), 3 )

@@ -186,6 +186,7 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
       Sflag[Si] = 4L
       message( Si )
       message("Error with issue with prediction grid ... null .. this should not happen")
+      next()
     }
     
     if (debug) {
@@ -420,7 +421,8 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
         if (!is.matrix(updates)) {
           Sflag[Si] = 8L
           message( Si )
-          message( "update of predictions were problematic ... this should not happen" )
+          message( "update of predictions were problematic ... this should not happen, proabbaly due to NA's" )
+          next()
         }
 
         mm = which( is.finite( rowSums(updates)))  # created when preds go outside quantile bounds .. this removes all data from a given location rather than the space-time .. severe but likely due to a poor prediction and so remove all (it is also faster this way as few manipulations)
