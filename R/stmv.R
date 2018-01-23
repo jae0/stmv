@@ -485,6 +485,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     }
     currentstatus = stmv_db( p=p, DS="statistics.status" )
     p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) ) # random order helps use all cpus
+    # FUNC is NULL means no running just return params
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     message( "||| Entering browser mode ...")
     browser()
@@ -546,8 +547,10 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
       ntodo = length( currentstatus$todo )
       ntodo_chunk = floor(ntodo/10)
       if ( ntodo_chunk > 0) {
+        # random order helps use all cpus 
         todolist = list( locs=currentstatus$todo[sample.int(ntodo, ntodo_chunk)] )
-        suppressMessages( parallel_run( stmv_interpolate, p=p, runindex=todolist )) # random order helps use all cpus )
+        p = parallel_run( stmv_interpolate, p=p, runindex=todolist ) 
+        stopCluster( p$cl )
         stmv_db( p=p, DS="save_current_state" ) # saved current state
       }
     }
@@ -557,8 +560,10 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     stmv_logfile(p=p, stime=timei1, currentstatus)
     ntodo = length( currentstatus$todo )
     if ( ntodo > 0) {
+      # random order helps use all cpus 
       todolist = list( locs=currentstatus$todo[sample.int(ntodo)] )
-      suppressMessages( parallel_run( stmv_interpolate, p=p, runindex=todolist )) # random order helps use all cpus )
+      p = parallel_run( stmv_interpolate, p=p, runindex=todolist )
+      stopCluster( p$cl )
       stmv_db( p=p, DS="save_current_state" ) # saved current state 
     }
 
@@ -584,13 +589,14 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
       stmv_logfile(p=p, stime=timei2, currentstatus)
       print( paste("Range multiplier:", mult) )
       if (length(currentstatus$todo) > 0) {
-        suppressMessages( parallel_run( 
+        p = parallel_run( 
           stmv_interpolate, 
           p=p, 
           stmv_distance_max=p$stmv_distance_max*mult, 
           stmv_distance_scale=p$stmv_distance_scale*mult,
           runindex=list( locs=sample( currentstatus$todo ) ) # random order helps use all cpus
-        ))
+        )
+        stopCluster( p$cl )
         stmv_db( p=p, DS="save_current_state" ) 
       }
     }
@@ -618,7 +624,8 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
       stmv_logfile(p=p, stime=timei3, currentstatus)
 
       p$stmv_local_modelengine = "tps"
-      parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( toredo )) ) # random order helps use all cpus
+      p = parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( toredo )) ) # random order helps use all cpus
+      stopCluster( p$cl )
       stmv_db( p=p, DS="save_current_state" )
     }
 
