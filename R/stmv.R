@@ -549,7 +549,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
       if ( ntodo_chunk > 0) {
         # random order helps use all cpus 
         todolist = list( locs=currentstatus$todo[sample.int(ntodo, ntodo_chunk)] )
-        p = parallel_run( stmv_interpolate, p=p, runindex=todolist ) 
+        p = parallel_run( stmv_interpolate, p=p, stime=time1, runindex=todolist ) 
         stmv_db( p=p, DS="save_current_state" ) # saved current state
         stopCluster( p$cl )
       }
@@ -562,7 +562,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     if ( ntodo > 0) {
       # random order helps use all cpus 
       todolist = list( locs=currentstatus$todo[sample.int(ntodo)] )
-      p = parallel_run( stmv_interpolate, p=p, runindex=todolist )
+      p = parallel_run( stmv_interpolate, p=p, runindex=todolist, stime=time1 )
       stmv_db( p=p, DS="save_current_state" ) # saved current state 
       stopCluster( p$cl )
     }
@@ -594,6 +594,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
           p=p, 
           stmv_distance_max=p$stmv_distance_max*mult, 
           stmv_distance_scale=p$stmv_distance_scale*mult,
+          stime=time2,
           runindex=list( locs=sample( currentstatus$todo ) ) # random order helps use all cpus
         )
         stopCluster( p$cl )
@@ -624,7 +625,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
       stmv_logfile(p=p, stime=timei3, currentstatus)
 
       p$stmv_local_modelengine = "tps"
-      p = parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( toredo )) ) # random order helps use all cpus
+      p = parallel_run( stmv_interpolate, p=p, stime=time3, runindex=list( locs=sample( toredo )) ) # random order helps use all cpus
       stopCluster( p$cl )
       stmv_db( p=p, DS="save_current_state" )
     }

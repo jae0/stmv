@@ -1,6 +1,6 @@
 
 
-stmv_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
+stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
   #\\ core function to interpolate (model and predict) in parallel
 
   # ---------------------
@@ -48,7 +48,7 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
   downsampling = sort( p$sampling[ which( p$sampling < 1) ] , decreasing=TRUE )
   downsampling = downsampling[ which(downsampling*p$stmv_distance_scale >= p$stmv_distance_min )]
 
-  # localcount = -1
+  localcount = -1
 
 
   # pre-calculate indices and dim for data to use inside the loop
@@ -63,8 +63,6 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
     ti_cov = setdiff(p$variables$local_all, c(p$variables$Y, p$variables$LOCS, p$variables$local_cov ) )
     itime_cov = which(dat_names %in% ti_cov)
   }
-
-  #  stime = Sys.time()
 
   local_fn = switch( p$stmv_local_modelengine,
     bayesx = stmv__bayesx,
@@ -83,8 +81,8 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
 
-    # localcount = localcount + 1
-    # if (( localcount %% 20 )== 0) currentstatus = stmv_logfile(p=p, stime=stime)
+    localcount = localcount + 1
+    if (( localcount %% sample.int(11, 1) == 0) currentstatus = stmv_logfile(p=p, stime=stime)
 
     Si = p$runs[ iip, "locs" ]
     print( paste(iip, Si ) )
