@@ -11,6 +11,7 @@ stmv_logfile = function(p, stime, currentstatus){
   tmore = currentstatus["n.todo"] / nrate
   tall = (currentstatus["n.todo"]+currentstatus["n.complete"]) / nrate
   cat( paste( "---", p$data_root, p$variables$Y, p$spatial.domain, "--- \n\n"), file=p$stmv_current_status, append=FALSE )
+  cat( paste( "Rate (no. per hour) :  ", round(nrate,3), "\n"), file=p$stmv_current_status, append=TRUE )
   cat( paste( "Core start time :  ", stime, "\n"), file=p$stmv_current_status, append=TRUE )
   cat( paste( "Current time :", Sys.time(), "\n"), file=p$stmv_current_status, append=TRUE )
   cat( paste( "Elapsed time :", format(dtime), "\n" ), file=p$stmv_current_status, append=TRUE)
