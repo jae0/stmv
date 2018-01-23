@@ -87,7 +87,7 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
     # if (( localcount %% 20 )== 0) currentstatus = stmv_logfile(p=p, stime=stime)
 
     Si = p$runs[ iip, "locs" ]
-    # if (debug) print( paste(iip, Si ) )
+    print( paste(iip, Si ) )
 
     if ( Sflag[Si] != 0L ) next()  # previously attempted .. skip
       # 0=to do
@@ -156,8 +156,17 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
         vario_U  = which( {dlon  <= ores[["range"]] } & {dlat <= ores[["range"]]} )
         vario_ndata =length(vario_U)
         if (vario_ndata < p$n.min) {
-          Sflag[Si] = 5L # not enough data
-          next()
+          # insufficient data at estimated range 
+          # ..could  stop analysis but this is extreme solution .. range identifies the distance 
+          # at which AC is no differnt from background noise and so addition of more distant data
+          # does not alter interpretation.
+          # NOTE: this range is a crude estimate that averages years ... 
+            if (exists("stmv_rangecheck", p)) {
+              if (p$stmv_rangecheck=="paranoid") {
+                Sflag[Si] = 5L 
+                next()
+              }
+            }
         } else if (vario_ndata > p$n.max) {
           U = vario_U[ .Internal( sample( vario_ndata, p$n.max, replace=FALSE, prob=NULL)) ]
           ndata = p$n.max
@@ -260,7 +269,8 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
       Sflag[Si] = 8L   # modelling / prediction did not complete properly 
       next()
     }
-  
+
+       
     if (exists("predictions", res)) {
       if (exists("mean", res$predictions)) {
         if (length(which( is.finite(res$predictions$mean ))) < 5) {
@@ -278,7 +288,6 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, ... ) {
       if (length( toolow) > 0)  res$predictions$mean[ toolow] = tq[1]
       if (length( toohigh) > 0) res$predictions$mean[ toohigh] = tq[2]
     }
-
 
     # stats collator
     if (!exists("stmv_stats",  res) ) res$stmv_stats = list()
