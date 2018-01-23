@@ -82,7 +82,7 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
   for ( iip in ip ) {
 
     localcount = localcount + 1
-    if (( localcount %% sample.int(11, 1) == 0) currentstatus = stmv_logfile(p=p, stime=stime)
+    if (( localcount %% sample.int(11, 1) == 0))  currentstatus = stmv_logfile(p=p, stime=stime)
 
     Si = p$runs[ iip, "locs" ]
     print( paste(iip, Si ) )
