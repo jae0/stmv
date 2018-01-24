@@ -2,6 +2,13 @@
 
 stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
   #\\ core function to interpolate (model and predict) in parallel
+  
+  if (0) {
+    # for debug  runs ..
+    currentstatus = stmv_db( p=p, DS="statistics.status" )
+    p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) )
+    ip = 1:p$nruns
+  }
 
   # ---------------------
   # deal with additional passed parameters
@@ -260,12 +267,14 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
     if ( is.null(res)) {
       dat = pa = res = NULL
       Sflag[Si] = 8L   # modelling / prediction did not complete properly 
-      next()
+      browser()
+      # next()
     }
 
     if ( inherits(res, "try-error") ) {
       dat = pa = res = NULL
       Sflag[Si] = 8L   # modelling / prediction did not complete properly 
+      browser()
       next()
     }
 
