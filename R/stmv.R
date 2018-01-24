@@ -562,7 +562,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     if ( ntodo > 0) {
       # random order helps use all cpus 
       todolist = list( locs=currentstatus$todo[sample.int(ntodo)] )
-      parallel_run( stmv_interpolate2, p=p, runindex=todolist )
+      parallel_run( stmv_interpolate, p=p, runindex=todolist )
       stmv_db( p=p, DS="save_current_state" ) # saved current state 
       stopCluster( p$cl )
     }
