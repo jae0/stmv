@@ -437,62 +437,53 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
 
     message("||| Finished. ")
     message("||| Once analyses begin, you can view maps from an external R session: ")
-    message("|||   p = stmv_db( p=p, DS='load.parameters' )" ) 
-    message("|||   stmv(p=p, runmode='debug_pred_static_map', debug_plot_variable_index=1) ")
-    message("|||   stmv(p=p, runmode='debug_pred_static_log_map', debug_plot_variable_index=1)")
-    message("|||   stmv(p=p, runmode='debug_pred_dynamic_map', debug_plot_variable_index=1)")
-    message("|||   stmv(p=p, runmode='debug_stats_map', debug_plot_variable_index=1)")
+    message("||| p = stmv_db( p=list(data_root=project.datadirectory('aegis', 'temperature'), variables=list(Y='t'), spatial.domain='canada.east' )), DS='load.parameters' )" ) 
+    message("||| stmv(p=p, runmode='debug_pred_static_map') ")
+    message("||| stmv(p=p, runmode='debug_pred_static_log_map')")
+    message("||| stmv(p=p, runmode='debug_pred_dynamic_map')")
+    message("||| stmv(p=p, runmode='debug_stats_map', debug_plot_variable_index=1)")
+    message("||| print( p$statsvars) # will get you your stats variables " )
     message("||| Monitor the status of modelling by looking at the output of the following file:")
     message("||| in linux, you can issue the following command:" )
-    message("|||   watch -n 60 cat ",  p$stmv_current_status  )
+    message("||| watch -n 60 cat ",  p$stmv_current_status  )
 
     p$initialized = TRUE
-    p <<- p  # push to parent in case a manual restart is needed
-    
-    
-  } else {
-
-    if (!exists("time.start", p) ) p$time.start = Sys.time()
-      
-      message( "||| Continuing from an interrupted start ..." )
-      if (!p$initialized) {
-        message( "||| Loading parameters from a saved configuration:", file.path( p$stmvSaveDir, 'p.rdata' ) )
-        p = stmv_db( p=p, DS="load.parameters" )
-        p <<- p  # push to parent in case a manual restart is needed
-      }
+  } 
   
-  }  # end of intialization of data structures
-
-  if (!exists("initialized", p)) stop( "||| stmv was not initialized properly" )
-  if (!p$initialized) stop( "||| stmv was not initialized properly" )
-
-
-  if ( "restart" %in% runmode ) {
-    stmv_db( p=p, DS="load_saved_state" ) # load saved state back into memory .. otherwise use what is in memory
-    currentstatus = stmv_db( p=p, DS="statistics.status" )
+  # end of intialization of data structures
+  
+  stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data 
+  
+  if (!exists("time.start", p) ) p$time.start = Sys.time()
+  
+  if (!p$initialized || "restart" %in% runmode || any(grepl("debug", runmode)) ) {
+    message( "||| Seem like we are continuing from an interrupted start ..." )
+    message( "||| Loading parameters from a saved configuration:", file.path( p$stmvSaveDir, 'p.rdata' ) )
+    p = stmv_db( p=p, DS="load.parameters" )
+    stmv_db( p=p, DS="load_saved_state" ) # try to load saved state back into memory .. otherwise use what is in memory
     currentstatus = stmv_db( p=p, DS="statistics.status.reset" )
     toredo = stmv_db( p=p, DS="flag.incomplete.predictions" )
     if ( !is.null(toredo) && length(toredo) > 0) {
       Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
       Sflag[toredo]=0L
     }
-  } 
+    currentstatus = stmv_db( p=p, DS="statistics.status" )
+  }
+
+  p <<- p  # push to parent in case a manual restart is needed
+  
   
 
   # -----------------------------------------------------
   if ( "debug" %in% runmode ) {
-    if (!p$initialized) {
-      message( "||| Loading parameters from a saved configuration:", file.path( p$stmvSaveDir, 'p.rdata' ) )
-      p = stmv_db( p=p, DS="load.parameters" )
-    }
     currentstatus = stmv_db( p=p, DS="statistics.status" )
     p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) ) # random order helps use all cpus
     # FUNC is NULL means no running just return params
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     message( "||| Entering browser mode ...")
+    p <<- p
     browser()
     stmv_interpolate (p=p )
-    p <<- p
   }
     
   # -----------------------------------------------------
@@ -542,22 +533,18 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     timei1 =  Sys.time()
     # p <<- p  # push to parent in case a manual restart is possible
 
-    nchunks = 100  # granularity of sequential runs
-    for ( chunk in 1:nchunks ) {
-      currentstatus = stmv_db( p=p, DS="statistics.status" )
-      stmv_logfile(p=p, stime=timei1, currentstatus)
-      ntodo = length( currentstatus$todo )
-      ntodo_chunk = floor(ntodo/10)
-      if ( ntodo_chunk > 0) {
-        # random order helps use all cpus 
-        todolist = list( locs=currentstatus$todo[sample.int(ntodo, ntodo_chunk)] )
-        p = parallel_run( stmv_interpolate, p=p, runindex=todolist ) 
-        stmv_db( p=p, DS="save_current_state" ) # saved current state
-        stopCluster( p$cl )
-      }
+    currentstatus = stmv_db( p=p, DS="statistics.status" )
+    stmv_logfile(p=p, stime=timei1, currentstatus)
+    ntodo = length( currentstatus$todo )
+    if ( ntodo > 0) {
+      # random order helps use all cpus 
+      todolist = list( locs=currentstatus$todo[sample.int(ntodo)] )
+      p = parallel_run( stmv_interpolate, p=p, runindex=todolist ) 
+      stmv_db( p=p, DS="save_current_state" ) # saved current state
+      stopCluster( p$cl )
     }
 
-    # catch any stragglers ..
+    # catch any stragglers due to interruppted parallel runs ...
     currentstatus = stmv_db( p=p, DS="statistics.status.reset" )
     stmv_logfile(p=p, stime=timei1, currentstatus)
     ntodo = length( currentstatus$todo )
@@ -585,21 +572,25 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     message( "||| Starting stage 2: more permisssive distance settings:")
     message( "|||  i.e., (stmv_distance_max and stmv_distance_scale) X {", paste0(p$stmv_multiplier_stage2, collapse=" "), "}" )
 
-
+    toredo = stmv_db( p=p, DS="flag.incomplete.predictions" )
+    if ( !is.null(toredo) && length(toredo) > 0) {
+      Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
+      Sflag[toredo]=0L
+    }
+    
     for ( mult in p$stmv_multiplier_stage2 ) {
       currentstatus = stmv_db(p=p, DS="statistics.status.reset" )
       stmv_logfile(p=p, stime=timei2, currentstatus)
       print( paste("Range multiplier:", mult) )
-      if (length(currentstatus$todo) > 0) {
-        p = parallel_run( 
-          stmv_interpolate, 
-          p=p, 
+      ntodo = length( currentstatus$todo )
+      if ( ntodo > 0) {
+        # random order helps use all cpus 
+        todolist = list( locs=currentstatus$todo[sample.int(ntodo)] )
+        parallel_run( stmv_interpolate, p=p, runindex=todolist, 
           stmv_distance_max=p$stmv_distance_max*mult, 
-          stmv_distance_scale=p$stmv_distance_scale*mult,
-          runindex=list( locs=sample( currentstatus$todo ) ) # random order helps use all cpus
-        )
+          stmv_distance_scale=p$stmv_distance_scale*mult )
+        stmv_db( p=p, DS="save_current_state" ) # saved current state 
         stopCluster( p$cl )
-        stmv_db( p=p, DS="save_current_state" ) 
       }
     }
 
@@ -627,8 +618,8 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
 
       p$stmv_local_modelengine = "tps"
       p = parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( toredo )) ) # random order helps use all cpus
-      stopCluster( p$cl )
       stmv_db( p=p, DS="save_current_state" )
+      stopCluster( p$cl )
     }
 
     p$time_stage3 = round( difftime( Sys.time(), timei3, units="hours" ), 3)
