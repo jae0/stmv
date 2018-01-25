@@ -448,11 +448,12 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     message("||| watch -n 60 cat ",  p$stmv_current_status  )
 
     p$initialized = TRUE
+    p <<- p  # push to parent in case a manual restart is needed
+    stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data 
   } 
   
   # end of intialization of data structures
   
-  stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data 
   
   if (!exists("time.start", p) ) p$time.start = Sys.time()
   
@@ -468,9 +469,10 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
       Sflag[toredo]=0L
     }
     currentstatus = stmv_db( p=p, DS="statistics.status" )
+    p <<- p  # push to parent in case a manual restart is needed
+    stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data 
   }
 
-  p <<- p  # push to parent in case a manual restart is needed
   
   
 
@@ -482,6 +484,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     message( "||| Entering browser mode ...")
     p <<- p
+    stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data 
     browser()
     stmv_interpolate (p=p )
   }
@@ -562,6 +565,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     currentstatus = stmv_db( p=p, DS="statistics.status" )
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     p <<- p  # push to parent in case a manual restart is needed
+    stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data 
   }
 
 
@@ -601,6 +605,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     stmv_logfile(p=p, stime=timei2, currentstatus)
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     p <<- p  # push to parent in case a manual restart is needed
+    stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data 
   }
 
   # -----------------------------------------------------
@@ -627,6 +632,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     currentstatus = stmv_db( p=p, DS="statistics.status" )
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     p <<- p  # push to parent in case a manual restart is needed
+    stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data 
   }
 
   # save again, in case some timings/etc needed in a restart
