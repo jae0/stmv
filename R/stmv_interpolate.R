@@ -267,14 +267,14 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
     if ( is.null(res)) {
       dat = pa = res = NULL
       Sflag[Si] = 8L   # modelling / prediction did not complete properly 
-      browser()
-      # next()
+      # browser()
+      next()
     }
 
     if ( inherits(res, "try-error") ) {
       dat = pa = res = NULL
       Sflag[Si] = 8L   # modelling / prediction did not complete properly 
-      browser()
+      # browser()
       next()
     }
 
