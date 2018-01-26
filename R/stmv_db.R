@@ -810,7 +810,7 @@
       PP = stmv_attach( p$storage.backend, p$ptr$P )
       PPsd = stmv_attach( p$storage.backend, p$ptr$Psd )
       SS = stmv_attach( p$storage.backend, p$ptr$S )
-      SSflag = stmv_attach( p$storage.backend, p$ptr$Sflag )[]
+      SSflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
 
       if (exists("stmv_global_modelengine", p)) {
         if (p$stmv_global_modelengine !="none" ) {
