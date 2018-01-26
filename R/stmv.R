@@ -1,6 +1,6 @@
 
 
-stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_plot_variable_index=1 ) {
+stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE ) {
 
   if (0) {
     DATA=NULL
@@ -438,10 +438,9 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     message("||| Finished. ")
     message("||| Once analyses begin, you can view maps from an external R session: ")
     message("||| p = stmv_db( p=list(data_root=project.datadirectory('aegis', 'temperature'), variables=list(Y='t'), spatial.domain='canada.east' )), DS='load.parameters' )" ) 
-    message("||| stmv(p=p, runmode='debug_pred_static_map') ")
-    message("||| stmv(p=p, runmode='debug_pred_static_log_map')")
-    message("||| stmv(p=p, runmode='debug_pred_dynamic_map')")
-    message("||| stmv(p=p, runmode='debug_stats_map', debug_plot_variable_index=1)")
+    message("||| stmv(p=p, runmode='debug_predictions_map', debug_plot_variable_index=1) # for static maps")
+    message("||| stmv(p=p, runmode='debug_predictions_map', debug_plot_variable_index=1:p$nt, debug_plot_log=TRUE) # for timeseries  of log(Y)")
+    message("||| stmv(p=p, runmode='debug_statistics_map', debug_plot_variable_index=1:length(p$statsvars))  ")
     message("||| print( p$statsvars) # will get you your stats variables " )
     message("||| Monitor the status of modelling by looking at the output of the following file:")
     message("||| in linux, you can issue the following command:" )
@@ -453,12 +452,14 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
   } 
   
   # end of intialization of data structures
+  # -----------------------------------------------------
+
   
-  
-  if (!exists("time.start", p) ) p$time.start = Sys.time()
   
   if (!p$initialized || "restart" %in% runmode || any(grepl("debug", runmode)) ) {
-    message( "||| Seem like we are continuing from an interrupted start ..." )
+    if (!exists("time.start", p) ) p$time.start = Sys.time()
+    message( " " )
+    message( "||| Seems like we are continuing from an interrupted start ..." )
     message( "||| Loading parameters from a saved configuration:", file.path( p$stmvSaveDir, 'p.rdata' ) )
     p = stmv_db( p=p, DS="load.parameters" )
     stmv_db( p=p, DS="load_saved_state" ) # try to load saved state back into memory .. otherwise use what is in memory
@@ -474,8 +475,6 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
   }
 
   
-  
-
   # -----------------------------------------------------
   if ( "debug" %in% runmode ) {
     currentstatus = stmv_db( p=p, DS="statistics.status" )
@@ -491,41 +490,62 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     
   # -----------------------------------------------------
 
-  if ( "debug_pred_static_map" %in% runmode) {
-      Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
-      P = stmv_attach( p$storage.backend, p$ptr$P )
-      print(
-        lattice::levelplot( (P[,debug_plot_variable_index])~Ploc[,1]+Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
-      )
-  }
-
-  # -----------------------------------------------------
-  if ( "debug_pred_static_log_map" %in% runmode) {
-      Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
-      P = stmv_attach( p$storage.backend, p$ptr$P )
-      print( 
-        lattice::levelplot( log(P[,debug_plot_variable_index])~Ploc[,1]+Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
-      )
-  }
-
-  # -----------------------------------------------------
-  if ( "debug_pred_dynamic_map" %in% runmode) {
-      Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
-      P = stmv_attach( p$storage.backend, p$ptr$P )
-      for (i in 1:p$nt) {
-        print( 
-          lattice::levelplot( P[,i] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) 
-        )
+  if ( "debug_predictions_map" %in% runmode) {
+    if (debug_data_source=="saved.state" ) {
+      fn_P = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean", "rdata", sep="." ) )
+      load( fn_P )
+      PP = P[]
+      if (exists("stmv_global_modelengine", p)) {
+        if (p$stmv_global_modelengine !="none" ) {
+          fn_P0 = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean0", "rdata", sep="." ) )
+          load( fn_P0 )
+          PP = PP[] + P0[]
+        }
       }
+    } else {
+      P = stmv_attach( p$storage.backend, p$ptr$P )
+      if (exists("stmv_global_modelengine", p)) {
+        if (p$stmv_global_modelengine !="none" ) {
+          P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
+          PP = P[] + P0[]
+        }
+      }
+    }
+    Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+    
+    if ( debug_plot_log ) PP = log(PP)
+    
+    if ( is.null(debug_plot_variable_index)) debug_plot_variable_index=1
+  
+    for (i in debug_plot_variable_index ) {
+      print(
+        lattice::levelplot( PP[,i] ~ Ploc[,1]+Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
+      )            
+    }
   }
 
   # -----------------------------------------------------
-  if ( "debug_stats_map" %in% runmode) {
-      Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
-      S = stmv_attach( p$storage.backend, p$ptr$S )
-      print( 
-        lattice::levelplot(S[,debug_plot_variable_index]~Sloc[,1]+Sloc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
-      )
+
+  if ( "debug_statistics_map" %in% runmode) {
+    if (debug_data_source=="saved.state" ) {
+      fn_stats = file.path( p$stmvSaveDir, paste( "tmp_stmv.statistics", "rdata", sep=".") )
+      load( fn_stats )
+      SS = S[]
+    } else {
+      SS = stmv_attach( p$storage.backend, p$ptr$S )
+    }
+    Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
+    
+    if ( debug_plot_log ) SS = log(SS)
+    
+    if ( is.null(debug_plot_variable_index)) debug_plot_variable_index=1
+  
+    for (i in debug_plot_variable_index ) {
+      print(
+        lattice::levelplot( SS[,i] ~ Sloc[,1]+Sloc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
+      )            
+    }
+  
   }
 
 
