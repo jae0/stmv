@@ -446,7 +446,6 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     message("||| in linux, you can issue the following command:" )
     message("||| watch -n 60 cat ",  p$stmv_current_status  )
 
-    p$initialized = TRUE
     p <<- p  # push to parent in case a manual restart is needed
     stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data 
   } 
@@ -456,7 +455,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
 
   
   
-  if (!p$initialized || "restart" %in% runmode || any(grepl("debug", runmode)) ) {
+  if ( "restart" %in% runmode || any(grepl("debug", runmode)) ) {
     if (!exists("time.start", p) ) p$time.start = Sys.time()
     message( " " )
     message( "||| Seems like we are continuing from an interrupted start ..." )
