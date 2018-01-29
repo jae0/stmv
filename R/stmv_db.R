@@ -729,9 +729,9 @@
       # lattice::levelplot( stats[,1] ~ Ploc[,1]+Ploc[,2])
       
       boundary = try( stmv_db( p=p, DS="boundary" ) )
-      if (!is.null(boundary)) {
       if( !("try-error" %in% class(boundary) ) ) {
-        inside.polygon = point.in.polygon( Ploc[,1], Ploc[,2],
+        if (!is.null(boundary)) {
+          inside.polygon = point.in.polygon( Ploc[,1], Ploc[,2],
           boundary$polygon[,1], boundary$polygon[,2], mode.checked=TRUE )
           o = which( inside.polygon == 0 ) # outside boundary
           if (length(o) > 0) stats[o,] = NA
@@ -803,8 +803,6 @@
 
 
     if (DS %in% c("load_saved_state") ) {
-
-      # named differently to avoid collisions 
 
       # named differently to avoid collisions 
       PP = stmv_attach( p$storage.backend, p$ptr$P )

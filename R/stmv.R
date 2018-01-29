@@ -252,7 +252,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
       attr( Pcovdata, "dimnames" ) = NULL
       if (p$storage.backend == "bigmemory.ram" ) {
         tmp_Pcov[[covname]] = big.matrix( nrow=nrow(Pcovdata), ncol=ncol(Pcovdata), type="double"  )
-        tmp_Pcov[[covname]][] = Pcovdata
+        tmp_Pcov[[covname]][] = Pcovdata[]
         p$ptr$Pcov[[covname]]  = bigmemory::describe( tmp_Pcov[[covname]] )
       }
       if (p$storage.backend == "bigmemory.filebacked" ) {
