@@ -372,7 +372,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
       pc = p # copy
       if (!pc$all.covars.static) if (exists("clusters.covars", pc) ) pc$clusters = pc$clusters.covars
       # takes about 28 GB per run .. adjust cluster number temporarily
-      suppressMessages( stmv_db( p=pc, DS="global.prediction.surface" ) )
+      stmv_db( p=pc, DS="global.prediction.surface" ) 
       p$time_covariates = round(difftime( Sys.time(), p$timec_covariates_0 , units="hours"), 3)
       message( paste( "||| Time taken to predict covariate surface (hours):", p$time_covariates ) )
     }
@@ -457,7 +457,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     message( "||| Seems like we are continuing from an interrupted start ..." )
     message( "||| Loading parameters from a saved configuration:", file.path( p$stmvSaveDir, 'p.rdata' ) )
     # p = stmv_db( p=p, DS="load.parameters" )
-    stmv_db( p=p, DS="load_saved_state" ) # try to load saved state back into memory .. otherwise use what is in memory
+    stmv_db( p=p, DS="load_saved_state" )  # try to load saved state back into memory .. otherwise use what is in memory
     currentstatus = stmv_db( p=p, DS="statistics.status.reset" )
     toredo = stmv_db( p=p, DS="flag.incomplete.predictions" )
     if ( !is.null(toredo) && length(toredo) > 0) {

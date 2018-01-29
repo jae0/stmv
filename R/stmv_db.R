@@ -822,10 +822,10 @@
       fn_stats = file.path( p$stmvSaveDir, paste( "tmp_stmv.statistics", "rdata", sep=".") )
       fn_sflag = file.path( p$stmvSaveDir, paste( "tmp_stmv.sflag", "rdata", sep=".") )
 
-      load( fn_P )
-      load( fn_Psd )
-      load( fn_stats )
-      load( fn_sflag )
+      if (file.exists(fn_P)) load( fn_P )
+      if (file.exists(fn_Psd)) load( fn_Psd )
+      if (file.exists(fn_stats)) load( fn_stats )
+      if (file.exists(fn_sflag)) load( fn_sflag )
 
       PP[] = P[]
       PPsd[] = Psd[]
@@ -836,8 +836,8 @@
         if (p$stmv_global_modelengine !="none" ) {
           fn_P0 = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean0", "rdata", sep="." ) )
           fn_P0sd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd0",  "rdata", sep="." ) )
-          load( fn_P0 )
-          load( fn_P0sd )
+          if (file.exists(fn_P0)) load( fn_P0 )
+          if (file.exists(fn_P0sd)) load( fn_P0sd )
           PP0[] = P0[]
           PP0sd[] = P0sd[]
         }
