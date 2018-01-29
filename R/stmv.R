@@ -245,7 +245,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
 
   if (exists("COV", p$variables)) {
     # this needs to be done as Prediction covars need to be structured as lists
-    if (!exists("Pcov", p$ptr) ) p$ptr$Pcov = list()
+    p$ptr$Pcov = list()
     tmp_Pcov = list()
     for ( covname in p$variables$COV ) {
       Pcovdata = as.matrix( DATA$output$COV[[covname]] )
@@ -456,7 +456,7 @@ stmv = function( p, runmode, DATA=NULL, storage.backend="bigmemory.ram",  debug_
     message( " " )
     message( "||| Seems like we are continuing from an interrupted start ..." )
     message( "||| Loading parameters from a saved configuration:", file.path( p$stmvSaveDir, 'p.rdata' ) )
-    p = stmv_db( p=p, DS="load.parameters" )
+    # p = stmv_db( p=p, DS="load.parameters" )
     stmv_db( p=p, DS="load_saved_state" ) # try to load saved state back into memory .. otherwise use what is in memory
     currentstatus = stmv_db( p=p, DS="statistics.status.reset" )
     toredo = stmv_db( p=p, DS="flag.incomplete.predictions" )
