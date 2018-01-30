@@ -45,6 +45,20 @@
       p$cache$Sloc =  file.path( p$stloc, "statistics_loc.cache" )
       p$cache$Sflag =     file.path( p$stloc, "statistics_flag.cache" )
 
+
+      p$saved_state_fn = list()
+      p$saved_state_fn$P = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean", "rdata", sep="." ) )
+      p$saved_state_fn$Pn = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "n", "rdata", sep="." ) )
+      p$saved_state_fn$Psd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd", "rdata", sep="." ) )
+      p$saved_state_fn$stats = file.path( p$stmvSaveDir, paste( "tmp_stmv.statistics", "rdata", sep=".") )
+      p$saved_state_fn$sflag = file.path( p$stmvSaveDir, paste( "tmp_stmv.sflag", "rdata", sep=".") )
+      if (exists("stmv_global_modelengine", p) ) {
+        if (p$stmv_global_modelengine !="none" ) {
+          p$saved_state_fn$P0 = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean0", "rdata", sep="." ) )
+          p$saved_state_fn$P0sd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd0", "rdata", sep="." ) )
+        }
+      }
+
       if (p$storage.backend == "bigmemory.filebacked" ) {
         p$bm = p$cache
         for ( i in names(p$bm) ) {
@@ -82,6 +96,7 @@
 
     # --------------------------
     if (DS %in% "cleanup" ) {
+      # all but not the restart files
       for (fn in unlist(p$cache) ) if (length(fn)>0) if (file.exists(fn)) file.remove(fn)
       for (fn in unlist(p$bm) ) if (length(fn)>0)  if (file.exists(fn)) file.remove(fn)
       return( NULL )
@@ -89,16 +104,10 @@
 
     # --------------------------
     if (DS %in% "cleanup.all" ) {
-      stmv_db( p=p, DS="cleanup")
-      snapshots = c(
-        file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean", "rdata", sep="." ) ),
-        file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd", "rdata", sep="." ) ),
-        file.path( p$stmvSaveDir, paste( "tmp_stmv.statistics", "rdata", sep=".") ),
-        file.path( p$stmvSaveDir, paste( "tmp_stmv.sflag", "rdata", sep=".") ),
-        file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean0", "rdata", sep="." ) ),
-        file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd0",  "rdata", sep="." ) )
-      )
-      for (fn in snapshots ) if (file.exists(fn)) file.remove(fn)
+      # all including the restart files
+      for (fn in unlist(p$cache) ) if (length(fn)>0) if (file.exists(fn)) file.remove(fn)
+      for (fn in unlist(p$bm) ) if (length(fn)>0)  if (file.exists(fn)) file.remove(fn)
+      for (fn in unlist( p$saved_state_fn) ) if (length(fn)>0) if (file.exists(fn)) file.remove(fn)
       return( NULL )
     }
 
@@ -777,35 +786,28 @@
         }
       }
 
-      fn_P = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean", "rdata", sep="." ) )
-      fn_Psd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd", "rdata", sep="." ) )
-      fn_stats = file.path( p$stmvSaveDir, paste( "tmp_stmv.statistics", "rdata", sep=".") )
-      fn_sflag = file.path( p$stmvSaveDir, paste( "tmp_stmv.sflag", "rdata", sep=".") )
-      
-      save( P, file=fn_P, compress=TRUE )
-      save( Psd, file=fn_Psd, compress=TRUE )
-      save( S, file=fn_stats, compress=TRUE )
-      save( Sflag, file=fn_sflag, compress=TRUE )
+      save( P, file=p$saved_state_fn$P, compress=TRUE )
+      save( Psd, file=p$saved_state_fn$Psd, compress=TRUE )
+      save( S, file=p$saved_state_fn$stats, compress=TRUE )
+      save( Sflag, file=p$saved_state_fn$sflag, compress=TRUE )
 
       if (exists("stmv_global_modelengine", p)) {
         if (p$stmv_global_modelengine !="none" ) {
-          fn_P0 = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean0", "rdata", sep="." ) )
-          fn_P0sd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd0", "rdata", sep="." ) )
-          save( P0,   file=fn_P0,   compress=TRUE )
-          save( P0sd, file=fn_P0sd, compress=TRUE )
+          save( P0,   file=p$saved_state_fn$P0,   compress=TRUE )
+          save( P0sd, file=p$saved_state_fn$P0sd, compress=TRUE )
         }
       }
       
     }
 
 
-    # ---------------------------
-
+    # =--------------------
 
     if (DS %in% c("load_saved_state") ) {
 
       # named differently to avoid collisions 
       PP = stmv_attach( p$storage.backend, p$ptr$P )
+      PPn = stmv_attach( p$storage.backend, p$ptr$Pn )
       PPsd = stmv_attach( p$storage.backend, p$ptr$Psd )
       SS = stmv_attach( p$storage.backend, p$ptr$S )
       SSflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
@@ -817,32 +819,30 @@
         }
       }
 
-      fn_P = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean", "rdata", sep="." ) )
-      fn_Psd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd", "rdata", sep="." ) )
-      fn_stats = file.path( p$stmvSaveDir, paste( "tmp_stmv.statistics", "rdata", sep=".") )
-      fn_sflag = file.path( p$stmvSaveDir, paste( "tmp_stmv.sflag", "rdata", sep=".") )
-
-      if (file.exists(fn_P)) load( fn_P )
-      if (file.exists(fn_Psd)) load( fn_Psd )
-      if (file.exists(fn_stats)) load( fn_stats )
-      if (file.exists(fn_sflag)) load( fn_sflag )
+      if (file.exists(p$saved_state_fn$P)) load( p$saved_state_fn$P )
+      if (file.exists(p$saved_state_fn$Pn)) load( p$saved_state_fn$Pn )
+      if (file.exists(p$saved_state_fn$Psd)) load( p$saved_state_fn$Psd )
+      if (file.exists(p$saved_state_fn$stats)) load( p$saved_state_fn$stats )
+      if (file.exists(p$saved_state_fn$sflag)) load( p$saved_state_fn$sflag )
 
       PP[] = P[]
+      PPn[] = Pn[]
       PPsd[] = Psd[]
       SS[] = S[]
       SSflag[] = Sflag[]
       
       if (exists("stmv_global_modelengine", p)) {
         if (p$stmv_global_modelengine !="none" ) {
-          fn_P0 = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean0", "rdata", sep="." ) )
-          fn_P0sd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd0",  "rdata", sep="." ) )
-          if (file.exists(fn_P0)) load( fn_P0 )
-          if (file.exists(fn_P0sd)) load( fn_P0sd )
+          if (file.exists(p$saved_state_fn$P0)) load( p$saved_state_fn$P0 )
+          if (file.exists(p$saved_state_fn$P0sd)) load( p$saved_state_fn$P0sd )
           PP0[] = P0[]
           PP0sd[] = P0sd[]
         }
       }
 
     }
+    
+    # =--------------------
+
 
   }
