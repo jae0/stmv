@@ -1,6 +1,6 @@
 
 
-stmv = function( p, runmode, DATA=NULL, continue_with_saved_state=FALSE, storage.backend="bigmemory.ram", debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE ) {
+stmv = function( p, runmode, DATA=NULL, continue_with_saved_state=TRUE, storage.backend="bigmemory.ram", debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE ) {
 
   if (0) {
     DATA=NULL
