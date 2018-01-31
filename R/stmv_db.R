@@ -438,6 +438,8 @@
 
     if (DS %in% c("global.prediction.surface") ) {
   
+      # p = parallel_run(p=p, runindex=list(tindex=1:p$nt) )
+browser()
       parallel_run(
         p=p, 
         runindex=list(tindex=1:p$nt),
@@ -450,7 +452,7 @@
           P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )
           for ( ii in ip ) {
             # downscale and warp from p(0) -> p1
-            it = p$runs$tindex[ii]  # == ii btw
+            it = p$runs[ii,"tindex"]  # == ii btw
             pa = NULL # construct prediction surface
             for (i in p$variables$COV ) {
               pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[i]] )
