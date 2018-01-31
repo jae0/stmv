@@ -439,7 +439,7 @@
     if (DS %in% c("global.prediction.surface") ) {
   
       # p = parallel_run(p=p, runindex=list(tindex=1:p$nt) )
-browser()
+      # browser()
       parallel_run(
         p=p, 
         runindex=list(tindex=1:p$nt),
