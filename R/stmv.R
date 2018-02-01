@@ -508,14 +508,19 @@ stmv = function( p, runmode, DATA=NULL, continue_with_saved_state=TRUE, storage.
 
   
   
-  if ( "restart" %in% runmode || any(grepl("debug", runmode)) ) {
+  if ( continue_with_saved_state || any(grepl("debug", runmode)) ) {
     if (!exists("time.start", p) ) p$time.start = Sys.time()
     message( " " )
-    message( "||| Seems like we are continuing from an interrupted start ..." )
+    message( "||| Seems like we are continuing from a saved state ..." )
     message( "||| Loading parameters from a saved configuration:", file.path( p$stmvSaveDir, 'p.rdata' ) )
     # p = stmv_db( p=p, DS="load.parameters" )
     stmv_db( p=p, DS="load_saved_state" )  # try to load saved state back into memory .. otherwise use what is in memory
-    currentstatus = stmv_db( p=p, DS="statistics.status.reset" )
+    currentstatus = stmv_db( p=p, DS="statistics.status.reset" )  # this resets error flags only
+  }
+
+  
+  if ( "reset_incomplete_locations" %in% runmode ) {
+    # this resets errors flags and areas without viable predictions
     toredo = stmv_db( p=p, DS="flag.incomplete.predictions" )
     if ( !is.null(toredo) && length(toredo) > 0) {
       Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
@@ -631,11 +636,6 @@ stmv = function( p, runmode, DATA=NULL, continue_with_saved_state=TRUE, storage.
     message( "||| Starting stage 2: more permisssive distance settings:")
     message( "|||  i.e., (stmv_distance_max and stmv_distance_scale) X {", paste0(p$stmv_multiplier_stage2, collapse=" "), "}" )
 
-    toredo = stmv_db( p=p, DS="flag.incomplete.predictions" )
-    if ( !is.null(toredo) && length(toredo) > 0) {
-      Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-      Sflag[toredo]=0L
-    }
     
     for ( mult in p$stmv_multiplier_stage2 ) {
       currentstatus = stmv_db(p=p, DS="statistics.status.reset" )
@@ -668,15 +668,13 @@ stmv = function( p, runmode, DATA=NULL, continue_with_saved_state=TRUE, storage.
     message(" ")
     message( "||| Starting stage 3: simple TPS-based failsafe method to interpolate all the remaining locations " )
   
-    toredo = stmv_db( p=p, DS="flag.incomplete.predictions" )
-    if ( !is.null(toredo) && length(toredo) > 0) {
-      Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-      Sflag[toredo]=0L
-      currentstatus = stmv_db( p=p, DS="statistics.status" )
-      stmv_logfile(p=p, stime=timei3, currentstatus)
-
+    currentstatus = stmv_db( p=p, DS="statistics.status.reset" )
+    stmv_logfile(p=p, stime=timei3, currentstatus)
+    ntodo = length( currentstatus$todo )
+    if ( ntodo > 0) {
+      todolist = list( locs=currentstatus$todo[sample.int(ntodo)] )
       p$stmv_local_modelengine = "tps"
-      p = parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( toredo )) ) # random order helps use all cpus
+      p = parallel_run( stmv_interpolate, p=p, runindex=todolist ) # random order helps use all cpus
       stmv_db( p=p, DS="save_current_state" )
       stopCluster( p$cl )
     }
