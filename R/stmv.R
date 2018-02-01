@@ -368,7 +368,7 @@ stmv = function( p, runmode, DATA=NULL, continue_with_saved_state=TRUE, storage.
     Ploc = NULL; 
 
     DATA = NULL; 
-
+    gc()
 
     if (exists("stmv_global_modelengine", p) ) {
       if (p$stmv_global_modelengine !="none" ) {
@@ -507,6 +507,7 @@ stmv = function( p, runmode, DATA=NULL, continue_with_saved_state=TRUE, storage.
     # -----------------------------------------------------
 
   
+  gc()
   
   if ( continue_with_saved_state || any(grepl("debug", runmode)) ) {
     if (!exists("time.start", p) ) p$time.start = Sys.time()
