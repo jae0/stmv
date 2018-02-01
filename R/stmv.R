@@ -258,18 +258,18 @@ stmv = function( p, runmode, DATA=NULL, continue_with_saved_state=TRUE, storage.
 
     if (exists("COV", p$variables)) {
       # this needs to be done as Prediction covars need to be structured as lists
-      nPcovlocs = nrow(Pcovdata)
-      if (nPcovlocs != nPlocs) {
-        message( "Inconsistency between number of prediction locations and prediction covariates: input data needs to be checked:")
-        message( "Usually this due to bathymetry and temperature being out of sync")
-        
-        print(str(DATA))
-        stop()
-      }
       p$ptr$Pcov = list()
       tmp_Pcov = list()
       for ( covname in p$variables$COV ) {
         Pcovdata = as.matrix( DATA$output$COV[[covname]] )
+        nPcovlocs = nrow(Pcovdata)
+        if (nPcovlocs != nPlocs) {
+          message( "Inconsistency between number of prediction locations and prediction covariates: input data needs to be checked:")
+          message( "Usually this due to bathymetry and temperature being out of sync")
+          
+          print(str(DATA))
+          stop()
+        }
         attr( Pcovdata, "dimnames" ) = NULL
         if (p$storage.backend == "bigmemory.ram" ) {
           tmp_Pcov[[covname]] = big.matrix( nrow=nPcovlocs, ncol=ncol(Pcovdata), type="double"  )
