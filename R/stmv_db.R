@@ -824,14 +824,14 @@
         }
       }
 
+      Pn = matrix( NaN, nrow=nrow(PPn), ncol=ncol(PPn) )   # delete me .. this is just a one-off fix
+      
       if (file.exists(p$saved_state_fn$P)) load( p$saved_state_fn$P )
       if (file.exists(p$saved_state_fn$Pn)) load( p$saved_state_fn$Pn )
       if (file.exists(p$saved_state_fn$Psd)) load( p$saved_state_fn$Psd )
       if (file.exists(p$saved_state_fn$stats)) load( p$saved_state_fn$stats )
       if (file.exists(p$saved_state_fn$sflag)) load( p$saved_state_fn$sflag )
 
-
-      if (!exists(Pn))  Pn = matrix( NaN, nrow=nrow(P), ncol=p$nt )   # delete me .. this is just a one-off fix
 
       PP[] = P[]
       PPn[] = Pn[]
