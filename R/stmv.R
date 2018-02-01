@@ -512,9 +512,7 @@ stmv = function( p, runmode, DATA=NULL, continue_with_saved_state=TRUE, storage.
   if ( continue_with_saved_state || any(grepl("debug", runmode)) ) {
     if (!exists("time.start", p) ) p$time.start = Sys.time()
     message( " " )
-    message( "||| Seems like we are continuing from a saved state ..." )
-    message( "||| Loading parameters from a saved configuration:", file.path( p$stmvSaveDir, 'p.rdata' ) )
-    # p = stmv_db( p=p, DS="load.parameters" )
+    message( "||| Seems like we are continuing from a saved state ... loading" )
     stmv_db( p=p, DS="load_saved_state" )  # try to load saved state back into memory .. otherwise use what is in memory
     currentstatus = stmv_db( p=p, DS="statistics.status.reset" )  # this resets error flags only
   }

@@ -777,6 +777,7 @@
 
       # named differently to avoid collisions 
       P = stmv_attach( p$storage.backend, p$ptr$P )[]
+      Pn = stmv_attach( p$storage.backend, p$ptr$Pn )[]
       Psd = stmv_attach( p$storage.backend, p$ptr$Psd )[]
       S = stmv_attach( p$storage.backend, p$ptr$S )[]
       Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )[]
@@ -789,6 +790,7 @@
       }
 
       save( P, file=p$saved_state_fn$P, compress=TRUE )
+      save( Pn, file=p$saved_state_fn$Pn, compress=TRUE )
       save( Psd, file=p$saved_state_fn$Psd, compress=TRUE )
       save( S, file=p$saved_state_fn$stats, compress=TRUE )
       save( Sflag, file=p$saved_state_fn$sflag, compress=TRUE )
@@ -804,6 +806,7 @@
 
 
     # =--------------------
+
 
     if (DS %in% c("load_saved_state") ) {
 
@@ -826,6 +829,9 @@
       if (file.exists(p$saved_state_fn$Psd)) load( p$saved_state_fn$Psd )
       if (file.exists(p$saved_state_fn$stats)) load( p$saved_state_fn$stats )
       if (file.exists(p$saved_state_fn$sflag)) load( p$saved_state_fn$sflag )
+
+
+      if (!exists(Pn))  Pn = matrix( NaN, nrow=nrow(P), ncol=p$nt )   # delete me .. this is just a one-off fix
 
       PP[] = P[]
       PPn[] = Pn[]
