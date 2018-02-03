@@ -809,7 +809,7 @@
 
 
     if (DS %in% c("load_saved_state") ) {
-browser()
+
       # named differently to avoid collisions 
       PP = stmv_attach( p$storage.backend, p$ptr$P )
       PPn = stmv_attach( p$storage.backend, p$ptr$Pn )
@@ -824,7 +824,11 @@ browser()
         }
       }
 
-      Pn = matrix( NaN, nrow=nrow(PPn), ncol=ncol(PPn) )   # delete me .. this is just a one-off fix
+      P = matrix( NaN, nrow=nrow(PP), ncol=ncol(PP) )   
+      Pn = matrix( NaN, nrow=nrow(PPn), ncol=ncol(PPn) )   
+      Psd = matrix( NaN, nrow=nrow(PPsd), ncol=ncol(PPsd) )   
+      S = matrix( NaN, nrow=nrow(SS), ncol=ncol(SS) )   
+      Sflag = matrix( NaN, nrow=nrow(SSflag), ncol=ncol(SSflag) )   
       
       if (file.exists(p$saved_state_fn$P)) load( p$saved_state_fn$P )
       if (file.exists(p$saved_state_fn$Pn)) load( p$saved_state_fn$Pn )
@@ -841,6 +845,8 @@ browser()
       
       if (exists("stmv_global_modelengine", p)) {
         if (p$stmv_global_modelengine !="none" ) {
+          P0 = matrix( NaN, nrow=nrow(PP0), ncol=ncol(PP0) )   
+          P0sd = matrix( NaN, nrow=nrow(PP0sd), ncol=ncol(PP0sd) )   
           if (file.exists(p$saved_state_fn$P0)) load( p$saved_state_fn$P0 )
           if (file.exists(p$saved_state_fn$P0sd)) load( p$saved_state_fn$P0sd )
           PP0[] = P0[]
