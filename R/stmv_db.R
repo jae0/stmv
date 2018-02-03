@@ -809,7 +809,7 @@
 
 
     if (DS %in% c("load_saved_state") ) {
-
+browser()
       # named differently to avoid collisions 
       PP = stmv_attach( p$storage.backend, p$ptr$P )
       PPn = stmv_attach( p$storage.backend, p$ptr$Pn )
