@@ -1,10 +1,10 @@
 
 
-stmv = function( p, runmode, DATA=NULL, continue_with_saved_state=TRUE, storage.backend="bigmemory.ram", debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE ) {
+stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="bigmemory.ram", debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE ) {
 
   if (0) {
     DATA=NULL
-    continue_with_saved_state=FALSE
+    use_saved_state=FALSE
     storage.backend="bigmemory.ram"
     debug_plot_variable_index=1
   }
@@ -124,7 +124,7 @@ stmv = function( p, runmode, DATA=NULL, continue_with_saved_state=TRUE, storage.
 
 
   S = matrix( NaN, nrow=nrow(Sloc), ncol=length( p$statsvars ) ) # NA forces into logical
-  if (continue_with_saved_state) {
+  if (use_saved_state) {
     if (file.exists(p$saved_state_fn$stats)) load( p$saved_state_fn$stats )
   }
     if (p$storage.backend == "bigmemory.ram" ) {
@@ -142,7 +142,7 @@ stmv = function( p, runmode, DATA=NULL, continue_with_saved_state=TRUE, storage.
 
 
   Sflag = matrix( 0L, nrow=nrow(Sloc), ncol=1 )  # 0L is the todo flag
-  if (continue_with_saved_state) {
+  if (use_saved_state) {
     if (file.exists(p$saved_state_fn$sflag)) load( p$saved_state_fn$sflag )
   }
   # 0=to do
@@ -292,7 +292,7 @@ stmv = function( p, runmode, DATA=NULL, continue_with_saved_state=TRUE, storage.
     
     # predictions and associated stats
     P = matrix( NaN, nrow=nPlocs, ncol=p$nt )
-    if (continue_with_saved_state) {
+    if (use_saved_state) {
       if (file.exists(p$saved_state_fn$P)) load( p$saved_state_fn$P )
     }       
       if (p$storage.backend == "bigmemory.ram" ) {
@@ -312,7 +312,7 @@ stmv = function( p, runmode, DATA=NULL, continue_with_saved_state=TRUE, storage.
 
     # count of prediction estimates
     Pn = matrix( NaN, nrow=nPlocs, ncol=p$nt )
-    if (continue_with_saved_state) {
+    if (use_saved_state) {
       if (file.exists(p$saved_state_fn$Pn)) load( p$saved_state_fn$Pn )
     }      
       if (p$storage.backend == "bigmemory.ram" ) {
@@ -332,7 +332,7 @@ stmv = function( p, runmode, DATA=NULL, continue_with_saved_state=TRUE, storage.
 
     # sd of prediction estimates
     Psd = matrix( NaN, nrow=nPlocs, ncol=p$nt )
-    if (continue_with_saved_state) {
+    if (use_saved_state) {
       if (file.exists(p$saved_state_fn$Psd)) load( p$saved_state_fn$Psd )
     }      
       if (p$storage.backend == "bigmemory.ram" ) {
@@ -375,7 +375,7 @@ stmv = function( p, runmode, DATA=NULL, continue_with_saved_state=TRUE, storage.
         # create prediction suface with covariate-based additive offsets
 
         P0 = matrix( NaN, nrow=nPlocs, ncol=p$nt )
-        if (continue_with_saved_state) {
+        if (use_saved_state) {
           if (file.exists(p$saved_state_fn$P0)) load( p$saved_state_fn$P0 )
         }      
         if (p$storage.backend == "bigmemory.ram" ) {
@@ -394,7 +394,7 @@ stmv = function( p, runmode, DATA=NULL, continue_with_saved_state=TRUE, storage.
 
 
         P0sd = matrix( NaN, nrow=nPlocs, ncol=p$nt )
-        if (continue_with_saved_state) {
+        if (use_saved_state) {
           if (file.exists(p$saved_state_fn$P0sd)) load( p$saved_state_fn$P0sd )
         }      
         if (p$storage.backend == "bigmemory.ram" ) {
@@ -509,7 +509,10 @@ stmv = function( p, runmode, DATA=NULL, continue_with_saved_state=TRUE, storage.
   
   gc()
   
-  if ( continue_with_saved_state || any(grepl("debug", runmode)) ) {
+  if ( "initialize" %in% runmode ) return(p)
+  
+    
+  if ( use_saved_state || any(grepl("debug", runmode)) ) {
     if (!exists("time.start", p) ) p$time.start = Sys.time()
     message( " " )
     message( "||| Seems like we are continuing from a saved state ... loading" )
