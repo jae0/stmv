@@ -542,7 +542,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="b
       runindex=list( locs=sample( currentstatus$todo ))  # random order helps use all cpus   
     )
     # FUNC is NULL means no running just return params
-    print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
+    print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ))
     message( "||| Entering browser mode ...")
     p$local.n.complete=currentstatus["n.complete"] 
     p <<- p
