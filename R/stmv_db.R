@@ -133,18 +133,15 @@
       
       if ( DS=="statistics.status.reset" ) {
         # to reset all rejected locations
-        if (length(which(is.finite(out$skipped))) > 0) {
-          Sflag[out$skipped] = 0L  # to reset all the problem flags to todo
-            out$skipped = which( Sflag[] == 9L )
-          Sflag[out$predareaerror] = 0L  # to reset all the problem flags to todo
-            out$predareaerror = which( Sflag[] == 4L )
-          Sflag[out$variogramerror] = 0L  # to reset all the problem flags to todo
-            out$variogramerror = which( Sflag[] == 6L )
-          Sflag[out$vrangeerror] = 0L  # to reset all the problem flags to todo
-            out$vrangeerror = which( Sflag[] == 7L )
-          Sflag[out$modelerror] = 0L  # to reset all the problem flags to todo
-            out$modelerror = which( Sflag[] == 8L )
-          out$todo = which( Sflag[]==0L )
+        toreset = which( Sflag[] > 2)
+        if (length(toreset) > 0) {
+          Sflag[toreset] = 0L  # to reset all the problem flags to todo
+          out$skipped = NA 
+          out$predareaerror = NA
+          out$variogramerror = NA
+          out$vrangeerror = NA
+          out$modelerror = NA
+          out$todo = NA
         }
       }
       
@@ -161,7 +158,7 @@
       out$n.skipped = length(out$skipped)
       out$n.total = length(Sflag) 
 
-      out$prop_incomp = round( out$n.todo / ( out$n.todo + out$n.complete), 3)
+      out$prop_incomp = round( out$n.todo / ( out$n.total), 3)
       message( paste("||| Proportion to do:", out$prop_incomp, "\n" ))
       return( out )
 
