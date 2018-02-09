@@ -538,10 +538,12 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="b
   # -----------------------------------------------------
   if ( "debug" %in% runmode ) {
     currentstatus = stmv_db( p=p, DS="statistics.status" )
-    p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) ) # random order helps use all cpus
+    p = parallel_run( p=p, 
+      runindex=list( locs=sample( currentstatus$todo ))  # random order helps use all cpus    )
     # FUNC is NULL means no running just return params
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     message( "||| Entering browser mode ...")
+    p$local.n.complete=currentstatus["n.complete"] 
     p <<- p
     stmv_interpolate (p=p )
   }
@@ -612,12 +614,12 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="b
     # p <<- p  # push to parent in case a manual restart is possible
 
     currentstatus = stmv_db( p=p, DS="statistics.status" )
-    stmv_logfile(p=p, stime=timei1, currentstatus)
     ntodo = length( currentstatus$todo )
     if ( ntodo > 0) {
       # random order helps use all cpus 
-      todolist = list( locs=currentstatus$todo[sample.int(ntodo)] )
-      p = parallel_run( stmv_interpolate, p=p, runindex=todolist ) 
+      p = parallel_run( stmv_interpolate, p=p, 
+        runindex=list( locs=currentstatus$todo[sample.int(ntodo)] ), 
+        local.n.complete=currentstatus["n.complete"] ) 
       stmv_db( p=p, DS="save_current_state" ) # saved current state
       stopCluster( p$cl )
     }
@@ -641,15 +643,16 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="b
     
     for ( mult in p$stmv_multiplier_stage2 ) {
       currentstatus = stmv_db(p=p, DS="statistics.status.reset" )
-      stmv_logfile(p=p, stime=timei2, currentstatus)
       print( paste("Range multiplier:", mult) )
       ntodo = length( currentstatus$todo )
       if ( ntodo > 0) {
         # random order helps use all cpus 
-        todolist = list( locs=currentstatus$todo[sample.int(ntodo)] )
-        parallel_run( stmv_interpolate, p=p, runindex=todolist, 
+        parallel_run( stmv_interpolate, p=p, 
+          runindex=list( locs=currentstatus$todo[sample.int(ntodo)] ), 
+          local.n.complete=currentstatus["n.complete"],
           stmv_distance_max=p$stmv_distance_max*mult, 
-          stmv_distance_scale=p$stmv_distance_scale*mult )
+          stmv_distance_scale=p$stmv_distance_scale*mult
+        )
         stmv_db( p=p, DS="save_current_state" ) # saved current state 
         stopCluster( p$cl )
       }
@@ -659,7 +662,6 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="b
     message(" ")
     message( paste( "||| Time taken to complete stage 2 interpolations (hours):", p$time_stage2, "" ) )
     currentstatus = stmv_db( p=p, DS="statistics.status" )
-    stmv_logfile(p=p, stime=timei2, currentstatus)
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     p <<- p  # push to parent in case a manual restart is needed
   }
@@ -671,12 +673,12 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="b
     message( "||| Starting stage 3: simple TPS-based failsafe method to interpolate all the remaining locations " )
   
     currentstatus = stmv_db( p=p, DS="statistics.status.reset" )
-    stmv_logfile(p=p, stime=timei3, currentstatus)
     ntodo = length( currentstatus$todo )
     if ( ntodo > 0) {
-      todolist = list( locs=currentstatus$todo[sample.int(ntodo)] )
       p$stmv_local_modelengine = "tps"
-      p = parallel_run( stmv_interpolate, p=p, runindex=todolist ) # random order helps use all cpus
+      p = parallel_run( stmv_interpolate, p=p, 
+        runindex=list( locs=currentstatus$todo[sample.int(ntodo)] ), 
+        local.n.complete=currentstatus["n.complete"] ) # random order helps use all cpus
       stmv_db( p=p, DS="save_current_state" )
       stopCluster( p$cl )
     }
