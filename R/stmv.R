@@ -539,7 +539,8 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="b
   if ( "debug" %in% runmode ) {
     currentstatus = stmv_db( p=p, DS="statistics.status" )
     p = parallel_run( p=p, 
-      runindex=list( locs=sample( currentstatus$todo ))  # random order helps use all cpus    )
+      runindex=list( locs=sample( currentstatus$todo ))  # random order helps use all cpus   
+    )
     # FUNC is NULL means no running just return params
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
     message( "||| Entering browser mode ...")
