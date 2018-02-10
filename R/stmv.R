@@ -549,7 +549,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="b
     # FUNC is NULL means no running just return params
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ))
     message( "||| Entering browser mode ...")
-    p$local.n.complete=currentstatus["n.complete"] 
+    
     p <<- p
     stmv_interpolate (p=p )
   }
@@ -624,8 +624,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="b
     if ( ntodo > 0) {
       # random order helps use all cpus 
       p = parallel_run( stmv_interpolate, p=p, 
-        runindex=list( locs=currentstatus$todo[sample.int(ntodo)] ), 
-        local.n.complete=currentstatus["n.complete"] ) 
+        runindex=list( locs=currentstatus$todo[sample.int(ntodo)] )  ) 
       stmv_db( p=p, DS="save_current_state" ) # saved current state
       stopCluster( p$cl )
     }
@@ -655,7 +654,6 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="b
         # random order helps use all cpus 
         parallel_run( stmv_interpolate, p=p, 
           runindex=list( locs=currentstatus$todo[sample.int(ntodo)] ), 
-          local.n.complete=currentstatus["n.complete"],
           stmv_distance_max=p$stmv_distance_max*mult, 
           stmv_distance_scale=p$stmv_distance_scale*mult
         )
@@ -683,8 +681,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="b
     if ( ntodo > 0) {
       p$stmv_local_modelengine = "tps"
       p = parallel_run( stmv_interpolate, p=p, 
-        runindex=list( locs=currentstatus$todo[sample.int(ntodo)] ), 
-        local.n.complete=currentstatus["n.complete"] ) # random order helps use all cpus
+        runindex=list( locs=currentstatus$todo[sample.int(ntodo)] )  ) # random order helps use all cpus
       stmv_db( p=p, DS="save_current_state" )
       stopCluster( p$cl )
     }

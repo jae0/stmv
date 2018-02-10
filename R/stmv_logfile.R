@@ -1,4 +1,4 @@
-stmv_logfile = function(p, stime, local.n.start=NULL){
+stmv_logfile = function(p, stime){
 
   varstoout = c("n.total", "n.shallow", "n.todo", "n.skipped", "n.predareaerror", "n.nodata", "n.variogramerror",
     "n.vrangeerror", "n.modelerror", "n.outside", "n.complete", "prop_incomp" )
@@ -8,14 +8,9 @@ stmv_logfile = function(p, stime, local.n.start=NULL){
   dtime = difftime( Sys.time(), stime )
   dtimehr = difftime( Sys.time(), stime, units="hours" )
   
-  if (is.null(local.n.start)) {
-    local.n.complete= currentstatus["n.complete"] - local.n.start
-  } else {
-    local.n.complete= currentstatus["n.complete"] 
-  }
-  nrate = local.n.complete/ as.numeric(dtimehr)
+  nrate = currentstatus["n.complete"]/ as.numeric(dtimehr)
   tmore = currentstatus["n.todo"] / nrate
-  tall = (currentstatus["n.todo"]+local.n.complete) / nrate
+  tall = (currentstatus["n.todo"]+currentstatus["n.complete"]) / nrate
   cat( paste( "---", p$data_root, p$variables$Y, p$spatial.domain, "--- \n\n"), file=p$stmv_current_status, append=FALSE )
   cat( paste( "Rate (no. per hour) :  ", round(nrate,3), "\n"), file=p$stmv_current_status, append=TRUE )
   nclusters = 1

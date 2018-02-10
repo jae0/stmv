@@ -85,15 +85,26 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
     userdefined = p$stmv_local_modelengine_userdefined
   )
   
+  savepoints = ip[ c(floor( length(ip)/3), length(ip) )  ]
+  
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
 
     localcount = localcount + 1
-    if (( localcount %% sample.int(11, 1) == 0))  currentstatus = stmv_logfile(p=p, stime=stime)
-    
+    if (( localcount %% sample.int(11, 1) == 0))  {
+      currentstatus = stmv_logfile(p=p, stime=stime)
+    }
 
     Si = p$runs[ iip, "locs" ]
     print( paste(iip, Si ) )
+    
+    if ( iip %in% savepoints ) {
+      save( P, file=p$saved_state_fn$P, compress=TRUE )
+      save( Pn, file=p$saved_state_fn$Pn, compress=TRUE )
+      save( Psd, file=p$saved_state_fn$Psd, compress=TRUE )
+      save( S, file=p$saved_state_fn$stats, compress=TRUE )
+      save( Sflag, file=p$saved_state_fn$sflag, compress=TRUE )
+    }
 
     if ( Sflag[Si] != 0L ) next()  # previously attempted .. skip
       # 0=to do
