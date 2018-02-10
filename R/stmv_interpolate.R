@@ -55,9 +55,6 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
   downsampling = sort( p$sampling[ which( p$sampling < 1) ] , decreasing=TRUE )
   downsampling = downsampling[ which(downsampling*p$stmv_distance_scale >= p$stmv_distance_min )]
 
-  localcount = -1
-
-
   # pre-calculate indices and dim for data to use inside the loop
   dat_names = unique( c(  p$variables$Y, p$variable$LOCS, p$variables$local_all,  "weights") )
   dat_nc = length( dat_names )
@@ -86,25 +83,25 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
   )
   
   savepoints = ip[ c(floor( length(ip)/3), length(ip) )  ]
+  logpoints = ip[ sample.int(length(ip), 10) ] 
   
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
 
-    localcount = localcount + 1
-    if (( localcount %% sample.int(11, 1) == 0))  {
-      currentstatus = stmv_logfile(p=p, stime=stime)
-    }
+    if ( iip %in% logpoints )  currentstatus = stmv_logfile(p=p, stime=stime)
 
-    Si = p$runs[ iip, "locs" ]
-    print( paste(iip, Si ) )
-    
     if ( iip %in% savepoints ) {
       save( P, file=p$saved_state_fn$P, compress=TRUE )
       save( Pn, file=p$saved_state_fn$Pn, compress=TRUE )
       save( Psd, file=p$saved_state_fn$Psd, compress=TRUE )
       save( S, file=p$saved_state_fn$stats, compress=TRUE )
       save( Sflag, file=p$saved_state_fn$sflag, compress=TRUE )
+      currentstatus = stmv_logfile(p=p, stime=stime)
     }
+
+    Si = p$runs[ iip, "locs" ]
+    print( paste(iip, Si ) )
+    
 
     if ( Sflag[Si] != 0L ) next()  # previously attempted .. skip
       # 0=to do
@@ -195,7 +192,7 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
       }
     }
   
-    dlon=dlat=o=NULL; gc()
+    dlon=dlat=o=NULL; 
 
     YiU = Yi[U] # YiU and p$stmv_distance_prediction determine the data entering into local model construction
     pa = stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=p$windowsize.half )
@@ -264,7 +261,7 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
 
     # model and prediction .. outputs are in scale of the link (and not response)
     # the following permits user-defined models (might want to use compiler::cmpfun )
-    gc()
+    
     res =NULL
     res = try( local_fn( p=p, dat=dat, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial, sloc=Sloc[Si,], distance=stmv_distance_cur ) )
 
