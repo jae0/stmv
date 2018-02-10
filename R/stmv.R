@@ -424,12 +424,17 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="b
           nc_cov = c( nc_cov,  ncol(pu) )
         }
         p$all.covars.static = ifelse( any(nc_cov > 1),  FALSE, TRUE )
-        pc = p # copy
-        if (!pc$all.covars.static) if (exists("clusters.covars", pc) ) pc$clusters = pc$clusters.covars
-        # takes about 28 GB per run .. adjust cluster number temporarily
-        stmv_db( p=pc, DS="global.prediction.surface" ) 
-        p$time_covariates = round(difftime( Sys.time(), p$timec_covariates_0 , units="hours"), 3)
-        message( paste( "||| Time taken to predict covariate surface (hours):", p$time_covariates ) )
+        
+        if (use_saved_state) {
+          if (file.exists(p$saved_state_fn$P0) & file.exists(p$saved_state_fn$P0sd)) {
+            pc = p # copy
+            if (!pc$all.covars.static) if (exists("clusters.covars", pc) ) pc$clusters = pc$clusters.covars
+            # takes about 28 GB per run .. adjust cluster number temporarily
+            stmv_db( p=pc, DS="global.prediction.surface" ) 
+            p$time_covariates = round(difftime( Sys.time(), p$timec_covariates_0 , units="hours"), 3)
+            message( paste( "||| Time taken to predict covariate surface (hours):", p$time_covariates ) )
+          }
+        }
       }
     }
 
