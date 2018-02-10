@@ -368,8 +368,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="b
     Ploc = NULL; 
 
     DATA = NULL; 
-    gc()
-
+    
     if (exists("stmv_global_modelengine", p) ) {
       if (p$stmv_global_modelengine !="none" ) {
         # create prediction suface with covariate-based additive offsets
@@ -510,9 +509,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="b
     # -----------------------------------------------------
     
   p <<- p
-  
-  gc()
-  
+
   if ( "initialize" %in% runmode ) return(p)
   
     
@@ -720,7 +717,5 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="b
 
   message( paste( "||| Time taken for full analysis (hours):", p$time_total ) )
   message( paste( "||| Your parameter 'p' has been updated in case you need to re-run something" ) )
-
-  # gc()
 
 }
