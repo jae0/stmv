@@ -508,7 +508,8 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="b
     
     # end of intialization of data structures
     # -----------------------------------------------------
-
+    
+  p <<- p
   
   gc()
   
