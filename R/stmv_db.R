@@ -541,7 +541,7 @@
     # -----
 
 
-    if (DS %in% c("stmv.prediction.redo", "stmv.prediction") )  {
+    if (DS %in% c("stmv.results.redo", "stmv.prediction", "stmv.stats") )  {
 
       if (DS=="stmv.prediction") {
         if (! exists("TIME", p$variables)) {
@@ -555,16 +555,24 @@
         if (ret=="ub") return( Pu)
       }
 
-
+      if (DS=="stmv.stats") {
+        fn = file.path( p$stmvSaveDir, paste( "stmv.statistics", "rdata", sep=".") )
+        stats = NULL
+        if (file.exists(fn)) load(fn)
+        return(stats)
+      }
+      
       shallower = NULL
       if ( exists("depth.filter", p) && is.finite( p$depth.filter) ) {
         if ( "z" %in% p$variables$COV ){
           depths = stmv_attach( p$storage.backend, p$ptr$Pcov[["z"]] )[]
           ii = which( depths[] < p$depth.filter )
           if (length(ii) > 0) shallower = ii
+          rm(ii)
           rm(depths)
         }
       }
+
 
       if ( exists("TIME", p$variables)) {
         clusters = p$clusters
@@ -692,30 +700,9 @@
           } # end if TIME
         } # end FUNC
       ) # end parallel_run
-    
-      if(0) {
-        i = 1
-        Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
-
-        Z = smooth.2d( Y=P[], x=Ploc[], ncol=p$nplats, nrow=p$nplons, cov.function=stationary.cov, Covariance="Matern", range=p$stmv_lowpass_phi, nu=p$stmv_lowpass_nu )
-        lattice::levelplot( P[] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
-      }
-    
-    }
-
-    # ----------------
 
 
-    if (DS %in% c("stats.to.prediction.grid.redo", "stats.to.prediction.grid") ) {
-      
-      # TODO:: parallelize this
-      
-      fn = file.path( p$stmvSaveDir, paste( "stmv.statistics", "rdata", sep=".") )
-      if (DS=="stats.to.prediction.grid") {
-        stats = NULL
-        if (file.exists(fn)) load(fn)
-        return(stats)
-      }
+      # prediction.stats
       
       Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
       S = stmv_attach( p$storage.backend, p$ptr$S )
@@ -746,28 +733,28 @@
         }
       }
       
+      if (length(shallower)>0) stats[shallower,] = NA
       
+      fn = file.path( p$stmvSaveDir, paste( "stmv.statistics", "rdata", sep=".") )
+      save( stats, file=fn, compress=TRUE )
+
       if (0){
         i = 1
         ii = which (is.finite(stats[,i]))
         lattice::levelplot( stats[ii,i] ~ Ploc[ii,1]+Ploc[ii,2])
       }
-      
-      if ( exists("depth.filter", p) && is.finite( p$depth.filter) ) {
-        # stats is now with the same indices as Pcov, Ploc, etc..
-        if ( "z" %in% p$variables$COV ){
-          depths = stmv_attach( p$storage.backend, p$ptr$Pcov[["z"]] )[]
-          shallower = which( depths < p$depth.filter )
-          if (length(shallower)>0) stats[shallower,] = NA
-          rm(shallower); gc()
-        }
-      }
-      
-      save( stats, file=fn, compress=TRUE )
-      
-    }
     
-    #-------------
+      if(0) {
+        i = 1
+        Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+
+        Z = smooth.2d( Y=P[], x=Ploc[], ncol=p$nplats, nrow=p$nplons, cov.function=stationary.cov, Covariance="Matern", range=p$stmv_lowpass_phi, nu=p$stmv_lowpass_nu )
+        lattice::levelplot( P[] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
+      }
+    
+    }
+
+    # ----------------
 
     
     if (DS %in% c("save_current_state") ) {

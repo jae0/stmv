@@ -698,8 +698,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="b
   # -----------------------------------------------------
   if ( "finish" %in% runmode ) {
 
-    stmv_db( p=p, DS="stmv.prediction.redo" ) # save to disk for use outside stmv*, returning to user scale
-    stmv_db( p=p, DS="stats.to.prediction.grid.redo") # save to disk for use outside stmv*
+    stmv_db( p=p, DS="stmv.results" ) # save to disk for use outside stmv*, returning to user scale
 
     if ( p$storage.backend !="bigmemory.ram" ) {
       resp = readline( "||| Delete temporary files? Type to confirm <YES>:  ")
