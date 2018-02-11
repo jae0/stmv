@@ -122,6 +122,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="b
     }
   rm( sbox )
 
+browser()
 
   S = matrix( NaN, nrow=nrow(Sloc), ncol=length( p$statsvars ) ) # NA forces into logical
   if (use_saved_state) {
