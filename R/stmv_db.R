@@ -428,7 +428,7 @@
       
       save( global_model, file= fn.global_model, compress=TRUE )
 
-      return (fn.global_model)
+      return ()
     }
 
     # -----cpu
