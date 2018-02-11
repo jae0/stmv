@@ -122,8 +122,6 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="b
     }
   rm( sbox )
 
-browser()
-
   S = matrix( NaN, nrow=nrow(Sloc), ncol=length( p$statsvars ) ) # NA forces into logical
   if (use_saved_state) {
     if (file.exists(p$saved_state_fn$stats)) load( p$saved_state_fn$stats )
