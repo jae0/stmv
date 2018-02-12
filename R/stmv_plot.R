@@ -1,7 +1,7 @@
 
   stmv_plot = function( p, obj, RES=NULL, MESH=NULL, SPDE=NULL, vname=NULL, idat=NULL, nxout=100, nyout=100 ) {
     #\\ Simple diagnostic plots for stmv statistics and predictions
-    #\\   stmv_plot( p=p, odb="mesh" ) :: mesh, range, nugget, partial.sill, kappa, intercept, etc
+    #\\   stmv_plot( p=p, obj="mesh" ) :: mesh, range, nugget, partial.sill, kappa, intercept, etc
     #\\   RES is the data result from an inla call
     #\\   MESH is the mesh data object
     #\\   vname is the name of the random spatial field in the model formula
