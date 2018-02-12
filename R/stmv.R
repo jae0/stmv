@@ -607,6 +607,122 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="b
   }
 
 
+  if ("stage0" %in% runmode ){
+    # all low-level operations in one to avoid $!#!@# bigmemory issues 
+    Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
+
+    out = list()
+
+    out$todo = which( Sflag[]==0L )       # 0 = TODO
+    out$done = which( Sflag[]==1L )       # 1 = completed
+    out$outside = which( Sflag[]==2L )    # 2 = oustide bounds(if any)
+    out$shallow = which( Sflag[]==3L )    # 3 = depth shallower than p$depth.filter (if it exists .. z is a covariate)
+    out$predareaerror = which( Sflag[]==4L ) # 4=predictionarea not ok,
+    out$nodata = which( Sflag[]==5L )     # 5=skipped due to insufficient data,
+    out$variogramerror = which( Sflag[]==6L ) # 6=skipped .. fast variogram did not work
+    out$vrangeerror = which( Sflag[]==7L )     # 7=variogram estimated range not ok
+    out$modelerror = which( Sflag[]==8L )     # 8=problem with prediction and/or modelling
+    out$skipped = which( Sflag[] == 9L )   # 9 not completed due to a failed attempt
+      
+    if ( "statistics.status.reset" %in% runmode ) {
+      # to reset all rejected locations
+      toreset = which( Sflag[] > 2)
+      if (length(toreset) > 0) {
+        Sflag[toreset] = 0L  # to reset all the problem flags to todo
+        out$skipped = NA 
+        out$predareaerror = NA
+        out$variogramerror = NA
+        out$vrangeerror = NA
+        out$modelerror = NA
+        out$todo = NA
+      }
+    }
+    
+    # do some counts
+    out$n.todo = length(out$todo)
+    out$n.complete = length(out$done) 
+    out$n.outside = length(which(is.finite(out$outside))) 
+    out$n.shallow = length(out$shallow)
+    out$n.predareaerror = length(out$predareaerror)
+    out$n.nodata = length(out$nodata)
+    out$n.variogramerror = length(out$variogramerror)
+    out$n.vrangeerror = length(out$vrangeerror)
+    out$n.modelerror = length(out$modelerror) 
+    out$n.skipped = length(out$skipped)
+    out$n.total = length(Sflag) 
+
+    out$prop_incomp = round( out$n.todo / ( out$n.total), 3)
+    message( paste("||| Proportion to do:", out$prop_incomp, "\n" ))
+    currentstatus = out
+
+    runindex=list( locs=currentstatus$todo[sample.int(length( currentstatus$todo ))] )
+
+    nvars = length(runindex)  # runindex must be a list
+    p$runs = expand.grid(runindex, stringsAsFactors=FALSE, KEEP.OUT.ATTRS=FALSE)
+    p$nruns = nrow( p$runs )
+    p$runs_uid = do.call(paste, c(p$runs, sep="~"))
+    p$clustertype = "PSOCK"
+    p$clusters = rep("localhost", 8)
+    p$rndseed = 1
+    if ( p$nruns < length( p$clusters ) ) {
+      p$clusters = sample( p$clusters, p$nruns )  # if very few runs, use only what is required
+    }
+    require(parallel)
+    cl = makeCluster( spec=p$clusters, type=p$clustertype ) # SOCK works well but does not load balance as MPI
+    RNGkind("L'Ecuyer-CMRG")  # multiple streams of pseudo-random numbers.
+    clusterSetRNGStream(cl, iseed=p$rndseed )
+    # if ( !is.null(clusterexport)) clusterExport( cl, clusterexport )
+    uv = unique(p$runs_uid)
+    uvl = length(uv)
+    lc = length(p$clusters)
+    lci = 1:lc
+    ssplt = list()
+    for(j in 1:uvl) ssplt[[j]]  = which(p$runs_uid == uv[j])
+    clustertasklist = rep(list(numeric()),lc)
+    if (uvl>lc) {
+      for(j in 1:uvl) {
+        k=j
+        if(j>lc) k = j%%lc+1
+        clustertasklist[[k]] <- c(clustertasklist[[k]],ssplt[[j]])
+      }
+    }
+    ssplt = NULL
+    clusterApply( cl, clustertasklist, stmv_interpolate, p=p  )
+
+      P = stmv_attach( p$storage.backend, p$ptr$P )[]
+      Pn = stmv_attach( p$storage.backend, p$ptr$Pn )[]
+      Psd = stmv_attach( p$storage.backend, p$ptr$Psd )[]
+      S = stmv_attach( p$storage.backend, p$ptr$S )[]
+      Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )[]
+
+      if (exists("stmv_global_modelengine", p)) {
+        if (p$stmv_global_modelengine !="none" ) {
+          P0 = stmv_attach( p$storage.backend, p$ptr$P0 )[]
+          P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )[]
+        }
+      }
+
+      save( P, file=p$saved_state_fn$P, compress=TRUE )
+      save( Pn, file=p$saved_state_fn$Pn, compress=TRUE )
+      save( Psd, file=p$saved_state_fn$Psd, compress=TRUE )
+      save( S, file=p$saved_state_fn$stats, compress=TRUE )
+      save( Sflag, file=p$saved_state_fn$sflag, compress=TRUE )
+
+      if (exists("stmv_global_modelengine", p)) {
+        if (p$stmv_global_modelengine !="none" ) {
+          save( P0,   file=p$saved_state_fn$P0,   compress=TRUE )
+          save( P0sd, file=p$saved_state_fn$P0sd, compress=TRUE )
+        }
+      }
+      
+      stmv_db( p=p, DS="stmv.results" ) # save to disk for use outside stmv*, returning to user scale
+
+    stopCluster( cl )
+    return("done")
+  }
+
+
+
 
   # -----------------------------------------------------
   if ( "stage1" %in% runmode ) {

@@ -541,7 +541,7 @@
     # -----
 
 
-    if (DS %in% c("stmv.results.redo", "stmv.prediction", "stmv.stats") )  {
+    if (DS %in% c("stmv.results", "stmv.prediction", "stmv.stats") )  {
 
       if (DS=="stmv.prediction") {
         if (! exists("TIME", p$variables)) {
