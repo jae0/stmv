@@ -91,11 +91,11 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
     if ( iip %in% logpoints )  currentstatus = stmv_logfile(p=p, stime=stime)
 
     if ( iip %in% savepoints ) {
-      _P = P[]; save( _P, file=p$saved_state_fn$P, compress=TRUE ); rm( _P)
-      _Pn = Pn[]; save( _Pn, file=p$saved_state_fn$Pn, compress=TRUE ); rm( _Pn) 
-      _Psd = Psd[]; save( _Psd, file=p$saved_state_fn$Psd, compress=TRUE ); rm( _Psd)
-      _S = S[]; save( _S, file=p$saved_state_fn$stats, compress=TRUE ); rm( _S)
-      _Sflag = Sflag[]; save( _Sflag, file=p$saved_state_fn$sflag, compress=TRUE ); rm( _Sflag)
+      sP = P[]; save( sP, file=p$saved_state_fn$P, compress=TRUE ); rm( sP)
+      sPn = Pn[]; save( sPn, file=p$saved_state_fn$Pn, compress=TRUE ); rm( sPn) 
+      sPsd = Psd[]; save( sPsd, file=p$saved_state_fn$Psd, compress=TRUE ); rm( sPsd)
+      sS = S[]; save( sS, file=p$saved_state_fn$stats, compress=TRUE ); rm( sS)
+      sSflag = Sflag[]; save( sSflag, file=p$saved_state_fn$sflag, compress=TRUE ); rm( sSflag)
       currentstatus = stmv_logfile(p=p, stime=stime)
     }
     Si = p$runs[ iip, "locs" ]

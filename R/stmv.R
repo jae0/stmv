@@ -689,29 +689,29 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="b
     ssplt = NULL
     clusterApply( cl, clustertasklist, stmv_interpolate, p=p  )
 
-      _P = stmv_attach( p$storage.backend, p$ptr$P )[]
-      _Pn = stmv_attach( p$storage.backend, p$ptr$Pn )[]
-      _Psd = stmv_attach( p$storage.backend, p$ptr$Psd )[]
-      _S = stmv_attach( p$storage.backend, p$ptr$S )[]
-      _Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )[]
+      sP = stmv_attach( p$storage.backend, p$ptr$P )[]
+      sPn = stmv_attach( p$storage.backend, p$ptr$Pn )[]
+      sPsd = stmv_attach( p$storage.backend, p$ptr$Psd )[]
+      sS = stmv_attach( p$storage.backend, p$ptr$S )[]
+      sSflag = stmv_attach( p$storage.backend, p$ptr$Sflag )[]
 
       if (exists("stmv_global_modelengine", p)) {
         if (p$stmv_global_modelengine !="none" ) {
-          _P0 = stmv_attach( p$storage.backend, p$ptr$P0 )[]
-          _P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )[]
+          sP0 = stmv_attach( p$storage.backend, p$ptr$P0 )[]
+          sP0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )[]
         }
       }
 
-      save( _P, file=p$saved_state_fn$P, compress=TRUE )
-      save( _Pn, file=p$saved_state_fn$Pn, compress=TRUE )
-      save( _Psd, file=p$saved_state_fn$Psd, compress=TRUE )
-      save( _S, file=p$saved_state_fn$stats, compress=TRUE )
-      save( _Sflag, file=p$saved_state_fn$sflag, compress=TRUE )
+      save( sP, file=p$saved_state_fn$P, compress=TRUE )
+      save( sPn, file=p$saved_state_fn$Pn, compress=TRUE )
+      save( sPsd, file=p$saved_state_fn$Psd, compress=TRUE )
+      save( sS, file=p$saved_state_fn$stats, compress=TRUE )
+      save( sSflag, file=p$saved_state_fn$sflag, compress=TRUE )
 
       if (exists("stmv_global_modelengine", p)) {
         if (p$stmv_global_modelengine !="none" ) {
-          save( _P0,   file=p$saved_state_fn$P0,   compress=TRUE )
-          save( _P0sd, file=p$saved_state_fn$P0sd, compress=TRUE )
+          save( sP0,   file=p$saved_state_fn$P0,   compress=TRUE )
+          save( sP0sd, file=p$saved_state_fn$P0sd, compress=TRUE )
         }
       }
       

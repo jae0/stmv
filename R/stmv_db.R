@@ -760,29 +760,29 @@
     if (DS %in% c("save_current_state") ) {
 
       # named differently to avoid collisions 
-      _P = stmv_attach( p$storage.backend, p$ptr$P )[]
-      _Pn = stmv_attach( p$storage.backend, p$ptr$Pn )[]
-      _Psd = stmv_attach( p$storage.backend, p$ptr$Psd )[]
-      _S = stmv_attach( p$storage.backend, p$ptr$S )[]
-      _Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )[]
+      sP = stmv_attach( p$storage.backend, p$ptr$P )[]
+      sPn = stmv_attach( p$storage.backend, p$ptr$Pn )[]
+      sPsd = stmv_attach( p$storage.backend, p$ptr$Psd )[]
+      sS = stmv_attach( p$storage.backend, p$ptr$S )[]
+      sSflag = stmv_attach( p$storage.backend, p$ptr$Sflag )[]
 
       if (exists("stmv_global_modelengine", p)) {
         if (p$stmv_global_modelengine !="none" ) {
-          _P0 = stmv_attach( p$storage.backend, p$ptr$P0 )[]
-          _P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )[]
+          sP0 = stmv_attach( p$storage.backend, p$ptr$P0 )[]
+          sP0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )[]
         }
       }
 
-      save( _P, file=p$saved_state_fn$P, compress=TRUE )
-      save( _Pn, file=p$saved_state_fn$Pn, compress=TRUE )
-      save( _Psd, file=p$saved_state_fn$Psd, compress=TRUE )
-      save( _S, file=p$saved_state_fn$stats, compress=TRUE )
-      save( _Sflag, file=p$saved_state_fn$sflag, compress=TRUE )
+      save( sP, file=p$saved_state_fn$P, compress=TRUE )
+      save( sPn, file=p$saved_state_fn$Pn, compress=TRUE )
+      save( sPsd, file=p$saved_state_fn$Psd, compress=TRUE )
+      save( sS, file=p$saved_state_fn$stats, compress=TRUE )
+      save( sSflag, file=p$saved_state_fn$sflag, compress=TRUE )
 
       if (exists("stmv_global_modelengine", p)) {
         if (p$stmv_global_modelengine !="none" ) {
-          save( _P0,   file=p$saved_state_fn$P0,   compress=TRUE )
-          save( _P0sd, file=p$saved_state_fn$P0sd, compress=TRUE )
+          save( sP0,   file=p$saved_state_fn$P0,   compress=TRUE )
+          save( sP0sd, file=p$saved_state_fn$P0sd, compress=TRUE )
         }
       }
       
@@ -808,11 +808,11 @@
         }
       }
 
-      _P = matrix( NaN, nrow=nrow(P), ncol=ncol(P) )   
-      _Pn = matrix( NaN, nrow=nrow(Pn), ncol=ncol(Pn) )   
-      _Psd = matrix( NaN, nrow=nrow(Psd), ncol=ncol(Psd) )   
-      _S = matrix( NaN, nrow=nrow(S), ncol=ncol(S) )   
-      _Sflag = matrix( NaN, nrow=nrow(Sflag), ncol=ncol(Sflag) )   
+      sP = matrix( NaN, nrow=nrow(P), ncol=ncol(P) )   
+      sPn = matrix( NaN, nrow=nrow(Pn), ncol=ncol(Pn) )   
+      sPsd = matrix( NaN, nrow=nrow(Psd), ncol=ncol(Psd) )   
+      sS = matrix( NaN, nrow=nrow(S), ncol=ncol(S) )   
+      sSflag = matrix( NaN, nrow=nrow(Sflag), ncol=ncol(Sflag) )   
       
       if (file.exists(p$saved_state_fn$P)) load( p$saved_state_fn$P )
       if (file.exists(p$saved_state_fn$Pn)) load( p$saved_state_fn$Pn )
@@ -821,20 +821,20 @@
       if (file.exists(p$saved_state_fn$sflag)) load( p$saved_state_fn$sflag )
 
 
-      P[] = _P[]
-      Pn[] = _Pn[]
-      Psd[] = _Psd[]
-      S[] = _S[]
-      Sflag[] = _Sflag[]
+      P[] = sP[]
+      Pn[] = sPn[]
+      Psd[] = sPsd[]
+      S[] = sS[]
+      Sflag[] = sSflag[]
       
       if (exists("stmv_global_modelengine", p)) {
         if (p$stmv_global_modelengine !="none" ) {
-          _P0 = matrix( NaN, nrow=nrow(P0), ncol=ncol(P0) )   
-          _P0sd = matrix( NaN, nrow=nrow(P0sd), ncol=ncol(P0sd) )   
+          sP0 = matrix( NaN, nrow=nrow(P0), ncol=ncol(P0) )   
+          sP0sd = matrix( NaN, nrow=nrow(P0sd), ncol=ncol(P0sd) )   
           if (file.exists(p$saved_state_fn$P0)) load( p$saved_state_fn$P0 )
           if (file.exists(p$saved_state_fn$P0sd)) load( p$saved_state_fn$P0sd )
-          P0[] = _P0[]
-          P0sd[] = _P0sd[]
+          P0[] = sP0[]
+          P0sd[] = sP0sd[]
         }
       }
 
