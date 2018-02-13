@@ -662,7 +662,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="b
     p$nruns = nrow( p$runs )
     p$runs_uid = do.call(paste, c(p$runs, sep="~"))
     p$clustertype = "PSOCK"
-    p$clusters = rep("localhost", 8)
+
     p$rndseed = 1
     if ( p$nruns < length( p$clusters ) ) {
       p$clusters = sample( p$clusters, p$nruns )  # if very few runs, use only what is required
