@@ -87,11 +87,11 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="b
     DATA$input[, p$variables$Y ] = p$stmv_Y_transform[[1]] (DATA$input[, p$variables$Y ] )
   }
 
-  if ( exists("stmv_global_modelengine", p) ) {
-    if ( p$stmv_global_modelengine !="none" ) {
-    # to add global covariate model (hierarchical)
-    # .. simplistic this way but faster ~ kriging with external drift
-      if ("globalmodel" %in% runmode) {
+  if ("globalmodel" %in% runmode) {
+    if ( exists("stmv_global_modelengine", p) ) {
+      if ( p$stmv_global_modelengine !="none" ) {
+      # to add global covariate model (hierarchical)
+      # .. simplistic this way but faster ~ kriging with external drift
         stmv_db( p=p, DS="global_model.redo", B=DATA$input )
       }
     }
@@ -689,29 +689,29 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="b
     ssplt = NULL
     clusterApply( cl, clustertasklist, stmv_interpolate, p=p  )
 
-      P = stmv_attach( p$storage.backend, p$ptr$P )[]
-      Pn = stmv_attach( p$storage.backend, p$ptr$Pn )[]
-      Psd = stmv_attach( p$storage.backend, p$ptr$Psd )[]
-      S = stmv_attach( p$storage.backend, p$ptr$S )[]
-      Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )[]
+      _P = stmv_attach( p$storage.backend, p$ptr$P )[]
+      _Pn = stmv_attach( p$storage.backend, p$ptr$Pn )[]
+      _Psd = stmv_attach( p$storage.backend, p$ptr$Psd )[]
+      _S = stmv_attach( p$storage.backend, p$ptr$S )[]
+      _Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )[]
 
       if (exists("stmv_global_modelengine", p)) {
         if (p$stmv_global_modelengine !="none" ) {
-          P0 = stmv_attach( p$storage.backend, p$ptr$P0 )[]
-          P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )[]
+          _P0 = stmv_attach( p$storage.backend, p$ptr$P0 )[]
+          _P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )[]
         }
       }
 
-      save( P, file=p$saved_state_fn$P, compress=TRUE )
-      save( Pn, file=p$saved_state_fn$Pn, compress=TRUE )
-      save( Psd, file=p$saved_state_fn$Psd, compress=TRUE )
-      save( S, file=p$saved_state_fn$stats, compress=TRUE )
-      save( Sflag, file=p$saved_state_fn$sflag, compress=TRUE )
+      save( _P, file=p$saved_state_fn$P, compress=TRUE )
+      save( _Pn, file=p$saved_state_fn$Pn, compress=TRUE )
+      save( _Psd, file=p$saved_state_fn$Psd, compress=TRUE )
+      save( _S, file=p$saved_state_fn$stats, compress=TRUE )
+      save( _Sflag, file=p$saved_state_fn$sflag, compress=TRUE )
 
       if (exists("stmv_global_modelengine", p)) {
         if (p$stmv_global_modelengine !="none" ) {
-          save( P0,   file=p$saved_state_fn$P0,   compress=TRUE )
-          save( P0sd, file=p$saved_state_fn$P0sd, compress=TRUE )
+          save( _P0,   file=p$saved_state_fn$P0,   compress=TRUE )
+          save( _P0sd, file=p$saved_state_fn$P0sd, compress=TRUE )
         }
       }
       
