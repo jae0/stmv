@@ -491,7 +491,7 @@
             }
 
             if (p$stmv_global_modelengine %in% c("glm", "bigglm", "gam") ) {
-              Pbaseline = try( predict( global_model, newdata=pa, type="response", se.fit=TRUE ) )
+              Pbaseline = try( predict( global_model, newdata=pa, type="link", se.fit=TRUE ) )
               pa = NULL
               gc()
               if (!inherits(Pbaseline, "try-error")) {
@@ -501,7 +501,7 @@
               Pbaseline = NULL; gc()
             } else if (p$stmv_global_modelengine =="bayesx") {
               stop( "not yet tested" ) # TODO
-              # Pbaseline = try( predict( global_model, newdata=pa, type="response", se.fit=TRUE ) )
+              # Pbaseline = try( predict( global_model, newdata=pa, type="link", se.fit=TRUE ) )
               # pa = NULL
               # gc()
               # if (!inherits(Pbaseline, "try-error")) {
@@ -646,6 +646,7 @@
               Pu = p$stmv_global_family$linkinv( P - 1.96* V )
               P = p$stmv_global_family$linkinv( P )
 
+              # any additional transformations
               if (exists("stmv_Y_transform", p)) {
                 Pl = p$stmv_Y_transform[[2]] (Pl)  # p$stmv_Y_transform[2] is the inverse transform
                 Pu = p$stmv_Y_transform[[2]] (Pu)
@@ -671,7 +672,7 @@
                 if (p$stmv_global_modelengine !="none" ) {
                   uu = which(!is.finite(P[]))
                   if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
-                  P = P[] + P0[]
+                  P = P[] + P0[]  # both on link scale
                   vv = which(!is.finite(V[]))
                   if (length(vv)>0) V[vv] = 0 # permit covariate-base predictions to pass through ..
                   V = sqrt( V[]^2 + P0sd[]^2) # simple additive independent errors assumed
@@ -682,7 +683,7 @@
                 V[shallower,] = NA
               }
 
-              # return to user scale
+              # return to user response scale
               Pl = p$stmv_global_family$linkinv( P + 1.96* V )
               Pu = p$stmv_global_family$linkinv( P - 1.96* V )
               P = p$stmv_global_family$linkinv( P )
