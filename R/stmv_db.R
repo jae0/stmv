@@ -117,9 +117,14 @@
     if ( DS %in% c( "statistics.status", "statistics.status.reset") ) {
     
       Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-      
+      if ( DS=="statistics.status.reset" ) {
+        # to reset all rejected locations
+        toreset = which( Sflag[] > 2)
+        if (length(toreset) > 0) {
+          Sflag[toreset] = 0L  # to reset all the problem flags to todo
+        }
+      }      
       out = list()
-      
       out$todo = which( Sflag[]==0L )       # 0 = TODO
       out$done = which( Sflag[]==1L )       # 1 = completed
       out$outside = which( Sflag[]==2L )    # 2 = oustide bounds(if any)
@@ -130,20 +135,6 @@
       out$vrangeerror = which( Sflag[]==7L )     # 7=variogram estimated range not ok
       out$modelerror = which( Sflag[]==8L )     # 8=problem with prediction and/or modelling
       out$skipped = which( Sflag[] == 9L )   # 9 not completed due to a failed attempt
-      
-      if ( DS=="statistics.status.reset" ) {
-        # to reset all rejected locations
-        toreset = which( Sflag[] > 2)
-        if (length(toreset) > 0) {
-          Sflag[toreset] = 0L  # to reset all the problem flags to todo
-          out$skipped = NA 
-          out$predareaerror = NA
-          out$variogramerror = NA
-          out$vrangeerror = NA
-          out$modelerror = NA
-          out$todo = NA
-        }
-      }
       
       # do some counts
       out$n.todo = length(out$todo)
@@ -158,7 +149,7 @@
       out$n.skipped = length(out$skipped)
       out$n.total = length(Sflag) 
 
-      out$prop_incomp = round( out$n.todo / ( out$n.total), 3)
+      out$prop_incomp = round( out$n.todo / ( out$n.total - out$n.outside ), 3)
       message( paste("||| Proportion to do:", out$prop_incomp, "\n" ))
       return( out )
 
@@ -845,12 +836,14 @@
       if (file.exists(p$saved_state_fn$stats)) load( p$saved_state_fn$stats )
       if (file.exists(p$saved_state_fn$sflag)) load( p$saved_state_fn$sflag )
 
-
       P[] = sP[]
       Pn[] = sPn[]
       Psd[] = sPsd[]
+      sP = sPsd = sPn = NULL
+      
       S[] = sS[]
       Sflag[] = sSflag[]
+      sS = sSflag = NULL
       
       if (exists("stmv_global_modelengine", p)) {
         if (p$stmv_global_modelengine !="none" ) {
@@ -860,9 +853,10 @@
           if (file.exists(p$saved_state_fn$P0sd)) load( p$saved_state_fn$P0sd )
           P0[] = sP0[]
           P0sd[] = sP0sd[]
+          sP0 = sP0sd = NULL
         }
       }
-
+      # gc()
     }
     
     # =--------------------
