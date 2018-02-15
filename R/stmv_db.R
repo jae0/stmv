@@ -436,8 +436,8 @@
           if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
           global_model = stmv_db( p=p, DS="global_model")
           if (is.null(global_model)) stop("Global model not found.")
-          P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
-          P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )
+          P0 = stmv_attach( p$storage.backend, p$ptr$P0 )  # remember this is on link scale
+          P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd ) # and this too
           for ( ii in ip ) {
             # downscale and warp from p(0) -> p1
             it = p$runs[ii,"tindex"]  # == ii btw
@@ -482,7 +482,7 @@
             }
 
             if (p$stmv_global_modelengine %in% c("glm", "bigglm", "gam") ) {
-              Pbaseline = try( predict( global_model, newdata=pa, type="link", se.fit=TRUE ) )
+              Pbaseline = try( predict( global_model, newdata=pa, type="link", se.fit=TRUE ) )  # must be on link scale
               pa = NULL
               gc()
               if (!inherits(Pbaseline, "try-error")) {
@@ -637,6 +637,7 @@
               if (exists("stmv_global_modelengine", p) ) {
                 if (p$stmv_global_modelengine !="none" ) {
                   ## maybe add via simulation ? ...
+                  # P0 and P are on link scale to this point
                   uu = which(!is.finite(P[]))
                   if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
                   P = P[] + P0[,it]
