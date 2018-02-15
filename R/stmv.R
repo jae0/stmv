@@ -1,11 +1,12 @@
 
 
-stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="bigmemory.ram", debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE ) {
+stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalized=FALSE, storage.backend="bigmemory.ram", debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE ) {
 
   if (0) {
     DATA=NULL
     use_saved_state=FALSE
     storage.backend="bigmemory.ram"
+    do.not.finalized=FALSE
     debug_plot_variable_index=1
   }
   
@@ -509,7 +510,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="b
     
   p <<- p
 
-  if ( "initialize" %in% runmode ) return(p)
+  if ( "initialize_only" %in% runmode ) return(p)
   
     
   if ( use_saved_state || any(grepl("debug", runmode)) ) {
@@ -610,198 +611,152 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="b
   if ("stage0" %in% runmode ){
     # all low-level operations in one to avoid $!#!@# bigmemory issues 
     Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-
-    out = list()
-
-    out$todo = which( Sflag[]==0L )       # 0 = TODO
-    out$done = which( Sflag[]==1L )       # 1 = completed
-    out$outside = which( Sflag[]==2L )    # 2 = oustide bounds(if any)
-    out$shallow = which( Sflag[]==3L )    # 3 = depth shallower than p$depth.filter (if it exists .. z is a covariate)
-    out$predareaerror = which( Sflag[]==4L ) # 4=predictionarea not ok,
-    out$nodata = which( Sflag[]==5L )     # 5=skipped due to insufficient data,
-    out$variogramerror = which( Sflag[]==6L ) # 6=skipped .. fast variogram did not work
-    out$vrangeerror = which( Sflag[]==7L )     # 7=variogram estimated range not ok
-    out$modelerror = which( Sflag[]==8L )     # 8=problem with prediction and/or modelling
-    out$skipped = which( Sflag[] == 9L )   # 9 not completed due to a failed attempt
-      
+    currentstatus = list()
+    currentstatus$todo = which( Sflag[]==0L )       # 0 = TODO
+    currentstatus$done = which( Sflag[]==1L )       # 1 = completed
+    currentstatus$outside = which( Sflag[]==2L )    # 2 = oustide bounds(if any)
+    currentstatus$shallow = which( Sflag[]==3L )    # 3 = depth shallower than p$depth.filter (if it exists .. z is a covariate)
+    currentstatus$predareaerror = which( Sflag[]==4L ) # 4=predictionarea not ok,
+    currentstatus$nodata = which( Sflag[]==5L )     # 5=skipped due to insufficient data,
+    currentstatus$variogramerror = which( Sflag[]==6L ) # 6=skipped .. fast variogram did not work
+    currentstatus$vrangeerror = which( Sflag[]==7L )     # 7=variogram estimated range not ok
+    currentstatus$modelerror = which( Sflag[]==8L )     # 8=problem with prediction and/or modelling
+    currentstatus$skipped = which( Sflag[] == 9L )   # 9 not completed due to a failed attempt
     if ( "statistics.status.reset" %in% runmode ) {
       # to reset all rejected locations
       toreset = which( Sflag[] > 2)
       if (length(toreset) > 0) {
         Sflag[toreset] = 0L  # to reset all the problem flags to todo
-        out$skipped = NA 
-        out$predareaerror = NA
-        out$variogramerror = NA
-        out$vrangeerror = NA
-        out$modelerror = NA
-        out$todo = NA
+        currentstatus$skipped = NA 
+        currentstatus$predareaerror = NA
+        currentstatus$variogramerror = NA
+        currentstatus$vrangeerror = NA
+        currentstatus$modelerror = NA
+        currentstatus$todo = NA
       }
     }
-    
     # do some counts
-    out$n.todo = length(out$todo)
-    out$n.complete = length(out$done) 
-    out$n.outside = length(which(is.finite(out$outside))) 
-    out$n.shallow = length(out$shallow)
-    out$n.predareaerror = length(out$predareaerror)
-    out$n.nodata = length(out$nodata)
-    out$n.variogramerror = length(out$variogramerror)
-    out$n.vrangeerror = length(out$vrangeerror)
-    out$n.modelerror = length(out$modelerror) 
-    out$n.skipped = length(out$skipped)
-    out$n.total = length(Sflag) 
-
-    out$prop_incomp = round( out$n.todo / ( out$n.total), 3)
-    message( paste("||| Proportion to do:", out$prop_incomp, "\n" ))
-    currentstatus = out
-
+    currentstatus$n.todo = length(currentstatus$todo)
+    currentstatus$n.complete = length(currentstatus$done) 
+    currentstatus$n.outside = length(which(is.finite(currentstatus$outside))) 
+    currentstatus$n.shallow = length(currentstatus$shallow)
+    currentstatus$n.predareaerror = length(currentstatus$predareaerror)
+    currentstatus$n.nodata = length(currentstatus$nodata)
+    currentstatus$n.variogramerror = length(currentstatus$variogramerror)
+    currentstatus$n.vrangeerror = length(currentstatus$vrangeerror)
+    currentstatus$n.modelerror = length(currentstatus$modelerror) 
+    currentstatus$n.skipped = length(currentstatus$skipped)
+    currentstatus$n.total = length(Sflag) 
+    currentstatus$prop_incomp = round( currentstatus$n.todo / ( currentstatus$n.total), 3)
     runindex=list( locs=currentstatus$todo[sample.int(length( currentstatus$todo ))] )
-
     nvars = length(runindex)  # runindex must be a list
     p$runs = expand.grid(runindex, stringsAsFactors=FALSE, KEEP.OUT.ATTRS=FALSE)
     p$nruns = nrow( p$runs )
     p$runs_uid = do.call(paste, c(p$runs, sep="~"))
     p$clustertype = "PSOCK"
-
     p$rndseed = 1
     if ( p$nruns < length( p$clusters ) ) {
       p$clusters = sample( p$clusters, p$nruns )  # if very few runs, use only what is required
     }
-    require(parallel)
-    cl = makeCluster( spec=p$clusters, type=p$clustertype ) # SOCK works well but does not load balance as MPI
-    RNGkind("L'Ecuyer-CMRG")  # multiple streams of pseudo-random numbers.
-    clusterSetRNGStream(cl, iseed=p$rndseed )
-    # if ( !is.null(clusterexport)) clusterExport( cl, clusterexport )
-    uv = unique(p$runs_uid)
-    uvl = length(uv)
-    lc = length(p$clusters)
-    lci = 1:lc
-    ssplt = list()
-    for(j in 1:uvl) ssplt[[j]]  = which(p$runs_uid == uv[j])
-    clustertasklist = rep(list(numeric()),lc)
-    if (uvl>lc) {
-      for(j in 1:uvl) {
-        k=j
-        if(j>lc) k = j%%lc+1
-        clustertasklist[[k]] <- c(clustertasklist[[k]],ssplt[[j]])
-      }
-    }
-    ssplt = NULL
-    clusterApply( cl, clustertasklist, stmv_interpolate, p=p  )
-
-      sP = stmv_attach( p$storage.backend, p$ptr$P )[]
-      sPn = stmv_attach( p$storage.backend, p$ptr$Pn )[]
-      sPsd = stmv_attach( p$storage.backend, p$ptr$Psd )[]
-      sS = stmv_attach( p$storage.backend, p$ptr$S )[]
-      sSflag = stmv_attach( p$storage.backend, p$ptr$Sflag )[]
-
-      if (exists("stmv_global_modelengine", p)) {
-        if (p$stmv_global_modelengine !="none" ) {
-          sP0 = stmv_attach( p$storage.backend, p$ptr$P0 )[]
-          sP0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )[]
+    p$cl = makeCluster( spec=p$clusters, type=p$clustertype ) # SOCK works well but does not load balance as MPI
+        RNGkind("L'Ecuyer-CMRG")  # multiple streams of pseudo-random numbers.
+        clusterSetRNGStream(p$cl, iseed=p$rndseed )
+        # if ( !is.null(clusterexport)) clusterExport( p$cl, clusterexport )
+        uv = unique(p$runs_uid)
+        uvl = length(uv)
+        lc = length(p$clusters)
+        lci = 1:lc
+        ssplt = list()
+        for(j in 1:uvl) ssplt[[j]]  = which(p$runs_uid == uv[j])
+        clustertasklist = rep(list(numeric()),lc)
+        if (uvl>lc) {
+          for(j in 1:uvl) {
+            k=j
+            if(j>lc) k = j%%lc+1
+            clustertasklist[[k]] <- c(clustertasklist[[k]],ssplt[[j]])
+          }
         }
-      }
-
-      save( sP, file=p$saved_state_fn$P, compress=TRUE )
-      save( sPn, file=p$saved_state_fn$Pn, compress=TRUE )
-      save( sPsd, file=p$saved_state_fn$Psd, compress=TRUE )
-      save( sS, file=p$saved_state_fn$stats, compress=TRUE )
-      save( sSflag, file=p$saved_state_fn$sflag, compress=TRUE )
-
-      if (exists("stmv_global_modelengine", p)) {
-        if (p$stmv_global_modelengine !="none" ) {
-          save( sP0,   file=p$saved_state_fn$P0,   compress=TRUE )
-          save( sP0sd, file=p$saved_state_fn$P0sd, compress=TRUE )
-        }
-      }
-      
-      stmv_db( p=p, DS="stmv.results" ) # save to disk for use outside stmv*, returning to user scale
-
-    stopCluster( cl )
-    return("done")
-  }
-
-
-
-
-  # -----------------------------------------------------
-  if ( "stage1" %in% runmode ) {
-    # this is the basic run
-    timei1 =  Sys.time()
-    # p <<- p  # push to parent in case a manual restart is possible
-
-    currentstatus = stmv_db( p=p, DS="statistics.status" )
-    ntodo = length( currentstatus$todo )
-    if ( ntodo > 0) {
-      # random order helps use all cpus 
-      parallel_run( stmv_interpolate, p=p, 
-        runindex=list( locs=currentstatus$todo[sample.int(ntodo)] )  ) 
-      stmv_db( p=p, DS="save_current_state" ) # saved current state
-      stopCluster( p$cl )
-    }
-
-    p$time_default = round( difftime( Sys.time(), timei1, units="hours" ), 3 )
-    message(" ")
-    message( paste( "||| Time taken to complete stage 1 interpolations (hours):", p$time_default, "" ) )
-    currentstatus = stmv_db( p=p, DS="statistics.status" )
-    print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
-    p <<- p  # push to parent in case a manual restart is needed
-  }
-
-
-  # -----------------------------------------------------
-  if ( "stage2" %in% runmode ) {
-    timei2 =  Sys.time()
-    message(" ")
-    message( "||| Starting stage 2: more permisssive distance settings:")
-    message( "|||  i.e., (stmv_distance_max and stmv_distance_scale) X {", paste0(p$stmv_multiplier_stage2, collapse=" "), "}" )
-
-    
-    for ( mult in p$stmv_multiplier_stage2 ) {
-      currentstatus = stmv_db(p=p, DS="statistics.status.reset" )
-      print( paste("Range multiplier:", mult) )
-      ntodo = length( currentstatus$todo )
-      if ( ntodo > 0) {
-        # random order helps use all cpus 
-        parallel_run( stmv_interpolate, p=p, 
-          runindex=list( locs=currentstatus$todo[sample.int(ntodo)] ), 
-          stmv_distance_max=p$stmv_distance_max*mult, 
-          stmv_distance_scale=p$stmv_distance_scale*mult
-        )
-        stmv_db( p=p, DS="save_current_state" ) # saved current state 
-        stopCluster( p$cl )
-      }
-    }
-
-    p$time_stage2 = round( difftime( Sys.time(), timei2, units="hours" ), 3)
-    message(" ")
-    message( paste( "||| Time taken to complete stage 2 interpolations (hours):", p$time_stage2, "" ) )
-    currentstatus = stmv_db( p=p, DS="statistics.status" )
-    print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
-    p <<- p  # push to parent in case a manual restart is needed
+        ssplt = NULL
+        clusterApply( p$cl, clustertasklist, stmv_interpolate, p=p  )
+    stopCluster( p$cl )
   }
 
   # -----------------------------------------------------
+
   if ( "stage3" %in% runmode ) {
-    timei3 =  Sys.time()
-    message(" ")
-    message( "||| Starting stage 3: simple TPS-based failsafe method to interpolate all the remaining locations " )
-  
-    currentstatus = stmv_db( p=p, DS="statistics.status.reset" )
-    ntodo = length( currentstatus$todo )
-    if ( ntodo > 0) {
-      p$stmv_local_modelengine = "tps"
-      parallel_run( stmv_interpolate, p=p, 
-        runindex=list( locs=currentstatus$todo[sample.int(ntodo)] )  ) # random order helps use all cpus
-      stmv_db( p=p, DS="save_current_state" )
-      stopCluster( p$cl )
-    }
 
-    p$time_stage3 = round( difftime( Sys.time(), timei3, units="hours" ), 3)
-    message( paste( "||| Time taken to complete stage3 interpolations (hours):", p$time_stage3, "" ) )
-    currentstatus = stmv_db( p=p, DS="statistics.status" )
-    print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ) )
+    p$stmv_local_modelengine = "tps"
+    # all low-level operations in one to avoid $!#!@# bigmemory issues 
+    Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
+    currentstatus = list()
+    currentstatus$todo = which( Sflag[]==0L )       # 0 = TODO
+    currentstatus$done = which( Sflag[]==1L )       # 1 = completed
+    currentstatus$outside = which( Sflag[]==2L )    # 2 = oustide bounds(if any)
+    currentstatus$shallow = which( Sflag[]==3L )    # 3 = depth shallower than p$depth.filter (if it exists .. z is a covariate)
+    currentstatus$predareaerror = which( Sflag[]==4L ) # 4=predictionarea not ok,
+    currentstatus$nodata = which( Sflag[]==5L )     # 5=skipped due to insufficient data,
+    currentstatus$variogramerror = which( Sflag[]==6L ) # 6=skipped .. fast variogram did not work
+    currentstatus$vrangeerror = which( Sflag[]==7L )     # 7=variogram estimated range not ok
+    currentstatus$modelerror = which( Sflag[]==8L )     # 8=problem with prediction and/or modelling
+    currentstatus$skipped = which( Sflag[] == 9L )   # 9 not completed due to a failed attempt
+    if ( "statistics.status.reset" %in% runmode ) {
+      # to reset all rejected locations
+      toreset = which( Sflag[] > 2)
+      if (length(toreset) > 0) {
+        Sflag[toreset] = 0L  # to reset all the problem flags to todo
+        currentstatus$skipped = NA 
+        currentstatus$predareaerror = NA
+        currentstatus$variogramerror = NA
+        currentstatus$vrangeerror = NA
+        currentstatus$modelerror = NA
+        currentstatus$todo = NA
+      }
+    }
+    # do some counts
+    currentstatus$n.todo = length(currentstatus$todo)
+    currentstatus$n.complete = length(currentstatus$done) 
+    currentstatus$n.outside = length(which(is.finite(currentstatus$outside))) 
+    currentstatus$n.shallow = length(currentstatus$shallow)
+    currentstatus$n.predareaerror = length(currentstatus$predareaerror)
+    currentstatus$n.nodata = length(currentstatus$nodata)
+    currentstatus$n.variogramerror = length(currentstatus$variogramerror)
+    currentstatus$n.vrangeerror = length(currentstatus$vrangeerror)
+    currentstatus$n.modelerror = length(currentstatus$modelerror) 
+    currentstatus$n.skipped = length(currentstatus$skipped)
+    currentstatus$n.total = length(Sflag) 
+    currentstatus$prop_incomp = round( currentstatus$n.todo / ( currentstatus$n.total), 3)
+    runindex=list( locs=currentstatus$todo[sample.int(length( currentstatus$todo ))] )
+    nvars = length(runindex)  # runindex must be a list
+    p$runs = expand.grid(runindex, stringsAsFactors=FALSE, KEEP.OUT.ATTRS=FALSE)
+    p$nruns = nrow( p$runs )
+    p$runs_uid = do.call(paste, c(p$runs, sep="~"))
+    p$clustertype = "PSOCK"
+    p$rndseed = 1
+    if ( p$nruns < length( p$clusters ) ) {
+      p$clusters = sample( p$clusters, p$nruns )  # if very few runs, use only what is required
+    }
+    p$cl = makeCluster( spec=p$clusters, type=p$clustertype ) # SOCK works well but does not load balance as MPI
     p <<- p  # push to parent in case a manual restart is needed
+        RNGkind("L'Ecuyer-CMRG")  # multiple streams of pseudo-random numbers.
+        clusterSetRNGStream(p$cl, iseed=p$rndseed )
+        # if ( !is.null(clusterexport)) clusterExport( p$cl, clusterexport )
+        uv = unique(p$runs_uid)
+        uvl = length(uv)
+        lc = length(p$clusters)
+        lci = 1:lc
+        ssplt = list()
+        for(j in 1:uvl) ssplt[[j]]  = which(p$runs_uid == uv[j])
+        clustertasklist = rep(list(numeric()),lc)
+        if (uvl>lc) {
+          for(j in 1:uvl) {
+            k=j
+            if(j>lc) k = j%%lc+1
+            clustertasklist[[k]] <- c(clustertasklist[[k]],ssplt[[j]])
+          }
+        }
+        ssplt = NULL
+        clusterApply( p$cl, clustertasklist, stmv_interpolate, p=p  )
+    stopCluster( p$cl )
 
   }
 
@@ -811,9 +766,11 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="b
   p$time_total = round( difftime( Sys.time(), p$time.start, units="hours" ), 3)
   
   # -----------------------------------------------------
-  if ( "finish" %in% runmode ) {
 
-    stmv_db( p=p, DS="stmv.results" ) # save to disk for use outside stmv*, returning to user scale
+  if (do.not.finalized) stmv_db( p=p, DS="stmv.results" ) # save to disk for use outside stmv*, returning to user scale
+
+
+  if ( "finish" %in% runmode ) {
 
     if ( p$storage.backend !="bigmemory.ram" ) {
       resp = readline( "||| Delete temporary files? Type to confirm <YES>:  ")
@@ -825,8 +782,6 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, storage.backend="b
         message( "||| You can delete them by running: stmv_db( p=p, DS='cleanup.all' ), once you are done. ")
       }
     }
-  
-    stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data objects
   }
 
   message( paste( "||| Time taken for full analysis (hours):", p$time_total ) )
