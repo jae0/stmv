@@ -126,6 +126,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FA
   S = matrix( NaN, nrow=nrow(Sloc), ncol=length( p$statsvars ) ) # NA forces into logical
   if (use_saved_state) {
     if (file.exists(p$saved_state_fn$stats)) load( p$saved_state_fn$stats )
+    S = sS; sS=NULL
   }
     if (p$storage.backend == "bigmemory.ram" ) {
       tmp_S = big.matrix(nrow=nrow(Sloc), ncol=length( p$statsvars ), type="double"  )
@@ -144,6 +145,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FA
   Sflag = matrix( 0L, nrow=nrow(Sloc), ncol=1 )  # 0L is the todo flag
   if (use_saved_state) {
     if (file.exists(p$saved_state_fn$sflag)) load( p$saved_state_fn$sflag )
+    Sflag = sSflag; sSflag=NULL
   }
   # 0=to do
   # 1=complete
@@ -294,6 +296,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FA
     P = matrix( NaN, nrow=nPlocs, ncol=p$nt )
     if (use_saved_state) {
       if (file.exists(p$saved_state_fn$P)) load( p$saved_state_fn$P )
+      P = sP; sP=NULL
     }       
       if (p$storage.backend == "bigmemory.ram" ) {
         tmp_P = big.matrix( nrow=nrow(P), ncol=ncol(P), type="double" )
@@ -314,6 +317,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FA
     Pn = matrix( NaN, nrow=nPlocs, ncol=p$nt )
     if (use_saved_state) {
       if (file.exists(p$saved_state_fn$Pn)) load( p$saved_state_fn$Pn )
+      Pn = sPn; sPn=NULL
     }      
       if (p$storage.backend == "bigmemory.ram" ) {
         tmp_Pn = big.matrix( nrow=nrow(Pn), ncol=ncol(Pn), type="double" )
@@ -334,6 +338,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FA
     Psd = matrix( NaN, nrow=nPlocs, ncol=p$nt )
     if (use_saved_state) {
       if (file.exists(p$saved_state_fn$Psd)) load( p$saved_state_fn$Psd )
+      Psd = sPsd; sPsd=NULL
     }      
       if (p$storage.backend == "bigmemory.ram" ) {
         tmp_Psd = big.matrix( nrow=nrow(Psd), ncol=ncol(Psd), type="double" )
@@ -376,6 +381,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FA
         P0 = matrix( NaN, nrow=nPlocs, ncol=p$nt )
         if (use_saved_state) {
           if (file.exists(p$saved_state_fn$P0)) load( p$saved_state_fn$P0 )
+          P0 = sP0; sP0=NULL
         }      
         if (p$storage.backend == "bigmemory.ram" ) {
           tmp_P0= big.matrix( nrow=nrow(P0), ncol=ncol(P0) , type="double" )
@@ -395,6 +401,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FA
         P0sd = matrix( NaN, nrow=nPlocs, ncol=p$nt )
         if (use_saved_state) {
           if (file.exists(p$saved_state_fn$P0sd)) load( p$saved_state_fn$P0sd )
+          P0sd = sP0sd; sP0sd=NULL
         }      
         if (p$storage.backend == "bigmemory.ram" ) {
           tmp_P0sd= big.matrix( nrow=nrow(P0sd), ncol=ncol(P0sd) , type="double" )
@@ -513,7 +520,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FA
   if ( "initialize_only" %in% runmode ) return(p)
   
     
-  if ( use_saved_state || any(grepl("debug", runmode)) ) {
+  if ( any(grepl("debug", runmode)) ) {
     if (!exists("time.start", p) ) p$time.start = Sys.time()
     message( " " )
     message( "||| Seems like we are continuing from a saved state ... loading" )
