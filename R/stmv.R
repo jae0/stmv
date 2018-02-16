@@ -1,12 +1,12 @@
 
 
-stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalized=FALSE, storage.backend="bigmemory.ram", debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE ) {
+stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FALSE, storage.backend="bigmemory.ram", debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE ) {
 
   if (0) {
     DATA=NULL
     use_saved_state=FALSE
     storage.backend="bigmemory.ram"
-    do.not.finalized=FALSE
+    do.not.finalize=FALSE
     debug_plot_variable_index=1
   }
   
@@ -169,7 +169,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalized=F
     }
     
 
-  rm(S, Sflag, Sloc)
+  S = Sflag = Sloc = NULL
 
   # data to be worked upon .. either the raw data or covariate-residuals
   Ydata = as.matrix(DATA$input[, p$variables$Y ])
@@ -196,7 +196,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalized=F
     if (p$storage.backend == "ff" ) {
       p$ptr$Y = ff( Ydata, dim=dim(Ydata), file=p$cache$Y, overwrite=TRUE )
     }
-  rm(Ydata)
+  Ydata = NULL
 
   Y = stmv_attach( p$storage.backend, p$ptr$Y )
 
@@ -214,7 +214,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalized=F
     if (p$storage.backend == "ff" ) {
       p$ptr$Yloc = ff( Yloc, dim=dim(Yloc), file=p$cache$Yloc, overwrite=TRUE )
     }
-  rm(Yloc)
+  Yloc = NULL
 
     # independent variables/ covariate
     if (exists("COV", p$variables)) {
@@ -231,7 +231,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalized=F
         if (p$storage.backend == "ff" ) {
           p$ptr$Ycov = ff( Ycov, dim=dim(Ycov), file=p$cache$Ycov, overwrite=TRUE )
         }
-      rm(Ycov)
+      Ycov= NULL
     }
 
     # data times
@@ -532,7 +532,6 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalized=F
   }
 
 
-  p <<- p  # push to parent in case a manual restart is needed
   stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data 
 
   
@@ -767,7 +766,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalized=F
   
   # -----------------------------------------------------
 
-  if (do.not.finalized) stmv_db( p=p, DS="stmv.results" ) # save to disk for use outside stmv*, returning to user scale
+  if (do.not.finalize) stmv_db( p=p, DS="stmv.results" ) # save to disk for use outside stmv*, returning to user scale
 
 
   if ( "finish" %in% runmode ) {
