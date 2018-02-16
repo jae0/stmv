@@ -802,6 +802,9 @@
           save( sP0sd, file=p$saved_state_fn$P0sd, compress=TRUE )
         }
       }
+      sP = sPsd = sPn = NULL
+      sS = sSflag = NULL
+      sP0 = sP0sd = NULL
       
     }
 
