@@ -3,8 +3,8 @@
 stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FALSE, storage.backend="bigmemory.ram", debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE ) {
 
   if (0) {
+    use_saved_state=TRUE
     DATA=NULL
-    use_saved_state=FALSE
     storage.backend="bigmemory.ram"
     do.not.finalize=FALSE
     debug_plot_variable_index=1
