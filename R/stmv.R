@@ -1,12 +1,14 @@
 
 
-stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FALSE, storage.backend="bigmemory.ram", debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE ) {
+stmv = function( p, runmode, DATA=NULL, 
+  use_saved_state=FALSE, save_completed_data=TRUE, force_complete_solution=TRUE, 
+  debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE ) {
 
   if (0) {
     use_saved_state=TRUE
     DATA=NULL
     storage.backend="bigmemory.ram"
-    do.not.finalize=FALSE
+    save_completed_data=FALSE  # export out of stmv system for use outside (e.g., by aegis)
     debug_plot_variable_index=1
   }
   
@@ -111,7 +113,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FA
   Sloc = as.matrix( expand.grid( sbox$plons, sbox$plats ))
     if (p$storage.backend == "bigmemory.ram" ) {
       tmp_Sloc = big.matrix(nrow=nrow(Sloc), ncol=ncol(Sloc), type="double"  )
-      tmp_Sloc[] = Sloc
+      tmp_Sloc[] = Sloc[]
       p$ptr$Sloc  = bigmemory::describe( tmp_Sloc  )
     }
     if (p$storage.backend == "bigmemory.filebacked" ) {
@@ -123,29 +125,27 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FA
     }
   rm( sbox )
 
-  S = matrix( NaN, nrow=nrow(Sloc), ncol=length( p$statsvars ) ) # NA forces into logical
+  sS = matrix( NaN, nrow=nrow(Sloc), ncol=length( p$statsvars ) ) # NA forces into logical
   if (use_saved_state) {
     if (file.exists(p$saved_state_fn$stats)) load( p$saved_state_fn$stats )
-    S = sS; sS=NULL
   }
     if (p$storage.backend == "bigmemory.ram" ) {
       tmp_S = big.matrix(nrow=nrow(Sloc), ncol=length( p$statsvars ), type="double"  )
-      tmp_S[] = S
+      tmp_S[] = sS[]
       p$ptr$S  = bigmemory::describe( tmp_S )
     }
     if (p$storage.backend == "bigmemory.filebacked" ) {
       p$ptr$S  = p$cache$S
-      bigmemory::as.big.matrix( S, type="double", backingfile=basename(p$bm$S), descriptorfile=basename(p$cache$S), backingpath=p$stmvSaveDir )
+      bigmemory::as.big.matrix( sS, type="double", backingfile=basename(p$bm$S), descriptorfile=basename(p$cache$S), backingpath=p$stmvSaveDir )
     }
     if (p$storage.backend == "ff" ) {
-      p$ptr$S = ff( S, dim=dim(S), file=p$cache$S, overwrite=TRUE )
+      p$ptr$S = ff( sS, dim=dim(sS), file=p$cache$S, overwrite=TRUE )
     }
 
 
-  Sflag = matrix( 0L, nrow=nrow(Sloc), ncol=1 )  # 0L is the todo flag
+  sSflag = matrix( 0L, nrow=nrow(Sloc), ncol=1 )  # 0L is the todo flag
   if (use_saved_state) {
     if (file.exists(p$saved_state_fn$sflag)) load( p$saved_state_fn$sflag )
-    Sflag = sSflag; sSflag=NULL
   }
   # 0=to do
   # 1=complete
@@ -158,20 +158,20 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FA
   # 8=problem with prediction and/or modelling
   # 9=attempting ... if encountered then it was some general problem  or was interrrupted 
     if (p$storage.backend == "bigmemory.ram" ) {
-      tmp_Sflag = big.matrix(nrow=nrow(Sloc), ncol=1, type="double" )
-      tmp_Sflag[] = 0L # TODO flag
+      tmp_Sflag = big.matrix(nrow=length(sSflag), ncol=1, type="double" )
+      tmp_Sflag[] = sSflag[]
       p$ptr$Sflag  = bigmemory::describe( tmp_Sflag )
     }
     if (p$storage.backend == "bigmemory.filebacked" ) {
       p$ptr$Sflag  = p$cache$Sflag
-      bigmemory::as.big.matrix( Sflag, type="double", backingfile=basename(p$bm$Sflag), descriptorfile=basename(p$cache$Sflag), backingpath=p$stmvSaveDir )
+      bigmemory::as.big.matrix( sSflag, type="double", backingfile=basename(p$bm$Sflag), descriptorfile=basename(p$cache$Sflag), backingpath=p$stmvSaveDir )
     }
     if (p$storage.backend == "ff" ) {
-      p$ptr$Sflag = ff( Sflag, dim=dim(Sflag), file=p$cache$Sflag, overwrite=TRUE )
+      p$ptr$Sflag = ff( sSflag, dim=dim(sSflag), file=p$cache$Sflag, overwrite=TRUE )
     }
     
 
-  S = Sflag = Sloc = NULL
+  sS = sSflag =  Sloc = NULL
 
   # data to be worked upon .. either the raw data or covariate-residuals
   Ydata = as.matrix(DATA$input[, p$variables$Y ])
@@ -188,7 +188,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FA
   Ydata = as.matrix( Ydata )
     if (p$storage.backend == "bigmemory.ram" ) {
       tmp_Y = big.matrix( nrow=nrow(Ydata), ncol=1, type="double"  )
-      tmp_Y[] = Ydata
+      tmp_Y[] = Ydata[]
       p$ptr$Y  = bigmemory::describe( tmp_Y )
     }
     if (p$storage.backend == "bigmemory.filebacked" ) {
@@ -206,7 +206,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FA
   Yloc = as.matrix( DATA$input[, p$variables$LOCS ])
     if (p$storage.backend == "bigmemory.ram" ) {
       tmp_Yloc = big.matrix( nrow=nrow(Yloc), ncol=ncol(Yloc), type="double" )
-      tmp_Yloc[] = Yloc
+      tmp_Yloc[] = Yloc[]
       p$ptr$Yloc = bigmemory::describe( tmp_Yloc )
     }
     if (p$storage.backend == "bigmemory.filebacked" ) {
@@ -223,7 +223,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FA
       Ycov = as.matrix(  DATA$input[ , p$variables$COV ] )
         if (p$storage.backend == "bigmemory.ram" ) {
           tmp_Ycov = big.matrix( nrow=nrow(Ycov), ncol=ncol(Ycov), type="double")
-          tmp_Ycov[] = Ycov
+          tmp_Ycov[] = Ycov[]
           p$ptr$Ycov  = bigmemory::describe( tmp_Ycov )
         }
         if (p$storage.backend == "bigmemory.filebacked" ) {
@@ -241,7 +241,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FA
       Ytime = as.matrix(  DATA$input[, p$variables$TIME ] )
         if (p$storage.backend == "bigmemory.ram" ) {
           tmp_Ytime = big.matrix( nrow=nrow(Ytime), ncol=ncol(Ytime), type="double"  )
-          tmp_Ytime[] = Ytime
+          tmp_Ytime[] = Ytime[]
           p$ptr$Ytime  = bigmemory::describe( tmp_Ytime )
         }
         if (p$storage.backend == "bigmemory.filebacked" ) {
@@ -293,66 +293,63 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FA
 
     
     # predictions and associated stats
-    P = matrix( NaN, nrow=nPlocs, ncol=p$nt )
+    sP = matrix( NaN, nrow=nPlocs, ncol=p$nt )
     if (use_saved_state) {
       if (file.exists(p$saved_state_fn$P)) load( p$saved_state_fn$P )
-      P = sP; sP=NULL
     }       
       if (p$storage.backend == "bigmemory.ram" ) {
-        tmp_P = big.matrix( nrow=nrow(P), ncol=ncol(P), type="double" )
-        tmp_P[] = P
+        tmp_P = big.matrix( nrow=nrow(sP), ncol=ncol(sP), type="double" )
+        tmp_P[] = sP[]
         p$ptr$P  = bigmemory::describe( tmp_P )
       }
       if (p$storage.backend == "bigmemory.filebacked" ) {
         p$ptr$P  = p$cache$P
-        bigmemory::as.big.matrix( P, type="double", backingfile=basename(p$bm$P), descriptorfile=basename(p$cache$P), backingpath=p$stmvSaveDir )
+        bigmemory::as.big.matrix( sP, type="double", backingfile=basename(p$bm$P), descriptorfile=basename(p$cache$P), backingpath=p$stmvSaveDir )
       }
       if (p$storage.backend == "ff" ) {
-        p$ptr$P = ff( P, dim=dim(P), file=p$cache$P, overwrite=TRUE )
+        p$ptr$P = ff( sP, dim=dim(sP), file=p$cache$P, overwrite=TRUE )
       }
-    P = NULL
+    sP = NULL
 
 
     # count of prediction estimates
-    Pn = matrix( NaN, nrow=nPlocs, ncol=p$nt )
+    sPn = matrix( NaN, nrow=nPlocs, ncol=p$nt )
     if (use_saved_state) {
       if (file.exists(p$saved_state_fn$Pn)) load( p$saved_state_fn$Pn )
-      Pn = sPn; sPn=NULL
     }      
       if (p$storage.backend == "bigmemory.ram" ) {
-        tmp_Pn = big.matrix( nrow=nrow(Pn), ncol=ncol(Pn), type="double" )
-        tmp_Pn[] = Pn
+        tmp_Pn = big.matrix( nrow=nrow(sPn), ncol=ncol(sPn), type="double" )
+        tmp_Pn[] = sPn[]
         p$ptr$Pn = bigmemory::describe( tmp_Pn )
       }
       if (p$storage.backend == "bigmemory.filebacked" ) {
         p$ptr$Pn  = p$cache$Pn
-        bigmemory::as.big.matrix( Pn, type="double", backingfile=basename(p$bm$Pn), descriptorfile=basename(p$cache$Pn), backingpath=p$stmvSaveDir )
+        bigmemory::as.big.matrix( sPn, type="double", backingfile=basename(p$bm$Pn), descriptorfile=basename(p$cache$Pn), backingpath=p$stmvSaveDir )
       }
       if (p$storage.backend == "ff" ) {
-        p$ptr$Pn = ff( Pn, dim=dim(Pn), file=p$cache$Pn, overwrite=TRUE )
+        p$ptr$Pn = ff( sPn, dim=dim(sPn), file=p$cache$Pn, overwrite=TRUE )
       }
-    Pn = NULL
+    sPn = NULL
 
 
     # sd of prediction estimates
-    Psd = matrix( NaN, nrow=nPlocs, ncol=p$nt )
+    sPsd = matrix( NaN, nrow=nPlocs, ncol=p$nt )
     if (use_saved_state) {
       if (file.exists(p$saved_state_fn$Psd)) load( p$saved_state_fn$Psd )
-      Psd = sPsd; sPsd=NULL
     }      
       if (p$storage.backend == "bigmemory.ram" ) {
-        tmp_Psd = big.matrix( nrow=nrow(Psd), ncol=ncol(Psd), type="double" )
-        tmp_Psd[] = Psd
+        tmp_Psd = big.matrix( nrow=nrow(sPsd), ncol=ncol(sPsd), type="double" )
+        tmp_Psd[] = sPsd[]
         p$ptr$Psd =bigmemory::describe( tmp_Psd )
       }
       if (p$storage.backend == "bigmemory.filebacked" ) {
         p$ptr$Psd  = p$cache$Psd
-        bigmemory::as.big.matrix( Psd, type="double", backingfile=basename(p$bm$Psd), descriptorfile=basename(p$cache$Psd), backingpath=p$stmvSaveDir )
+        bigmemory::as.big.matrix( sPsd, type="double", backingfile=basename(p$bm$Psd), descriptorfile=basename(p$cache$Psd), backingpath=p$stmvSaveDir )
       }
       if (p$storage.backend == "ff" ) {
-        p$ptr$Psd = ff( Psd, dim=dim(Psd), file=p$cache$Psd, overwrite=TRUE )
+        p$ptr$Psd = ff( sPsd, dim=dim(sPsd), file=p$cache$Psd, overwrite=TRUE )
       }
-    Psd = NULL
+    sPsd = NULL
     
     
     # prediction coordinates
@@ -360,7 +357,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FA
       attr( Ploc, "dimnames" ) = NULL
       if (p$storage.backend == "bigmemory.ram" ) {
         tmp_Ploc = big.matrix( nrow=nrow(Ploc), ncol=ncol(Ploc), type="double" )
-        tmp_Ploc[] = Ploc
+        tmp_Ploc[] = Ploc[]
         p$ptr$Ploc  = bigmemory::describe( tmp_Ploc )
       }
       if (p$storage.backend == "bigmemory.filebacked" ) {
@@ -378,44 +375,42 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FA
       if (p$stmv_global_modelengine !="none" ) {
         # create prediction suface with covariate-based additive offsets
 
-        P0 = matrix( NaN, nrow=nPlocs, ncol=p$nt )
+        sP0 = matrix( NaN, nrow=nPlocs, ncol=p$nt )
         if (use_saved_state) {
           if (file.exists(p$saved_state_fn$P0)) load( p$saved_state_fn$P0 )
-          P0 = sP0; sP0=NULL
         }      
         if (p$storage.backend == "bigmemory.ram" ) {
-          tmp_P0= big.matrix( nrow=nrow(P0), ncol=ncol(P0) , type="double" )
-          tmp_P0[] = P0
+          tmp_P0= big.matrix( nrow=nrow(sP0), ncol=ncol(sP0) , type="double" )
+          tmp_P0[] = sP0[]
           p$ptr$P0 = bigmemory::describe(tmp_P0 )
         }
         if (p$storage.backend == "bigmemory.filebacked" ) {
           p$ptr$P0  = p$cache$P0
-          bigmemory::as.big.matrix( P0, type="double", backingfile=basename(p$bm$P0), descriptorfile=basename(p$cache$P0), backingpath=p$stmvSaveDir )
+          bigmemory::as.big.matrix( sP0, type="double", backingfile=basename(p$bm$P0), descriptorfile=basename(p$cache$P0), backingpath=p$stmvSaveDir )
         }
         if (p$storage.backend == "ff" ) {
-          p$ptr$P0 = ff( P0, dim=dim(P0), file=p$cache$P0, overwrite=TRUE )
+          p$ptr$P0 = ff( sP0, dim=dim(sP0), file=p$cache$P0, overwrite=TRUE )
         }
-        P0 = NULL
+        sP0 = NULL
 
 
-        P0sd = matrix( NaN, nrow=nPlocs, ncol=p$nt )
+        sP0sd = matrix( NaN, nrow=nPlocs, ncol=p$nt )
         if (use_saved_state) {
           if (file.exists(p$saved_state_fn$P0sd)) load( p$saved_state_fn$P0sd )
-          P0sd = sP0sd; sP0sd=NULL
         }      
         if (p$storage.backend == "bigmemory.ram" ) {
-          tmp_P0sd= big.matrix( nrow=nrow(P0sd), ncol=ncol(P0sd) , type="double" )
-          tmp_P0sd[] = P0sd
+          tmp_P0sd= big.matrix( nrow=nrow(sP0sd), ncol=ncol(sP0sd) , type="double" )
+          tmp_P0sd[] = sP0sd[]
           p$ptr$P0sd = bigmemory::describe(tmp_P0sd )
         }
         if (p$storage.backend == "bigmemory.filebacked" ) {
           p$ptr$P0sd  = p$cache$P0sd
-          bigmemory::as.big.matrix( P0sd, type="double", backingfile=basename(p$bm$P0sd), descriptorfile=basename(p$cache$P0sd), backingpath=p$stmvSaveDir )
+          bigmemory::as.big.matrix( sP0sd, type="double", backingfile=basename(p$bm$P0sd), descriptorfile=basename(p$cache$P0sd), backingpath=p$stmvSaveDir )
         }
         if (p$storage.backend == "ff" ) {
-          p$ptr$P0sd = ff( P0sd, dim=dim(P0sd), file=p$cache$P0sd, overwrite=TRUE )
+          p$ptr$P0sd = ff( sP0sd, dim=dim(sP0sd), file=p$cache$P0sd, overwrite=TRUE )
         }
-        P0sd=NULL; 
+        sP0sd=NULL; 
 
 
         # test to see if all covars are static as this can speed up the initial predictions
@@ -480,7 +475,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FA
     Yi = as.matrix(Yi)
       if (p$storage.backend == "bigmemory.ram" ) {
         tmp_Yi = big.matrix( nrow=nrow(Yi), ncol=ncol(Yi), type="double" )
-        tmp_Yi[] = Yi
+        tmp_Yi[] = Yi[]
         p$ptr$Yi  = bigmemory::describe( tmp_Yi )
       }
       if (p$storage.backend == "bigmemory.filebacked" ) {
@@ -561,11 +556,10 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FA
   if ( "debug_predictions_map" %in% runmode) {
     if (debug_data_source=="saved.state" ) {
       load( p$saved_state_fn$P )
-      PP = P[]
       if (exists("stmv_global_modelengine", p)) {
         if (p$stmv_global_modelengine !="none" ) {
           load( p$saved_state_fn$P0 )
-          PP = PP[] + P0[]
+          sP[] = sP[] + sP0[]
         }
       }
     } else {
@@ -573,19 +567,19 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FA
       if (exists("stmv_global_modelengine", p)) {
         if (p$stmv_global_modelengine !="none" ) {
           P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
-          PP = P[] + P0[]
+          sP = P[] + P0[]
         }
       }
     }
     Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
     
-    if ( debug_plot_log ) PP = log(PP)
+    if ( debug_plot_log ) sP = log(sP)
     
     if ( is.null(debug_plot_variable_index)) debug_plot_variable_index=1
   
     for (i in debug_plot_variable_index ) {
       print(
-        lattice::levelplot( PP[,i] ~ Ploc[,1]+Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
+        lattice::levelplot( sP[,i] ~ Ploc[,1]+Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
       )            
     }
   }
@@ -595,105 +589,112 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FA
   if ( "debug_statistics_map" %in% runmode) {
     if (debug_data_source=="saved.state" ) {
       load( p$saved_state_fn$stats )
-      SS = S[]
     } else {
-      SS = stmv_attach( p$storage.backend, p$ptr$S )
+      sS = stmv_attach( p$storage.backend, p$ptr$S )[]
     }
     Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
     
-    if ( debug_plot_log ) SS = log(SS)
+    if ( debug_plot_log ) sS = log(sS)
     
     if ( is.null(debug_plot_variable_index)) debug_plot_variable_index=1
   
     for (i in debug_plot_variable_index ) {
       print(
-        lattice::levelplot( SS[,i] ~ Sloc[,1]+Sloc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
+        lattice::levelplot( sS[,i] ~ Sloc[,1]+Sloc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
       )            
     }
   
   }
 
-
-  if ("stage0" %in% runmode ){
-    # all low-level operations in one to avoid $!#!@# bigmemory issues 
-    Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-    currentstatus = list()
-    currentstatus$todo = which( Sflag[]==0L )       # 0 = TODO
-    currentstatus$done = which( Sflag[]==1L )       # 1 = completed
-    currentstatus$outside = which( Sflag[]==2L )    # 2 = oustide bounds(if any)
-    currentstatus$shallow = which( Sflag[]==3L )    # 3 = depth shallower than p$depth.filter (if it exists .. z is a covariate)
-    currentstatus$predareaerror = which( Sflag[]==4L ) # 4=predictionarea not ok,
-    currentstatus$nodata = which( Sflag[]==5L )     # 5=skipped due to insufficient data,
-    currentstatus$variogramerror = which( Sflag[]==6L ) # 6=skipped .. fast variogram did not work
-    currentstatus$vrangeerror = which( Sflag[]==7L )     # 7=variogram estimated range not ok
-    currentstatus$modelerror = which( Sflag[]==8L )     # 8=problem with prediction and/or modelling
-    currentstatus$skipped = which( Sflag[] == 9L )   # 9 not completed due to a failed attempt
-    if ( "statistics.status.reset" %in% runmode ) {
-      # to reset all rejected locations
-      toreset = which( Sflag[] > 2)
-      if (length(toreset) > 0) {
-        Sflag[toreset] = 0L  # to reset all the problem flags to todo
-        currentstatus$skipped = NA 
-        currentstatus$predareaerror = NA
-        currentstatus$variogramerror = NA
-        currentstatus$vrangeerror = NA
-        currentstatus$modelerror = NA
-        currentstatus$todo = NA
-      }
-    }
-    # do some counts
-    currentstatus$n.todo = length(currentstatus$todo)
-    currentstatus$n.complete = length(currentstatus$done) 
-    currentstatus$n.outside = length(which(is.finite(currentstatus$outside))) 
-    currentstatus$n.shallow = length(currentstatus$shallow)
-    currentstatus$n.predareaerror = length(currentstatus$predareaerror)
-    currentstatus$n.nodata = length(currentstatus$nodata)
-    currentstatus$n.variogramerror = length(currentstatus$variogramerror)
-    currentstatus$n.vrangeerror = length(currentstatus$vrangeerror)
-    currentstatus$n.modelerror = length(currentstatus$modelerror) 
-    currentstatus$n.skipped = length(currentstatus$skipped)
-    currentstatus$n.total = length(Sflag) 
-    currentstatus$prop_incomp = round( currentstatus$n.todo / ( currentstatus$n.total), 3)
-    runindex=list( locs=currentstatus$todo[sample.int(length( currentstatus$todo ))] )
-    nvars = length(runindex)  # runindex must be a list
-    p$runs = expand.grid(runindex, stringsAsFactors=FALSE, KEEP.OUT.ATTRS=FALSE)
-    p$nruns = nrow( p$runs )
-    p$runs_uid = do.call(paste, c(p$runs, sep="~"))
-    p$clustertype = "PSOCK"
-    p$rndseed = 1
-    if ( p$nruns < length( p$clusters ) ) {
-      p$clusters = sample( p$clusters, p$nruns )  # if very few runs, use only what is required
-    }
-    p$cl = makeCluster( spec=p$clusters, type=p$clustertype ) # SOCK works well but does not load balance as MPI
-        RNGkind("L'Ecuyer-CMRG")  # multiple streams of pseudo-random numbers.
-        clusterSetRNGStream(p$cl, iseed=p$rndseed )
-        # if ( !is.null(clusterexport)) clusterExport( p$cl, clusterexport )
-        uv = unique(p$runs_uid)
-        uvl = length(uv)
-        lc = length(p$clusters)
-        lci = 1:lc
-        ssplt = list()
-        for(j in 1:uvl) ssplt[[j]]  = which(p$runs_uid == uv[j])
-        clustertasklist = rep(list(numeric()),lc)
-        if (uvl>lc) {
-          for(j in 1:uvl) {
-            k=j
-            if(j>lc) k = j%%lc+1
-            clustertasklist[[k]] <- c(clustertasklist[[k]],ssplt[[j]])
-          }
-        }
-        ssplt = NULL
-        clusterApply( p$cl, clustertasklist, stmv_interpolate, p=p  )
-    stopCluster( p$cl )
-  }
-
   # -----------------------------------------------------
 
-  if ( "stage3" %in% runmode ) {
-
+  if ("interpolate" %in% runmode ) {
+    sdm0 = p$stmv_distance_max 
+    sds0 = p$stmv_distance_scale
+    for (sdsm in 1:length(p$stmv_distance_search_multiplier) ) {
+      if ( length(p$stmv_distance_search_multiplier) > 1 ) {
+        if (length(p$clusters) > 1) p$clusters = p$clusters[-1]  # scale back no of cpus as there is an increase in RAM usage
+      }
+      p$stmv_distance_max = sdm0 * sdsm
+      p$stmv_distance_scale = sds0 * sdsm
+        # all low-level operations in one to avoid $!#!@# bigmemory issues 
+        Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
+        if ( "statistics.status.reset" %in% runmode ) {
+          # to reset all rejected locations
+          toreset = which( Sflag[] > 2)
+          if (length(toreset) > 0) Sflag[toreset] = 0L  # to reset all the problem flags to todo
+        }
+        currentstatus = list()
+        currentstatus$todo = which( Sflag[]==0L )       # 0 = TODO
+        currentstatus$done = which( Sflag[]==1L )       # 1 = completed
+        currentstatus$outside = which( Sflag[]==2L )    # 2 = oustide bounds(if any)
+        currentstatus$shallow = which( Sflag[]==3L )    # 3 = depth shallower than p$depth.filter (if it exists .. z is a covariate)
+        currentstatus$predareaerror = which( Sflag[]==4L ) # 4=predictionarea not ok,
+        currentstatus$nodata = which( Sflag[]==5L )     # 5=skipped due to insufficient data,
+        currentstatus$variogramerror = which( Sflag[]==6L ) # 6=skipped .. fast variogram did not work
+        currentstatus$vrangeerror = which( Sflag[]==7L )     # 7=variogram estimated range not ok
+        currentstatus$modelerror = which( Sflag[]==8L )     # 8=problem with prediction and/or modelling
+        currentstatus$skipped = which( Sflag[] == 9L )   # 9 not completed due to a failed attempt
+        # do some counts
+        currentstatus$n.todo = length(currentstatus$todo)
+        currentstatus$n.complete = length(currentstatus$done) 
+        currentstatus$n.outside = length(which(is.finite(currentstatus$outside))) 
+        currentstatus$n.shallow = length(currentstatus$shallow)
+        currentstatus$n.predareaerror = length(currentstatus$predareaerror)
+        currentstatus$n.nodata = length(currentstatus$nodata)
+        currentstatus$n.variogramerror = length(currentstatus$variogramerror)
+        currentstatus$n.vrangeerror = length(currentstatus$vrangeerror)
+        currentstatus$n.modelerror = length(currentstatus$modelerror) 
+        currentstatus$n.skipped = length(currentstatus$skipped)
+        currentstatus$n.total = length(Sflag) 
+        currentstatus$prop_incomp = round( currentstatus$n.todo / ( currentstatus$n.total), 3)
+        runindex=list( locs=currentstatus$todo[sample.int(length( currentstatus$todo ))] )
+        nvars = length(runindex)  # runindex must be a list
+        p$runs = expand.grid(runindex, stringsAsFactors=FALSE, KEEP.OUT.ATTRS=FALSE)
+        p$nruns = nrow( p$runs )
+        p$runs_uid = do.call(paste, c(p$runs, sep="~"))
+        p$clustertype = "PSOCK"
+        p$rndseed = 1
+        if ( p$nruns < length( p$clusters ) ) {
+          p$clusters = sample( p$clusters, p$nruns )  # if very few runs, use only what is required
+        }
+        p$cl = makeCluster( spec=p$clusters, type=p$clustertype ) # SOCK works well but does not load balance as MPI
+            RNGkind("L'Ecuyer-CMRG")  # multiple streams of pseudo-random numbers.
+            clusterSetRNGStream(p$cl, iseed=p$rndseed )
+            # if ( !is.null(clusterexport)) clusterExport( p$cl, clusterexport )
+            uv = unique(p$runs_uid)
+            uvl = length(uv)
+            lc = length(p$clusters)
+            lci = 1:lc
+            ssplt = list()
+            for(j in 1:uvl) ssplt[[j]]  = which(p$runs_uid == uv[j])
+            clustertasklist = rep(list(numeric()),lc)
+            if (uvl>lc) {
+              for(j in 1:uvl) {
+                k=j
+                if(j>lc) k = j%%lc+1
+                clustertasklist[[k]] <- c(clustertasklist[[k]],ssplt[[j]])
+              }
+            }
+            ssplt = NULL
+            clusterApply( p$cl, clustertasklist, stmv_interpolate, p=p  )
+        stopCluster( p$cl )
+    }  # end for loop
+  }
+  
+  # --------------------
+  
+  if (force_complete_solution) {
+    # using tps, finalize all interpolations where there are missing data/predictions
     p$stmv_local_modelengine = "tps"
+
     # all low-level operations in one to avoid $!#!@# bigmemory issues 
     Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
+    if ( "statistics.status.reset" %in% runmode ) {
+      # to reset all rejected locations
+      toreset = which( Sflag[] > 2)
+      if (length(toreset) > 0) Sflag[toreset] = 0L  # to reset all the problem flags to todo
+    }
     currentstatus = list()
     currentstatus$todo = which( Sflag[]==0L )       # 0 = TODO
     currentstatus$done = which( Sflag[]==1L )       # 1 = completed
@@ -705,19 +706,6 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FA
     currentstatus$vrangeerror = which( Sflag[]==7L )     # 7=variogram estimated range not ok
     currentstatus$modelerror = which( Sflag[]==8L )     # 8=problem with prediction and/or modelling
     currentstatus$skipped = which( Sflag[] == 9L )   # 9 not completed due to a failed attempt
-    if ( "statistics.status.reset" %in% runmode ) {
-      # to reset all rejected locations
-      toreset = which( Sflag[] > 2)
-      if (length(toreset) > 0) {
-        Sflag[toreset] = 0L  # to reset all the problem flags to todo
-        currentstatus$skipped = NA 
-        currentstatus$predareaerror = NA
-        currentstatus$variogramerror = NA
-        currentstatus$vrangeerror = NA
-        currentstatus$modelerror = NA
-        currentstatus$todo = NA
-      }
-    }
     # do some counts
     currentstatus$n.todo = length(currentstatus$todo)
     currentstatus$n.complete = length(currentstatus$done) 
@@ -742,7 +730,6 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FA
       p$clusters = sample( p$clusters, p$nruns )  # if very few runs, use only what is required
     }
     p$cl = makeCluster( spec=p$clusters, type=p$clustertype ) # SOCK works well but does not load balance as MPI
-    p <<- p  # push to parent in case a manual restart is needed
         RNGkind("L'Ecuyer-CMRG")  # multiple streams of pseudo-random numbers.
         clusterSetRNGStream(p$cl, iseed=p$rndseed )
         # if ( !is.null(clusterexport)) clusterExport( p$cl, clusterexport )
@@ -763,20 +750,16 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FA
         ssplt = NULL
         clusterApply( p$cl, clustertasklist, stmv_interpolate, p=p  )
     stopCluster( p$cl )
-
   }
-
-  # save again, in case some timings/etc needed in a restart
-  # p <<- p  # push to parent in case a manual restart is possible
-
-  p$time_total = round( difftime( Sys.time(), p$time.start, units="hours" ), 3)
+  
   
   # -----------------------------------------------------
 
-  if (do.not.finalize) stmv_db( p=p, DS="stmv.results" ) # save to disk for use outside stmv*, returning to user scale
+  if (save_completed_data) stmv_db( p=p, DS="stmv.results" ) # save to disk for use outside stmv*, returning to user scale
 
+  # -----------------------------------------------------
 
-  if ( "finish" %in% runmode ) {
+  if ( "cleanup" %in% runmode ) {
 
     if ( p$storage.backend !="bigmemory.ram" ) {
       resp = readline( "||| Delete temporary files? Type to confirm <YES>:  ")
@@ -790,6 +773,7 @@ stmv = function( p, runmode, DATA=NULL, use_saved_state=TRUE, do.not.finalize=FA
     }
   }
 
+  p$time_total = round( difftime( Sys.time(), p$time.start, units="hours" ), 3)
   message( paste( "||| Time taken for full analysis (hours):", p$time_total ) )
   message( paste( "||| Your parameter 'p' has been updated in case you need to re-run something" ) )
 
