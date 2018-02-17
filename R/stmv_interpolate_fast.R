@@ -1,7 +1,7 @@
 
 stmv_interpolate_fast = function( ip=NULL, p ) {
 
-  #// designed to be called from stmv_interpolate
+  #// designed to be called from stmv
   #// for the sake of speed and parallelization, the kernel density method via fft is written out again .. it is taken from fields::smooth.2d
   #// the spatial interpolation is smoother than what is expected from a kriging covariance
 

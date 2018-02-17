@@ -619,11 +619,9 @@ stmv = function( p, runmode, DATA=NULL,
       p$stmv_distance_scale = sds0 * sdsm
         # all low-level operations in one to avoid $!#!@# bigmemory issues 
         Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-        if ( "statistics.status.reset" %in% runmode ) {
-          # to reset all rejected locations
-          toreset = which( Sflag[] > 2)
-          if (length(toreset) > 0) Sflag[toreset] = 0L  # to reset all the problem flags to todo
-        }
+        # to reset all rejected locations
+        toreset = which( Sflag[] > 2)
+        if (length(toreset) > 0) Sflag[toreset] = 0L  # to reset all the problem flags to todo
         currentstatus = list()
         currentstatus$todo = which( Sflag[]==0L )       # 0 = TODO
         currentstatus$done = which( Sflag[]==1L )       # 1 = completed
@@ -685,16 +683,11 @@ stmv = function( p, runmode, DATA=NULL,
   # --------------------
   
   if (force_complete_solution) {
-    # using tps, finalize all interpolations where there are missing data/predictions
-    p$stmv_local_modelengine = "tps"
-
+    # finalize all interpolations where there are missing data/predictions using fft-based fast smooth
     # all low-level operations in one to avoid $!#!@# bigmemory issues 
     Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-    if ( "statistics.status.reset" %in% runmode ) {
-      # to reset all rejected locations
-      toreset = which( Sflag[] > 2)
-      if (length(toreset) > 0) Sflag[toreset] = 0L  # to reset all the problem flags to todo
-    }
+    toreset = which( Sflag[] > 2)
+    if (length(toreset) > 0) Sflag[toreset] = 0L  # to reset all the problem flags to todo
     currentstatus = list()
     currentstatus$todo = which( Sflag[]==0L )       # 0 = TODO
     currentstatus$done = which( Sflag[]==1L )       # 1 = completed
@@ -719,7 +712,8 @@ stmv = function( p, runmode, DATA=NULL,
     currentstatus$n.skipped = length(currentstatus$skipped)
     currentstatus$n.total = length(Sflag) 
     currentstatus$prop_incomp = round( currentstatus$n.todo / ( currentstatus$n.total), 3)
-    runindex=list( locs=currentstatus$todo[sample.int(length( currentstatus$todo ))] )
+    
+    runindex=list( time_index=1:p$nt )
     nvars = length(runindex)  # runindex must be a list
     p$runs = expand.grid(runindex, stringsAsFactors=FALSE, KEEP.OUT.ATTRS=FALSE)
     p$nruns = nrow( p$runs )
@@ -748,7 +742,7 @@ stmv = function( p, runmode, DATA=NULL,
           }
         }
         ssplt = NULL
-        clusterApply( p$cl, clustertasklist, stmv_interpolate, p=p  )
+        clusterApply( p$cl, clustertasklist, stmv_interpolate_fast, p=p  )
     stopCluster( p$cl )
   }
   
