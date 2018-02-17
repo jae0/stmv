@@ -685,34 +685,6 @@ stmv = function( p, runmode, DATA=NULL,
   if (force_complete_solution) {
     # finalize all interpolations where there are missing data/predictions using fft-based fast smooth
     # all low-level operations in one to avoid $!#!@# bigmemory issues 
-    Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-    toreset = which( Sflag[] > 2)
-    if (length(toreset) > 0) Sflag[toreset] = 0L  # to reset all the problem flags to todo
-    currentstatus = list()
-    currentstatus$todo = which( Sflag[]==0L )       # 0 = TODO
-    currentstatus$done = which( Sflag[]==1L )       # 1 = completed
-    currentstatus$outside = which( Sflag[]==2L )    # 2 = oustide bounds(if any)
-    currentstatus$shallow = which( Sflag[]==3L )    # 3 = depth shallower than p$depth.filter (if it exists .. z is a covariate)
-    currentstatus$predareaerror = which( Sflag[]==4L ) # 4=predictionarea not ok,
-    currentstatus$nodata = which( Sflag[]==5L )     # 5=skipped due to insufficient data,
-    currentstatus$variogramerror = which( Sflag[]==6L ) # 6=skipped .. fast variogram did not work
-    currentstatus$vrangeerror = which( Sflag[]==7L )     # 7=variogram estimated range not ok
-    currentstatus$modelerror = which( Sflag[]==8L )     # 8=problem with prediction and/or modelling
-    currentstatus$skipped = which( Sflag[] == 9L )   # 9 not completed due to a failed attempt
-    # do some counts
-    currentstatus$n.todo = length(currentstatus$todo)
-    currentstatus$n.complete = length(currentstatus$done) 
-    currentstatus$n.outside = length(which(is.finite(currentstatus$outside))) 
-    currentstatus$n.shallow = length(currentstatus$shallow)
-    currentstatus$n.predareaerror = length(currentstatus$predareaerror)
-    currentstatus$n.nodata = length(currentstatus$nodata)
-    currentstatus$n.variogramerror = length(currentstatus$variogramerror)
-    currentstatus$n.vrangeerror = length(currentstatus$vrangeerror)
-    currentstatus$n.modelerror = length(currentstatus$modelerror) 
-    currentstatus$n.skipped = length(currentstatus$skipped)
-    currentstatus$n.total = length(Sflag) 
-    currentstatus$prop_incomp = round( currentstatus$n.todo / ( currentstatus$n.total), 3)
-    
     runindex=list( time_index=1:p$nt )
     nvars = length(runindex)  # runindex must be a list
     p$runs = expand.grid(runindex, stringsAsFactors=FALSE, KEEP.OUT.ATTRS=FALSE)
