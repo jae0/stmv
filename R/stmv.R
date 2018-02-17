@@ -678,6 +678,32 @@ stmv = function( p, runmode, DATA=NULL,
             clusterApply( p$cl, clustertasklist, stmv_interpolate, p=p  )
         stopCluster( p$cl )
     }  # end for loop
+
+      # a penultimate save of data as an internal format, just in case
+      sP = stmv_attach( p$storage.backend, p$ptr$P )[]
+      sPn = stmv_attach( p$storage.backend, p$ptr$Pn )[]
+      sPsd = stmv_attach( p$storage.backend, p$ptr$Psd )[]
+      sS = stmv_attach( p$storage.backend, p$ptr$S )[]
+      sSflag = stmv_attach( p$storage.backend, p$ptr$Sflag )[]
+      if (exists("stmv_global_modelengine", p)) {
+        if (p$stmv_global_modelengine !="none" ) {
+          sP0 = stmv_attach( p$storage.backend, p$ptr$P0 )[]
+          sP0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )[]
+        }
+      }
+      save( sP, file=p$saved_state_fn$P, compress=TRUE ); sP = NULL
+      save( sPn, file=p$saved_state_fn$Pn, compress=TRUE ); sPn = NULL
+      save( sPsd, file=p$saved_state_fn$Psd, compress=TRUE ); sPsd=NULL
+      save( sS, file=p$saved_state_fn$stats, compress=TRUE ); sS = NULL
+      save( sSflag, file=p$saved_state_fn$sflag, compress=TRUE ); sSflag = NULL
+      
+      if (exists("stmv_global_modelengine", p)) {
+        if (p$stmv_global_modelengine !="none" ) {
+          save( sP0,   file=p$saved_state_fn$P0,   compress=TRUE ); sP0 = NULL
+          save( sP0sd, file=p$saved_state_fn$P0sd, compress=TRUE ); sP0sd = NULL
+        }
+      }
+
   }
   
   # --------------------
@@ -716,6 +742,35 @@ stmv = function( p, runmode, DATA=NULL,
         ssplt = NULL
         clusterApply( p$cl, clustertasklist, stmv_interpolate_fast, p=p  )
     stopCluster( p$cl )
+    
+    if (0) {
+      # a penultimate save of data as an internal format, just in case
+      sP = stmv_attach( p$storage.backend, p$ptr$P )[]
+      sPn = stmv_attach( p$storage.backend, p$ptr$Pn )[]
+      sPsd = stmv_attach( p$storage.backend, p$ptr$Psd )[]
+      sS = stmv_attach( p$storage.backend, p$ptr$S )[]
+      sSflag = stmv_attach( p$storage.backend, p$ptr$Sflag )[]
+      if (exists("stmv_global_modelengine", p)) {
+        if (p$stmv_global_modelengine !="none" ) {
+          sP0 = stmv_attach( p$storage.backend, p$ptr$P0 )[]
+          sP0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )[]
+        }
+      }
+      save( sP, file=p$saved_state_fn$P, compress=TRUE ); sP = NULL
+      save( sPn, file=p$saved_state_fn$Pn, compress=TRUE ); sPn = NULL
+      save( sPsd, file=p$saved_state_fn$Psd, compress=TRUE ); sPsd=NULL
+      save( sS, file=p$saved_state_fn$stats, compress=TRUE ); sS = NULL
+      save( sSflag, file=p$saved_state_fn$sflag, compress=TRUE ); sSflag = NULL
+      
+      if (exists("stmv_global_modelengine", p)) {
+        if (p$stmv_global_modelengine !="none" ) {
+          save( sP0,   file=p$saved_state_fn$P0,   compress=TRUE ); sP0 = NULL
+          save( sP0sd, file=p$saved_state_fn$P0sd, compress=TRUE ); sP0sd = NULL
+        }
+      }
+      
+    }
+
   }
   
   
