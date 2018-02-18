@@ -1,6 +1,6 @@
 
 
-stmv = function( p, runmode, DATA=NULL, 
+stmv = function( p, runmode="interpolate", DATA=NULL, 
   use_saved_state=FALSE, save_completed_data=TRUE, force_complete_solution=TRUE, 
   debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE ) {
 
