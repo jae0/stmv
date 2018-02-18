@@ -11,8 +11,8 @@ stmv_interpolate_fast = function( ip=NULL, p ) {
   S = stmv_attach( p$storage.backend, p$ptr$S )
 
   # do this here as the Stats are from the most reliable estimates
-  nu = median(  S[,which( p$statsvars=="nu" )], na.rm=TRUE )
-  phi = median(  S[,which( p$statsvars=="phi" )], na.rm=TRUE )
+  nu = mean( c( mean(S[,which( p$statsvars=="nu" )], na.rm=TRUE ), p$stmv_lowpass_nu), na.rm=TRUE )
+  phi = mean( c( mean(S[,which( p$statsvars=="phi" )], na.rm=TRUE ), p$stmv_lowpass_phi), na.rm=TRUE )
 
   P = stmv_attach( p$storage.backend, p$ptr$P )
   Psd = stmv_attach( p$storage.backend, p$ptr$Psd )

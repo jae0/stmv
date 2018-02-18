@@ -2,7 +2,7 @@
 
 stmv = function( p, runmode="interpolate", DATA=NULL, 
   use_saved_state=FALSE, save_completed_data=TRUE, force_complete_solution=TRUE, 
-  debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE ) {
+  debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE, cpu.scaleback=FALSE ) {
 
   if (0) {
     use_saved_state=TRUE
@@ -612,8 +612,10 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     sdm0 = p$stmv_distance_max 
     sds0 = p$stmv_distance_scale
     for (sdsm in 1:length(p$stmv_distance_search_multiplier) ) {
-      if ( sdsm > 1 ) {
-        if (length(p$clusters) > 1) p$clusters = p$clusters[-1]  # scale back no of cpus as there is an increase in RAM usage
+      if (cpu.scaleback) {
+        if ( sdsm > 1 ) {
+          if (length(p$clusters) > 1) p$clusters = p$clusters[-1]  # scale back no of cpus as there is an increase in RAM usage
+        }
       }
       p$stmv_distance_max = sdm0 * p$stmv_distance_search_multiplier[ sdsm ]
       p$stmv_distance_scale = sds0 * p$stmv_distance_search_multiplier[ sdsm ]

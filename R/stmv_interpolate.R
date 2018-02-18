@@ -83,7 +83,7 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
   )
   
   nip = length(ip)
-  nlogs = 40
+  nlogs = 20
   savepoints = ip[ floor( sample.int( (nip-99), 2 ) ) ]
   
   if (nip < 100) {

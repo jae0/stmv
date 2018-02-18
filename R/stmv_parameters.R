@@ -27,6 +27,9 @@ stmv_parameters = function( p=NULL, ... ) {
     # fractions of distance scale  to try in local block search
     p$sampling = c( 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.1, 1.2, 1.5, 1.75, 2 )
   }
+  
+  if (!exists("stmv_lowpass_phi", p)) p$stmv_lowpass_phi = p$pres*2 # FFT based method when operating gloablly
+  if (!exists("stmv_lowpass_nu", p)) p$stmv_lowpass_nu = 0.5 # this is exponential covar
 
   # used by "fields" GRMF functions
   if ( p$stmv_local_modelengine %in% c("gaussianprocess2Dt")) {
