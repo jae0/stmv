@@ -612,11 +612,11 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     sdm0 = p$stmv_distance_max 
     sds0 = p$stmv_distance_scale
     for (sdsm in 1:length(p$stmv_distance_search_multiplier) ) {
-      if ( length(p$stmv_distance_search_multiplier) > 1 ) {
+      if ( sdsm > 1 ) {
         if (length(p$clusters) > 1) p$clusters = p$clusters[-1]  # scale back no of cpus as there is an increase in RAM usage
       }
-      p$stmv_distance_max = sdm0 * sdsm
-      p$stmv_distance_scale = sds0 * sdsm
+      p$stmv_distance_max = sdm0 * p$stmv_distance_search_multiplier[ sdsm ]
+      p$stmv_distance_scale = sds0 * p$stmv_distance_search_multiplier[ sdsm ]
         # all low-level operations in one to avoid $!#!@# bigmemory issues 
         Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
         # to reset all rejected locations
