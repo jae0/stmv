@@ -180,12 +180,12 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     if (p$stmv_global_modelengine !="none" ) {
       # at present only those that have a predict and residuals methods ... 
       covmodel = stmv_db( p=p, DS="global_model")
-      Ypreds = predict(covmodel, type="link", se.fit=FALSE )  ## TODO .. keep track of the SE
+      # Ypreds = predict(covmodel, type="link", se.fit=FALSE )  ## TODO .. keep track of the SE
       Ydata  = residuals(covmodel, type="deviance") # ie. link scale .. this is the default but make it explicit
       covmodel =NULL
     }
   }
-  Ypreds = NULL
+  # Ypreds = NULL
   Ydata = as.matrix( Ydata )
     if (p$storage.backend == "bigmemory.ram" ) {
       tmp_Y = big.matrix( nrow=nrow(Ydata), ncol=1, type="double"  )
