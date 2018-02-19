@@ -8,8 +8,9 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     use_saved_state=TRUE
     DATA=NULL
     storage.backend="bigmemory.ram"
-    save_completed_data=FALSE  # export out of stmv system for use outside (e.g., by aegis)
+    save_completed_data=TRUE  # export out of stmv system for use outside (e.g., by aegis)
     debug_plot_variable_index=1
+    cpu.scaleback=FALSE
   }
   
   #\\ localized modelling of space and time data to predict/interpolate upon a grid
@@ -436,9 +437,6 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         }
       }
     }
-
-
-
 
     stmv_db( p=p, DS="statistics.Sflag" )
     Y = stmv_attach( p$storage.backend, p$ptr$Y )
