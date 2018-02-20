@@ -401,10 +401,12 @@
         require(mgcv)
         if (!exists("wt", B)) {
           global_model = try(
-            gam( formula=p$stmv_global_modelformula, data=B, optimizer=c("outer","bfgs"), family=p$stmv_global_family) )
+            gam( formula=p$stmv_global_modelformula, data=B, 
+              optimizer= p$stmv_gam_optimizer, family=p$stmv_global_family) )
         } else {
           global_model = try(
-            gam( formula=p$stmv_global_modelformula, data=B, optimizer=c("outer","bfgs"), family=p$stmv_global_family, weights=wt ) )
+            gam( formula=p$stmv_global_modelformula, data=B, 
+              optimizer= p$stmv_gam_optimizer, family=p$stmv_global_family, weights=wt ) )
         }
       }
 
