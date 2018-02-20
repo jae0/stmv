@@ -6,8 +6,6 @@ stmv__gam = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
   
   sdTotal=sd(dat[,p$variable$Y], na.rm=T)
 
-  if (!exists("stmv_gam_optimizer", p)) p$stmv_gam_optimizer=c("outer", "bfgs")
-  
   if ( exists("stmv_local_model_distanceweighted", p) ) {
     if (p$stmv_local_model_distanceweighted) {
       hmod = try( gam( p$stmv_local_modelformula, data=dat, na.action="na.omit", weights=weights, optimizer=p$stmv_gam_optimizer) )
