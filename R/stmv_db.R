@@ -575,14 +575,14 @@
         runindex = list( tindex=1 )  # dummy value
       }
 
-      parallel_run(
-        p=p, 
-        clusters=clusters, # override
-        runindex=runindex,
-        shallower=shallower,
-        FUNC = function( ip=NULL, p, shallower ) {
-          if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
-          if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
+      # parallel_run(
+      #   p=p, 
+      #   clusters=clusters, # override
+      #   runindex=runindex,
+      #   shallower=shallower,
+      #   FUNC = function( ip=NULL, p, shallower ) {
+      #     if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
+      #     if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
 
           PP = stmv_attach( p$storage.backend, p$ptr$P )
           PPsd = stmv_attach( p$storage.backend, p$ptr$Psd )
@@ -693,8 +693,8 @@
               save( Pl, file=fn_Pl, compress=T )
               save( Pu, file=fn_Pu, compress=T )
           } # end if TIME
-        } # end FUNC
-      ) # end parallel_run
+      #   } # end FUNC
+      # ) # end parallel_run
 
 
       # prediction.stats
