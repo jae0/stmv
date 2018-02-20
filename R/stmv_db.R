@@ -620,15 +620,15 @@
           }
 
           # return to user scale (that of Y)
-          Pl = p$stmv_global_family$linkinv( P + 1.96* V )
-          Pu = p$stmv_global_family$linkinv( P - 1.96* V )
-          P = p$stmv_global_family$linkinv( P )
+          Pl = p$stmv_global_family$linkinv( P[] + 1.96* V[] )
+          Pu = p$stmv_global_family$linkinv( P[] - 1.96* V[] )
+          P = p$stmv_global_family$linkinv( P[] )
 
           # any additional transformations
           if (exists("stmv_Y_transform", p)) {
-            Pl = p$stmv_Y_transform[[2]] (Pl)  # p$stmv_Y_transform[2] is the inverse transform
-            Pu = p$stmv_Y_transform[[2]] (Pu)
-            P = p$stmv_Y_transform[[2]] (P)
+            Pl = p$stmv_Y_transform[[2]] (Pl[])  # p$stmv_Y_transform[2] is the inverse transform
+            Pu = p$stmv_Y_transform[[2]] (Pu[])
+            P = p$stmv_Y_transform[[2]] (P[])
           }
 
           save( P, file=fn_P, compress=T )
@@ -662,15 +662,15 @@
           }
 
           # return to user response scale
-          Pl = p$stmv_global_family$linkinv( P + 1.96* V )
-          Pu = p$stmv_global_family$linkinv( P - 1.96* V )
-          P = p$stmv_global_family$linkinv( P )
+          Pl = p$stmv_global_family$linkinv( P[] + 1.96* V[] )
+          Pu = p$stmv_global_family$linkinv( P[] - 1.96* V[] )
+          P = p$stmv_global_family$linkinv( P[] )
 
 
           if (exists("stmv_Y_transform", p)) {
-            Pl = p$stmv_Y_transform[[2]] (Pl)  # p$stmv_Y_transform[2] is the inverse transform
-            Pu = p$stmv_Y_transform[[2]] (Pu)
-            P = p$stmv_Y_transform[[2]] (P)
+            Pl = p$stmv_Y_transform[[2]] (Pl[])  # p$stmv_Y_transform[2] is the inverse transform
+            Pu = p$stmv_Y_transform[[2]] (Pu[])
+            P = p$stmv_Y_transform[[2]] (P[])
           }
 
           save( P, file=fn_P, compress=T )
