@@ -426,105 +426,96 @@
 
     if (DS %in% c("global.prediction.surface") ) {
   
-      # p = parallel_run(p=p, runindex=list(tindex=1:p$nt) )
-      # browser()
-      parallel_run(
-        p=p, 
-        runindex=list(tindex=1:p$nt),
-        FUNC = function( ip=NULL, p ) {
-          if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
-          if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
-          global_model = stmv_db( p=p, DS="global_model")
-          if (is.null(global_model)) stop("Global model not found.")
-          P0 = stmv_attach( p$storage.backend, p$ptr$P0 )  # remember this is on link scale
-          P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd ) # and this too
-          for ( ii in ip ) {
-            # downscale and warp from p(0) -> p1
-            it = p$runs[ii,"tindex"]  # == ii btw
-            pa = NULL # construct prediction surface
-            for (i in p$variables$COV ) {
-              pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[i]] )
-              nc = ncol(pu)
-              if ( nc== 1 ) {
-                pa = cbind( pa, pu[] ) # ie. a static variable (space)
-              } else if ( nc == p$nt & nc == p$ny) {
-                pa = cbind( pa, pu[,it] ) # ie. same time dimension as predictive data (space.annual.seasonal)
-              } else if ( nc == p$ny & p$nt > p$ny)  {
-                iy = round( (it-1) / p$nw ) + 1
-                pa = cbind( pa, pu[,iy] ) # ie., annual data (space.annual)
-              } else if ( nc == p$nt & p$nt > p$ny) {
-                pa = cbind( pa, pu[,it] ) # ie. same time dimension as predictive data (space.annual.seasonal)
-              } else {
-                print(i)
-                print(nc)
-                stop( "Erroneous data dimension ... the dataset for the above variable looks to be incomplete?")
-              }
-            }
-            pa = as.data.frame( pa )
-            names(pa) = p$variables$COV
+      global_model = stmv_db( p=p, DS="global_model")
+      if (is.null(global_model)) stop("Global model not found.")
 
-            if ( any( p$variables$LOCS %in%  all.vars( p$stmv_global_modelformula ) ) ) {
-              Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
-              pa = cbind(pa, Ploc[])
-              names(pa) = c( p$variables$COV, p$variables$LOCS )
-            }
+      P0 = stmv_attach( p$storage.backend, p$ptr$P0 )  # remember this is on link scale
+      P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd ) # and this too
 
-            if ( "yr" %in%  all.vars( p$stmv_global_modelformula ) ) {
-              npa = names(pa)
-              pa = cbind(pa, p$yrs[it] )
-              names(pa) = c( npa, "yr" )
-            }
+      for ( it in 1:p$nt ) {
+        # downscale and warp from p(0) -> p1
+        pa = NULL # construct prediction surface
+        for (i in p$variables$COV ) {
+          pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[i]] )
+          nc = ncol(pu)
+          if ( nc== 1 ) {
+            pa = cbind( pa, pu[] ) # ie. a static variable (space)
+          } else if ( nc == p$nt & nc == p$ny) {
+            pa = cbind( pa, pu[,it] ) # ie. same time dimension as predictive data (space.annual.seasonal)
+          } else if ( nc == p$ny & p$nt > p$ny)  {
+            iy = round( (it-1) / p$nw ) + 1
+            pa = cbind( pa, pu[,iy] ) # ie., annual data (space.annual)
+          } else if ( nc == p$nt & p$nt > p$ny) {
+            pa = cbind( pa, pu[,it] ) # ie. same time dimension as predictive data (space.annual.seasonal)
+          } else {
+            print(i)
+            print(nc)
+            stop( "Erroneous data dimension ... the dataset for the above variable looks to be incomplete?")
+          }
+        }
+        pa = as.data.frame( pa )
+        names(pa) = p$variables$COV
 
-            if ( "dyear" %in%  all.vars( p$stmv_global_modelformula ) ) {
-              npa = names(pa)
-              pa = cbind(pa, p$prediction.dyear )
-              names(pa) = c( npa, "dyear" )
-            }
+        if ( any( p$variables$LOCS %in%  all.vars( p$stmv_global_modelformula ) ) ) {
+          Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+          pa = cbind(pa, Ploc[])
+          names(pa) = c( p$variables$COV, p$variables$LOCS )
+        }
 
-            if (p$stmv_global_modelengine %in% c("glm", "bigglm", "gam") ) {
-              Pbaseline = try( predict( global_model, newdata=pa, type="link", se.fit=TRUE ) )  # must be on link scale
-              pa = NULL
-              gc()
-              if (!inherits(Pbaseline, "try-error")) {
-                P0[,it] = Pbaseline$fit
-                P0sd[,it] = Pbaseline$se.fit
-              }
-              Pbaseline = NULL; gc()
-            } else if (p$stmv_global_modelengine =="bayesx") {
-              stop( "not yet tested" ) # TODO
-              # Pbaseline = try( predict( global_model, newdata=pa, type="link", se.fit=TRUE ) )
-              # pa = NULL
-              # gc()
-              # if (!inherits(Pbaseline, "try-error")) {
-              #   P0[,it] = Pbaseline$fit
-              #   P0sd[,it] = Pbaseline$se.fit
-              # }
-              # Pbaseline = NULL; gc()
+        if ( "yr" %in%  all.vars( p$stmv_global_modelformula ) ) {
+          npa = names(pa)
+          pa = cbind(pa, p$yrs[it] )
+          names(pa) = c( npa, "yr" )
+        }
 
-            } else if (p$stmv_global_modelengine =="none") {
-              # nothing to do
-            } else  {
-              stop ("This global model method requires a bit more work .. ")
-            }
+        if ( "dyear" %in%  all.vars( p$stmv_global_modelformula ) ) {
+          npa = names(pa)
+          pa = cbind(pa, p$prediction.dyear )
+          names(pa) = c( npa, "dyear" )
+        }
 
-            if (p$all.covars.static) {
-              # if this is true then this is a single cpu run and all predictions for each time slice is the same
-              # could probably catch this and keep storage small but that would make the update math a little more complex
-              # this keeps it simple with a quick copy
-              if (p$nt  > 1 ) {
-                for (j in ip[2:p$nruns]){
-                  P0[,j] = P0[,1]
-                  P0sd[,j] = P0sd[,1]
-                }
-              }
-              global_model =NULL
-              return(NULL)
+        if (p$stmv_global_modelengine %in% c("glm", "bigglm", "gam") ) {
+          Pbaseline = try( predict( global_model, newdata=pa, type="link", se.fit=TRUE ) )  # must be on link scale
+          pa = NULL
+          gc()
+          if (!inherits(Pbaseline, "try-error")) {
+            P0[,it] = Pbaseline$fit
+            P0sd[,it] = Pbaseline$se.fit
+          }
+          Pbaseline = NULL; gc()
+        } else if (p$stmv_global_modelengine =="bayesx") {
+          stop( "not yet tested" ) # TODO
+          # Pbaseline = try( predict( global_model, newdata=pa, type="link", se.fit=TRUE ) )
+          # pa = NULL
+          # gc()
+          # if (!inherits(Pbaseline, "try-error")) {
+          #   P0[,it] = Pbaseline$fit
+          #   P0sd[,it] = Pbaseline$se.fit
+          # }
+          # Pbaseline = NULL; gc()
+
+        } else if (p$stmv_global_modelengine =="none") {
+          # nothing to do
+        } else  {
+          stop ("This global model method requires a bit more work .. ")
+        }
+
+        if (p$all.covars.static) {
+          # if this is true then this is a single cpu run and all predictions for each time slice is the same
+          # could probably catch this and keep storage small but that would make the update math a little more complex
+          # this keeps it simple with a quick copy
+          if (p$nt  > 1 ) {
+            for (j in ip[2:p$nruns]){
+              P0[,j] = P0[,1]
+              P0sd[,j] = P0sd[,1]
             }
-          } # end each timeslice
+          }
           global_model =NULL
           return(NULL)
         }
-      )
+      } # end each timeslice
+      global_model =NULL
+
       message( "||| Done ... moving onto the rest of the analysis...")
     }
 
@@ -575,126 +566,117 @@
         runindex = list( tindex=1 )  # dummy value
       }
 
-      # parallel_run(
-      #   p=p, 
-      #   clusters=clusters, # override
-      #   runindex=runindex,
-      #   shallower=shallower,
-      #   FUNC = function( ip=NULL, p, shallower ) {
-      #     if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
-      #     if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
+      
+      PP = stmv_attach( p$storage.backend, p$ptr$P )
+      PPsd = stmv_attach( p$storage.backend, p$ptr$Psd )
+      if (exists("stmv_global_modelengine", p)) {
+        if (p$stmv_global_modelengine !="none" ) {
+          P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
+          P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )
+        }
+      }
 
-          PP = stmv_attach( p$storage.backend, p$ptr$P )
-          PPsd = stmv_attach( p$storage.backend, p$ptr$Psd )
-          if (exists("stmv_global_modelengine", p)) {
+      if ( exists("TIME", p$variables)) {
+        
+#             for ( ii in ip ) { # outputs are on yearly breakdown
+#           it = p$runs[ii, "tindex"] # == ii btw
+        for (y in p$yrs) {
+          y = p$yrs[it]
+          
+          fn_P = file.path( p$stmvSaveDir, paste("stmv.prediction", "mean",  y, "rdata", sep="." ) )
+          fn_Pl = file.path( p$stmvSaveDir, paste("stmv.prediction", "lb",   y, "rdata", sep="." ) )
+          fn_Pu = file.path( p$stmvSaveDir, paste("stmv.prediction", "ub",   y, "rdata", sep="." ) )
+          vv = ncol(PP)
+          if ( vv > p$ny ) {
+            col.ranges = (it-1) * p$nw + (1:p$nw)
+            P = PP  [,col.ranges]
+            V = PPsd[,col.ranges] # simpleadditive independent errors assumed
+          } else if ( vv==p$ny) {
+            P = PP[,it]
+            V = PPsd[,it]
+          }
+
+          if (exists("stmv_global_modelengine", p) ) {
             if (p$stmv_global_modelengine !="none" ) {
-              P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
-              P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )
+              ## maybe add via simulation ? ...
+              # P0 and P are on link scale to this point
+              uu = which(!is.finite(P[]))
+              if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
+              P = P[] + P0[,it]
+              vv = which(!is.finite(V[]))
+              if (length(vv)>0) V[vv] = 0 # permit covariate-base predictions to pass through ..
+              V = sqrt( V[]^2 + P0sd[,it]^2) # simple additive independent errors assumed
             }
           }
 
-          if ( exists("TIME", p$variables)) {
-            
-            for ( ii in ip ) { # outputs are on yearly breakdown
-              it = p$runs[ii, "tindex"] # == ii btw
-              y = p$yrs[it]
-              
-              fn_P = file.path( p$stmvSaveDir, paste("stmv.prediction", "mean",  y, "rdata", sep="." ) )
-              fn_Pl = file.path( p$stmvSaveDir, paste("stmv.prediction", "lb",   y, "rdata", sep="." ) )
-              fn_Pu = file.path( p$stmvSaveDir, paste("stmv.prediction", "ub",   y, "rdata", sep="." ) )
-              vv = ncol(PP)
-              if ( vv > p$ny ) {
-                col.ranges = (it-1) * p$nw + (1:p$nw)
-                P = PP  [,col.ranges]
-                V = PPsd[,col.ranges] # simpleadditive independent errors assumed
-              } else if ( vv==p$ny) {
-                P = PP[,it]
-                V = PPsd[,it]
-              }
-
-              if (exists("stmv_global_modelengine", p) ) {
-                if (p$stmv_global_modelengine !="none" ) {
-                  ## maybe add via simulation ? ...
-                  # P0 and P are on link scale to this point
-                  uu = which(!is.finite(P[]))
-                  if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
-                  P = P[] + P0[,it]
-                  vv = which(!is.finite(V[]))
-                  if (length(vv)>0) V[vv] = 0 # permit covariate-base predictions to pass through ..
-                  V = sqrt( V[]^2 + P0sd[,it]^2) # simple additive independent errors assumed
-                }
-              }
-
-              if ( !is.null(shallower) ){
-                if ( is.vector(P) ) {
-                  P[shallower] = NA
-                  V[shallower] = NA
-                } else {
-                  P[shallower,] = NA
-                  V[shallower,] = NA
-                }
-              }
-
-              # return to user scale (that of Y)
-              Pl = p$stmv_global_family$linkinv( P + 1.96* V )
-              Pu = p$stmv_global_family$linkinv( P - 1.96* V )
-              P = p$stmv_global_family$linkinv( P )
-
-              # any additional transformations
-              if (exists("stmv_Y_transform", p)) {
-                Pl = p$stmv_Y_transform[[2]] (Pl)  # p$stmv_Y_transform[2] is the inverse transform
-                Pu = p$stmv_Y_transform[[2]] (Pu)
-                P = p$stmv_Y_transform[[2]] (P)
-              }
-
-              save( P, file=fn_P, compress=T )
-              save( Pl, file=fn_Pl, compress=T )
-              save( Pu, file=fn_Pu, compress=T )
-              print ( paste("Year:", y)  )
+          if ( !is.null(shallower) ){
+            if ( is.vector(P) ) {
+              P[shallower] = NA
+              V[shallower] = NA
+            } else {
+              P[shallower,] = NA
+              V[shallower,] = NA
             }
+          }
 
-          } else {
-            # serial run only ... 
-            
-              fn_P = file.path( p$stmvSaveDir, paste("stmv.prediction", "mean", "rdata", sep="." ) )
-              fn_Pl = file.path( p$stmvSaveDir, paste("stmv.prediction", "lb", "rdata", sep="." ) )
-              fn_Pu = file.path( p$stmvSaveDir, paste("stmv.prediction", "ub", "rdata", sep="." ) )
+          # return to user scale (that of Y)
+          Pl = p$stmv_global_family$linkinv( P + 1.96* V )
+          Pu = p$stmv_global_family$linkinv( P - 1.96* V )
+          P = p$stmv_global_family$linkinv( P )
 
-              P = PP[]
-              V = PPsd[]
-              if (exists("stmv_global_modelengine", p) ) {
-                if (p$stmv_global_modelengine !="none" ) {
-                  uu = which(!is.finite(P[]))
-                  if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
-                  P = P[] + P0[]  # both on link scale
-                  vv = which(!is.finite(V[]))
-                  if (length(vv)>0) V[vv] = 0 # permit covariate-base predictions to pass through ..
-                  V = sqrt( V[]^2 + P0sd[]^2) # simple additive independent errors assumed
-                }
-              }
-              if ( !is.null(shallower) ){
-                P[shallower,] = NA
-                V[shallower,] = NA
-              }
+          # any additional transformations
+          if (exists("stmv_Y_transform", p)) {
+            Pl = p$stmv_Y_transform[[2]] (Pl)  # p$stmv_Y_transform[2] is the inverse transform
+            Pu = p$stmv_Y_transform[[2]] (Pu)
+            P = p$stmv_Y_transform[[2]] (P)
+          }
 
-              # return to user response scale
-              Pl = p$stmv_global_family$linkinv( P + 1.96* V )
-              Pu = p$stmv_global_family$linkinv( P - 1.96* V )
-              P = p$stmv_global_family$linkinv( P )
+          save( P, file=fn_P, compress=T )
+          save( Pl, file=fn_Pl, compress=T )
+          save( Pu, file=fn_Pu, compress=T )
+          print ( paste("Year:", y)  )
+        }
+
+      } else {
+        # serial run only ... 
+        
+          fn_P = file.path( p$stmvSaveDir, paste("stmv.prediction", "mean", "rdata", sep="." ) )
+          fn_Pl = file.path( p$stmvSaveDir, paste("stmv.prediction", "lb", "rdata", sep="." ) )
+          fn_Pu = file.path( p$stmvSaveDir, paste("stmv.prediction", "ub", "rdata", sep="." ) )
+
+          P = PP[]
+          V = PPsd[]
+          if (exists("stmv_global_modelengine", p) ) {
+            if (p$stmv_global_modelengine !="none" ) {
+              uu = which(!is.finite(P[]))
+              if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
+              P = P[] + P0[]  # both on link scale
+              vv = which(!is.finite(V[]))
+              if (length(vv)>0) V[vv] = 0 # permit covariate-base predictions to pass through ..
+              V = sqrt( V[]^2 + P0sd[]^2) # simple additive independent errors assumed
+            }
+          }
+          if ( !is.null(shallower) ){
+            P[shallower,] = NA
+            V[shallower,] = NA
+          }
+
+          # return to user response scale
+          Pl = p$stmv_global_family$linkinv( P + 1.96* V )
+          Pu = p$stmv_global_family$linkinv( P - 1.96* V )
+          P = p$stmv_global_family$linkinv( P )
 
 
-              if (exists("stmv_Y_transform", p)) {
-                Pl = p$stmv_Y_transform[[2]] (Pl)  # p$stmv_Y_transform[2] is the inverse transform
-                Pu = p$stmv_Y_transform[[2]] (Pu)
-                P = p$stmv_Y_transform[[2]] (P)
-              }
+          if (exists("stmv_Y_transform", p)) {
+            Pl = p$stmv_Y_transform[[2]] (Pl)  # p$stmv_Y_transform[2] is the inverse transform
+            Pu = p$stmv_Y_transform[[2]] (Pu)
+            P = p$stmv_Y_transform[[2]] (P)
+          }
 
-              save( P, file=fn_P, compress=T )
-              save( Pl, file=fn_Pl, compress=T )
-              save( Pu, file=fn_Pu, compress=T )
-          } # end if TIME
-      #   } # end FUNC
-      # ) # end parallel_run
+          save( P, file=fn_P, compress=T )
+          save( Pl, file=fn_Pl, compress=T )
+          save( Pu, file=fn_Pu, compress=T )
+      } # end if TIME
 
 
       # prediction.stats
