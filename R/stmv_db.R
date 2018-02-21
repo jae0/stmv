@@ -560,14 +560,6 @@
       }
 
 
-      if ( exists("TIME", p$variables)) {
-        clusters = p$clusters
-        runindex = list( tindex=1:p$ny ) # annual only
-      } else {
-        clusters = p$clusters[1]  # force serial mode
-        runindex = list( tindex=1 )  # dummy value
-      }
-
       
       PP = stmv_attach( p$storage.backend, p$ptr$P )
       PPsd = stmv_attach( p$storage.backend, p$ptr$Psd )
