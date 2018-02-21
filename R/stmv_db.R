@@ -424,7 +424,9 @@
       return ()
     }
 
-    # -----cpu
+
+    # -----
+
 
     if (DS %in% c("global.prediction.surface") ) {
   
@@ -546,8 +548,6 @@
         return(stats)
       }
 
-      
-
       shallower = NULL
       if ( exists("depth.filter", p) && is.finite( p$depth.filter) ) {
         if ( "z" %in% p$variables$COV ){
@@ -579,38 +579,31 @@
       }
 
       if ( exists("TIME", p$variables)) {
-        
-#             for ( ii in ip ) { # outputs are on yearly breakdown
-#           it = p$runs[ii, "tindex"] # == ii btw
-        for (y in p$yrs) {
+        for (it in 1:p$ny) {
           y = p$yrs[it]
-          
           fn_P = file.path( p$stmvSaveDir, paste("stmv.prediction", "mean",  y, "rdata", sep="." ) )
           fn_Pl = file.path( p$stmvSaveDir, paste("stmv.prediction", "lb",   y, "rdata", sep="." ) )
           fn_Pu = file.path( p$stmvSaveDir, paste("stmv.prediction", "ub",   y, "rdata", sep="." ) )
           vv = ncol(PP)
           if ( vv > p$ny ) {
-            col.ranges = (it-1) * p$nw + (1:p$nw)
-            P = PP  [,col.ranges]
-            V = PPsd[,col.ranges] # simpleadditive independent errors assumed
+            ww = (it-1) * p$nw + (1:p$nw)
+            P = PP  [,ww]
+            V = PPsd[,ww] # simpleadditive independent errors assumed
           } else if ( vv==p$ny) {
             P = PP[,it]
             V = PPsd[,it]
           }
-
           if (exists("stmv_global_modelengine", p) ) {
             if (p$stmv_global_modelengine !="none" ) {
-              ## maybe add via simulation ? ...
-              # P0 and P are on link scale to this point
+              ## maybe add via simulation, note: P0 and P are on link scale to this point
               uu = which(!is.finite(P[]))
-              if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
+              if (length(uu)>0) P[uu] = 0 # permit global predictions to pass through ..
               P = P[] + P0[,it]
               vv = which(!is.finite(V[]))
               if (length(vv)>0) V[vv] = 0 # permit covariate-base predictions to pass through ..
               V = sqrt( V[]^2 + P0sd[,it]^2) # simple additive independent errors assumed
             }
           }
-
           if ( !is.null(shallower) ){
             if ( is.vector(P) ) {
               P[shallower] = NA
@@ -620,7 +613,6 @@
               V[shallower,] = NA
             }
           }
-
           # return to user scale (that of Y)
           Pl = p$stmv_global_family$linkinv( P[] + 1.96* V[] )
           Pu = p$stmv_global_family$linkinv( P[] - 1.96* V[] )
