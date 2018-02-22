@@ -37,9 +37,10 @@ stmv_parameters = function( p=NULL, ... ) {
     if (!exists("lambda.grid", p) ) p$lambda.grid = 10^seq( -9, 3, by=0.5) # ratio of tau sq to sigma sq
   }
 
+  if (!exists("stmv_gam_optimizer", p)) p$stmv_gam_optimizer=c("outer","bfgs")
+  
   if ( p$stmv_local_modelengine %in% c("gam" )) {
     # p$stmv_gam_optimizer=c("outer","optim")
-    if (!exists("stmv_gam_optimizer", p)) p$stmv_gam_optimizer=c("outer","bfgs")
     # if (!exists("stmv_gam_optimizer", p)) p$stmv_gam_optimizer="perf"
   }
 
