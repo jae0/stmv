@@ -15,6 +15,11 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   
   #\\ localized modelling of space and time data to predict/interpolate upon a grid
   #\\ speed ratings: bigmemory.ram (1), ff (2), bigmemory.filebacked (3)
+
+  p = stmv_parameters(p=p) # fill in parameters with defaults where required
+
+  p = stmv_db( p=p, DS="filenames" )
+
   # -----------------------------------------------------
   if (!exists("stmvSaveDir", p)) p$stmvSaveDir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
 
@@ -30,8 +35,6 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   message( " ")
 
   
-  p = stmv_parameters(p=p) # fill in parameters with defaults where required
-  p = stmv_db( p=p, DS="filenames" )
 
   p$ptr = list() # location for data pointers
 
@@ -81,14 +84,12 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   message( "||| These are large files (4 to 6 X 5GB), it will take a minute ... ")
   stmv_db( p=p, DS="cleanup" )
 
-  p$nloccov = 0
-  if (exists("local_cov", p$variables)) p$nloccov = length(p$variables$local_cov)
 
   # construct prediction/output grid area ('pa')
   p$windowsize.half = floor(p$stmv_distance_prediction/p$pres) # convert distance to discretized increments of row/col indices
 
   if (exists("stmv_Y_transform", p)) {
-    DATA$input[, p$variables$Y ] = p$stmv_Y_transform[[1]] (DATA$input[, p$variables$Y ] )
+    DATA$input[, p$variables$Y ] = p$stmv_Y_transform$transf(DATA$input[, p$variables$Y ] )
   }
 
   if ("globalmodel" %in% runmode) {

@@ -612,9 +612,9 @@
 
           # any additional transformations
           if (exists("stmv_Y_transform", p)) {
-            Pl = p$stmv_Y_transform[[2]] (Pl[])  # p$stmv_Y_transform[2] is the inverse transform
-            Pu = p$stmv_Y_transform[[2]] (Pu[])
-            P = p$stmv_Y_transform[[2]] (P[])
+            Pl = p$stmv_Y_transform$invers (Pl[])  # p$stmv_Y_transform[2] is the inverse transform
+            Pu = p$stmv_Y_transform$invers (Pu[])
+            P = p$stmv_Y_transform$invers (P[])
           }
 
           save( P, file=fn_P, compress=T )
@@ -654,9 +654,9 @@
 
 
           if (exists("stmv_Y_transform", p)) {
-            Pl = p$stmv_Y_transform[[2]] (Pl[])  # p$stmv_Y_transform[2] is the inverse transform
-            Pu = p$stmv_Y_transform[[2]] (Pu[])
-            P = p$stmv_Y_transform[[2]] (P[])
+            Pl = p$stmv_Y_transform$invers (Pl[])  # p$stmv_Y_transform[2] is the inverse transform
+            Pu = p$stmv_Y_transform$invers (Pu[])
+            P = p$stmv_Y_transform$invers (P[])
           }
 
           save( P, file=fn_P, compress=T )

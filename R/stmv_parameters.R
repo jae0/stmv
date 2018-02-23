@@ -49,6 +49,7 @@ stmv_parameters = function( p=NULL, ... ) {
   }
 
 
+  if (!exists("variables", p)) p$variables=list()
 
   # require knowledge of size of stats output which varies with a given type of analysis
   p$statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "range", "phi", "nu" ) 
@@ -97,19 +98,47 @@ stmv_parameters = function( p=NULL, ... ) {
   p$libs = unique( p$libs )
   suppressMessages( RLibrary( p$libs ) )
 
-  p$variables$all = NULL
-  if (exists("stmv_local_modelformula", p))  {
+
+  if (!exists("LOCS", p$variables)) stop( "p$variables$LOCS needs to be defined" )
+
+  p$variables$Y = NULL
+  if (exists("stmv_local_modelformula", p))  p$variables$Y = all.vars( p$stmv_local_modelformula[[2]] ) 
+  if (exists("stmv_global_modelformula", p)) p$variables$Y = all.vars( p$stmv_global_modelformula[[2]] )
+  
+  p$variables$local_all = NULL  
+  p$variables$local_cov = NULL
+  if (exists("stmv_local_modelformula", p)) {
     p$variables$local_all = all.vars( p$stmv_local_modelformula )
-    p$variables$local_cov = intersect( p$variables$local_all, p$variables$COV )
-    p$variables$all = unique( c( p$variables$all, p$variables$local_all ) )
+    p$variables$local_cov = all.vars( p$stmv_local_modelformula[[3]] )
   }
+  p$nloccov = 0
+  if (exists("local_cov", p$variables)) p$nloccov = length(p$variables$local_cov)
+
+  p$variables$global_all = NULL  
+  p$variables$global_cov = NULL
   if (exists("stmv_global_modelformula", p)) {
     p$variables$global_all = all.vars( p$stmv_global_modelformula )
-    p$variables$global_cov = intersect( p$variables$global_all, p$variables$COV )
-    p$variables$all = unique( c( p$variables$all, p$variables$global_all ) )
+    p$variables$global_cov = all.vars( p$stmv_global_modelformula[[3]] )
   }
-  p$stmv_current_status = file.path( p$stmvSaveDir, "stmv_current_status" )
+  
+  p$variables$ALL = NULL
+  p$variables$ALL = c( p$variables$local_all, p$variables$global_all )
+  p$variables$ALL = setdiff( unique( c( p$variables$ALL, p$variables$LOCS ) ), "-1") 
 
+  p$variables$COV = setdiff( p$variables$ALL, p$variables$LOCS )  # non-location and non-time based covariates
+
+  p$stmv_current_status = file.path( p$stmvSaveDir, "stmv_current_status" )
 
   return(p)
 }
+
+
+
+
+
+
+
+
+
+
+
