@@ -5,8 +5,8 @@ stmv_variablelist = function( p ) {
     if (exists("stmv_local_modelformula", p))  p$variables$Y = all.vars( p$stmv_local_modelformula[[2]] ) 
     if (exists("stmv_global_modelformula", p)) p$variables$Y = all.vars( p$stmv_global_modelformula[[2]] )
   }
-  if (!exists("Y", p$variables)) stop("p$variables$Y is not defined ... it is required")
-
+  if (!exists("Y", p$variables)) p$variables = "not_defined" # this can be called to get covars.. do not stop
+   
   p$variables$local_all = NULL  
   p$variables$local_cov = NULL
   if (exists("stmv_local_modelformula", p)) {
