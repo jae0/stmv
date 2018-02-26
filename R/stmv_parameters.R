@@ -52,8 +52,7 @@ stmv_parameters = function( p=NULL, ... ) {
 
   # require knowledge of size of stats output which varies with a given type of analysis
   p$statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "range", "phi", "nu" ) 
-  if (grepl("space-year", p$stmv_dimensionality)) p$statsvars = c( p$statsvars, "ar_timerange", "ar_1" )  
-  # if (exists("TIME", p$variables) )  p$statsvars = c( p$statsvars, "ar_timerange", "ar_1" )
+  if (exists("TIME", p$variables) )  p$statsvars = c( p$statsvars, "ar_timerange", "ar_1" )
   if (p$stmv_local_modelengine == "userdefined" ) {
     if (exists("stmv_local_modelengine", p) ) {
       if (exists("stmv_local_modelengine_userdefined", p) ) {
@@ -99,6 +98,9 @@ stmv_parameters = function( p=NULL, ... ) {
   suppressMessages( RLibrary( p$libs ) )
 
   p = stmv_variablelist(p)
+
+  p$nloccov = 0
+  if (exists("local_cov", p$variables)) p$nloccov = length(p$variables$local_cov)
 
   return(p)
 }
