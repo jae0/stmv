@@ -48,12 +48,12 @@ stmv_parameters = function( p=NULL, ... ) {
      # nothing to add yet ..
   }
 
-
   if (!exists("variables", p)) p$variables=list()
 
   # require knowledge of size of stats output which varies with a given type of analysis
   p$statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "range", "phi", "nu" ) 
-  if (exists("TIME", p$variables) )  p$statsvars = c( p$statsvars, "ar_timerange", "ar_1" )
+  if (grepl("space-year", p$stmv_dimensionality)) p$statsvars = c( p$statsvars, "ar_timerange", "ar_1" )  
+  # if (exists("TIME", p$variables) )  p$statsvars = c( p$statsvars, "ar_timerange", "ar_1" )
   if (p$stmv_local_modelengine == "userdefined" ) {
     if (exists("stmv_local_modelengine", p) ) {
       if (exists("stmv_local_modelengine_userdefined", p) ) {
@@ -93,41 +93,12 @@ stmv_parameters = function( p=NULL, ... ) {
     if (p$stmv_global_modelengine %in% c("bigglm", "biglm") ) p$libs = c( p$libs, "biglm" )
   }
 
-  if (exists("TIME", p$variables) )  p$libs = c( p$libs, "mgcv" ) # default uses GAM smooths
+  if (grepl("space-year", p$stmv_dimensionality)) p$libs = c( p$libs, "mgcv" ) # default uses GAM smooths
 
   p$libs = unique( p$libs )
   suppressMessages( RLibrary( p$libs ) )
 
-
-  if (!exists("LOCS", p$variables)) stop( "p$variables$LOCS needs to be defined" )
-
-  p$variables$Y = NULL
-  if (exists("stmv_local_modelformula", p))  p$variables$Y = all.vars( p$stmv_local_modelformula[[2]] ) 
-  if (exists("stmv_global_modelformula", p)) p$variables$Y = all.vars( p$stmv_global_modelformula[[2]] )
-  
-  p$variables$local_all = NULL  
-  p$variables$local_cov = NULL
-  if (exists("stmv_local_modelformula", p)) {
-    p$variables$local_all = all.vars( p$stmv_local_modelformula )
-    p$variables$local_cov = all.vars( p$stmv_local_modelformula[[3]] )
-  }
-  p$nloccov = 0
-  if (exists("local_cov", p$variables)) p$nloccov = length(p$variables$local_cov)
-
-  p$variables$global_all = NULL  
-  p$variables$global_cov = NULL
-  if (exists("stmv_global_modelformula", p)) {
-    p$variables$global_all = all.vars( p$stmv_global_modelformula )
-    p$variables$global_cov = all.vars( p$stmv_global_modelformula[[3]] )
-  }
-  
-  p$variables$ALL = NULL
-  p$variables$ALL = c( p$variables$local_all, p$variables$global_all )
-  p$variables$ALL = setdiff( unique( c( p$variables$ALL, p$variables$LOCS ) ), "-1") 
-
-  p$variables$COV = setdiff( p$variables$ALL, p$variables$LOCS )  # non-location and non-time based covariates
-
-  p$stmv_current_status = file.path( p$stmvSaveDir, "stmv_current_status" )
+  p = stmv_variablelist(p)
 
   return(p)
 }

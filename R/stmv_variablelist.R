@@ -8,7 +8,12 @@ stmv_variablelist = function( p ) {
   if (!exists("Y", p$variables)) p$variables$Y = "not_defined"
 
   if (!exists("LOCS", p$variables)) p$variables$LOCS = c("plon", "plat")
-  if (!exists("TIME", p$variables)) p$variables$TIME = "tiyr" 
+
+  if (grepl("space-year", p$stmv_dimensionality)) {
+    if (!exists("TIME", p$variables)) {
+      p$variables$TIME = "tiyr" 
+    }
+  }
 
   if (!exists("COV", p$variables)) {
     p$variables$local_all = NULL  
