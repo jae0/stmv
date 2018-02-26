@@ -19,13 +19,14 @@ stmv_variablelist = function( p ) {
     p$variables$global_all = all.vars( p$stmv_global_modelformula )
     p$variables$global_cov = all.vars( p$stmv_global_modelformula[[3]] )
   }
-  p$variables$ALL = NULL
+  p$variables$ALL = NULL  # "all" but Y
   p$variables$ALL = c( p$variables$local_all, p$variables$global_all )
   p$variables$ALL = unique( c( p$variables$ALL, p$variables$LOCS, p$variables$TIME ) )  
-  p$variables$TSvars = p$variables$ALL[ unique( c( grep("cos.w", p$variables$ALL), grep("sin.w", p$variables$ALL) )  )]  # harmonics
+  oo = unique( c( grep("cos.w", p$variables$ALL), grep("sin.w", p$variables$ALL) ) )
+  if (length(oo) > 0) p$variables$TSvars = p$variables$ALL[oo]  # harmonics
   p$variables$ALL = setdiff( p$variables$ALL, p$variables$TSvars)
-  p$variables$coordinates = unique( c(p$variables$LOCS, p$variables$TIME) )
-  p$variables$COV = setdiff( p$variables$ALL, p$variables$coordinates )  # non-location and non-time based covariates
+  p$variables$COORDS = unique( c(p$variables$LOCS, p$variables$TIME) )
+  p$variables$COV = setdiff( p$variables$ALL, p$variables$COORDS )  # non-location and non-time based covariates
 
   return (p)
 }
