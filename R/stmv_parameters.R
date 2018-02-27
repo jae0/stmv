@@ -92,7 +92,7 @@ stmv_parameters = function( p=NULL, ... ) {
     if (p$stmv_global_modelengine %in% c("bigglm", "biglm") ) p$libs = c( p$libs, "biglm" )
   }
 
-  if (grepl("space-year", p$stmv_dimensionality)) p$libs = c( p$libs, "mgcv" ) # default uses GAM smooths
+  if (exists("TIME", p$variables)) p$libs = c( p$libs, "mgcv" ) # default uses GAM smooths
 
   p$libs = unique( p$libs )
   suppressMessages( RLibrary( p$libs ) )
