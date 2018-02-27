@@ -1,26 +1,5 @@
 stmv_variablelist = function( p ) {
   
-  if (!exists("variables", p)) p$variables = list()
-  if (!exists("Y", p$variables)) {
-    if (exists("stmv_local_modelformula", p))  {
-      if (!is.null(p$stmv_local_modelformula)) {
-        if (p$stmv_local_modelformula != "none") {
-          oo = all.vars( p$stmv_local_modelformula[[2]] ) 
-          if (length(oo) > 0) p$variables$Y = oo 
-        }
-      }
-    }
-    if (exists("stmv_global_modelformula", p))  {
-      if (!is.null(p$stmv_global_modelformula)) {
-        if (p$stmv_global_modelformula != "none") {
-          oo = all.vars( p$stmv_global_modelformula[[2]] )
-          if (length(oo) > 0) p$variables$Y = oo
-        }
-      }
-    }
-  }
-  
-  if (!exists("Y", p$variables)) p$variables = "not_defined" # this can be called to get covars.. do not stop
    
   p$variables$local_all = NULL  
   p$variables$local_cov = NULL
