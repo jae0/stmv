@@ -20,8 +20,8 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
 
   if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
 
-  if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
   if (is.null(ip)) ip = p$runindex[[1]]
+  if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
   
   #---------------------
   # data for modelling
