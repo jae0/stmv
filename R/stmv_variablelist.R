@@ -33,19 +33,17 @@ stmv_variablelist = function( p ) {
       }
     }
   }
-  p$variables$ALL = NULL  
+  
   p$variables$ALL = c( p$variables$local_all, p$variables$global_all )
-  p$variables$ALL = unique( c( p$variables$ALL, p$variables$LOCS, p$variables$TIME ) )  
-  p$variables$ALL = setdiff( p$variables$ALL, p$variables$Y )   # remove dep var
   
+  # all external variables (remove harmonics)
   oo = unique( c( grep("cos.w", p$variables$ALL), grep("sin.w", p$variables$ALL) ) )
-  if (length(oo) > 0) p$variables$TSvars = p$variables$ALL[oo]  # harmonics
+  if (length(oo) > 0) p$variables$ALL_REQUIRED = p$variables$ALL[-oo]
+  p$variables$ALL_REQUIRED = setdiff( p$variables$ALL_REQUIRED, "yr" )  # year is  computed from time index ... not required
   
-  p$variables$ALL = setdiff( p$variables$ALL, p$variables$TSvars)
   p$variables$COORDS = unique( c(p$variables$LOCS, p$variables$TIME) )
   
-  oo = setdiff( p$variables$global_all, p$variables$COORDS )  # non-location and non-time based covariates
-  if (length(oo) > 0)  p$variables$COV = oo  # covariates for global model
+  p$variables$COV = setdiff( p$variables$ALL_REQUIRED, c(p$variables$COORDS, p$variables$Y) )
   
   return (p)
 }
