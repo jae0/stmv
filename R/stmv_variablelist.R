@@ -30,7 +30,10 @@ stmv_variablelist = function( p ) {
         oo = all.vars( p$stmv_local_modelformula )
         if (length(oo) > 0) {
           p$variables$local_all = oo
-          p$variables$local_cov = all.vars( p$stmv_local_modelformula[[3]] )
+        }
+        oo = all.vars( p$stmv_local_modelformula[[3]] )
+        if (length(oo) > 0) {
+          p$variables$local_cov = oo
         }
       }
     }
@@ -43,12 +46,15 @@ stmv_variablelist = function( p ) {
         oo = all.vars( p$stmv_global_modelformula )
         if (length(oo) > 0) {
           p$variables$global_all = oo
-          p$variables$global_cov = all.vars( p$stmv_global_modelformula[[3]] )
+        }
+        oo = all.vars( p$stmv_global_modelformula[[3]] )
+        if (length(oo) > 0) {
+          p$variables$global_cov = oo
         }
       }
     }
   }
-  p$variables$ALL = NULL  # "all" but Y
+  p$variables$ALL = NULL  
   p$variables$ALL = c( p$variables$local_all, p$variables$global_all )
   p$variables$ALL = unique( c( p$variables$ALL, p$variables$LOCS, p$variables$TIME ) )  
   oo = unique( c( grep("cos.w", p$variables$ALL), grep("sin.w", p$variables$ALL) ) )
