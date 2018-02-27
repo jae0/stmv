@@ -10,14 +10,24 @@ stmv_variablelist = function( p ) {
   p$variables$local_all = NULL  
   p$variables$local_cov = NULL
   if (exists("stmv_local_modelformula", p)) {
-    p$variables$local_all = all.vars( p$stmv_local_modelformula )
-    p$variables$local_cov = all.vars( p$stmv_local_modelformula[[3]] )
+    if (!is.null(p$stmv_local_modelformula)) {
+      oo = all.vars( p$stmv_local_modelformula )
+      if (length(oo) > 0) {
+        p$variables$local_all = all.vars( p$stmv_local_modelformula )
+        p$variables$local_cov = all.vars( p$stmv_local_modelformula[[3]] )
+      }
+    }
   }
   p$variables$global_all = NULL  
   p$variables$global_cov = NULL
   if (exists("stmv_global_modelformula", p)) {
-    p$variables$global_all = all.vars( p$stmv_global_modelformula )
-    p$variables$global_cov = all.vars( p$stmv_global_modelformula[[3]] )
+    if (!is.null(p$stmv_global_modelformula)) {
+      oo = all.vars( p$stmv_global_modelformula )
+      if (length(oo) > 0) {
+        p$variables$global_all = all.vars( p$stmv_global_modelformula )
+        p$variables$global_cov = all.vars( p$stmv_global_modelformula[[3]] )
+      }
+    }
   }
   p$variables$ALL = NULL  # "all" but Y
   p$variables$ALL = c( p$variables$local_all, p$variables$global_all )
