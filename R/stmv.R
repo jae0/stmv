@@ -15,15 +15,15 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   
   #\\ localized modelling of space and time data to predict/interpolate upon a grid
   #\\ speed ratings: bigmemory.ram (1), ff (2), bigmemory.filebacked (3)
+  
+  # -----------------------------------------------------
+  if (!exists("stmvSaveDir", p)) p$stmvSaveDir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
+  
+  if ( !file.exists(p$stmvSaveDir)) dir.create( p$stmvSaveDir, recursive=TRUE, showWarnings=FALSE )
 
   p = stmv_parameters(p=p) # fill in parameters with defaults where required
 
   p = stmv_db( p=p, DS="filenames" )
-
-  # -----------------------------------------------------
-  if (!exists("stmvSaveDir", p)) p$stmvSaveDir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
-
-  if ( !file.exists(p$stmvSaveDir)) dir.create( p$stmvSaveDir, recursive=TRUE, showWarnings=FALSE )
 
 
   message( "||| Initializing data files ... " )
