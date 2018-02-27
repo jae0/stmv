@@ -36,6 +36,8 @@ stmv_variablelist = function( p ) {
   p$variables$ALL = NULL  
   p$variables$ALL = c( p$variables$local_all, p$variables$global_all )
   p$variables$ALL = unique( c( p$variables$ALL, p$variables$LOCS, p$variables$TIME ) )  
+  p$variables$ALL = setdiff( p$variables$ALL, p$variables$Y )   # remove dep var
+  
   oo = unique( c( grep("cos.w", p$variables$ALL), grep("sin.w", p$variables$ALL) ) )
   if (length(oo) > 0) p$variables$TSvars = p$variables$ALL[oo]  # harmonics
   p$variables$ALL = setdiff( p$variables$ALL, p$variables$TSvars)
