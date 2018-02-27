@@ -40,6 +40,7 @@ stmv_variablelist = function( p ) {
   oo = unique( c( grep("cos.w", p$variables$ALL), grep("sin.w", p$variables$ALL) ) )
   if (length(oo) > 0) p$variables$ALL_REQUIRED = p$variables$ALL[-oo]
   p$variables$ALL_REQUIRED = setdiff( p$variables$ALL_REQUIRED, "yr" )  # year is  computed from time index ... not required
+  #  varstokeep = unique( c( p$variables$Y, p$variables$LOCS, p$variables$TIME, p$variables$COV ) )
   
   p$variables$COORDS = unique( c(p$variables$LOCS, p$variables$TIME) )
   
