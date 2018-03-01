@@ -115,7 +115,7 @@
     # -----------------
 
     if ( DS %in% c( "statistics.status", "statistics.status.reset") ) {
-    
+
       Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
       if ( DS=="statistics.status.reset" ) {
         # to reset all rejected locations
@@ -123,7 +123,7 @@
         if (length(toreset) > 0) {
           Sflag[toreset] = 0L  # to reset all the problem flags to todo
         }
-      }      
+      }
       out = list()
       out$todo = which( Sflag[]==0L )       # 0 = TODO
       out$done = which( Sflag[]==1L )       # 1 = completed
@@ -135,19 +135,19 @@
       out$vrangeerror = which( Sflag[]==7L )     # 7=variogram estimated range not ok
       out$modelerror = which( Sflag[]==8L )     # 8=problem with prediction and/or modelling
       out$skipped = which( Sflag[] == 9L )   # 9 not completed due to a failed attempt
-      
+
       # do some counts
       out$n.todo = length(out$todo)
-      out$n.complete = length(out$done) 
-      out$n.outside = length(which(is.finite(out$outside))) 
+      out$n.complete = length(out$done)
+      out$n.outside = length(which(is.finite(out$outside)))
       out$n.shallow = length(out$shallow)
       out$n.predareaerror = length(out$predareaerror)
       out$n.nodata = length(out$nodata)
       out$n.variogramerror = length(out$variogramerror)
       out$n.vrangeerror = length(out$vrangeerror)
-      out$n.modelerror = length(out$modelerror) 
+      out$n.modelerror = length(out$modelerror)
       out$n.skipped = length(out$skipped)
-      out$n.total = length(Sflag) 
+      out$n.total = length(Sflag)
 
       out$prop_incomp = round( out$n.todo / ( out$n.total - out$n.outside ), 3)
       message( paste("||| Proportion to do:", out$prop_incomp, "\n" ))
@@ -281,7 +281,7 @@
         uP = unique(uP)
         Sflag[uP] = 0L  # force set to redo
       }
-      
+
       return(uP)
     }
 
@@ -401,11 +401,11 @@
         require(mgcv)
         if (!exists("wt", B)) {
           global_model = try(
-            gam( formula=p$stmv_global_modelformula, data=B, 
+            gam( formula=p$stmv_global_modelformula, data=B,
               optimizer= p$stmv_gam_optimizer, family=p$stmv_global_family) )
         } else {
           global_model = try(
-            gam( formula=p$stmv_global_modelformula, data=B, 
+            gam( formula=p$stmv_global_modelformula, data=B,
               optimizer= p$stmv_gam_optimizer, family=p$stmv_global_family, weights=wt ) )
         }
       }
@@ -418,7 +418,7 @@
 
       if ( "try-error" %in% class(global_model) ) stop( "The covariate model was problematic" )
       print( summary( global_model ) )
-      
+
       save( global_model, file= fn.global_model, compress=TRUE )
 
       return ()
@@ -430,20 +430,26 @@
 
     if (DS %in% c("global.prediction.surface") ) {
 
-      stmv_global_predict = function(ip=NULL, p) {
-        
-        if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
-        if (is.null(ip)) ip = p$runindex[[1]]
-          
+      # stmv_global_predict = function(ip=NULL, p) {
+      #
+      #   if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
+      #   if (is.null(ip)) ip = 1:p$nruns
+
         global_model = stmv_db( p=p, DS="global_model")
         if (is.null(global_model)) stop("Global model not found.")
 
         P0 = stmv_attach( p$storage.backend, p$ptr$P0 )  # remember this is on link scale
         P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd ) # and this too
 
-        for ( it in ip ) {
+        ip = 1:p$nt
+
+        for ( iip in ip ) {
+
           # downscale and warp from p(0) -> p1
           pa = NULL # construct prediction surface
+          # it = p$runs[iip, "it"]
+          it = iip
+
           for (i in p$variables$COV ) {
             pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[i]] )
             nc = ncol(pu)
@@ -465,19 +471,19 @@
           pa = as.data.frame( pa )
           names(pa) = p$variables$COV
 
-          if ( any( p$variables$LOCS %in%  all.vars( p$stmv_global_modelformula ) ) ) {
+          if ( any( p$variables$LOCS %in%  p$variables$global_cov ) ) {
             Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
             pa = cbind(pa, Ploc[])
             names(pa) = c( p$variables$COV, p$variables$LOCS )
           }
 
-          if ( "yr" %in%  all.vars( p$stmv_global_modelformula ) ) {
+          if ( "yr" %in%  p$variables$global_cov ) {
             npa = names(pa)
             pa = cbind(pa, p$yrs[it] )
             names(pa) = c( npa, "yr" )
           }
 
-          if ( "dyear" %in%  all.vars( p$stmv_global_modelformula ) ) {
+          if ( "dyear" %in% p$variables$global_cov ) {
             npa = names(pa)
             pa = cbind(pa, p$prediction.dyear )
             names(pa) = c( npa, "dyear" )
@@ -519,51 +525,51 @@
                 P0sd[,j] = P0sd[,1]
               }
             }
-            global_model =NULL
-            return(NULL)
+            # global_model =NULL
+            # return(NULL)
           }
 
         } # end each timeslice
-        global_model =NULL
-        return("Done")
-      }
-
-  
-      p$runindex=list( it=1:p$nt  )
-      nvars = length(p$runindex)  # p$runindex must be a list
-      runs = expand.grid(p$runindex, stringsAsFactors=FALSE, KEEP.OUT.ATTRS=FALSE)
-      nruns = nrow( runs )
-      runs_uid = do.call(paste, c(runs, sep="~"))
-      clustertype = "PSOCK"
-      clusters = p$clusters
-      rndseed = 1
-      if ( nruns < length( clusters ) ) {
-        clusters = sample( clusters, nruns )  # if very few runs, use only what is required
-      }
-      cl = makeCluster( spec=clusters, type=clustertype ) # SOCK works well but does not load balance as MPI
-          RNGkind("L'Ecuyer-CMRG")  # multiple streams of pseudo-random numbers.
-          clusterSetRNGStream(cl, iseed=rndseed )
-          # if ( !is.null(clusterexport)) clusterExport( p$cl, clusterexport )
-          uv = unique(runs_uid)
-          uvl = length(uv)
-          lc = length(clusters)
-          lci = 1:lc
-          ssplt = list()
-          for(j in 1:uvl) ssplt[[j]]  = which(runs_uid == uv[j])
-          clustertasklist = rep(list(numeric()),lc)
-          if (uvl>lc) {
-            for(j in 1:uvl) {
-              k=j
-              if(j>lc) k = j%%lc+1
-              clustertasklist[[k]] <- c(clustertasklist[[k]],ssplt[[j]])
-            }
-          }
-          ssplt = NULL
-          
-          clusterApply( cl, clustertasklist, stmv_global_predict, p=p  )
-      
-      stopCluster( cl )
-
+        # global_model =NULL
+        # return("Done")
+      # }
+      #
+      # plocal = p
+      #
+      # plocal$runindex=list( it=1:plocal$nt  )
+      # plocal$nvars = length(plocal$runindex)  # plocal$runindex must be a list
+      # plocal$runs = expand.grid(plocal$runindex, stringsAsFactors=FALSE, KEEP.OUT.ATTRS=FALSE)
+      # plocal$nruns = nrow( runs )
+      # plocal$runs_uid = do.call(paste, c(plocal$runs, sep="~"))
+      # plocal$clustertype = "PSOCK"
+      # plocal$rndseed = 1
+      # if ( nruns < length( plocal$clusters ) ) {
+      #   plocal$clusters = sample( plocal$clusters, plocal$nruns )  # if very few runs, use only what is required
+      # }
+      # plocal$cl = makeCluster( spec=plocal$clusters, type=plocal$clustertype ) # SOCK works well but does not load balance as MPI
+      #     RNGkind("L'Ecuyer-CMRG")  # multiple streams of pseudo-random numbers.
+      #     clusterSetRNGStream(plocal$cl, iseed=plocal$rndseed )
+      #     # if ( !is.null(clusterexport)) clusterExport( plocal$cl, clusterexport )
+      #     uv = unique(plocal$runs_uid)
+      #     uvl = length(uv)
+      #     lc = length(plocal$clusters)
+      #     lci = 1:lc
+      #     ssplt = list()
+      #     for(j in 1:uvl) ssplt[[j]]  = which(plocal$runs_uid == uv[j])
+      #     plocal$clustertasklist = rep(list(numeric()),lc)
+      #     if (uvl>lc) {
+      #       for(j in 1:uvl) {
+      #         k=j
+      #         if(j>lc) k = j%%lc+1
+      #         plocal$clustertasklist[[k]] <- c(plocal$clustertasklist[[k]],ssplt[[j]])
+      #       }
+      #     }
+      #     ssplt = NULL
+      #
+      #     clusterApply( plocal$cl, plocal$clustertasklist, stmv_global_predict, p=plocal  )
+      #
+      # stopCluster( cl )
+      #
 
         # message( "||| Done ... moving onto the rest of the analysis...")
     }
@@ -605,7 +611,7 @@
       }
 
 
-      
+
       PP = stmv_attach( p$storage.backend, p$ptr$P )
       PPsd = stmv_attach( p$storage.backend, p$ptr$Psd )
       if (exists("stmv_global_modelengine", p)) {
@@ -669,8 +675,8 @@
         }
 
       } else {
-        # serial run only ... 
-        
+        # serial run only ...
+
           fn_P = file.path( p$stmvSaveDir, paste("stmv.prediction", "mean", "rdata", sep="." ) )
           fn_Pl = file.path( p$stmvSaveDir, paste("stmv.prediction", "lb", "rdata", sep="." ) )
           fn_Pu = file.path( p$stmvSaveDir, paste("stmv.prediction", "ub", "rdata", sep="." ) )
@@ -711,26 +717,26 @@
 
 
       # prediction.stats
-      
+
       Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
       S = stmv_attach( p$storage.backend, p$ptr$S )
       Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
-      
+
       Sloc_nplat = ceiling( diff( p$corners$plat) / p$stmv_distance_statsgrid)
       Sloc_nplon = ceiling( diff( p$corners$plon) / p$stmv_distance_statsgrid)
-      
+
       stats = matrix( NaN, ncol=length( p$statsvars ), nrow=nrow( Ploc) )  # output data .. ff does not handle NA's .. using NaN for now
       colnames(stats)=p$statsvars
-      
+
       for ( i in 1:length( p$statsvars ) ) {
         print(i)
         # linear interpolation
         u = as.image( S[,i], x=Sloc[,], na.rm=TRUE, nx=Sloc_nplon, ny=Sloc_nplat )
         stats[,i] = as.vector( fields::interp.surface( u, loc=Ploc[] ) ) # linear interpolation
       }
-      
+
       # lattice::levelplot( stats[,1] ~ Ploc[,1]+Ploc[,2])
-      
+
       boundary = try( stmv_db( p=p, DS="boundary" ) )
       if( !("try-error" %in% class(boundary) ) ) {
         if (!is.null(boundary)) {
@@ -740,9 +746,9 @@
           if (length(o) > 0) stats[o,] = NA
         }
       }
-      
+
       if (length(shallower)>0) stats[shallower,] = NA
-      
+
       fn = file.path( p$stmvSaveDir, paste( "stmv.statistics", "rdata", sep=".") )
       save( stats, file=fn, compress=TRUE )
 
@@ -751,7 +757,7 @@
         ii = which (is.finite(stats[,i]))
         lattice::levelplot( stats[ii,i] ~ Ploc[ii,1]+Ploc[ii,2])
       }
-    
+
       if(0) {
         i = 1
         Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
@@ -759,15 +765,15 @@
         Z = smooth.2d( Y=P[], x=Ploc[], ncol=p$nplats, nrow=p$nplons, cov.function=stationary.cov, Covariance="Matern", range=p$stmv_lowpass_phi, nu=p$stmv_lowpass_nu )
         lattice::levelplot( P[] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
       }
-    
+
     }
 
     # ----------------
 
-    
+
     if (DS %in% c("save_current_state") ) {
 
-      # named differently to avoid collisions 
+      # named differently to avoid collisions
       sP = stmv_attach( p$storage.backend, p$ptr$P )[]
       sPn = stmv_attach( p$storage.backend, p$ptr$Pn )[]
       sPsd = stmv_attach( p$storage.backend, p$ptr$Psd )[]
@@ -796,7 +802,7 @@
       sP = sPsd = sPn = NULL
       sS = sSflag = NULL
       sP0 = sP0sd = NULL
-      
+
     }
 
 
@@ -805,7 +811,7 @@
 
     if (DS %in% c("load_saved_state") ) {
 
-      # named differently to avoid collisions 
+      # named differently to avoid collisions
       P = stmv_attach( p$storage.backend, p$ptr$P )
       Pn = stmv_attach( p$storage.backend, p$ptr$Pn )
       Psd = stmv_attach( p$storage.backend, p$ptr$Psd )
@@ -819,12 +825,12 @@
         }
       }
 
-      sP = matrix( NaN, nrow=nrow(P), ncol=ncol(P) )   
-      sPn = matrix( NaN, nrow=nrow(Pn), ncol=ncol(Pn) )   
-      sPsd = matrix( NaN, nrow=nrow(Psd), ncol=ncol(Psd) )   
-      sS = matrix( NaN, nrow=nrow(S), ncol=ncol(S) )   
-      sSflag = matrix( NaN, nrow=nrow(Sflag), ncol=ncol(Sflag) )   
-      
+      sP = matrix( NaN, nrow=nrow(P), ncol=ncol(P) )
+      sPn = matrix( NaN, nrow=nrow(Pn), ncol=ncol(Pn) )
+      sPsd = matrix( NaN, nrow=nrow(Psd), ncol=ncol(Psd) )
+      sS = matrix( NaN, nrow=nrow(S), ncol=ncol(S) )
+      sSflag = matrix( NaN, nrow=nrow(Sflag), ncol=ncol(Sflag) )
+
       if (file.exists(p$saved_state_fn$P)) load( p$saved_state_fn$P )
       if (file.exists(p$saved_state_fn$Pn)) load( p$saved_state_fn$Pn )
       if (file.exists(p$saved_state_fn$Psd)) load( p$saved_state_fn$Psd )
@@ -835,15 +841,15 @@
       Pn[] = sPn[]
       Psd[] = sPsd[]
       sP = sPsd = sPn = NULL
-      
+
       S[] = sS[]
       Sflag[] = sSflag[]
       sS = sSflag = NULL
-      
+
       if (exists("stmv_global_modelengine", p)) {
         if (p$stmv_global_modelengine !="none" ) {
-          sP0 = matrix( NaN, nrow=nrow(P0), ncol=ncol(P0) )   
-          sP0sd = matrix( NaN, nrow=nrow(P0sd), ncol=ncol(P0sd) )   
+          sP0 = matrix( NaN, nrow=nrow(P0), ncol=ncol(P0) )
+          sP0sd = matrix( NaN, nrow=nrow(P0sd), ncol=ncol(P0sd) )
           if (file.exists(p$saved_state_fn$P0)) load( p$saved_state_fn$P0 )
           if (file.exists(p$saved_state_fn$P0sd)) load( p$saved_state_fn$P0sd )
           P0[] = sP0[]
@@ -853,7 +859,7 @@
       }
       # gc()
     }
-    
+
     # =--------------------
 
 
