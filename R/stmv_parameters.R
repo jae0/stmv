@@ -19,7 +19,7 @@ stmv_parameters = function( p=NULL, ... ) {
   if (!exists( "stmv_quantile_bounds", p)) p$stmv_quantile_bounds = c(0.01, 0.99) # remove these extremes in interpolations
   if (!exists( "eps", p)) p$eps = 1e-6 # floating point precision
   if (!exists( "boundary", p)) p$boundary = FALSE
-  if (!exists( "depth.filter", p)) p$depth.filter = FALSE # depth is given as log(depth) so, choose andy stats locations with elevation > 1 m as being on land
+  if (!exists( "depth.filter", p)) p$depth.filter = FALSE # if !FALSE .. depth is given as m so, choose andy stats locations with elevation > 1 m as being on land
   if (!exists( "stmv_kernelmethods_use_all_data", p)) p$stmv_kernelmethods_use_all_data =TRUE ## speed and RAM usage improvement is minimal (if any) when off, leave on or remove option and fix as on
   if (!exists( "stmv_distance_search_multiplier", p) ) p$stmv_distance_search_multiplier = c( 1.0, 1.25 ) # distance multiplier for increased searching radius ( iterative )
 
@@ -27,7 +27,7 @@ stmv_parameters = function( p=NULL, ... ) {
     # fractions of distance scale  to try in local block search
     p$sampling = c( 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.1, 1.2, 1.5, 1.75, 2 )
   }
-  
+
   if (!exists("stmv_lowpass_phi", p)) p$stmv_lowpass_phi = p$pres*2 # FFT based method when operating gloablly
   if (!exists("stmv_lowpass_nu", p)) p$stmv_lowpass_nu = 0.5 # this is exponential covar
 
@@ -38,7 +38,7 @@ stmv_parameters = function( p=NULL, ... ) {
   }
 
   if (!exists("stmv_gam_optimizer", p)) p$stmv_gam_optimizer=c("outer","bfgs")
-  
+
   if ( p$stmv_local_modelengine %in% c("gam" )) {
     # p$stmv_gam_optimizer=c("outer","optim")
     # if (!exists("stmv_gam_optimizer", p)) p$stmv_gam_optimizer="perf"
@@ -51,7 +51,7 @@ stmv_parameters = function( p=NULL, ... ) {
   if (!exists("variables", p)) p$variables=list()
 
   # require knowledge of size of stats output which varies with a given type of analysis
-  p$statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "range", "phi", "nu" ) 
+  p$statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "range", "phi", "nu" )
   if (exists("TIME", p$variables) )  p$statsvars = c( p$statsvars, "ar_timerange", "ar_1" )
   if (p$stmv_local_modelengine == "userdefined" ) {
     if (exists("stmv_local_modelengine", p) ) {
@@ -75,7 +75,7 @@ stmv_parameters = function( p=NULL, ... ) {
       stop( "||| More than one unique cluster server was specified .. the bigmemory RAM-based method only works within one server." )
     }
   }
- 
+
   # other libs
   if (exists("stmv_local_modelengine", p)) {
     if (p$stmv_local_modelengine=="bayesx")  p$libs = c( p$libs, "R2BayesX" )
@@ -104,14 +104,3 @@ stmv_parameters = function( p=NULL, ... ) {
 
   return(p)
 }
-
-
-
-
-
-
-
-
-
-
-
