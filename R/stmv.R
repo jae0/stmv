@@ -1,7 +1,7 @@
 
 
-stmv = function( p, runmode="interpolate", DATA=NULL, 
-  use_saved_state=FALSE, save_completed_data=TRUE, force_complete_solution=TRUE, 
+stmv = function( p, runmode="interpolate", DATA=NULL,
+  use_saved_state=FALSE, save_completed_data=TRUE, force_complete_solution=TRUE,
   debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE, cpu.scaleback=FALSE ) {
 
   if (0) {
@@ -12,13 +12,13 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     debug_plot_variable_index=1
     cpu.scaleback=FALSE
   }
-  
+
   #\\ localized modelling of space and time data to predict/interpolate upon a grid
   #\\ speed ratings: bigmemory.ram (1), ff (2), bigmemory.filebacked (3)
-  
+
   # -----------------------------------------------------
   if (!exists("stmvSaveDir", p)) p$stmvSaveDir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
-  
+
   if ( !file.exists(p$stmvSaveDir)) dir.create( p$stmvSaveDir, recursive=TRUE, showWarnings=FALSE )
 
   p = stmv_parameters(p=p) # fill in parameters with defaults where required
@@ -34,14 +34,14 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   message( "|||",  p$stmvSaveDir  )
   message( " ")
 
-  
+
 
   p$ptr = list() # location for data pointers
 
   # set up the data and problem using data objects
   tmpfiles = unlist( p$cache)
   for (tf in tmpfiles) if (file.exists( tf)) file.remove(tf)
-  
+
   # permit passing a function rather than data directly .. less RAM usage in parent call
   if (is.null(DATA) ) {
     if (exists("DATA", p)) {
@@ -92,12 +92,13 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     DATA$input[, p$variables$Y ] = p$stmv_Y_transform$transf(DATA$input[, p$variables$Y ] )
   }
 
-  if ("globalmodel" %in% runmode) {
+  if ( any(grepl("globalmodel", runmode) ) ) {
     if ( exists("stmv_global_modelengine", p) ) {
       if ( p$stmv_global_modelengine !="none" ) {
       # to add global covariate model (hierarchical)
       # .. simplistic this way but faster ~ kriging with external drift
         stmv_db( p=p, DS="global_model.redo", B=DATA$input )
+        if (any(grepl("globalmodel.only", runmode))) return( stmv_db( p=p, DS="global_model" ) )
       }
     }
   }
@@ -153,12 +154,12 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   # 1=complete
   # 2=oustide bounds(if any)
   # 3=shallow(if z is a covariate)
-  # 4=range not ok, 
-  # 5=skipped due to insufficient data, 
+  # 4=range not ok,
+  # 5=skipped due to insufficient data,
   # 6=skipped .. fast variogram did not work
   # 7=variogram estimated range not ok
   # 8=problem with prediction and/or modelling
-  # 9=attempting ... if encountered then it was some general problem  or was interrrupted 
+  # 9=attempting ... if encountered then it was some general problem  or was interrrupted
     if (p$storage.backend == "bigmemory.ram" ) {
       tmp_Sflag = big.matrix(nrow=length(sSflag), ncol=1, type="double" )
       tmp_Sflag[] = sSflag[]
@@ -171,7 +172,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     if (p$storage.backend == "ff" ) {
       p$ptr$Sflag = ff( sSflag, dim=dim(sSflag), file=p$cache$Sflag, overwrite=TRUE )
     }
-    
+
 
   sS = sSflag =  Sloc = NULL
 
@@ -179,7 +180,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   Ydata = as.matrix(DATA$input[, p$variables$Y ])
   if (exists("stmv_global_modelengine", p)) {
     if (p$stmv_global_modelengine !="none" ) {
-      # at present only those that have a predict and residuals methods ... 
+      # at present only those that have a predict and residuals methods ...
       covmodel = stmv_db( p=p, DS="global_model")
       # Ypreds = predict(covmodel, type="link", se.fit=FALSE )  ## TODO .. keep track of the SE
       Ydata  = residuals(covmodel, type="deviance") # ie. link scale .. this is the default but make it explicit
@@ -253,11 +254,11 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         if (p$storage.backend == "ff" ) {
           p$ptr$Ytime = ff( Ytime, dim=dim(Ytime), file=p$cache$Ytime, overwrite=TRUE )
         }
-      Ytime =NULL; 
-      
+      Ytime =NULL;
+
     }
-    
-    
+
+
     nPlocs = nrow(DATA$output$LOCS)
 
     if (exists("COV", p$variables)) {
@@ -270,7 +271,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         if (nPcovlocs != nPlocs) {
           message( "Inconsistency between number of prediction locations and prediction covariates: input data needs to be checked:")
           message( "Usually this due to bathymetry and temperature being out of sync")
-          
+
           print(str(DATA))
           stop()
         }
@@ -289,16 +290,16 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         }
         Pcovdata = NULL
       }
-      
+
     }
 
 
-    
+
     # predictions and associated stats
     sP = matrix( NaN, nrow=nPlocs, ncol=p$nt )
     if (use_saved_state) {
       if (file.exists(p$saved_state_fn$P)) load( p$saved_state_fn$P )
-    }       
+    }
       if (p$storage.backend == "bigmemory.ram" ) {
         tmp_P = big.matrix( nrow=nrow(sP), ncol=ncol(sP), type="double" )
         tmp_P[] = sP[]
@@ -318,7 +319,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     sPn = matrix( NaN, nrow=nPlocs, ncol=p$nt )
     if (use_saved_state) {
       if (file.exists(p$saved_state_fn$Pn)) load( p$saved_state_fn$Pn )
-    }      
+    }
       if (p$storage.backend == "bigmemory.ram" ) {
         tmp_Pn = big.matrix( nrow=nrow(sPn), ncol=ncol(sPn), type="double" )
         tmp_Pn[] = sPn[]
@@ -338,7 +339,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     sPsd = matrix( NaN, nrow=nPlocs, ncol=p$nt )
     if (use_saved_state) {
       if (file.exists(p$saved_state_fn$Psd)) load( p$saved_state_fn$Psd )
-    }      
+    }
       if (p$storage.backend == "bigmemory.ram" ) {
         tmp_Psd = big.matrix( nrow=nrow(sPsd), ncol=ncol(sPsd), type="double" )
         tmp_Psd[] = sPsd[]
@@ -352,8 +353,8 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         p$ptr$Psd = ff( sPsd, dim=dim(sPsd), file=p$cache$Psd, overwrite=TRUE )
       }
     sPsd = NULL
-    
-    
+
+
     # prediction coordinates
     Ploc = as.matrix( DATA$output$LOCS )
       attr( Ploc, "dimnames" ) = NULL
@@ -369,10 +370,10 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       if (p$storage.backend == "ff" ) {
         p$ptr$Ploc = ff( Ploc, dim=dim(Ploc), file=p$cache$Ploc, overwrite=TRUE )
       }
-    Ploc = NULL; 
+    Ploc = NULL;
 
-    DATA = NULL; 
-    
+    DATA = NULL;
+
     if (exists("stmv_global_modelengine", p) ) {
       if (p$stmv_global_modelengine !="none" ) {
         # create prediction suface with covariate-based additive offsets
@@ -380,7 +381,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         sP0 = matrix( NaN, nrow=nPlocs, ncol=p$nt )
         if (use_saved_state) {
           if (file.exists(p$saved_state_fn$P0)) load( p$saved_state_fn$P0 )
-        }      
+        }
         if (p$storage.backend == "bigmemory.ram" ) {
           tmp_P0= big.matrix( nrow=nrow(sP0), ncol=ncol(sP0) , type="double" )
           tmp_P0[] = sP0[]
@@ -399,7 +400,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         sP0sd = matrix( NaN, nrow=nPlocs, ncol=p$nt )
         if (use_saved_state) {
           if (file.exists(p$saved_state_fn$P0sd)) load( p$saved_state_fn$P0sd )
-        }      
+        }
         if (p$storage.backend == "bigmemory.ram" ) {
           tmp_P0sd= big.matrix( nrow=nrow(sP0sd), ncol=ncol(sP0sd) , type="double" )
           tmp_P0sd[] = sP0sd[]
@@ -412,7 +413,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         if (p$storage.backend == "ff" ) {
           p$ptr$P0sd = ff( sP0sd, dim=dim(sP0sd), file=p$cache$P0sd, overwrite=TRUE )
         }
-        sP0sd=NULL; 
+        sP0sd=NULL;
 
 
         # test to see if all covars are static as this can speed up the initial predictions
@@ -427,12 +428,12 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
           nc_cov = c( nc_cov,  ncol(pu) )
         }
         p$all.covars.static = ifelse( any(nc_cov > 1),  FALSE, TRUE )
-        
+
         if (!use_saved_state) {
             pc = p # copy
             if (!pc$all.covars.static) if (exists("clusters.covars", pc) ) pc$clusters = pc$clusters.covars
             # takes about 28 GB per run .. adjust cluster number temporarily
-            stmv_db( p=pc, DS="global.prediction.surface" ) 
+            stmv_db( p=pc, DS="global.prediction.surface" )
             p$time_covariates = round(difftime( Sys.time(), p$timec_covariates_0 , units="hours"), 3)
             message( paste( "||| Time taken to predict covariate surface (hours):", p$time_covariates ) )
         }
@@ -496,7 +497,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
     message("||| Finished. ")
     message("||| Once analyses begin, you can view maps from an external R session: ")
-    message("||| p = stmv_db( p=list(data_root=project.datadirectory('aegis', 'temperature'), variables=list(Y='t'), spatial.domain='canada.east' )), DS='load.parameters' )" ) 
+    message("||| p = stmv_db( p=list(data_root=project.datadirectory('aegis', 'temperature'), variables=list(Y='t'), spatial.domain='canada.east' )), DS='load.parameters' )" )
     message("||| stmv(p=p, runmode='debug_predictions_map', debug_plot_variable_index=1) # for static maps")
     message("||| stmv(p=p, runmode='debug_predictions_map', debug_plot_variable_index=1:p$nt, debug_plot_log=TRUE) # for timeseries  of log(Y)")
     message("||| stmv(p=p, runmode='debug_statistics_map', debug_plot_variable_index=1:length(p$statsvars))  ")
@@ -505,15 +506,15 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     message("||| in linux, you can issue the following command:" )
     message("||| watch -n 60 cat ",  p$stmv_current_status  )
 
-    
+
     # end of intialization of data structures
     # -----------------------------------------------------
-    
+
   p <<- p
 
   if ( "initialize_only" %in% runmode ) return(p)
-  
-    
+
+
   if ( any(grepl("debug", runmode)) ) {
     if (!exists("time.start", p) ) p$time.start = Sys.time()
     message( " " )
@@ -522,7 +523,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     currentstatus = stmv_db( p=p, DS="statistics.status.reset" )  # this resets error flags only
   }
 
-  
+
   if ( "reset_incomplete_locations" %in% runmode ) {
     # this resets errors flags and areas without viable predictions
     toredo = stmv_db( p=p, DS="flag.incomplete.predictions" )
@@ -533,23 +534,23 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   }
 
 
-  stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data 
+  stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data
 
-  
+
   # -----------------------------------------------------
   if ( "debug" %in% runmode ) {
     currentstatus = stmv_db( p=p, DS="statistics.status" )
-    pdeb = parallel_run( p=p, 
-      runindex=list( locs=sample( currentstatus$todo ))  # random order helps use all cpus   
+    pdeb = parallel_run( p=p,
+      runindex=list( locs=sample( currentstatus$todo ))  # random order helps use all cpus
     )
     # FUNC is NULL means no running just return params
     print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ))
     message( "||| Entering browser mode ...")
-    
+
     p <<- pdeb
     stmv_interpolate (p=pdeb )
   }
-    
+
   # -----------------------------------------------------
 
   if ( "debug_predictions_map" %in% runmode) {
@@ -571,15 +572,15 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       }
     }
     Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
-    
+
     if ( debug_plot_log ) sP = log(sP)
-    
+
     if ( is.null(debug_plot_variable_index)) debug_plot_variable_index=1
-  
+
     for (i in debug_plot_variable_index ) {
       print(
         lattice::levelplot( sP[,i] ~ Ploc[,1]+Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
-      )            
+      )
     }
   }
 
@@ -592,23 +593,23 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       sS = stmv_attach( p$storage.backend, p$ptr$S )[]
     }
     Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
-    
+
     if ( debug_plot_log ) sS = log(sS)
-    
+
     if ( is.null(debug_plot_variable_index)) debug_plot_variable_index=1
-  
+
     for (i in debug_plot_variable_index ) {
       print(
         lattice::levelplot( sS[,i] ~ Sloc[,1]+Sloc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
-      )            
+      )
     }
-  
+
   }
 
   # -----------------------------------------------------
 
   if ("interpolate" %in% runmode ) {
-    sdm0 = p$stmv_distance_max 
+    sdm0 = p$stmv_distance_max
     sds0 = p$stmv_distance_scale
     for (sdsm in 1:length(p$stmv_distance_search_multiplier) ) {
       if (cpu.scaleback) {
@@ -618,7 +619,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       }
       p$stmv_distance_max = sdm0 * p$stmv_distance_search_multiplier[ sdsm ]
       p$stmv_distance_scale = sds0 * p$stmv_distance_search_multiplier[ sdsm ]
-        # all low-level operations in one to avoid $!#!@# bigmemory issues 
+        # all low-level operations in one to avoid $!#!@# bigmemory issues
         Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
         # to reset all rejected locations
         toreset = which( Sflag[] > 2)
@@ -636,16 +637,16 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         currentstatus$skipped = which( Sflag[] == 9L )   # 9 not completed due to a failed attempt
         # do some counts
         currentstatus$n.todo = length(currentstatus$todo)
-        currentstatus$n.complete = length(currentstatus$done) 
-        currentstatus$n.outside = length(which(is.finite(currentstatus$outside))) 
+        currentstatus$n.complete = length(currentstatus$done)
+        currentstatus$n.outside = length(which(is.finite(currentstatus$outside)))
         currentstatus$n.shallow = length(currentstatus$shallow)
         currentstatus$n.predareaerror = length(currentstatus$predareaerror)
         currentstatus$n.nodata = length(currentstatus$nodata)
         currentstatus$n.variogramerror = length(currentstatus$variogramerror)
         currentstatus$n.vrangeerror = length(currentstatus$vrangeerror)
-        currentstatus$n.modelerror = length(currentstatus$modelerror) 
+        currentstatus$n.modelerror = length(currentstatus$modelerror)
         currentstatus$n.skipped = length(currentstatus$skipped)
-        currentstatus$n.total = length(Sflag) 
+        currentstatus$n.total = length(Sflag)
         currentstatus$prop_incomp = round( currentstatus$n.todo / ( currentstatus$n.total), 3)
         runindex=list( locs=currentstatus$todo[sample.int(length( currentstatus$todo ))] )
         nvars = length(runindex)  # runindex must be a list
@@ -697,7 +698,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       save( sPsd, file=p$saved_state_fn$Psd, compress=TRUE ); sPsd=NULL
       save( sS, file=p$saved_state_fn$stats, compress=TRUE ); sS = NULL
       save( sSflag, file=p$saved_state_fn$sflag, compress=TRUE ); sSflag = NULL
-      
+
       if (exists("stmv_global_modelengine", p)) {
         if (p$stmv_global_modelengine !="none" ) {
           save( sP0,   file=p$saved_state_fn$P0,   compress=TRUE ); sP0 = NULL
@@ -706,12 +707,12 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       }
 
   }
-  
+
   # --------------------
-  
+
   if (force_complete_solution) {
     # finalize all interpolations where there are missing data/predictions using fft-based fast smooth
-    # all low-level operations in one to avoid $!#!@# bigmemory issues 
+    # all low-level operations in one to avoid $!#!@# bigmemory issues
     runindex=list( time_index=1:p$nt )
     nvars = length(runindex)  # runindex must be a list
     p$runs = expand.grid(runindex, stringsAsFactors=FALSE, KEEP.OUT.ATTRS=FALSE)
@@ -743,7 +744,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         ssplt = NULL
         clusterApply( p$cl, clustertasklist, stmv_interpolate_fast, p=p  )
     stopCluster( p$cl )
-    
+
     if (0) {
       # a penultimate save of data as an internal format, just in case
       sP = stmv_attach( p$storage.backend, p$ptr$P )[]
@@ -762,19 +763,19 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       save( sPsd, file=p$saved_state_fn$Psd, compress=TRUE ); sPsd=NULL
       save( sS, file=p$saved_state_fn$stats, compress=TRUE ); sS = NULL
       save( sSflag, file=p$saved_state_fn$sflag, compress=TRUE ); sSflag = NULL
-      
+
       if (exists("stmv_global_modelengine", p)) {
         if (p$stmv_global_modelengine !="none" ) {
           save( sP0,   file=p$saved_state_fn$P0,   compress=TRUE ); sP0 = NULL
           save( sP0sd, file=p$saved_state_fn$P0sd, compress=TRUE ); sP0sd = NULL
         }
       }
-      
+
     }
 
   }
-  
-  
+
+
   # -----------------------------------------------------
 
   if (save_completed_data) stmv_db( p=p, DS="stmv.results" ) # save to disk for use outside stmv*, returning to user scale
