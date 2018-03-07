@@ -1,10 +1,12 @@
 
 
 stmv = function( p, runmode="interpolate", DATA=NULL,
-  use_saved_state=FALSE, save_completed_data=TRUE, force_complete_solution=TRUE,
+  use_saved_state=FALSE, save_completed_data=TRUE, force_complete_solution=FALSE, nsavepoints=1,
   debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE, cpu.scaleback=FALSE ) {
 
   if (0) {
+    nsavepoints = 1
+    force_complete_solution=FALSE
     use_saved_state=TRUE
     DATA=NULL
     storage.backend="bigmemory.ram"
@@ -497,6 +499,10 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     }
     if ( !exists("stmv_distance_min", p)) p$stmv_distance_min = mean( c(p$stmv_distance_prediction, p$stmv_distance_scale /20 ) )
     if ( !exists("stmv_distance_max", p)) p$stmv_distance_max = mean( c(p$stmv_distance_prediction*10, p$stmv_distance_scale * 2 ) )
+
+
+    p$nsavepoints = nsavepoints
+
 
     message("||| Finished. ")
     message("||| Once analyses begin, you can view maps from an external R session: ")

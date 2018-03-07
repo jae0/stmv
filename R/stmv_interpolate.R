@@ -2,7 +2,7 @@
 
 stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
   #\\ core function to interpolate (model and predict) in parallel
-  
+
   if (0) {
     # for debug  runs ..
     currentstatus = stmv_db( p=p, DS="statistics.status" )
@@ -21,7 +21,7 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
   if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
 
   if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
-  
+
   #---------------------
   # data for modelling
   S = stmv_attach( p$storage.backend, p$ptr$S )
@@ -60,7 +60,7 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
   iY = which(dat_names== p$variables$Y)
   ilocs = which( dat_names %in% p$variable$LOCS )
   # iwei = which( dat_names %in% "weights" )
-  
+
   if (p$nloccov > 0) icov = which( dat_names %in% p$variables$local_cov )
   if (exists("TIME", p$variables)) {
     ti_cov = setdiff(p$variables$local_all, c(p$variables$Y, p$variables$LOCS, p$variables$local_cov ) )
@@ -80,17 +80,17 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
     twostep = stmv__twostep,
     userdefined = p$stmv_local_modelengine_userdefined
   )
-  
+
   nip = length(ip)
   nlogs = 20
-  savepoints = ip[ floor( sample.int( (nip-99), 2 ) ) ]
-  
+  savepoints = ip[ floor( sample.int( (nip-99), p$nsavepoints ) ) ]
+
   if (nip < 100) {
     nlogs = 4
     savepoints = 0  # ie. no saving
   }
 
-  logpoints  = ip[ floor( seq( from=1, to=nip, length.out= nlogs ) ) ] 
+  logpoints  = ip[ floor( seq( from=1, to=nip, length.out= nlogs ) ) ]
 
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
@@ -99,7 +99,7 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
 
     if ( iip %in% savepoints ) {
       sP = P[]; save( sP, file=p$saved_state_fn$P, compress=TRUE ); rm( sP)
-      sPn = Pn[]; save( sPn, file=p$saved_state_fn$Pn, compress=TRUE ); rm( sPn) 
+      sPn = Pn[]; save( sPn, file=p$saved_state_fn$Pn, compress=TRUE ); rm( sPn)
       sPsd = Psd[]; save( sPsd, file=p$saved_state_fn$Psd, compress=TRUE ); rm( sPsd)
       sS = S[]; save( sS, file=p$saved_state_fn$stats, compress=TRUE ); rm( sS)
       sSflag = Sflag[]; save( sSflag, file=p$saved_state_fn$sflag, compress=TRUE ); rm( sSflag)
@@ -108,20 +108,20 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
     Si = p$runs[ iip, "locs" ]
 
     print( paste(iip, Si ) )
-    
+
 
     if ( Sflag[Si] != 0L ) next()  # previously attempted .. skip
       # 0=to do
       # 1=complete
       # 2=oustide bounds(if any) -
       # 3=shallow(if z is a covariate) -
-      # 4=predictionarea not ok, 
-      # 5=skipped due to insufficient data, 
+      # 4=predictionarea not ok,
+      # 5=skipped due to insufficient data,
       # 6=skipped .. fast variogram did not work
       # 7=variogram estimated range not ok
       # 8=problem with prediction and/or modelling
-      # 9=attempting ... if encountered then it was some general problem  or was interrrupted 
-      
+      # 9=attempting ... if encountered then it was some general problem  or was interrrupted
+
     # find data nearest S[Si,] and with sufficient data
     dlon = abs( Sloc[Si,1] - Yloc[Yi[],1] )
     dlat = abs( Sloc[Si,2] - Yloc[Yi[],2] )
@@ -146,7 +146,7 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
       }
       if (ndata < p$n.min) {
         Sflag[Si] = 5L   # skipped .. not enough data
-        next() 
+        next()
       }
     } else if (ndata > p$n.max){
       U = U[ .Internal( sample( length(U), p$n.max, replace=FALSE, prob=NULL)) ]
@@ -159,7 +159,7 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
       distance_cutoff=stmv_distance_cur, nbreaks=13 ) )
     if ( is.null(o)) Sflag[Si] = 6L   # fast variogram did not work
     if ( inherits(o, "try-error")) Sflag[Si] = 6L   # fast variogram did not work
-    
+
     if (exists("stmv_rangecheck", p)) {
       if (p$stmv_rangecheck=="paranoid") {
         if ( Sflag[Si] == 6L ) {
@@ -167,7 +167,7 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
         }
       }
     }
-  
+
     ores = NULL
     if ( exists(p$stmv_variogram_method, o)) {
       ores = o[[p$stmv_variogram_method]] # store current best estimate of variogram characteristics
@@ -177,14 +177,14 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
         vario_U  = which( {dlon  <= ores[["range"]] } & {dlat <= ores[["range"]]} )
         vario_ndata =length(vario_U)
         if (vario_ndata < p$n.min) {
-          # insufficient data at estimated range 
-          # ..could  stop analysis but this is extreme solution .. range identifies the distance 
+          # insufficient data at estimated range
+          # ..could  stop analysis but this is extreme solution .. range identifies the distance
           # at which AC is no differnt from background noise and so addition of more distant data
           # does not alter interpretation.
-          # NOTE: this range is a crude estimate that averages years ... 
+          # NOTE: this range is a crude estimate that averages years ...
             if (exists("stmv_rangecheck", p)) {
               if (p$stmv_rangecheck=="paranoid") {
-                Sflag[Si] = 5L 
+                Sflag[Si] = 5L
                 next()
               }
             }
@@ -198,8 +198,8 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
         vario_U = vario_ndata = NULL
       }
     }
-  
-    dlon=dlat=o=NULL; 
+
+    dlon=dlat=o=NULL;
 
     YiU = Yi[U] # YiU and p$stmv_distance_prediction determine the data entering into local model construction
     pa = stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=p$windowsize.half )
@@ -209,7 +209,7 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
       message("Error with issue with prediction grid ... null .. this should not happen")
       next()
     }
-    
+
     if (debug) {
       # check that position indices are working properly
       Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
@@ -234,12 +234,12 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
     dat = matrix( 1, nrow=ndata, ncol=dat_nc )
     dat[,iY] = Y[YiU] # these are residuals if there is a global model
     dat[,ilocs] = Yloc[YiU,] + stmv_distance_cur * runif(2*ndata, -1e-6, 1e-6) # add a small error term to prevent some errors when duplicate locations exist
-    
+
     # dat[,iwei]  = 1  # filled with 1's at init above
     # dat[,iwei] = 1 / (( Sloc[Si,2] - dat$plat)**2 + (Sloc[Si,1] - dat$plon)**2 )# weight data in space: inverse distance squared
     # dat[ which( dat[,iwei] < 1e-4 ), iwei ] = 1e-4
     # dat[ which( dat[,iwei] > 1 ) , iwei ] = 1
-    
+
     if (p$nloccov > 0) dat[,icov] = Ycov[YiU,] # no need for other dim checks as this is user provided
     if (exists("TIME", p$variables)) dat[, itime_cov] = as.matrix(stmv_timecovars( vars=ti_cov, ti=Ytime[YiU, ] ) )
     dat = as.data.frame(dat)
@@ -252,7 +252,7 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
       if (exists("varSpatial", ores)) if (is.finite(ores$varSpatial)) varSpatial = ores$varSpatial
       if (exists("varObs", ores))  if (is.finite(ores$varObs)) if (ores$varObs > p$eps) varObs = ores$varObs
     }
-        
+
     if (is.null(nu)) nu = p$stmv_lowpass_nu
     if (is.null(nu)) nu = 0.5
     if (!is.finite(nu)) nu = 0.5
@@ -268,7 +268,7 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
 
     # model and prediction .. outputs are in scale of the link (and not response)
     # the following permits user-defined models (might want to use compiler::cmpfun )
-    
+
     res =NULL
     res = try( local_fn( p=p, dat=dat, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial, sloc=Sloc[Si,], distance=stmv_distance_cur ) )
 
@@ -282,24 +282,24 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
 
     if ( is.null(res)) {
       dat = pa = res = NULL
-      Sflag[Si] = 8L   # modelling / prediction did not complete properly 
+      Sflag[Si] = 8L   # modelling / prediction did not complete properly
       # browser()
       next()
     }
 
     if ( inherits(res, "try-error") ) {
       dat = pa = res = NULL
-      Sflag[Si] = 8L   # modelling / prediction did not complete properly 
+      Sflag[Si] = 8L   # modelling / prediction did not complete properly
       # browser()
       next()
     }
 
-       
+
     if (exists("predictions", res)) {
       if (exists("mean", res$predictions)) {
         if (length(which( is.finite(res$predictions$mean ))) < 5) {
           dat = pa = res = NULL
-          Sflag[Si] = 8L   # modelling / prediction did not complete properly 
+          Sflag[Si] = 8L   # modelling / prediction did not complete properly
           next()  # looks to be a faulty solution
         }
       }
@@ -494,7 +494,7 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
       if ("time slice at 2012.05") {
         lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==2012.05,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
       }
-      
+
       if ("all TIME time slices from latest predictions") {
         for( i in sort(unique(res$predictions[,p$variables$TIME])))  {
           print(lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==i,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
@@ -505,6 +505,10 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
         for (i in 1:p$nt) {
           print( lattice::levelplot( P[pa$i,i] ~ Ploc[pa$i,1] + Ploc[ pa$i, 2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
         }
+      }
+
+      if ("no time slices in P") {
+          print( lattice::levelplot( P[pa$i] ~ Ploc[pa$i,1] + Ploc[ pa$i, 2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
       }
 
     }
