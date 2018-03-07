@@ -1,11 +1,12 @@
 
 
 stmv = function( p, runmode="interpolate", DATA=NULL,
-  use_saved_state=FALSE, save_completed_data=TRUE, force_complete_solution=FALSE, nsavepoints=1,
+  use_saved_state=FALSE, save_completed_data=TRUE, force_complete_solution=FALSE, nsavepoints=1, nlogs=25,
   debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE, cpu.scaleback=FALSE ) {
 
   if (0) {
     nsavepoints = 1
+    nlogs = 25
     force_complete_solution=FALSE
     use_saved_state=TRUE
     DATA=NULL
@@ -22,6 +23,10 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   if (!exists("stmvSaveDir", p)) p$stmvSaveDir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
 
   if ( !file.exists(p$stmvSaveDir)) dir.create( p$stmvSaveDir, recursive=TRUE, showWarnings=FALSE )
+
+
+  p$nsavepoints = nsavepoints
+  p$nlogs = nlogs
 
   p = stmv_parameters(p=p) # fill in parameters with defaults where required
 
@@ -500,8 +505,6 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     if ( !exists("stmv_distance_min", p)) p$stmv_distance_min = mean( c(p$stmv_distance_prediction, p$stmv_distance_scale /20 ) )
     if ( !exists("stmv_distance_max", p)) p$stmv_distance_max = mean( c(p$stmv_distance_prediction*10, p$stmv_distance_scale * 2 ) )
 
-
-    p$nsavepoints = nsavepoints
 
 
     message("||| Finished. ")

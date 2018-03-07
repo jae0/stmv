@@ -82,15 +82,15 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
   )
 
   nip = length(ip)
-  nlogs = 20
-  savepoints = ip[ floor( sample.int( (nip-99), p$nsavepoints ) ) ]
-
   if (nip < 100) {
-    nlogs = 4
-    savepoints = 0  # ie. no saving
+    nlogs = 3
+  } else {
+    nlogs = p$nlogs
   }
+  logpoints  = ip[ floor( seq( from=10, to=(nip-10), length.out=nlogs ) ) ]
 
-  logpoints  = ip[ floor( seq( from=1, to=nip, length.out= nlogs ) ) ]
+  savepoints = sample.int(logpoints, p$nsavepoints) ) ]
+  if (nip < 100) savepoints = 0  # ie. no saving .. no need
 
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
