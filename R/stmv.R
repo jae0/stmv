@@ -530,8 +530,9 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   if ( any(grepl("debug", runmode)) ) {
     if (!exists("time.start", p) ) p$time.start = Sys.time()
     message( " " )
-    message( "||| Seems like we are continuing from a saved state ... loading" )
-    stmv_db( p=p, DS="load_saved_state" )  # try to load saved state back into memory .. otherwise use what is in memory
+    message( "||| Seems like we are continuing from a saved state ... " )
+    browser()
+    # stmv_db( p=p, DS="load_saved_state" )  # try to load saved state back into memory .. otherwise use what is in memory
     currentstatus = stmv_db( p=p, DS="statistics.status.reset" )  # this resets error flags only
   }
 
