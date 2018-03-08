@@ -141,6 +141,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   sS = matrix( NaN, nrow=nrow(Sloc), ncol=length( p$statsvars ) ) # NA forces into logical
   if (use_saved_state) {
     if (file.exists(p$saved_state_fn$stats)) load( p$saved_state_fn$stats )
+    if (is.vector(sS)) sS = as.matrix(sS, nrow=Sloc, ncol=1)
   }
     if (p$storage.backend == "bigmemory.ram" ) {
       tmp_S = big.matrix(nrow=nrow(Sloc), ncol=length( p$statsvars ), type="double"  )
@@ -159,6 +160,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   sSflag = matrix( 0L, nrow=nrow(Sloc), ncol=1 )  # 0L is the todo flag
   if (use_saved_state) {
     if (file.exists(p$saved_state_fn$sflag)) load( p$saved_state_fn$sflag )
+    if (is.vector(sSflag)) sSflag = as.matrix(sSflag, nrow=Sloc, ncol=1)
   }
   # 0=to do
   # 1=complete
@@ -309,6 +311,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     sP = matrix( NaN, nrow=nPlocs, ncol=p$nt )
     if (use_saved_state) {
       if (file.exists(p$saved_state_fn$P)) load( p$saved_state_fn$P )
+      if (is.vector(sP)) sP=as.matrix(sP, nrow=nPlocs, ncol=1)
     }
       if (p$storage.backend == "bigmemory.ram" ) {
         tmp_P = big.matrix( nrow=nrow(sP), ncol=ncol(sP), type="double" )
@@ -329,6 +332,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     sPn = matrix( NaN, nrow=nPlocs, ncol=p$nt )
     if (use_saved_state) {
       if (file.exists(p$saved_state_fn$Pn)) load( p$saved_state_fn$Pn )
+      if (is.vector(sPn)) sPn = as.matrix(sPn, nrow=nPlocs, ncol=1)
     }
       if (p$storage.backend == "bigmemory.ram" ) {
         tmp_Pn = big.matrix( nrow=nrow(sPn), ncol=ncol(sPn), type="double" )
@@ -349,6 +353,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     sPsd = matrix( NaN, nrow=nPlocs, ncol=p$nt )
     if (use_saved_state) {
       if (file.exists(p$saved_state_fn$Psd)) load( p$saved_state_fn$Psd )
+      if (is.vector(sPsd)) sPsd = as.matrix(sPsd, nrow=nPlocs, ncol=1)
     }
       if (p$storage.backend == "bigmemory.ram" ) {
         tmp_Psd = big.matrix( nrow=nrow(sPsd), ncol=ncol(sPsd), type="double" )
@@ -391,6 +396,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         sP0 = matrix( NaN, nrow=nPlocs, ncol=p$nt )
         if (use_saved_state) {
           if (file.exists(p$saved_state_fn$P0)) load( p$saved_state_fn$P0 )
+          if (is.vector(sP0)) sP0 = as.matrix(sP0, nrow=nPlocs, ncol=1)
         }
         if (p$storage.backend == "bigmemory.ram" ) {
           tmp_P0= big.matrix( nrow=nrow(sP0), ncol=ncol(sP0) , type="double" )
@@ -410,6 +416,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         sP0sd = matrix( NaN, nrow=nPlocs, ncol=p$nt )
         if (use_saved_state) {
           if (file.exists(p$saved_state_fn$P0sd)) load( p$saved_state_fn$P0sd )
+          if (is.vector(sP0sd)) sP0sd = as.matrix(sP0sd, nrow=nPlocs, ncol=1)
         }
         if (p$storage.backend == "bigmemory.ram" ) {
           tmp_P0sd= big.matrix( nrow=nrow(sP0sd), ncol=ncol(sP0sd) , type="double" )
