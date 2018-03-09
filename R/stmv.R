@@ -195,7 +195,10 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       # at present only those that have a predict and residuals methods ...
       covmodel = stmv_db( p=p, DS="global_model")
       # Ypreds = predict(covmodel, type="link", se.fit=FALSE )  ## TODO .. keep track of the SE
-      Ydata  = residuals(covmodel, type="deviance") # ie. link scale .. this is the default but make it explicit
+      Ydata  = residuals(covmodel, type="working") # ie. internal (link) scale
+      Yq = quantile( Ydata, probs=p$stmv_quantile_bounds )
+      Ydata[ Ydata < Yq[1] ] = Yq[1]
+      Ydata[ Ydata > Yq[2] ] = Yq[2]
       covmodel =NULL
     }
   }
@@ -574,6 +577,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   # -----------------------------------------------------
 
   if ( "debug_predictions_map" %in% runmode) {
+    if ( is.null(debug_plot_variable_index)) debug_plot_variable_index=1
     if (debug_data_source=="saved.state" ) {
       load( p$saved_state_fn$P )
       if (exists("stmv_global_modelengine", p)) {
@@ -584,19 +588,20 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       }
     } else {
       P = stmv_attach( p$storage.backend, p$ptr$P )
+      sP = P[]
       if (exists("stmv_global_modelengine", p)) {
         if (p$stmv_global_modelengine !="none" ) {
           P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
-          sP = P[] + P0[]
+          sP = sP[] + P0[]
         }
       }
     }
-    Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
-
+    sP = p$stmv_global_family$linkinv( sP[] )
+    if (exists("stmv_Y_transform", p)) {
+      sP = p$stmv_Y_transform$invers (sP[])
+    }
     if ( debug_plot_log ) sP = log(sP)
-
-    if ( is.null(debug_plot_variable_index)) debug_plot_variable_index=1
-
+    Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
     for (i in debug_plot_variable_index ) {
       print(
         lattice::levelplot( sP[,i] ~ Ploc[,1]+Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
@@ -613,11 +618,8 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       sS = stmv_attach( p$storage.backend, p$ptr$S )[]
     }
     Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
-
     if ( debug_plot_log ) sS = log(sS)
-
     if ( is.null(debug_plot_variable_index)) debug_plot_variable_index=1
-
     for (i in debug_plot_variable_index ) {
       print(
         lattice::levelplot( sS[,i] ~ Sloc[,1]+Sloc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")

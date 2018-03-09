@@ -491,9 +491,13 @@
 
           if (p$stmv_global_modelengine %in% c("glm", "bigglm", "gam") ) {
             Pbaseline = try( predict( global_model, newdata=pa, type="link", se.fit=TRUE ) )  # must be on link scale
+            YYY = predict( global_model, type="link", se.fit=TRUE )
+            Yq = quantile( YYY, probs=p$stmv_quantile_bounds )
             pa = NULL
             gc()
             if (!inherits(Pbaseline, "try-error")) {
+              Pbaseline$fit[ Pbaseline$fit < Yq[1] ] = Yq[1]  # do not permit extrapolation
+              Pbaseline$fit[ Pbaseline$fit > Yq[2] ] = Yq[2]
               P0[,it] = Pbaseline$fit
               P0sd[,it] = Pbaseline$se.fit
             }
@@ -609,8 +613,6 @@
           rm(depths)
         }
       }
-
-
 
       PP = stmv_attach( p$storage.backend, p$ptr$P )
       PPsd = stmv_attach( p$storage.backend, p$ptr$Psd )
