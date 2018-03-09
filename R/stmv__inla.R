@@ -20,10 +20,10 @@ stmv__inla = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
   if ( !exists("stmv_eps", p)) p$stmv_eps = p$pres / 10  # add a little noise to coordinates to prevent a race condition
 
   if ( !exists("inla.alpha", p)) p$inla.alpha = 1.5 # alpha-1 = nu of bessel function curviness
-  if ( !exists("inla.nsamples", p)) p$inla.nsamples = 5000 # posterior similations 
+  if ( !exists("inla.nsamples", p)) p$inla.nsamples = 5000 # posterior similations
   if ( !exists("predict.in.one.go", p)) p$predict.in.one.go = FALSE # use false, one go is very very slow and a resource expensive method
-  if ( !exists("predict.quantiles", p)) p$predict.quantiles = c(0.025, 0.975 )  # posterior predictions robustified by trimming extreme values 
-  
+  if ( !exists("predict.quantiles", p)) p$predict.quantiles = c(0.025, 0.975 )  # posterior predictions robustified by trimming extreme values
+
   if ( !exists("debug.file", p)) p$debug.file = file.path( work_root, "inla.debug.out" )
 
   # priors
@@ -33,7 +33,7 @@ stmv__inla = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
   #-----------------
   # row, col indices
   if ( !exists("stmv.posterior.extract", p)) {
-    # example for simplest form 
+    # example for simplest form
     p$stmv.posterior.extract = function(s, rnm) {
       # rnm are the rownames that will contain info about the indices ..
       # optimally the grep search should only be done once but doing so would
@@ -49,7 +49,7 @@ stmv__inla = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
 
   # also sending direct distances rather than proportion seems to cause issues..
   MESH = stmv_mesh_inla( locs=dat[,p$variables$LOC] + locs_noise,
-    # lengthscale=p$stmv_distance_prediction*2,  
+    # lengthscale=p$stmv_distance_prediction*2,
     # max.edge=p$inla.mesh.max.edge * p$stmv_distance_prediction*2,
     bnd.offset=p$inla.mesh.offset,
     cutoff=p$inla.mesh.cutoff,
@@ -74,7 +74,7 @@ stmv__inla = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
   obs_eff = list()
   obs_eff[["spde"]] = c( obs_index, list(intercept=1) )
   if ( exists( "COV", p$variables) ) {
-    covar = as.data.frame( dat[, p$variables$COV ] ) 
+    covar = as.data.frame( dat[, p$variables$COV ] )
     colnames( covar ) = p$variables$COV
     obs_eff[["covar"]] = as.list(covar)
     obs_A = list( inla.spde.make.A( mesh=MESH, loc=as.matrix(dat[, p$variables$LOC ]) ), 1 )
@@ -84,7 +84,7 @@ stmv__inla = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
 
   obs_ydata = list()
   obs_ydata[[ p$variables$Y ]] = dat[, p$variables$Y ]
-  
+
   DATA = inla.stack( tag="obs", data=obs_ydata, A=obs_A, effects=obs_eff, remove.unused=FALSE )
   rm ( obs_index, obs_eff, obs_ydata, obs_A )
   # remove.unused=FALSE ensures that we can look at the estimated field effect without
@@ -121,14 +121,14 @@ stmv__inla = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
   preds_stack_index = inla.stack.index( DATA, "preds")$data  # indices of predictions in stacked data
   rm ( preds_eff, preds_ydata, preds_A, PREDS, preds_index, preds_locs ); gc()
 
-  if (!exists("stmv_local_modelformula", p) )  p$stmv_local_modelformula = formula( z ~ -1 + intercept + f( spatial.field, model=SPDE ) ) # SPDE is the spatial covariance model .. defined in 
+  if (!exists("stmv_local_modelformula", p) )  p$stmv_local_modelformula = formula( z ~ -1 + intercept + f( spatial.field, model=SPDE ) ) # SPDE is the spatial covariance model .. defined in
 
   RES = NULL
-  RES = stmv_inla_call( FM=p$stmv_local_modelformula, DATA=DATA, SPDE=SPDE, FAMILY=p$inla_family )
+  RES = stmv_inla_call( FM=p$stmv_local_modelformula, DATA=DATA, SPDE=SPDE, FAMILY="gaussian" ) # family should be gaussian("identity") as it is operating upon the linear link scale
 
   if (is.null(RES))  return(NULL)
 
-  
+
   if (0) {
     # inla.spde2.matern creates files to disk that are not cleaned up:
     # No longer an issue? 2016-Nov JC
@@ -142,7 +142,7 @@ stmv__inla = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
 
   # -----------
   # predictions
-  
+
   preds = NULL
   if (! exists("stmv_inla_prediction", p) ) p$stmv_inla_prediction="direct"
 
@@ -153,17 +153,17 @@ stmv__inla = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
   }
 
   if ( p$stmv_inla_prediction=="projected") {
-    #\\ note this method only works with simple additive models 
+    #\\ note this method only works with simple additive models
     #\\ when smoothes are involved, it becomes very complicated and direct estimation is probably faster/easier
     pG = inla.mesh.projector( MESH, loc=as.matrix( pa[,p$variables$LOC]) )
     posterior.samples = inla.posterior.sample(n=p$inla.nsamples, RES)
-    rnm = rownames(posterior.samples[[1]]$latent )  
+    rnm = rownames(posterior.samples[[1]]$latent )
     posterior = sapply( posterior.samples, p$stmv.posterior.extract, rnm=rnm )
-    rm(posterior.samples); 
+    rm(posterior.samples);
     # robustify the predictions by trimming extreme values .. will have minimal effect upon mean
-    # but variance estimates should be useful/more stable as the tails are sometimes quite long 
+    # but variance estimates should be useful/more stable as the tails are sometimes quite long
     for (ii in 1:nrow(posterior )) {
-      qnt = quantile( posterior[ii,], probs=p$predict.quantiles, na.rm=TRUE ) 
+      qnt = quantile( posterior[ii,], probs=p$predict.quantiles, na.rm=TRUE )
       toolow = which( posterior[ii,] < qnt[1] )
       toohigh = which (posterior[ii,] > qnt[2] )
       if (length( toolow) > 0 ) posterior[ii,toolow] = qnt[1]
@@ -172,7 +172,7 @@ stmv__inla = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
     pa$mean = c( inla.mesh.project( pG, field=apply( posterior, 1, mean, na.rm=TRUE )  ))
     pa$sd   = c( inla.mesh.project( pG, field=apply( posterior, 1, sd, na.rm=TRUE )  ))
 
-  
+
   }
 
   if (0) {

@@ -1,11 +1,11 @@
 
 stmv__gstat = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varObs=NULL, varSpatial=NULL, variablelist=FALSE, ...  ) {
-  #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation 
-  #\\ note: time is not being modelled and treated independently 
-  #\\      .. you had better have enough data in each time slice ..  essentially this is kriging 
+  #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
+  #\\ note: time is not being modelled and treated independently
+  #\\      .. you had better have enough data in each time slice ..  essentially this is kriging
   if (variablelist)  return( c() )
 
-  if (!exists( "stmv_gstat_formula", p)) p$stmv_gstat_formula = formula( paste( p$variables$Y, "~ 1 ")) 
+  if (!exists( "stmv_gstat_formula", p)) p$stmv_gstat_formula = formula( paste( p$variables$Y, "~ 1 "))
 
   sdTotal = sd(dat[,p$variable$Y], na.rm=T)
 
@@ -16,7 +16,7 @@ stmv__gstat = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varObs=NUL
   pa$sd = sdTotal  # leave as this as sd estimation is too expensive
 
   for ( ti in 1:p$nt ) {
-    
+
     if ( exists("TIME", p$variables) ) {
       xi = which( dat[ , p$variables$TIME ] == p$prediction.ts[ti] )
       pa_i = which( pa[, p$variables$TIME]==p$prediction.ts[ti])
@@ -28,7 +28,7 @@ stmv__gstat = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varObs=NUL
 
     vMod0 = vgm(psill=varSpatial, model="Mat", range=phi, nugget=varObs, kappa=nu ) # starting model parameters
     gs = gstat(id = "hmk", formula=p$stmv_gstat_formula, locations=~plon+plat, data=xy[xi,], maxdist=approx_range, nmin=p$n.min, nmax=p$n.max, force=TRUE, model=vMod0 )
-    # this step adds a lot of time .. 
+    # this step adds a lot of time ..
     preds = predict(gs, newdata=xy[xi,] )
     dat$mean[xi] = as.vector( preds[,1] )
     ss = lm( dat$mean[xi] ~ dat[xi,p$variables$Y], na.action=na.omit)
@@ -49,6 +49,6 @@ stmv__gstat = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varObs=NUL
   if (rsquared < p$stmv_rsquared_threshold ) return(NULL)
 
   stmv_stats = list( sdTotal=sdTotal, rsquared=rsquared, ndata=nrow(dat) ) # must be same order as p$statsvars
-  return( list( predictions=pa, stmv_stats=stmv_stats ) )  
+  return( list( predictions=pa, stmv_stats=stmv_stats ) )
 }
 
