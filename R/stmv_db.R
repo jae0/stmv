@@ -492,7 +492,7 @@
           if (p$stmv_global_modelengine %in% c("glm", "bigglm", "gam") ) {
             Pbaseline = try( predict( global_model, newdata=pa, type="link", se.fit=TRUE ) )  # must be on link scale
             YYY = predict( global_model, type="link", se.fit=TRUE )
-            Yq = quantile( YYY, probs=p$stmv_quantile_bounds )
+            Yq = quantile( YYY$fit, probs=p$stmv_quantile_bounds )
             pa = NULL
             gc()
             if (!inherits(Pbaseline, "try-error")) {
