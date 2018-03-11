@@ -696,8 +696,8 @@
             }
           }
           if ( !is.null(shallower) ){
-            P[shallower,] = NA
-            V[shallower,] = NA
+            P[shallower] = NA
+            V[shallower] = NA
           }
 
           # return to user response scale
