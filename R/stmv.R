@@ -460,7 +460,10 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       }
     }
 
-    stmv_db( p=p, DS="statistics.Sflag" )
+    if (!use_saved_state) {
+      stmv_db( p=p, DS="statistics.Sflag" )
+    }
+
     Y = stmv_attach( p$storage.backend, p$ptr$Y )
     Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
     Yi = 1:length(Y) # index with useable data
