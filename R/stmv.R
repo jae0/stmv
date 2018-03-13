@@ -642,6 +642,9 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
           if (length(p$clusters) > 1) p$clusters = p$clusters[-1]  # scale back no of cpus as there is an increase in RAM usage
         }
       }
+
+      print( paste("Starting stage", sdsm, "of", length(sdsm)))
+
       p$stmv_distance_max = sdm0 * p$stmv_distance_search_multiplier[ sdsm ]
       p$stmv_distance_scale = sds0 * p$stmv_distance_search_multiplier[ sdsm ]
         # all low-level operations in one to avoid $!#!@# bigmemory issues
@@ -739,6 +742,9 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   if (force_complete_solution) {
     # finalize all interpolations where there are missing data/predictions using fft-based fast smooth
     # all low-level operations in one to avoid $!#!@# bigmemory issues
+
+    print( "Force completing full interpolation using fast interpolation upon the stragglers" )
+
     runindex=list( time_index=1:p$nt )
     nvars = length(runindex)  # runindex must be a list
     p$runs = expand.grid(runindex, stringsAsFactors=FALSE, KEEP.OUT.ATTRS=FALSE)
