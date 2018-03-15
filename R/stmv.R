@@ -102,12 +102,14 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   if ( any(grepl("globalmodel", runmode) ) ) {
     if ( exists("stmv_global_modelengine", p) ) {
       if ( p$stmv_global_modelengine !="none" ) {
-      # to add global covariate model (hierarchical)
-      # .. simplistic this way but faster ~ kriging with external drift
-        stmv_db( p=p, DS="global_model.redo", B=DATA$input )
-        if (any(grepl("globalmodel.only", runmode))) {
-          o = stmv_db( p=p, DS="global_model" )
-          return( o )
+        if ( p$stmv_global_modelformula !="none" ) {
+        # to add global covariate model (hierarchical)
+        # .. simplistic this way but faster ~ kriging with external drift
+          stmv_db( p=p, DS="global_model.redo", B=DATA$input )
+          if (any(grepl("globalmodel.only", runmode))) {
+            o = stmv_db( p=p, DS="global_model" )
+            return( o )
+          }
         }
       }
     }
