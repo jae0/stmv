@@ -165,7 +165,8 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
 
     if ( is.null(o)) Sflag[Si] = 6L   # fast variogram did not work
     if ( inherits(o, "try-error")) Sflag[Si] = 6L   # fast variogram did not work
-
+    if (Sflag[Si] == 6L) next()
+    
     if (exists("stmv_rangecheck", p)) {
       if (p$stmv_rangecheck=="paranoid") {
         if ( Sflag[Si] == 6L ) {
