@@ -624,12 +624,12 @@
       }
 
       if ( exists("TIME", p$variables)) {
+        vv = ncol(PP)
         for (it in 1:p$ny) {
           y = p$yrs[it]
           fn_P = file.path( p$stmvSaveDir, paste("stmv.prediction", "mean",  y, "rdata", sep="." ) )
           fn_Pl = file.path( p$stmvSaveDir, paste("stmv.prediction", "lb",   y, "rdata", sep="." ) )
           fn_Pu = file.path( p$stmvSaveDir, paste("stmv.prediction", "ub",   y, "rdata", sep="." ) )
-          vv = ncol(PP)
           if ( vv > p$ny ) {
             ww = (it-1) * p$nw + (1:p$nw)
             P = PP  [,ww]
@@ -658,10 +658,19 @@
               V[shallower,] = NA
             }
           }
+
+          Pl =  P[] + 1.96* V[]
+          Pu =  P[] - 1.96* V[]
+          P =  P[]
+
           # return to user scale (that of Y)
-          Pl = p$stmv_global_family$linkinv( P[] + 1.96* V[] )
-          Pu = p$stmv_global_family$linkinv( P[] - 1.96* V[] )
-          P = p$stmv_global_family$linkinv( P[] )
+          if ( exists( "stmv_global_family", p)) {
+            if (p$stmv_global_family !="none" ) {
+              Pl = p$stmv_global_family$linkinv( Pl[] )
+              Pu = p$stmv_global_family$linkinv( Pu[] )
+              P = p$stmv_global_family$linkinv( P[] )
+            }
+          }
 
           # any additional transformations
           if (exists("stmv_Y_transform", p)) {
@@ -700,11 +709,18 @@
             V[shallower] = NA
           }
 
-          # return to user response scale
-          Pl = p$stmv_global_family$linkinv( P[] + 1.96* V[] )
-          Pu = p$stmv_global_family$linkinv( P[] - 1.96* V[] )
-          P = p$stmv_global_family$linkinv( P[] )
+          Pl =  P[] + 1.96* V[]
+          Pu =  P[] - 1.96* V[]
+          P =  P[]
 
+          # return to user scale (that of Y)
+          if ( exists( "stmv_global_family", p)) {
+            if (p$stmv_global_family !="none" ) {
+              Pl = p$stmv_global_family$linkinv( Pl[] )
+              Pu = p$stmv_global_family$linkinv( Pu[] )
+              P = p$stmv_global_family$linkinv( P[] )
+            }
+          }
 
           if (exists("stmv_Y_transform", p)) {
             Pl = p$stmv_Y_transform$invers (Pl[])  # p$stmv_Y_transform[2] is the inverse transform
