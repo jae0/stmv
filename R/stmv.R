@@ -709,7 +709,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
             ssplt = NULL
             # stmv_interpolate(p=p)
             clusterApply( p$cl, clustertasklist, stmv_interpolate, p=p  )
-        stopCluster( p$cl )
+        # stopCluster( p$cl )
     }  # end for loop
 
       # a penultimate save of data as an internal format, just in case
@@ -777,7 +777,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         }
         ssplt = NULL
         clusterApply( p$cl, clustertasklist, stmv_interpolate_fast, p=p  )
-    stopCluster( p$cl )
+    # stopCluster( p$cl )
 
     if (0) {
       # a penultimate save of data as an internal format, just in case
