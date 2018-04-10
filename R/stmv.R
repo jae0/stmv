@@ -683,7 +683,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         p$runs = expand.grid(runindex, stringsAsFactors=FALSE, KEEP.OUT.ATTRS=FALSE)
         p$nruns = nrow( p$runs )
         p$runs_uid = do.call(paste, c(p$runs, sep="~"))
-        p$clustertype = "PSOCK"
+        p$clustertype = "FORK"
         p$rndseed = 1
         if ( p$nruns < length( p$clusters ) ) {
           p$clusters = sample( p$clusters, p$nruns )  # if very few runs, use only what is required
@@ -752,7 +752,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     p$runs = expand.grid(runindex, stringsAsFactors=FALSE, KEEP.OUT.ATTRS=FALSE)
     p$nruns = nrow( p$runs )
     p$runs_uid = do.call(paste, c(p$runs, sep="~"))
-    p$clustertype = "PSOCK"
+    p$clustertype = "FORK"
     p$rndseed = 1
     if ( p$nruns < length( p$clusters ) ) {
       p$clusters = sample( p$clusters, p$nruns )  # if very few runs, use only what is required
