@@ -688,8 +688,11 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         if ( p$nruns < length( p$clusters ) ) {
           p$clusters = sample( p$clusters, p$nruns )  # if very few runs, use only what is required
         }
-        p$cl = makeCluster( spec=p$clusters, nnodes=length(p$clusters), type=p$clustertype ) # SOCK works well but does not load balance as MPI
-
+        if (clustertype=="FORK") {
+          p$cl = makeCluster( spec=length(p$clusters),  type=p$clustertype ) # SOCK works well but does not load balance as MPI
+        } else {
+          p$cl = makeCluster( spec=p$clusters,  type=p$clustertype ) # SOCK works well but does not load balance as MPI
+        }
             RNGkind("L'Ecuyer-CMRG")  # multiple streams of pseudo-random numbers.
             clusterSetRNGStream(p$cl, iseed=p$rndseed )
             # if ( !is.null(clusterexport)) clusterExport( p$cl, clusterexport )
@@ -759,7 +762,12 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       p$clusters = sample( p$clusters, p$nruns )  # if very few runs, use only what is required
     }
     
-    p$cl = makeCluster( spec=p$clusters, nnodes=length(p$clusters), type=p$clustertype ) # SOCK works well but does not load balance as MPI
+        if (clustertype=="FORK") {
+          p$cl = makeCluster( spec=length(p$clusters),  type=p$clustertype ) # SOCK works well but does not load balance as MPI
+        } else {
+          p$cl = makeCluster( spec=p$clusters,  type=p$clustertype ) # SOCK works well but does not load balance as MPI
+        }
+
         RNGkind("L'Ecuyer-CMRG")  # multiple streams of pseudo-random numbers.
         clusterSetRNGStream(p$cl, iseed=p$rndseed )
         # if ( !is.null(clusterexport)) clusterExport( p$cl, clusterexport )
