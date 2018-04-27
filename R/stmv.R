@@ -687,7 +687,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         if ( p$nruns < length( p$clusters ) ) {
           p$clusters = sample( p$clusters, p$nruns )  # if very few runs, use only what is required
         }
-        if (!exists( "clustertype", p) ) p$clustertype = "FORK"
+        if (!exists( "clustertype", p) ) p$clustertype = "PSOCK"
         if (p$clustertype=="FORK") {
           p$cl = makeCluster( spec=length(p$clusters),  type=p$clustertype ) # SOCK works well but does not load balance as MPI
         } else {
@@ -760,7 +760,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     if ( p$nruns < length( p$clusters ) ) {
       p$clusters = sample( p$clusters, p$nruns )  # if very few runs, use only what is required
     }
-    if (!exists( "clustertype", p) ) p$clustertype = "FORK"
+    if (!exists( "clustertype", p) ) p$clustertype = "PSOCK"
     if (p$clustertype=="FORK") {
       p$cl = makeCluster( spec=length(p$clusters),  type=p$clustertype ) # SOCK works well but does not load balance as MPI
     } else {
