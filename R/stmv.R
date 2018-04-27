@@ -683,13 +683,13 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         p$runs = expand.grid(runindex, stringsAsFactors=FALSE, KEEP.OUT.ATTRS=FALSE)
         p$nruns = nrow( p$runs )
         p$runs_uid = do.call(paste, c(p$runs, sep="~"))
-        p$clustertype = "FORK"
         p$rndseed = 1
         if ( p$nruns < length( p$clusters ) ) {
           p$clusters = sample( p$clusters, p$nruns )  # if very few runs, use only what is required
         }
-        p$cl = makeCluster( spec=p$clusters, nnode=length(p$clusters), type=p$clustertype ) # SOCK works well but does not load balance as MPI
-
+        if (!exists( "clustertype", p) ) p$clustertype = "FORK"
+        if ( !exists("nnode", p) ) p$nnode = length( p$clusters)
+        p$cl = makeCluster( spec=p$clusters, nnode=p$nnode, type=p$clustertype ) # SOCK works well but does not load
             RNGkind("L'Ecuyer-CMRG")  # multiple streams of pseudo-random numbers.
             clusterSetRNGStream(p$cl, iseed=p$rndseed )
             # if ( !is.null(clusterexport)) clusterExport( p$cl, clusterexport )
@@ -753,13 +753,13 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     p$runs = expand.grid(runindex, stringsAsFactors=FALSE, KEEP.OUT.ATTRS=FALSE)
     p$nruns = nrow( p$runs )
     p$runs_uid = do.call(paste, c(p$runs, sep="~"))
-    p$clustertype = "FORK"
     p$rndseed = 1
     if ( p$nruns < length( p$clusters ) ) {
       p$clusters = sample( p$clusters, p$nruns )  # if very few runs, use only what is required
     }
-    
-    p$cl = makeCluster( spec=p$clusters, nnode=length(p$clusters), type=p$clustertype ) # SOCK works well but does not load balance as MPI
+    if (!exists( "clustertype", p) ) p$clustertype = "FORK"
+    if ( !exists("nnode", p) ) p$nnode = length( p$clusters)
+    p$cl = makeCluster( spec=p$clusters, nnode=p$nnode, type=p$clustertype ) # SOCK works well but does not load balance as MPI
         RNGkind("L'Ecuyer-CMRG")  # multiple streams of pseudo-random numbers.
         clusterSetRNGStream(p$cl, iseed=p$rndseed )
         # if ( !is.null(clusterexport)) clusterExport( p$cl, clusterexport )
@@ -779,7 +779,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         }
         ssplt = NULL
         clusterApply( p$cl, clustertasklist, stmv_interpolate_fast, p=p  )
-    # stopCluster( p$cl )
+    stopCluster( p$cl )
 
     if (0) {
       # a penultimate save of data as an internal format, just in case
