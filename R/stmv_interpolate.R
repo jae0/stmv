@@ -89,22 +89,27 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
   }
   logpoints  = ip[ floor( seq( from=10, to=(nip-10), length.out=nlogs ) ) ]
 
-  savepoints = sample(logpoints, p$nsavepoints)
-  if (nip < 100) savepoints = 0  # ie. no saving .. no need
+  if (debug) {
+    nsavepoints = 3
+    savepoints = sample(logpoints, nsavepoints)
+  }
 
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
 
     if ( iip %in% logpoints )  currentstatus = stmv_logfile(p=p, stime=stime)
 
-    if ( iip %in% savepoints ) {
-      sP = P[]; save( sP, file=p$saved_state_fn$P, compress=TRUE ); rm( sP)
-      sPn = Pn[]; save( sPn, file=p$saved_state_fn$Pn, compress=TRUE ); rm( sPn)
-      sPsd = Psd[]; save( sPsd, file=p$saved_state_fn$Psd, compress=TRUE ); rm( sPsd)
-      sS = S[]; save( sS, file=p$saved_state_fn$stats, compress=TRUE ); rm( sS)
-      sSflag = Sflag[]; save( sSflag, file=p$saved_state_fn$sflag, compress=TRUE ); rm( sSflag)
-      currentstatus = stmv_logfile(p=p, stime=stime)
+    if (debug) {
+      if ( iip %in% savepoints ) {
+        sP = P[]; save( sP, file=p$saved_state_fn$P, compress=TRUE ); rm( sP)
+        sPn = Pn[]; save( sPn, file=p$saved_state_fn$Pn, compress=TRUE ); rm( sPn)
+        sPsd = Psd[]; save( sPsd, file=p$saved_state_fn$Psd, compress=TRUE ); rm( sPsd)
+        sS = S[]; save( sS, file=p$saved_state_fn$stats, compress=TRUE ); rm( sS)
+        sSflag = Sflag[]; save( sSflag, file=p$saved_state_fn$sflag, compress=TRUE ); rm( sSflag)
+        currentstatus = stmv_logfile(p=p, stime=stime)
+      }
     }
+
     Si = p$runs[ iip, "locs" ]
 
     print( paste(iip, Si ) )
@@ -161,12 +166,12 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
       # try one more time
       o = try( stmv_variogram( xy=Yloc[U,], z=Y[U], methods=p$stmv_variogram_method,
         distance_cutoff=stmv_distance_cur*1.2, nbreaks=11 ) )
-    }  
+    }
 
     if ( is.null(o)) Sflag[Si] = 6L   # fast variogram did not work
     if ( inherits(o, "try-error")) Sflag[Si] = 6L   # fast variogram did not work
     if (Sflag[Si] == 6L) next()
-    
+
     if (exists("stmv_rangecheck", p)) {
       if (p$stmv_rangecheck=="paranoid") {
         if ( Sflag[Si] == 6L ) {
@@ -176,7 +181,7 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
     }
 
     ores = NULL
-    if (!is.null(o)) { 
+    if (!is.null(o)) {
       if ( exists(p$stmv_variogram_method, o)) {
         ores = o[[p$stmv_variogram_method]] # store current best estimate of variogram characteristics
         if ( !exists("range_ok", ores) ) Sflag[Si] = 7L
