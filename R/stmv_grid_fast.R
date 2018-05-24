@@ -1,4 +1,4 @@
-grid_fast = function(xy, z, discretized_n=100, FUNC=mean, ...) {
+stmv_grid_fast = function(xy, z, discretized_n=100, FUNC=mean, ...) {
   xr = range( xy[,1], na.rm=TRUE )
   yr = range( xy[,2], na.rm=TRUE )
   drange = sqrt( diff( xr)^2 + diff( yr)^2  )

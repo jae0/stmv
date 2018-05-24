@@ -1,14 +1,14 @@
 
 
-stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
+stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... ) {
   #\\ core function to interpolate (model and predict) in parallel
 
   if (0) {
-    # for debug  runs ..
+    # for debugging  runs ..
     currentstatus = stmv_db( p=p, DS="statistics.status" )
     p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) )
     ip = 1:p$nruns
-    debug=TRUE
+    debugging=TRUE
     stime=Sys.time()
   }
 
@@ -91,7 +91,7 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
   }
   logpoints  = ip[ floor( seq( from=10, to=(nip-10), length.out=nlogs ) ) ]
 
-  if (debug) {
+  if (debugging) {
     nsavepoints = 3
     savepoints = sample(logpoints, nsavepoints)
   }
@@ -101,7 +101,7 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
 
     if ( iip %in% logpoints )  currentstatus = stmv_logfile(p=p, stime=stime)
 
-    if (debug) {
+    if (debugging) {
       if ( iip %in% savepoints ) {
         sP = P[]; save( sP, file=p$saved_state_fn$P, compress=TRUE ); rm( sP)
         sPn = Pn[]; save( sPn, file=p$saved_state_fn$Pn, compress=TRUE ); rm( sPn)
@@ -214,7 +214,7 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
       next()
     }
 
-    if (debug) {
+    if (debugging) {
       # check that position indices are working properly
       Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
       Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
@@ -276,7 +276,7 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
     res =NULL
     res = try( local_fn( p=p, dat=dat, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial, sloc=Sloc[Si,], distance=stmv_distance_cur ) )
 
-    if (debug) print( str(res))
+    if (debugging) print( str(res))
 
     if (0) {
       lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==2012.05,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
@@ -483,7 +483,7 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
       }
     }
 
-    if (debug) {
+    if (debugging) {
         v = res$predictions
         if ( exists("TIME", p$variables) ){
           v = v[which( v[,p$variables$TIME]==2000.55),]
