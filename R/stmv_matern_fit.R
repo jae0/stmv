@@ -1,6 +1,6 @@
 
-matern_find_range_fast = function( xy, z, nu=0.5, discretized_n=100, nbreaks = 13 ) {
-  # nu=0.5 defaults to exponential
+stmv_matern_fit = function( xy, z, nu=0.5, discretized_n=100, nbreaks = 13 ) {
+  # nu=0.5 defaults to exponential and uses gstat
   #\\ NOTE:: the default parameterization is Wikipedia's paramterization:
   #\\ == Rasmussen, Carl Edward (2006) Gaussian Processes for Machine Learning
   #\\  sigma^2 * (2^{1-nu} / Gamma(nu) ) * (sqrt(2*nu) * ||x|| / phi)^{nu} * K_{nu}( sqrt(2*nu) * ||x|| / phi)
@@ -9,7 +9,7 @@ matern_find_range_fast = function( xy, z, nu=0.5, discretized_n=100, nbreaks = 1
   #\\ the smaller dimension  before computation.
   # -------------------------
 
-  g = grid_fast(xy=xy, z=z, discretized_n=discretized_n, FUNC=mean, na.rm=TRUE)
+  g = stmv_grid_fast(xy=xy, z=z, discretized_n=discretized_n, FUNC=mean, na.rm=TRUE)
 
   maxdist = g$drange/4   # begin with this (diagonal)
 

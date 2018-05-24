@@ -166,57 +166,43 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
     o = NULL
     o = try( stmv_variogram( xy=Yloc[U,], z=Y[U], methods=p$stmv_variogram_method,
       distance_cutoff=stmv_distance_cur, nbreaks=13 ) )
-    if ( is.null(o)) {
-      # try one more time
-      o = try( stmv_variogram( xy=Yloc[U,], z=Y[U], methods=p$stmv_variogram_method,
-        distance_cutoff=stmv_distance_cur*1.25, nbreaks=11 ) )
-      # plot( vg~vx, o$fast )
-    }
-
     if ( is.null(o)) Sflag[Si] = 6L   # fast variogram did not work
     if ( inherits(o, "try-error")) Sflag[Si] = 6L   # fast variogram did not work
     if (Sflag[Si] == 6L) next()
 
-    if (exists("stmv_rangecheck", p)) {
-      if (p$stmv_rangecheck=="paranoid") {
-        if ( Sflag[Si] == 6L ) {
-          next()
+    if (exists("stmv_rangecheck", p)) if (p$stmv_rangecheck=="paranoid") if ( Sflag[Si] == 6L ) next()
+
+    ores = NULL
+    if ( exists(p$stmv_variogram_method, o)) {
+      ores = o[[p$stmv_variogram_method]] # store current best estimate of variogram characteristics
+      if ( !exists("range_ok", ores) ) Sflag[Si] = 7L
+      if ( ores[["range_ok"]] ) {
+        stmv_distance_cur = ores[["range"]]
+        vario_U  = which( {dlon  <= ores[["range"]] } & {dlat <= ores[["range"]]} )
+        vario_ndata =length(vario_U)
+        if (vario_ndata < p$n.min) {
+          # insufficient data at estimated range
+          # ..could  stop analysis but this is not necessary .. range identifies the distance
+          # at which AC is no differnt from background noise and so addition of more distant data
+          # does not alter interpretation.
+          # NOTE: this range is a crude estimate that averages across years (if any) ...
+            if (exists("stmv_rangecheck", p)) {
+              if (p$stmv_rangecheck=="paranoid") {
+                Sflag[Si] = 5L
+                next()
+              }
+            }
+        } else if (vario_ndata > p$n.max) {
+          U = vario_U[ .Internal( sample( vario_ndata, p$n.max, replace=FALSE, prob=NULL)) ]
+          ndata = p$n.max
+        } else {
+          U  = vario_U
+          ndata = vario_ndata
         }
+        vario_U = vario_ndata = NULL
       }
     }
 
-    ores = NULL
-    if (!is.null(o)) {
-      if ( exists(p$stmv_variogram_method, o)) {
-        ores = o[[p$stmv_variogram_method]] # store current best estimate of variogram characteristics
-        if ( !exists("range_ok", ores) ) Sflag[Si] = 7L
-        if ( ores[["range_ok"]] ) {
-          stmv_distance_cur = ores[["range"]]
-          vario_U  = which( {dlon  <= ores[["range"]] } & {dlat <= ores[["range"]]} )
-          vario_ndata =length(vario_U)
-          if (vario_ndata < p$n.min) {
-            # insufficient data at estimated range
-            # ..could  stop analysis but this is extreme solution .. range identifies the distance
-            # at which AC is no differnt from background noise and so addition of more distant data
-            # does not alter interpretation.
-            # NOTE: this range is a crude estimate that averages years ...
-              if (exists("stmv_rangecheck", p)) {
-                if (p$stmv_rangecheck=="paranoid") {
-                  Sflag[Si] = 5L
-                  next()
-                }
-              }
-          } else if (vario_ndata > p$n.max) {
-            U = vario_U[ .Internal( sample( vario_ndata, p$n.max, replace=FALSE, prob=NULL)) ]
-            ndata = p$n.max
-          } else {
-            U  = vario_U
-            ndata = vario_ndata
-          }
-          vario_U = vario_ndata = NULL
-        }
-      }
-    }
     dlon=dlat=o=NULL;
 
     YiU = Yi[U] # YiU and p$stmv_distance_prediction determine the data entering into local model construction
