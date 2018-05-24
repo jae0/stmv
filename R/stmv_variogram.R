@@ -240,7 +240,7 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
       #\\ the smaller dimension  before computation.
       # -------------------------
 
-      g = stmv_grid_fast(xy=xy, z=z, discretized_n=150, FUNC=mean, na.rm=TRUE)
+      g = stmv_grid_fast(xy=xy, z=z, discretized_n=125, FUNC=mean, na.rm=TRUE)
 
       maxdist = out$range_crude   # begin with this (diagonal)
 
@@ -265,7 +265,6 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
 
       } else {
         cnt = 0
-        vMod0 = gstat::vgm(psill=0.75, model="Mat", range=1, nugget=0.25, kappa=0.5 ) # starting model parameters
         distance_range = maxdist
 
         while ( cnt < 5  ) {
@@ -280,6 +279,7 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
 
           vEm = gstat::variogram( g$z~1, locations=~plon+plat, data=XY, cutoff=maxdist/out$stmv_internal_scale, width=maxdist/(out$stmv_internal_scale*nbreaks), cressie=FALSE )  # empirical variogram
           vEm$dist0 = vEm$dist * out$stmv_internal_scale
+          vMod0 = gstat::vgm(psill=2*0.75*runif(1), model="Mat", range=2*1*runif(1), nugget=2*0.25*runif(1), kappa=0.5 ) # starting model parameters, 2*X as the expected value of runif(1) = 0.5
           vFitgs =  try( gstat::fit.variogram( vEm, vMod0, fit.kappa =TRUE, fit.sills=TRUE, fit.ranges=TRUE ) )
             # gstat's kappa is the Bessel function's "nu" smoothness parameter
             # gstat::"range" == range parameter == phi
