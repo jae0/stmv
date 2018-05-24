@@ -175,31 +175,35 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     ores = NULL
     if ( exists(p$stmv_variogram_method, o)) {
       ores = o[[p$stmv_variogram_method]] # store current best estimate of variogram characteristics
-      if ( !exists("range_ok", ores) ) Sflag[Si] = 7L
-      if ( ores[["range_ok"]] ) {
-        stmv_distance_cur = ores[["range"]]
-        vario_U  = which( {dlon  <= ores[["range"]] } & {dlat <= ores[["range"]]} )
-        vario_ndata =length(vario_U)
-        if (vario_ndata < p$n.min) {
-          # insufficient data at estimated range
-          # ..could  stop analysis but this is not necessary .. range identifies the distance
-          # at which AC is no differnt from background noise and so addition of more distant data
-          # does not alter interpretation.
-          # NOTE: this range is a crude estimate that averages across years (if any) ...
+      if ( !exists("range_ok", ores) ){
+        Sflag[Si] = 7L
+      } else {
+        if ( ores[["range_ok"]] ) {
+          stmv_distance_cur = ores[["range"]]
+          vario_U  = which( {dlon  <= ores[["range"]] } & {dlat <= ores[["range"]]} )
+          vario_ndata =length(vario_U)
+          if (vario_ndata < p$n.min) {
+            # insufficient data at estimated range
+            # ..could  stop analysis but this is not necessary .. range identifies the distance
+            # at which AC is no differnt from background noise and so addition of more distant data
+            # does not alter interpretation.
+            # NOTE: this range is a crude estimate that averages across years (if any) ...
             if (exists("stmv_rangecheck", p)) {
               if (p$stmv_rangecheck=="paranoid") {
                 Sflag[Si] = 5L
                 next()
               }
             }
-        } else if (vario_ndata > p$n.max) {
-          U = vario_U[ .Internal( sample( vario_ndata, p$n.max, replace=FALSE, prob=NULL)) ]
-          ndata = p$n.max
-        } else {
-          U  = vario_U
-          ndata = vario_ndata
+          }
+          if (vario_ndata > p$n.max) {
+            U = vario_U[ .Internal( sample( vario_ndata, p$n.max, replace=FALSE, prob=NULL)) ]
+            ndata = p$n.max
+          } else {
+            U  = vario_U
+            ndata = vario_ndata
+          }
+          vario_U = vario_ndata = NULL
         }
-        vario_U = vario_ndata = NULL
       }
     }
 
