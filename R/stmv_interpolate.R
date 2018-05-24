@@ -249,6 +249,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     dat = as.data.frame(dat)
     names(dat) = dat_names
 
+    # remember that these are crude mean/discretized estimates
     nu = phi = varSpatial = varObs = NULL
     if (!is.null(ores)) {
       if (exists("nu", ores)) if (is.finite(ores$nu)) nu = ores$nu

@@ -1,9 +1,9 @@
 
 stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, eps=1e-9, stmv_internal_scale=NA ) {
-  #\\ simple nonlinear least squares fit 
-  
+  #\\ simple nonlinear least squares fit
+
   if (is.na(stmv_internal_scale)) stmv_internal_scale= max(vx)/2
-  vx = vx / stmv_internal_scale 
+  vx = vx / stmv_internal_scale
 
   if (any(!is.finite(vx)) | any(!is.finite(vg))) {
     fit=list()
@@ -13,33 +13,33 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, eps=1e-9
 
   vgm_var_max = max(vg)
   vgm_dist_max = max(vx)
-  
+
   if (!is.null(nu)) {  # ie. nu is fixed
-    vario_function = function(par, vg, vx, nu){ 
+    vario_function = function(par, vg, vx, nu){
       vgm = par["tau.sq"] + par["sigma.sq"]*{ 1-stmv_matern(distance=vx, mRange=par["phi"], mSmooth=nu) }
       obj = sum( {vg - vgm}^2, na.rm=TRUE) # vario normal errors, no weights , etc.. just the line
       return(obj)
     }
-    par = c(tau.sq=vgm_var_max*0.05, sigma.sq=vgm_var_max*0.95, phi=1 ) 
+    par = c(tau.sq=vgm_var_max*0.05, sigma.sq=vgm_var_max*0.95, phi=1 )
     lower =c(0, 0, eps )
     upper =c(vgm_var_max*2, vgm_var_max*2, 5)
-    
-    fit = try( optim( par=par, vg=vg, vx=vx, nu=nu, method="L-BFGS-B", lower=lower, upper=upper, fn=vario_function ) ) 
-  
+
+    fit = try( optim( par=par, vg=vg, vx=vx, nu=nu, method="L-BFGS-B", lower=lower, upper=upper, fn=vario_function ) )
+
   } else {
-  
-    vario_function = function(par, vg, vx){ 
+
+    vario_function = function(par, vg, vx){
       vgm = par["tau.sq"] + par["sigma.sq"]*{ 1-stmv_matern(distance=vx, mRange=par["phi"], mSmooth=par["nu"]) }
       obj = sum( {vg - vgm}^2, na.rm=TRUE) # vario normal errors, no weights , etc.. just the line
       return(obj)
     }
-    par = c(tau.sq=vgm_var_max*0.2, sigma.sq=vgm_var_max*0.8, phi=1, nu=0.5) 
+    par = c(tau.sq=vgm_var_max*0.2, sigma.sq=vgm_var_max*0.8, phi=1, nu=0.5)
     lower =c(0, 0, 0.1, 0.1 )
     upper =c(vgm_var_max*2, vgm_var_max*2, 5, 5)
-    
-    fit = try( optim( par=par, vg=vg, vx=vx, method="L-BFGS-B", lower=lower, upper=upper, fn=vario_function ) ) 
+
+    fit = try( optim( par=par, vg=vg, vx=vx, method="L-BFGS-B", lower=lower, upper=upper, fn=vario_function ) )
   }
-  
+
   fit$summary = list(
     vg = vg,
     vx = vx,
@@ -55,25 +55,24 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, eps=1e-9
     objfn = NA
   )
 
-  if ( !inherits(fit, "try-error")) { 
+  if ( !inherits(fit, "try-error")) {
    if ( fit$convergence==0 ) {
       fit$summary$nu = ifelse( !is.null(nu), nu, fit$par[["nu"]] )
       fit$summary$phi=fit$par[["phi"]]
       fit$summary$varSpatial=fit$par[["sigma.sq"]]
-      fit$summary$varObs=fit$par[["tau.sq"]] 
+      fit$summary$varObs=fit$par[["tau.sq"]]
       fit$summary$range=matern_phi2distance( phi=fit$summary$phi, nu=fit$summary$nu )
-      fit$summary$range_ok = ifelse( fit$summary$range < fit$summary$vgm_dist_max*0.9, TRUE, FALSE )
+      fit$summary$range_ok = ifelse( fit$summary$range < fit$summary$vgm_dist_max*0.99, TRUE, FALSE )
       fit$summary$objfn=fit$value
     }
-
   }
 
   fit$summary$phi = fit$summary$phi * stmv_internal_scale
   fit$summary$range = fit$summary$range * stmv_internal_scale
   fit$summary$vx = fit$summary$vx * stmv_internal_scale
   fit$summary$vgm_dist_max = fit$summary$vgm_dist_max * stmv_internal_scale
-  
-  # message( " Optim flag (0==all good): ", fit$convergence, " --- ", fit$message ) 
+
+  # message( " Optim flag (0==all good): ", fit$convergence, " --- ", fit$message )
 
   if( plotvgm ) {
     xlim= c(0, fit$summary$vgm_dist_max*1.1)

@@ -257,44 +257,46 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
       fit = stmv_variogram_optimization( vx=vEm$dist0, vg=vEm$gamma, plotvgm=FALSE, stmv_internal_scale=out$stmv_internal_scale ) # nu=0.5 == exponential variogram
 
       if ( fit$summary$range_ok ) {
+
         out$fast = fit$summary
         out$fast$fit=fit
         out$fast$vgm=vEm
-        return( out )
-      }
+        cnt = 10  # force skip the following
 
+      } else {
+        cnt = 0
+        vMod0 = gstat::vgm(psill=0.75, model="Mat", range=1, nugget=0.25, kappa=0.5 ) # starting model parameters
+        distance_range = maxdist
 
-      cnt = 0
-      vMod0 = gstat::vgm(psill=0.75, model="Mat", range=1, nugget=0.25, kappa=0.5 ) # starting model parameters
-      distance_range = maxdist
+        while ( cnt < 5  ) {
+          maxdist = maxdist * 1.25
+          if ( maxdist < distance_range ) {
+            # message ( "Autocorrelation range greater than data range .. retrying a last time at max dist with more data")
+            cnt = 7
+            maxdist = distance_range
+          }
+          # message( "Range longer than distance cutoff ... retrying with a larger distance cutoff")
+          cnt = cnt + 1
 
-      while ( cnt < 5  ) {
-        maxdist = maxdist * 1.25
-        if ( maxdist > distance_range ) {
-          # message ( "Autocorrelation range greater than data range .. retrying a last time at max dist with more data")
-          cnt = 7
-          maxdist = distance_range
-        }
-        # message( "Range longer than distance cutoff ... retrying with a larger distance cutoff")
-        cnt = cnt + 1
+          vEm = gstat::variogram( g$z~1, locations=~plon+plat, data=XY, cutoff=maxdist/out$stmv_internal_scale, width=maxdist/(out$stmv_internal_scale*nbreaks), cressie=FALSE )  # empirical variogram
+          vEm$dist0 = vEm$dist * out$stmv_internal_scale
+          vFitgs =  try( gstat::fit.variogram( vEm, vMod0, fit.kappa =TRUE, fit.sills=TRUE, fit.ranges=TRUE ) )
+            # gstat's kappa is the Bessel function's "nu" smoothness parameter
+            # gstat::"range" == range parameter == phi
+          if (inherits(vFitgs, "try-error") )  return(NULL)
 
-        vEm = gstat::variogram( g$z~1, locations=~plon+plat, data=XY, cutoff=maxdist/out$stmv_internal_scale, width=maxdist/(out$stmv_internal_scale*nbreaks), cressie=FALSE )  # empirical variogram
-        vEm$dist0 = vEm$dist * out$stmv_internal_scale
-        vFitgs =  try( gstat::fit.variogram( vEm, vMod0, fit.kappa =TRUE, fit.sills=TRUE, fit.ranges=TRUE ) )
-          # gstat's kappa is the Bessel function's "nu" smoothness parameter
-          # gstat::"range" == range parameter == phi
-        if (inherits(vFitgs, "try-error") )  return(NULL)
+          phi = matern_phi2phi( mRange=vFitgs$range[2], mSmooth=vFitgs$kappa[2], parameterization_input="gstat", parameterization_output="stmv" ) * out$stmv_internal_scale
+          nu=vFitgs$kappa[2]
+          distance_range = matern_phi2distance( phi=phi, nu=nu  )
 
-        phi = matern_phi2phi( mRange=vFitgs$range[2], mSmooth=vFitgs$kappa[2], parameterization_input="gstat", parameterization_output="stmv" ) * out$stmv_internal_scale
-        nu=vFitgs$kappa[2]
-        distance_range = matern_phi2distance( phi=phi, nu=nu  )
-
-        if ( distance_range < maxdist ) {
           out$fast = list( fit=vFitgs, vgm=vEm, range=distance_range, nu=vFitgs$kappa[2], phi=phi,
             varSpatial=vFitgs$psill[2], varObs=vFitgs$psill[1]  )
-          return( out )
+          out$fast$range_ok = ifelse( out$fast$range < out$vgm$dist0*0.99, TRUE, FALSE )
+
+          if ( distance_range < maxdist ) break()
         }
       }
+
 
       if (plotdata) {
         xub = max(out$distance_cutoff) *1.25
@@ -413,6 +415,7 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
     out$fields$phi = matern_phi2phi( mRange=res["theta"], mSmooth=out$fields$nu,
       parameterization_input="fields", parameterization_output="stmv") * out$stmv_internal_scale
     out$fields$range = matern_phi2distance(phi=out$fields$phi, nu=out$fields$nu)
+    out$fields$range_ok = ifelse( out$fields$range < out$distance_cutoff*0.99, TRUE, FALSE )
 
     if( 0){
 #      xub = max(out$distance_cutoff, max(out$geoR$vgm$u, out$distance_cutoff)) *1.25
@@ -465,6 +468,7 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
     out$gstat = list( fit=vFitgs, vgm=vEm, range=NA, nu=vFitgs$kappa[2], phi=scale,
         varSpatial=vFitgs$psill[2], varObs=vFitgs$psill[1]  )  # gstat::"range" == range parameter == phi
     out$gstat$range = matern_phi2distance( phi=out$gstat$phi, nu=out$gstat$nu  )
+    out$gstat$range_ok = ifelse( out$gstat$range < out$distance_cutoff*0.99, TRUE, FALSE )
 
     if (plotdata) {
       xub = max(out$distance_cutoff) *1.25
@@ -522,6 +526,7 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
             varSpatial= vMod$cov.pars[1], varObs=vMod$nugget,
             nu=vMod$kappa,  phi=scale )
     out$geoR$range = matern_phi2distance( phi=out$geoR$phi, nu=out$geoR$nu  )
+    out$geoR$range_ok = ifelse( out$geoR$range < out$distance_cutoff*0.99, TRUE, FALSE )
 
     if (plotdata) {
       # not rescaled ...
@@ -594,6 +599,7 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
               nu=oo$param["value", "matern.nu"], # RF::nu == geoR:: kappa (bessel smoothness param)
               error=NA )
     out$RandomFields$range = matern_phi2distance( phi=out$RandomFields$phi, nu=out$RandomFields$nu  )
+    out$RandomFields$range_ok = ifelse( out$RandomFields$range < out$distance_cutoff*0.99, TRUE, FALSE )
 
     if (plotdata) {
       xub = max(out$distance_cutoff, out$RandomFields$range, out$RandomFields$vgm@centers) *1.25
@@ -644,6 +650,7 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
             varSpatial= vMod$cov.pars[1], varObs=vMod$nugget,
             nu=vMod$kappa,  phi=scale )
     out$geoR.ML$range = matern_phi2distance( phi=out$geoR.ML$phi, nu=out$geoR.ML$nu  )
+    out$geoR.ML$range_ok = ifelse( out$geoR.ML$range < out$distance_cutoff*0.99, TRUE, FALSE )
 
     if (plotdata) {
       xub = max(out$distance_cutoff, out$geoR.ML$range, out$geoR.ML$vgm$u) *1.25
@@ -715,6 +722,7 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
     out$spBayes = list( model=model, recover=m.1,
       range=matern_phi2distance( phi=scale, nu=u[["nu"]]  ), varSpatial=u[["sigma.sq"]], varObs=u[["tau.sq"]],
       phi=scale, nu=u["nu"] )  # output using geoR nomenclature
+    out$spBayes$range_ok = ifelse( out$spBayes$range < out$distance_cutoff*0.99, TRUE, FALSE )
 
     if (plotdata) {
       plot.new()
@@ -841,6 +849,7 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
       phi=scale, nu=alpha-1, error=NA )
 
     out$inla$range = matern_phi2distance( phi=out$inla$phi, nu=out$inla$nu  )
+    out$inla$range_ok = ifelse( out$inla$range < out$distance_cutoff*0.99, TRUE, FALSE )
 
     if (plotdata) {
       x = seq( 0,  max(out$distance_cutoff, out$inla$range.inla.practical, out$inla$range) *1.25, length.out=100 )
@@ -899,6 +908,7 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
       phi=scale, nu=alpha-1, error=NA )
 
     out$geostatsp$range = matern_phi2distance( phi=out$geostatsp$phi, nu=out$geostatsp$nu  )
+    out$geostatsp$range_ok = ifelse( out$geostatsp$range < out$distance_cutoff*0.99, TRUE, FALSE )
 
     if (plotdata) {
       x = seq( 0,  max(out$distance_cutoff, out$geostatsp$range.inla.practical, out$geostatsp$range) *1.25, length.out=100 )
@@ -946,6 +956,7 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
         nu =nu, phi=scale )
 
     out$bayesx$range = matern_phi2distance( phi=out$bayesx$phi, nu=out$bayesx$nu  )
+    out$bayesx$range_ok = ifelse( out$bayesx$range < out$distance_cutoff*0.99, TRUE, FALSE )
 
     if(0){
       plot( fm, term = "sx(plon,plat)", image=TRUE, contour=TRUE )
@@ -1037,6 +1048,8 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
       tausq = fit$summary["tausq", "mean"]
     )
     out$jags$range = matern_phi2distance( phi=out$jags$phi, nu=0.5  )
+    out$jags$range_ok = ifelse( out$jags$range < out$distance_cutoff*0.99, TRUE, FALSE )
+
     return(out)
   }
 
@@ -1202,6 +1215,7 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
     pred=rstan::extract(f)
     phii = mean(pred$phi) * out$stmv_internal_scale
     rnge = matern_phi2distance( phi=phii, nu=0.5  )
+    out$stan$range_ok = ifelse( out$stan$range < out$distance_cutoff*0.99, TRUE, FALSE )
 
     # prob=apply(pred,2,function(x) I(length(x[x>0.10])/length(x) > 0.8)*1)
     return( "Method not yet finished .. speed is the issue (though faster than JAGS) and ML/VB methods are unstable")
@@ -1309,6 +1323,7 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
 
     # out$LaplacesDemon$range = geoR::practicalRange("matern", phi=out$LaplacesDemon$phi, kappa=out$LaplacesDemon$nu)
       out$LaplacesDemon$range = matern_phi2distance( phi=out$LaplacesDemon$phi, nu=out$LaplacesDemon$nu)
+      out$LaplacesDemon$range_ok = ifelse( out$LaplacesDemon$range < out$distance_cutoff*0.99, TRUE, FALSE )
 
    # print( out$LaplacesDemon )
 
