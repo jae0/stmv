@@ -227,24 +227,100 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
 
   if ( "fast" %in% methods)  {
     # gives a fast stable empirical variogram using nl least squares and a coarse-grained discretization
+    # essentially the same as gstat method but coarse grained discretization
 
-    vfast = stmv_matern_fit( xy/dscale , z, nu=0.5 ) * dscale  # same as gstat method but coarse grained discretization
+    # nu=0.5, discretized_n=100, nbreaks = 13
 
-    maxdist = g$drange/4   # begin with this (diagonal)
+      # nu=0.5 defaults to exponential and uses gstat
+      #\\ NOTE:: the default parameterization is Wikipedia's paramterization:
+      #\\ == Rasmussen, Carl Edward (2006) Gaussian Processes for Machine Learning
+      #\\  sigma^2 * (2^{1-nu} / Gamma(nu) ) * (sqrt(2*nu) * ||x|| / phi)^{nu} * K_{nu}( sqrt(2*nu) * ||x|| / phi)
+      #\\   where K_{nu} is the Bessel function with smooth nu and phi is known as the range parameter
+      #\\ As usage sometimes is for high density data, aggregation to a coarse resolution of 'discretized_n' units along
+      #\\ the smaller dimension  before computation.
+      # -------------------------
+
+        # out$Ndata = length(z)
+        # out$varZ = var( z, na.rm=TRUE )  # this is the scaling factor for semivariance .. diving by sd, below reduces numerical floating point issues
+        #
+        # # reduce scale of distances to reduce large number effects
+        # out$range_crude = sqrt( diff(range(xy[,1]))^2 + diff(range(xy[,2]))^2) / 4  #initial scaling distance
+        # out$stmv_internal_scale = matern_distance2phi( out$range_crude, nu=0.5 )  # the presumed scaling distance to make calcs use smaller numbers
+        #
+        # # if max dist not given, make a sensible choice using exponential variogram as a first estimate
+        # out$distance_cutoff = ifelse( is.na(distance_cutoff), out$range_crude * 1.5, distance_cutoff )
+        # zmin = min( z, na.rm=TRUE )
+        #
+        # xy = xy + out$stmv_internal_scale * runif(2*out$Ndata, -1e-4, 1e-4) # add a small error term to prevent some errors in GRMF methods
+
+      g = stmv_grid_fast(xy=xy, z=z, discretized_n=100, FUNC=mean, na.rm=TRUE)
+
+      maxdist = out$stmv_internal_scale/4   # begin with this (diagonal)
+
+      # gives a fast stable empirical variogram using nl least squares
+
+      XY = as.data.frame(g$xy / out$stmv_internal_scale )  # drange keeps things smaller in value to avoid floating point issues
+      names(XY) =  c("plon", "plat" ) # arbitrary
+
+      vEm = gstat::variogram( g$z ~ 1, locations=~plon+plat, data=XY, cutoff=maxdist/out$stmv_internal_scale, width=maxdist/out$stmv_internal_scale/nbreaks, cressie=FALSE ) # empirical variogram
+      if (inherits(vEm, "try-error") ) return(NULL)
+      vEm$dist0 = vEm$dist * out$stmv_internal_scale
+      vMod0 = gstat::vgm(psill=0.75, model="Mat", range=1, nugget=0.25, kappa=0.5 ) # starting model parameters
+      vFitgs =  try( gstat::fit.variogram( vEm, vMod0, fit.kappa =TRUE, fit.sills=TRUE, fit.ranges=TRUE ) ) ## gstat's kappa is the Bessel function's "nu" smoothness parameter
+      if (inherits(vFitgs, "try-error") )  return(NULL)
+
+      phi = matern_phi2phi( mRange=vFitgs$range[2], mSmooth=vFitgs$kappa[2], parameterization_input="gstat", parameterization_output="stmv" ) * out$stmv_internal_scale
+      nu=vFitgs$kappa[2]
+      range = matern_phi2distance( phi=phi, nu=nu  )
+      # varSpatial=vFitgs$psill[2]
+      # varObs=vFitgs$psill[1]
+
+      if ( range < maxdist ) return( range )
+
+      cnt = 0
+      while ( cnt < 5  ) {
+        maxdist = maxdist * 1.25
+        if ( maxdist > drange ) {
+          # message ( "Autocorrelation range greater than data range .. retrying a last time at max dist with more data")
+          cnt = 7
+          maxdist = drange
+        }
+        # message( "Range longer than distance cutoff ... retrying with a larger distance cutoff")
+        cnt = cnt + 1
+
+        vEm = gstat::variogram( g$z~1, locations=~plon+plat, data=XY, cutoff=maxdist/out$stmv_internal_scale, width=maxdist/out$stmv_internal_scale/nbreaks, cressie=FALSE ) # empirical variogram
+        if (inherits(vEm, "try-error") ) return(NULL)
+        vEm$dist0 = vEm$dist * out$stmv_internal_scale
+        vMod0 = gstat::vgm(psill=0.75, model="Mat", range=1, nugget=0.25, kappa=0.5 ) # starting model parameters
+        vFitgs =  try( gstat::fit.variogram( vEm, vMod0, fit.kappa =TRUE, fit.sills=TRUE, fit.ranges=TRUE ) ) ## gstat's kappa is the Bessel function's "nu" smoothness parameter
+        if (inherits(vFitgs, "try-error") )  return(NULL)
+
+        phi = matern_phi2phi( mRange=vFitgs$range[2], mSmooth=vFitgs$kappa[2], parameterization_input="gstat", parameterization_output="stmv" ) * out$stmv_internal_scale
+        nu=vFitgs$kappa[2]
+        range = matern_phi2distance( phi=phi, nu=nu  )
+
+        if ( range < maxdist ) return( range )
+      }
+
+
+
+---
+
+    maxdist = out$stmv_internal_scale/4   # begin with this (diagonal)
 
     # gives a fast stable empirical variogram using nl least squares
 
-    XY = as.data.frame(g$xy / g$drange )  # drange keeps things smaller in value to avoid floating point issues
+    XY = as.data.frame(g$xy / out$stmv_internal_scale )  # drange keeps things smaller in value to avoid floating point issues
     names(XY) =  c("plon", "plat" ) # arbitrary
 
-    vEm = gstat::variogram( g$z~1, locations=~plon+plat, data=XY, cutoff=maxdist/g$drange, width=maxdist/g$drange/nbreaks, cressie=FALSE ) # empirical variogram
+    vEm = gstat::variogram( g$z~1, locations=~plon+plat, data=XY, cutoff=maxdist/out$stmv_internal_scale, width=maxdist/out$stmv_internal_scale/nbreaks, cressie=FALSE ) # empirical variogram
     if (inherits(vEm, "try-error") ) return(NULL)
-    vEm$dist0 = vEm$dist * g$drange
+    vEm$dist0 = vEm$dist * out$stmv_internal_scale
     vMod0 = gstat::vgm(psill=0.75, model="Mat", range=1, nugget=0.25, kappa=0.5 ) # starting model parameters
     vFitgs =  try( gstat::fit.variogram( vEm, vMod0, fit.kappa =TRUE, fit.sills=TRUE, fit.ranges=TRUE ) ) ## gstat's kappa is the Bessel function's "nu" smoothness parameter
     if (inherits(vFitgs, "try-error") )  return(NULL)
 
-    phi = matern_phi2phi( mRange=vFitgs$range[2], mSmooth=vFitgs$kappa[2], parameterization_input="gstat", parameterization_output="stmv" ) * g$drange
+    phi = matern_phi2phi( mRange=vFitgs$range[2], mSmooth=vFitgs$kappa[2], parameterization_input="gstat", parameterization_output="stmv" ) * out$stmv_internal_scale
     nu=vFitgs$kappa[2]
     range = matern_phi2distance( phi=phi, nu=nu  )
     # varSpatial=vFitgs$psill[2]
