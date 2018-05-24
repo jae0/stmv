@@ -1,5 +1,5 @@
 
-stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, inla.edge=c(1/3, 1), methods=c("fast"), distance_cutoff=NA, nbreaks = 15, family="gaussian", stanmodel=NULL ) {
+stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), distance_cutoff=NA, nbreaks = 15, family="gaussian", stanmodel=NULL ) {
 
   #\\ estimate empirical variograms (actually correlation functions)
   #\\ and then model them using a number of different approaches .. using a Matern basis
@@ -26,7 +26,6 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, inla.edge=c(1/3, 1),
         z = residuals( mm)
 
         plotdata=TRUE
-        inla.edge=c(1/3, 1)
         nbreaks = 15
         distance_cutoff=NA
         nbreaks = 15
@@ -229,8 +228,16 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, inla.edge=c(1/3, 1),
 
 
   if ( "fast" %in% methods)  {
-    # gives a fast stable empirical variogram using nl least squares
+    # gives a fast stable empirical variogram using nl least squares and a coarse-grained discretization
+
+    # nx = length(gx)
+    # zx = c( gx, gx[nx]+(gx[2]-gx[1]) )
+    # X = as.numeric(as.character(cut( x, zx, include.lowest=T, right=F, labels=gx )))
+    # names(X) = names(x)
+
+
     vario = fields::vgram( loc=xy, y=z, dmax=out$distance_cutoff, N=nbreaks)
+
     fit = stmv_variogram_optimization( vx=vario$centers, vg=vario$stats["mean",], plotvgm=plotdata, stmv_internal_scale=out$stmv_internal_scale ) # nu=0.5 == exponential variogram
     out$fast = fit$summary
     return(out)

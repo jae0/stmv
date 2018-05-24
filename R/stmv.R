@@ -12,7 +12,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     storage.backend="bigmemory.ram"
     save_completed_data=TRUE  # export out of stmv system for use outside (e.g., by aegis)
     debug_plot_variable_index=1
-
+    runmode="interpolate"
   }
 
   #\\ localized modelling of space and time data to predict/interpolate upon a grid
@@ -520,7 +520,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
 
 
-    message("||| Finished. ")
+    message("||| Finished preparing data structures ... ")
     message("||| Once analyses begin, you can view maps from an external R session: ")
     message("||| p = stmv_db( p=list(data_root=project.datadirectory('aegis', 'temperature'), variables=list(Y='t'), spatial.domain='canada.east' )), DS='load.parameters' )" )
     message("||| stmv(p=p, runmode='debug_predictions_map', debug_plot_variable_index=1) # for static maps")

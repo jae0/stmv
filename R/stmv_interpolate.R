@@ -8,6 +8,8 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
     currentstatus = stmv_db( p=p, DS="statistics.status" )
     p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) )
     ip = 1:p$nruns
+    debug=TRUE
+    stime=Sys.time()
   }
 
   # ---------------------
@@ -153,10 +155,12 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
         Sflag[Si] = 5L   # skipped .. not enough data
         next()
       }
-    } else if (ndata > p$n.max){
-      U = U[ .Internal( sample( length(U), p$n.max, replace=FALSE, prob=NULL)) ]
-      ndata = p$n.max
     }
+
+    # else if (ndata > p$n.max){
+    #   U = U[ .Internal( sample( length(U), p$n.max, replace=FALSE, prob=NULL)) ]
+    #   ndata = p$n.max
+    # }
 
     # crude (mean) variogram across all time slices
     o = NULL
@@ -165,7 +169,8 @@ stmv_interpolate = function( ip=NULL, p, debug=FALSE, stime=Sys.time(), ... ) {
     if ( is.null(o)) {
       # try one more time
       o = try( stmv_variogram( xy=Yloc[U,], z=Y[U], methods=p$stmv_variogram_method,
-        distance_cutoff=stmv_distance_cur*1.2, nbreaks=11 ) )
+        distance_cutoff=stmv_distance_cur*1.25, nbreaks=11 ) )
+      # plot( vg~vx, o$fast )
     }
 
     if ( is.null(o)) Sflag[Si] = 6L   # fast variogram did not work
