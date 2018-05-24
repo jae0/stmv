@@ -240,7 +240,7 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
       #\\ the smaller dimension  before computation.
       # -------------------------
 
-      g = stmv_grid_fast(xy=xy, z=z, discretized_n=100, FUNC=mean, na.rm=TRUE)
+      g = stmv_grid_fast(xy=xy, z=z, discretized_n=150, FUNC=mean, na.rm=TRUE)
 
       maxdist = out$range_crude   # begin with this (diagonal)
 
