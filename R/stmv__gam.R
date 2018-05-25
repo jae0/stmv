@@ -9,7 +9,7 @@ stmv__gam = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
 
   if ( exists("stmv_local_model_distanceweighted", p) ) {
     if (p$stmv_local_model_distanceweighted) {
-      hmod = try( bam( p$stmv_local_modelformula, data=dat, na.action="na.omit", weights=weights, method="fREML", use.chol=TRUE, gc.level=2, discrete=TRUE) )
+      hmod = try( bam( p$stmv_local_modelformula, data=dat, na.action="na.omit", weights=weights, method="fREML", use.chol=TRUE, gc.level=2) )
     } else {
       hmod = try( bam( p$stmv_local_modelformula, data=dat, na.action="na.omit", weights=weights ) )
     }
