@@ -14,7 +14,7 @@ stmv__gam = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
       hmod = try( bam( p$stmv_local_modelformula, data=dat, na.action="na.omit", weights=weights ) )
     }
   } else {
-      hmod = try( gam( p$stmv_local_modelformula, data=dat, na.action="na.omit", optimizer=c("outer", "bfgs")  ) )
+      hmod = try( gam( p$stmv_local_modelformula, data=dat, na.action="na.omit", optimizer=c("outer", "bfgs")  ) )  # gam has become very slow as an option...
   }
 
 
