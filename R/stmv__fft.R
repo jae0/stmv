@@ -4,7 +4,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
   #\\ note: time is not being modelled and treated independently
   #\\      .. you had better have enough data in each time slice
-  #\\ first a low-pass filter as defined by p$stmv_lowpass_nu, p$stmv_lowpass_phi, then a simple covariance filter determined by nu,phi
+  #\\ first a low-pass filter as defined by p$stmv_lowpass_nu, p$stmv_lowpass_phi, then a simple covariance filter determined by nu,phi ;; fft==spatial.process (no lowpass)
 
   if (variablelist)  return( c() )
 
@@ -50,7 +50,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     sp.covar.kernel = fft(sp.covar.surf) / ( fft(mC) * nr2 * nc2 )
   }
 
-  if (p$stmv_fft_filter == "spatial.process") {
+  if (p$stmv_fft_filter %in% c("spatial.process", "fft") ) {
     sp.covar = stationary.cov( dgrid, center, Covariance="Matern", range=phi, nu=nu )
     sp.covar.surf = as.surface(dgrid, c(sp.covar))$z
     sp.covar.kernel = fft(sp.covar.surf) / ( fft(mC) * nr2 * nc2 )
