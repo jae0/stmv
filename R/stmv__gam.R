@@ -9,9 +9,9 @@ stmv__gam = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
 
   if ( exists("stmv_local_model_distanceweighted", p) ) {
     if (p$stmv_local_model_distanceweighted) {
-      hmod = try( gam( p$stmv_local_modelformula, data=dat, na.action="na.omit", weights=weights, optimizer=p$stmv_gam_optimizer) )
+      hmod = try( bam( p$stmv_local_modelformula, data=dat, na.action="na.omit", weights=weights, method="fREML", use.chol=TRUE, gc.level=2, discrete=TRUE) )
     } else {
-      hmod = try( gam( p$stmv_local_modelformula, data=dat, na.action="na.omit", optimizer=p$stmv_gam_optimizer  ) )
+      hmod = try( bam( p$stmv_local_modelformula, data=dat, na.action="na.omit", weights=weights ) )
     }
   } else {
       hmod = try( gam( p$stmv_local_modelformula, data=dat, na.action="na.omit", optimizer=c("outer", "bfgs")  ) )
@@ -36,4 +36,3 @@ stmv__gam = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
 
   return( list( predictions=pa, stmv_stats=stmv_stats ) )
 }
-
