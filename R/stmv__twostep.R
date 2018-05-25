@@ -59,6 +59,8 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
   } # end if
   rownames(px) = NULL
 
+
+  print( "starting gam-timeseries mod/pred")
   ts_gam = stmv__gam( p, dat, px ) # currently only a GAM is enabled for the TS component
 
   if (is.null( ts_gam)) return(NULL)
@@ -89,6 +91,8 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
 
   out = NULL
 
+  print( "starting spatial boosted mod/pred")
+
   # step 2 :: spatial modelling .. essentially a time-space separable solution
 
   if (!exists( "stmv_twostep_space", p)) p$stmv_twostep_space="krige" # default
@@ -116,4 +120,3 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
 
   return( out )
 }
-
