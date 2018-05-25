@@ -162,7 +162,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     #   ndata = p$n.max
     # }
 
-    print( ndata )
+    # print( ndata )
 
     # crude (mean) variogram across all time slices
     o = NULL
@@ -209,8 +209,8 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
       }
     }
 
-    print( ndata )
-    print( stmv_distance_cur )
+    # print( ndata )
+    # print( stmv_distance_cur )
 
     dlon=dlat=o=NULL;
 
@@ -279,7 +279,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     if (is.null(varObs)) varObs = varSpatial
 
 
-    print( "starting interpolation" )
+    # print( "starting interpolation" )
 
 
     ores$vgm = NULL # can be large
