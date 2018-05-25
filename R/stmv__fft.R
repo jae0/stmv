@@ -8,8 +8,6 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
 
   if (variablelist)  return( c() )
 
-browser()
-
   sdTotal=sd(dat[,p$variable$Y], na.rm=T)
 
   x_r = range(dat[,p$variables$LOCS[1]])
