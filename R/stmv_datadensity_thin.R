@@ -8,7 +8,7 @@ stmv_datadensity_thin = function( locs, times=NULL, ntarget=100, minresolution=N
   if (!is.null(z)) {
 
     tt = floor( z / minresolution[3] ) * minresolution[3]
-    rr = tapply( X=dd, INDEX=list(xx, yy, tt), FUN = function(w) {length( which(is.finite(w) )}, simplify=TRUE )
+    rr = tapply( X=dd, INDEX=list(xx, yy, tt), FUN = function(w) {length( which(is.finite(w) ))}, simplify=TRUE )
     rr = as.data.frame( as.table (rr) )
     rr[,1] = as.numeric(as.character( rr[,1] ))
     rr[,2] = as.numeric(as.character( rr[,2] ))
@@ -17,7 +17,7 @@ stmv_datadensity_thin = function( locs, times=NULL, ntarget=100, minresolution=N
     names(rr) =c("x", "y", "t", "n")
   } else {
 
-    rr = tapply( X=dd, INDEX=list(xx, yy), FUN = function(w) {length( which(is.finite(w) )}, simplify=TRUE )
+    rr = tapply( X=dd, INDEX=list(xx, yy), FUN = function(w) {length( which(is.finite(w) ))}, simplify=TRUE )
     rr = as.data.frame( as.table (rr) )
     rr[,1] = as.numeric(as.character( rr[,1] ))
     rr[,2] = as.numeric(as.character( rr[,2] ))
