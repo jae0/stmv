@@ -48,6 +48,7 @@ stmv_variablelist = function( p ) {
   # year is  computed from time index ... not required
 
   p$variables$COV = setdiff( p$variables$ALL_REQUIRED, c(p$variables$COORDS, p$variables$Y) )
+  if (length(p$variables$COV) ==0) p$variables$COV = NULL
 
   return (p)
 }
