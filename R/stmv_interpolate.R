@@ -53,8 +53,11 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
   # misc intermediate calcs to be done outside of parallel loops
   upsampling = sort( p$sampling[ which( p$sampling > 1 ) ] )
   upsampling = upsampling[ which(upsampling*p$stmv_distance_scale <= p$stmv_distance_max )]
-  downsampling = sort( p$sampling[ which( p$sampling < 1) ] , decreasing=TRUE )
-  downsampling = downsampling[ which(downsampling*p$stmv_distance_scale >= p$stmv_distance_min )]
+
+  # downsampling is not longer used .. a slightly more complex thinning method instead (see below)
+  # downsampling = sort( p$sampling[ which( p$sampling < 1) ] , decreasing=TRUE )
+  # downsampling = downsampling[ which(downsampling*p$stmv_distance_scale >= p$stmv_distance_min )]
+
 
   # pre-calculate indices and dim for data to use inside the loop
   dat_names = unique( c(  p$variables$Y, p$variable$LOCS, p$variables$local_all,  "weights") )
@@ -157,13 +160,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
       }
     }
 
-    # else if (ndata > p$n.max){
-    #   U = U[ .Internal( sample( length(U), p$n.max, replace=FALSE, prob=NULL)) ]
-    #   ndata = p$n.max
-    # }
-
-    # print( ndata )
-
     # crude (mean) variogram across all time slices
     o = NULL
     o = try( stmv_variogram( xy=Yloc[U,], z=Y[U], methods=p$stmv_variogram_method,
@@ -197,20 +193,25 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
               }
             }
           }
-          if (vario_ndata > p$n.max) {
-            U = vario_U[ .Internal( sample( vario_ndata, p$n.max, replace=FALSE, prob=NULL)) ]
-            ndata = p$n.max
-          } else {
-            U  = vario_U
-            ndata = vario_ndata
-          }
+          U  = vario_U
+          ndata = vario_ndata
           vario_U = vario_ndata = NULL
         }
       }
     }
 
-    # print( ndata )
-    # print( stmv_distance_cur )
+    if (ndata > p$n.max) {
+      # U = U[ .Internal( sample( vario_ndata, p$n.max, replace=FALSE, prob=NULL)) ] # simple random
+      if (exists("TIME", p$variables)) {
+        U = stmv_datadensity_thin( locs=Yloc[U,], times=Ytime[YiU, ], ntarget=p$n.max, minresolutions=c(p$pres, p$pres, p$tres) )
+      } else {
+        U = stmv_datadensity_thin( locs=Yloc[U,], ntarget=p$n.max, minresolution=c(p$pres, p$pres, p$tres) )
+      }
+      ndata = length(U)
+    }
+
+
+
 
     dlon=dlat=o=NULL;
 
@@ -246,12 +247,8 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     # reconstruct data for modelling (dat) and data for prediction purposes (pa)
     dat = matrix( 1, nrow=ndata, ncol=dat_nc )
     dat[,iY] = Y[YiU] # these are residuals if there is a global model
-    dat[,ilocs] = Yloc[YiU,] + stmv_distance_cur * runif(2*ndata, -1e-6, 1e-6) # add a small error term to prevent some errors when duplicate locations exist
+    dat[,ilocs] = Yloc[YiU,] + stmv_distance_cur * runif(2*ndata, -1e-6, 1e-6) # add a small error term to prevent some errors when duplicate locations exist; stmv_distance_cur offsets to positive values
 
-    # dat[,iwei]  = 1  # filled with 1's at init above
-    # dat[,iwei] = 1 / (( Sloc[Si,2] - dat$plat)**2 + (Sloc[Si,1] - dat$plon)**2 )# weight data in space: inverse distance squared
-    # dat[ which( dat[,iwei] < 1e-4 ), iwei ] = 1e-4
-    # dat[ which( dat[,iwei] > 1 ) , iwei ] = 1
 
     if (p$nloccov > 0) dat[,icov] = Ycov[YiU,] # no need for other dim checks as this is user provided
     if (exists("TIME", p$variables)) dat[, itime_cov] = as.matrix(stmv_timecovars( vars=ti_cov, ti=Ytime[YiU, ] ) )
