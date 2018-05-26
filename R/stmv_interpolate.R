@@ -203,14 +203,14 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     if (ndata > p$n.max) {
       # U = U[ .Internal( sample( vario_ndata, p$n.max, replace=FALSE, prob=NULL)) ] # simple random
       if (exists("TIME", p$variables)) {
-        U = stmv_datadensity_thin( locs=Yloc[U,], times=Ytime[YiU, ], ntarget=p$n.max, minresolutions=c(p$pres, p$pres, p$tres) )
+        U = stmv_datadensity_thin( locs=Yloc[U,], times=Ytime[YiU, ], ntarget=p$n.max,
+          minresolutions=p$downsampling_multiplier*c(p$pres, p$pres, p$tres) )
       } else {
-        U = stmv_datadensity_thin( locs=Yloc[U,], ntarget=p$n.max, minresolution=c(p$pres, p$pres, p$tres) )
+        U = stmv_datadensity_thin( locs=Yloc[U,], ntarget=p$n.max,
+          minresolution=p$downsampling_multiplier*c(p$pres, p$pres, p$tres) )
       }
       ndata = length(U)
     }
-
-
 
 
     dlon=dlat=o=NULL;
