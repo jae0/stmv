@@ -1,13 +1,13 @@
 stmv_datadensity_thin = function( locs, times=NULL, ntarget=100, minresolution=NULL ) {
   # minresolution determines resolution beyond which there is too much information ...
   if (is.null(minresolution)) stop("minresolution is required")
-  xx = floor( xy[,1] / minresolution[1] ) * minresolution[1]
-  yy = floor( xy[,2] / minresolution[2] ) * minresolution[2]
+  xx = floor( locs[,1] / minresolution[1] ) * minresolution[1]
+  yy = floor( locs[,2] / minresolution[2] ) * minresolution[2]
   dd = 1:length(xx)
 
-  if (!is.null(z)) {
+  if (!is.null(times)) {
 
-    tt = floor( z / minresolution[3] ) * minresolution[3]
+    tt = floor( times / minresolution[3] ) * minresolution[3]
     rr = tapply( X=dd, INDEX=list(xx, yy, tt), FUN = function(w) {length( which(is.finite(w) ))}, simplify=TRUE )
     rr = as.data.frame( as.table (rr) )
     rr[,1] = as.numeric(as.character( rr[,1] ))
@@ -21,7 +21,7 @@ stmv_datadensity_thin = function( locs, times=NULL, ntarget=100, minresolution=N
     rr = as.data.frame( as.table (rr) )
     rr[,1] = as.numeric(as.character( rr[,1] ))
     rr[,2] = as.numeric(as.character( rr[,2] ))
-    rr = rr[ which( is.finite( rr[,4] )) ,]
+    rr = rr[ which( is.finite( rr[,3] )) ,]
     names(rr) =c("x", "y", "n")
   }
 
@@ -31,7 +31,7 @@ stmv_datadensity_thin = function( locs, times=NULL, ntarget=100, minresolution=N
 
   keep = NULL
   for (o in 1:nrow(rr)) {
-    if (!is.null(z)) {
+    if (!is.null(times)) {
       oo = which( xx == rr[o,1] & yy == rr[o,2] & tt == rr[o,2] )
     } else {
       oo = which( xx == rr[o,1] & yy == rr[o,2] )
@@ -41,10 +41,10 @@ stmv_datadensity_thin = function( locs, times=NULL, ntarget=100, minresolution=N
       okeep = floor(invcount[o] * noo)
       if (okeep > 1) {
         ss = oo[ .Internal( sample( noo, okeep, replace=FALSE, prob=NULL)) ]
-        keep = c(keep, ss )
+        keep = c(keep, dd[ss] )
       }
     } else {
-      keep = c(keep, noo )
+      keep = c(keep, dd[oo] )
     }
   }
   return( tokeep )

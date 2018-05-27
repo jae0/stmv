@@ -117,7 +117,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
 
     Si = p$runs[ iip, "locs" ]
 
-    print( paste(iip, Si ) )
 
 
     if ( Sflag[Si] != 0L ) next()  # previously attempted .. skip
@@ -138,6 +137,8 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     U =  which( {dlon  <= p$stmv_distance_scale} & {dlat <= p$stmv_distance_scale} )
     stmv_distance_cur = p$stmv_distance_scale
     ndata = length(U)
+
+    print( paste(iip, Si, ndata ) )
 
     if (0) {
       plot( Sloc[,], pch=20, cex=0.5, col="gray")
@@ -166,8 +167,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
       distance_cutoff=stmv_distance_cur, nbreaks=13 ) )
     if ( is.null(o)) Sflag[Si] = 6L   # fast variogram did not work
     if ( inherits(o, "try-error")) Sflag[Si] = 6L   # fast variogram did not work
-    if (Sflag[Si] == 6L) next()
-
     if (exists("stmv_rangecheck", p)) if (p$stmv_rangecheck=="paranoid") if ( Sflag[Si] == 6L ) next()
 
     ores = NULL
@@ -203,12 +202,13 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     if (ndata > p$n.max) {
       # U = U[ .Internal( sample( vario_ndata, p$n.max, replace=FALSE, prob=NULL)) ] # simple random
       if (exists("TIME", p$variables)) {
-        U = stmv_datadensity_thin( locs=Yloc[U,], times=Ytime[YiU, ], ntarget=p$n.max,
-          minresolutions=p$downsampling_multiplier*c(p$pres, p$pres, p$tres) )
-      } else {
-        U = stmv_datadensity_thin( locs=Yloc[U,], ntarget=p$n.max,
+        iU = stmv_datadensity_thin( locs=Yloc[U,], times=Ytime[YiU, ], ntarget=p$n.max,
           minresolution=p$downsampling_multiplier*c(p$pres, p$pres, p$tres) )
+      } else {
+        iU = stmv_datadensity_thin( locs=Yloc[U,], ntarget=p$n.max,
+          minresolution=p$downsampling_multiplier*c(p$pres, p$pres ) )
       }
+      U = U[iU]
       ndata = length(U)
     }
 
