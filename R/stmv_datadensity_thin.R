@@ -47,5 +47,5 @@ stmv_datadensity_thin = function( locs, times=NULL, ntarget=100, minresolution=N
       keep = c(keep, dd[oo] )
     }
   }
-  return( tokeep )
+  return( keep )
 }
