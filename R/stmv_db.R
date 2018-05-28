@@ -430,26 +430,22 @@
 
     if (DS %in% c("global.prediction.surface") ) {
 
-      # stmv_global_predict = function(ip=NULL, p) {
-      #
-      #   if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
-      #   if (is.null(ip)) ip = 1:p$nruns
+      global_model = stmv_db( p=p, DS="global_model")
+      if (is.null(global_model)) stop("Global model not found.")
 
-        global_model = stmv_db( p=p, DS="global_model")
-        if (is.null(global_model)) stop("Global model not found.")
+      P0 = stmv_attach( p$storage.backend, p$ptr$P0 )  # remember this is on link scale
+      P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd ) # and this too
 
-        P0 = stmv_attach( p$storage.backend, p$ptr$P0 )  # remember this is on link scale
-        P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd ) # and this too
+      ip = 1:p$nt
 
-        ip = 1:p$nt
+      for ( iip in ip ) {
 
-        for ( iip in ip ) {
+        # downscale and warp from p(0) -> p1
+        pa = NULL # construct prediction surface
+        # it = p$runs[iip, "it"]
+        it = iip
 
-          # downscale and warp from p(0) -> p1
-          pa = NULL # construct prediction surface
-          # it = p$runs[iip, "it"]
-          it = iip
-
+        if ( length(p$variables$COV) > 0 ) {
           for (i in p$variables$COV ) {
             pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[i]] )
             nc = ncol(pu)
@@ -470,111 +466,70 @@
           }
           pa = as.data.frame( pa )
           names(pa) = p$variables$COV
+        }
 
-          if ( any( p$variables$LOCS %in%  p$variables$global_cov ) ) {
-            Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
-            pa = cbind(pa, Ploc[])
-            names(pa) = c( p$variables$COV, p$variables$LOCS )
+        if ( any( p$variables$LOCS %in%  p$variables$global_cov ) ) {
+          Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+          pa = cbind(pa, Ploc[])
+          names(pa) = c( p$variables$COV, p$variables$LOCS )
+        }
+
+        if ( "yr" %in%  p$variables$global_cov ) {
+          npa = names(pa)
+          pa = cbind(pa, p$yrs[it] )
+          names(pa) = c( npa, "yr" )
+        }
+
+        if ( "dyear" %in% p$variables$global_cov ) {
+          npa = names(pa)
+          pa = cbind(pa, p$prediction.dyear )
+          names(pa) = c( npa, "dyear" )
+        }
+
+        if (p$stmv_global_modelengine %in% c("glm", "bigglm", "gam") ) {
+          Pbaseline = try( predict( global_model, newdata=pa, type="link", se.fit=TRUE ) )  # must be on link scale
+          YYY = predict( global_model, type="link", se.fit=TRUE )
+          Yq = quantile( YYY$fit, probs=p$stmv_quantile_bounds )
+          pa = NULL
+          gc()
+          if (!inherits(Pbaseline, "try-error")) {
+            Pbaseline$fit[ Pbaseline$fit < Yq[1] ] = Yq[1]  # do not permit extrapolation
+            Pbaseline$fit[ Pbaseline$fit > Yq[2] ] = Yq[2]
+            P0[,it] = Pbaseline$fit
+            P0sd[,it] = Pbaseline$se.fit
           }
+          Pbaseline = NULL; gc()
+        } else if (p$stmv_global_modelengine =="bayesx") {
+          stop( "not yet tested" ) # TODO
+          # Pbaseline = try( predict( global_model, newdata=pa, type="link", se.fit=TRUE ) )
+          # pa = NULL
+          # gc()
+          # if (!inherits(Pbaseline, "try-error")) {
+          #   P0[,it] = Pbaseline$fit
+          #   P0sd[,it] = Pbaseline$se.fit
+          # }
+          # Pbaseline = NULL; gc()
 
-          if ( "yr" %in%  p$variables$global_cov ) {
-            npa = names(pa)
-            pa = cbind(pa, p$yrs[it] )
-            names(pa) = c( npa, "yr" )
-          }
+        } else if (p$stmv_global_modelengine =="none") {
+          # nothing to do
+        } else  {
+          stop ("This global model method requires a bit more work .. ")
+        }
 
-          if ( "dyear" %in% p$variables$global_cov ) {
-            npa = names(pa)
-            pa = cbind(pa, p$prediction.dyear )
-            names(pa) = c( npa, "dyear" )
-          }
-
-          if (p$stmv_global_modelengine %in% c("glm", "bigglm", "gam") ) {
-            Pbaseline = try( predict( global_model, newdata=pa, type="link", se.fit=TRUE ) )  # must be on link scale
-            YYY = predict( global_model, type="link", se.fit=TRUE )
-            Yq = quantile( YYY$fit, probs=p$stmv_quantile_bounds )
-            pa = NULL
-            gc()
-            if (!inherits(Pbaseline, "try-error")) {
-              Pbaseline$fit[ Pbaseline$fit < Yq[1] ] = Yq[1]  # do not permit extrapolation
-              Pbaseline$fit[ Pbaseline$fit > Yq[2] ] = Yq[2]
-              P0[,it] = Pbaseline$fit
-              P0sd[,it] = Pbaseline$se.fit
-            }
-            Pbaseline = NULL; gc()
-          } else if (p$stmv_global_modelengine =="bayesx") {
-            stop( "not yet tested" ) # TODO
-            # Pbaseline = try( predict( global_model, newdata=pa, type="link", se.fit=TRUE ) )
-            # pa = NULL
-            # gc()
-            # if (!inherits(Pbaseline, "try-error")) {
-            #   P0[,it] = Pbaseline$fit
-            #   P0sd[,it] = Pbaseline$se.fit
-            # }
-            # Pbaseline = NULL; gc()
-
-          } else if (p$stmv_global_modelengine =="none") {
-            # nothing to do
-          } else  {
-            stop ("This global model method requires a bit more work .. ")
-          }
-
-          if (exists("all.covars.static", p)) {
-            if (p$all.covars.static) {
-            # if this is true then this is a single cpu run and all predictions for each time slice is the same
-            # could probably catch this and keep storage small but that would make the update math a little more complex
-            # this keeps it simple with a quick copy
-              if (p$nt  > 1 ) {
-                for (j in ip[2:p$nruns]){
-                  P0[,j] = P0[,1]
-                  P0sd[,j] = P0sd[,1]
-                }
+        if (exists("all.covars.static", p)) {
+          if (p$all.covars.static) {
+          # if this is true then this is a single cpu run and all predictions for each time slice is the same
+          # could probably catch this and keep storage small but that would make the update math a little more complex
+          # this keeps it simple with a quick copy
+            if (p$nt  > 1 ) {
+              for (j in ip[2:p$nruns]){
+                P0[,j] = P0[,1]
+                P0sd[,j] = P0sd[,1]
               }
             }
           }
-        } # end each timeslice
-        # global_model =NULL
-        # return("Done")
-      # }
-      #
-      # plocal = p
-      #
-      # plocal$runindex=list( it=1:plocal$nt  )
-      # plocal$nvars = length(plocal$runindex)  # plocal$runindex must be a list
-      # plocal$runs = expand.grid(plocal$runindex, stringsAsFactors=FALSE, KEEP.OUT.ATTRS=FALSE)
-      # plocal$nruns = nrow( runs )
-      # plocal$runs_uid = do.call(paste, c(plocal$runs, sep="~"))
-      # plocal$clustertype = "PSOCK"
-      # plocal$rndseed = 1
-      # if ( nruns < length( plocal$clusters ) ) {
-      #   plocal$clusters = sample( plocal$clusters, plocal$nruns )  # if very few runs, use only what is required
-      # }
-      # plocal$cl = makeCluster( spec=plocal$clusters, type=plocal$clustertype ) # SOCK works well but does not load balance as MPI
-      #     RNGkind("L'Ecuyer-CMRG")  # multiple streams of pseudo-random numbers.
-      #     clusterSetRNGStream(plocal$cl, iseed=plocal$rndseed )
-      #     # if ( !is.null(clusterexport)) clusterExport( plocal$cl, clusterexport )
-      #     uv = unique(plocal$runs_uid)
-      #     uvl = length(uv)
-      #     lc = length(plocal$clusters)
-      #     lci = 1:lc
-      #     ssplt = list()
-      #     for(j in 1:uvl) ssplt[[j]]  = which(plocal$runs_uid == uv[j])
-      #     plocal$clustertasklist = rep(list(numeric()),lc)
-      #     if (uvl>lc) {
-      #       for(j in 1:uvl) {
-      #         k=j
-      #         if(j>lc) k = j%%lc+1
-      #         plocal$clustertasklist[[k]] <- c(plocal$clustertasklist[[k]],ssplt[[j]])
-      #       }
-      #     }
-      #     ssplt = NULL
-      #
-      #     clusterApply( plocal$cl, plocal$clustertasklist, stmv_global_predict, p=plocal  )
-      #
-      # stopCluster( cl )
-      #
-
-        # message( "||| Done ... moving onto the rest of the analysis...")
+        }
+      } # end each timeslice
     }
 
 

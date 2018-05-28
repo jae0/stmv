@@ -443,12 +443,16 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
         p$timec_covariates_0 =  Sys.time()
         if (exists("COV", p$variables)) {
-          nc_cov =NULL
-          for (i in p$variables$COV ) {
-            pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[i]] )
-            nc_cov = c( nc_cov,  ncol(pu) )
+          if (length(p$variables$COV) > 0) {
+            nc_cov =NULL
+            for (i in p$variables$COV ) {
+              pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[i]] )
+              nc_cov = c( nc_cov,  ncol(pu) )
+            }
+            p$all.covars.static = ifelse( any(nc_cov > 1),  FALSE, TRUE )
+          } else {
+            p$all.covars.static = TRUE # degenerate case where the model is an intercept-only model (to remove mean effects)
           }
-          p$all.covars.static = ifelse( any(nc_cov > 1),  FALSE, TRUE )
         }
 
         if (!use_saved_state) {
