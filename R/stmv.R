@@ -279,35 +279,36 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     nPlocs = nrow(DATA$output$LOCS)
 
     if (exists("COV", p$variables)) {
-      # this needs to be done as Prediction covars need to be structured as lists
-      p$ptr$Pcov = list()
-      tmp_Pcov = list()
-      for ( covname in p$variables$COV ) {
-        Pcovdata = as.matrix( DATA$output$COV[[covname]] )
-        nPcovlocs = nrow(Pcovdata)
-        if (nPcovlocs != nPlocs) {
-          message( "Inconsistency between number of prediction locations and prediction covariates: input data needs to be checked:")
-          message( "Usually this due to bathymetry and temperature being out of sync")
+      if (length(p$variables$COV) > 0) {
+        # this needs to be done as Prediction covars need to be structured as lists
+        p$ptr$Pcov = list()
+        tmp_Pcov = list()
+        for ( covname in p$variables$COV ) {
+          Pcovdata = as.matrix( DATA$output$COV[[covname]] )
+          nPcovlocs = nrow(Pcovdata)
+          if (nPcovlocs != nPlocs) {
+            message( "Inconsistency between number of prediction locations and prediction covariates: input data needs to be checked:")
+            message( "Usually this due to bathymetry and temperature being out of sync")
 
-          print(str(DATA))
-          stop()
+            print(str(DATA))
+            stop()
+          }
+          attr( Pcovdata, "dimnames" ) = NULL
+          if (p$storage.backend == "bigmemory.ram" ) {
+            tmp_Pcov[[covname]] = big.matrix( nrow=nPcovlocs, ncol=ncol(Pcovdata), type="double"  )
+            tmp_Pcov[[covname]][] = Pcovdata[]
+            p$ptr$Pcov[[covname]]  = bigmemory::describe( tmp_Pcov[[covname]] )
+          }
+          if (p$storage.backend == "bigmemory.filebacked" ) {
+            p$ptr$Pcov[[covname]]  = p$cache$Pcov[[covname]]
+            bigmemory::as.big.matrix( Pcovdata, type="double", backingfile=basename(p$bm$Pcov[[covname]]), descriptorfile=basename(p$cache$Pcov[[covname]]), backingpath=p$stmvSaveDir )
+          }
+          if (p$storage.backend == "ff" ) {
+            p$ptr$Pcov[[covname]] = ff( Pcovdata, dim=dim(Pcovdata), file=p$cache$Pcov[[covname]], overwrite=TRUE )
+          }
+          Pcovdata = NULL
         }
-        attr( Pcovdata, "dimnames" ) = NULL
-        if (p$storage.backend == "bigmemory.ram" ) {
-          tmp_Pcov[[covname]] = big.matrix( nrow=nPcovlocs, ncol=ncol(Pcovdata), type="double"  )
-          tmp_Pcov[[covname]][] = Pcovdata[]
-          p$ptr$Pcov[[covname]]  = bigmemory::describe( tmp_Pcov[[covname]] )
-        }
-        if (p$storage.backend == "bigmemory.filebacked" ) {
-          p$ptr$Pcov[[covname]]  = p$cache$Pcov[[covname]]
-          bigmemory::as.big.matrix( Pcovdata, type="double", backingfile=basename(p$bm$Pcov[[covname]]), descriptorfile=basename(p$cache$Pcov[[covname]]), backingpath=p$stmvSaveDir )
-        }
-        if (p$storage.backend == "ff" ) {
-          p$ptr$Pcov[[covname]] = ff( Pcovdata, dim=dim(Pcovdata), file=p$cache$Pcov[[covname]], overwrite=TRUE )
-        }
-        Pcovdata = NULL
       }
-
     }
 
 

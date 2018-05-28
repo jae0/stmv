@@ -468,6 +468,8 @@
           }
           pa = as.data.frame( pa )
           names(pa) = p$variables$COV
+        } else {
+          pa = data.frame(intercept=rep(1, length(P0)))  # just to get the size right  when constant intercept model
         }
 
         if ( any( p$variables$LOCS %in%  p$variables$global_cov ) ) {
