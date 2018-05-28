@@ -702,6 +702,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     # stopCluster( p$cl )
 
     # random order helps use all cpus
+    currentstatus = stmv_db( p=p, DS="statistics.status" )
     pp = parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )))
 
     # a penultimate save of data as an internal format, just in case the save step or force complete goes funny
