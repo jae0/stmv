@@ -106,18 +106,17 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
 
     if (debugging) {
       if ( iip %in% savepoints ) {
-        sP = P[]; save( sP, file=p$saved_state_fn$P, compress=TRUE ); rm( sP)
-        sPn = Pn[]; save( sPn, file=p$saved_state_fn$Pn, compress=TRUE ); rm( sPn)
-        sPsd = Psd[]; save( sPsd, file=p$saved_state_fn$Psd, compress=TRUE ); rm( sPsd)
-        sS = S[]; save( sS, file=p$saved_state_fn$stats, compress=TRUE ); rm( sS)
-        sSflag = Sflag[]; save( sSflag, file=p$saved_state_fn$sflag, compress=TRUE ); rm( sSflag)
+        sP = P[]; save( sP, file=p$saved_state_fn$P, compress=TRUE ); sP=NULL
+        sPn = Pn[]; save( sPn, file=p$saved_state_fn$Pn, compress=TRUE ); sPn=NULL
+        sPsd = Psd[]; save( sPsd, file=p$saved_state_fn$Psd, compress=TRUE ); sPsd=NULL
+        sS = S[]; save( sS, file=p$saved_state_fn$stats, compress=TRUE ); sS=NULL
+        sSflag = Sflag[]; save( sSflag, file=p$saved_state_fn$sflag, compress=TRUE ); sSflag=NULL
         currentstatus = stmv_logfile(p=p, stime=stime)
+        gc()
       }
     }
 
     Si = p$runs[ iip, "locs" ]
-
-
 
     if ( Sflag[Si] != 0L ) next()  # previously attempted .. skip
       # 0=to do
@@ -212,8 +211,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
       ndata = length(U)
     }
 
-
-    dlon=dlat=o=NULL;
+    iU=dlon=dlat=o=NULL; gc()
 
     YiU = Yi[U] # YiU and p$stmv_distance_prediction determine the data entering into local model construction
     pa = stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=p$windowsize.half )
@@ -298,14 +296,14 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     if ( is.null(res)) {
       dat = pa = res = NULL
       Sflag[Si] = 8L   # modelling / prediction did not complete properly
-      # browser()
+      gc()
       next()
     }
 
     if ( inherits(res, "try-error") ) {
       dat = pa = res = NULL
       Sflag[Si] = 8L   # modelling / prediction did not complete properly
-      # browser()
+      gc()
       next()
     }
 
@@ -315,6 +313,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
         if (length(which( is.finite(res$predictions$mean ))) < 5) {
           dat = pa = res = NULL
           Sflag[Si] = 8L   # modelling / prediction did not complete properly
+          gc()
           next()  # looks to be a faulty solution
         }
       }
@@ -326,6 +325,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
       toohigh = which( res$predictions$mean > tq[2] )
       if (length( toolow) > 0)  res$predictions$mean[ toolow] = tq[1]
       if (length( toohigh) > 0) res$predictions$mean[ toohigh] = tq[2]
+      toolow = toohigh = tq= NULL
     }
 
     # stats collator
@@ -398,8 +398,8 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
         rm ( pac, piid )
       }
       rm(pac_i)
+      gc()
     }
-
 
     # update SD estimates of predictions with those from other locations via the
     # incremental  method ("online algorithm") of mean estimation after Knuth ;
@@ -425,7 +425,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
         }
         stdev_update = NULL
         means_update = NULL
-
         rm(ui, mm, iumm)
       }
 
@@ -437,7 +436,10 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
         P  [vi] = res$predictions$mean[v]
         Psd[vi] = res$predictions$sd[v]
       }
+      vi = NULL
+      gc()
     }
+
 
     if ( exists("TIME", p$variables) ) {
       u = which( is.finite( P[res$predictions$i,1] ) )  # these have data already .. update
@@ -472,7 +474,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
         }
         stdev_update = NULL
         means_update = NULL
-        rm(ui, mm)
+        updates = ui = mm=NULL
       }
 
       # do this as a second pass in case NA's were introduced by the update .. unlikely , but just in case
@@ -483,7 +485,8 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
         Pn [vi,] = 1
         P  [vi,] = res$predictions$mean[v]
         Psd[vi,] = res$predictions$sd[v]
-        rm(vi)
+        vi = NULL
+        gc()
       }
     }
 
@@ -530,6 +533,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
 
     res = NULL
     pa = NULL
+    gc()
 
     # ----------------------
     # do last. it is an indicator of completion of all tasks
