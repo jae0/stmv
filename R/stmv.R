@@ -238,7 +238,8 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
     # independent variables/ covariate
     if (exists("COV", p$variables)) {
-      Ycov = as.matrix(  DATA$input[ , p$variables$COV ] )
+      if (length(p$variables$COV) > 0) {
+        Ycov = as.matrix(  DATA$input[ , p$variables$COV ] )
         if (p$storage.backend == "bigmemory.ram" ) {
           tmp_Ycov = big.matrix( nrow=nrow(Ycov), ncol=ncol(Ycov), type="double")
           tmp_Ycov[] = Ycov[]
@@ -251,7 +252,8 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         if (p$storage.backend == "ff" ) {
           p$ptr$Ycov = ff( Ycov, dim=dim(Ycov), file=p$cache$Ycov, overwrite=TRUE )
         }
-      Ycov= NULL
+        Ycov= NULL
+      }
     }
 
     # data times
@@ -482,14 +484,16 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
     # data locations
     if (exists("COV", p$variables)) {
-      Ycov = stmv_attach( p$storage.backend, p$ptr$Ycov )
-      if (length(p$variables$COV)==1) {
-        bad = which( !is.finite( Ycov[] ))
-      } else {
-        bad = which( !is.finite( rowSums(Ycov[])))
+      if (length(p$variables$COV) > 0) {
+        Ycov = stmv_attach( p$storage.backend, p$ptr$Ycov )
+        if (length(p$variables$COV)==1) {
+          bad = which( !is.finite( Ycov[] ))
+        } else {
+          bad = which( !is.finite( rowSums(Ycov[])))
+        }
+        if (length(bad)> 0 ) Yi[bad] = NA
+        Yi = na.omit(Yi)
       }
-      if (length(bad)> 0 ) Yi[bad] = NA
-      Yi = na.omit(Yi)
     }
 
     # data locations

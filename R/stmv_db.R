@@ -304,13 +304,15 @@
 
       # covariates (independent vars)
       if ( exists( "COV", p$variables) ) {
-        Ycov = stmv_attach(  p$storage.backend, p$ptr$Ycov )
-        if ( length( p$variables$COV ) == 1 ) {
-          bad = which( !is.finite( Ycov[]) )
-        } else {
-          bad = which( !is.finite( rowSums(Ycov[])) )
+        if (length(p$variables$COV) > 0) {
+          Ycov = stmv_attach(  p$storage.backend, p$ptr$Ycov )
+          if ( length( p$variables$COV ) == 1 ) {
+            bad = which( !is.finite( Ycov[]) )
+          } else {
+            bad = which( !is.finite( rowSums(Ycov[])) )
+          }
+          if (length(bad)> 0 ) hasdata[bad] = NA
         }
-        if (length(bad)> 0 ) hasdata[bad] = NA
       }
 
       ii = na.omit(hasdata)
