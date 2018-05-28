@@ -453,7 +453,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
         if (!use_saved_state) {
           pc = p # copy
-          if (!pc$all.covars.static) if (exists("clusters.covars", pc) ) pc$clusters = pc$clusters.covars
+          if (exists("all.covars.static", pc)) if (!pc$all.covars.static) if (exists("clusters.covars", pc) ) pc$clusters = pc$clusters.covars
           # takes about 28 GB per run .. adjust cluster number temporarily
           stmv_db( p=pc, DS="global.prediction.surface" )
           p$time_covariates = round(difftime( Sys.time(), p$timec_covariates_0 , units="hours"), 3)
