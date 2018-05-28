@@ -519,20 +519,19 @@
             stop ("This global model method requires a bit more work .. ")
           }
 
-          if (p$all.covars.static) {
+          if (exists("all.covars.static", p)) {
+            if (p$all.covars.static) {
             # if this is true then this is a single cpu run and all predictions for each time slice is the same
             # could probably catch this and keep storage small but that would make the update math a little more complex
             # this keeps it simple with a quick copy
-            if (p$nt  > 1 ) {
-              for (j in ip[2:p$nruns]){
-                P0[,j] = P0[,1]
-                P0sd[,j] = P0sd[,1]
+              if (p$nt  > 1 ) {
+                for (j in ip[2:p$nruns]){
+                  P0[,j] = P0[,1]
+                  P0sd[,j] = P0sd[,1]
+                }
               }
             }
-            # global_model =NULL
-            # return(NULL)
           }
-
         } # end each timeslice
         # global_model =NULL
         # return("Done")

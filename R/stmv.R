@@ -394,7 +394,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
     if (exists("stmv_global_modelengine", p) ) {
       if (p$stmv_global_modelengine !="none" ) {
-        # create prediction suface with covariate-based additive offsets
+        # create prediction suface .. additive offsets
 
         sP0 = matrix( NaN, nrow=nPlocs, ncol=p$nt )
         if (use_saved_state) {
@@ -442,20 +442,22 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         message( "||| depending upon the size of the prediction grid and number of cpus (~1hr?).. ")
 
         p$timec_covariates_0 =  Sys.time()
-        nc_cov =NULL
-        for (i in p$variables$COV ) {
-          pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[i]] )
-          nc_cov = c( nc_cov,  ncol(pu) )
+        if (exists("COV", p$variables)) {
+          nc_cov =NULL
+          for (i in p$variables$COV ) {
+            pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[i]] )
+            nc_cov = c( nc_cov,  ncol(pu) )
+          }
+          p$all.covars.static = ifelse( any(nc_cov > 1),  FALSE, TRUE )
         }
-        p$all.covars.static = ifelse( any(nc_cov > 1),  FALSE, TRUE )
 
         if (!use_saved_state) {
-            pc = p # copy
-            if (!pc$all.covars.static) if (exists("clusters.covars", pc) ) pc$clusters = pc$clusters.covars
-            # takes about 28 GB per run .. adjust cluster number temporarily
-            stmv_db( p=pc, DS="global.prediction.surface" )
-            p$time_covariates = round(difftime( Sys.time(), p$timec_covariates_0 , units="hours"), 3)
-            message( paste( "||| Time taken to predict covariate surface (hours):", p$time_covariates ) )
+          pc = p # copy
+          if (!pc$all.covars.static) if (exists("clusters.covars", pc) ) pc$clusters = pc$clusters.covars
+          # takes about 28 GB per run .. adjust cluster number temporarily
+          stmv_db( p=pc, DS="global.prediction.surface" )
+          p$time_covariates = round(difftime( Sys.time(), p$timec_covariates_0 , units="hours"), 3)
+          message( paste( "||| Time taken to predict covariate surface (hours):", p$time_covariates ) )
         }
       }
     }
