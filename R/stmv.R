@@ -646,75 +646,75 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
   if ("interpolate" %in% runmode ) {
 
-    # # all low-level operations in one to avoid $!#!@# bigmemory issues
-    # Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-    # # to reset all rejected locations
-    # toreset = which( Sflag[] > 2)
-    # if (length(toreset) > 0) Sflag[toreset] = 0L  # to reset all the problem flags to todo
-    # currentstatus = list()
-    # currentstatus$todo = which( Sflag[]==0L )       # 0 = TODO
-    # currentstatus$done = which( Sflag[]==1L )       # 1 = completed
-    # currentstatus$outside = which( Sflag[]==2L )    # 2 = oustide bounds(if any)
-    # currentstatus$shallow = which( Sflag[]==3L )    # 3 = depth shallower than p$depth.filter (if it exists .. z is a covariate)
-    # currentstatus$predareaerror = which( Sflag[]==4L ) # 4=predictionarea not ok,
-    # currentstatus$nodata = which( Sflag[]==5L )     # 5=skipped due to insufficient data,
-    # currentstatus$variogramerror = which( Sflag[]==6L ) # 6=skipped .. fast variogram did not work
-    # currentstatus$vrangeerror = which( Sflag[]==7L )     # 7=variogram estimated range not ok
-    # currentstatus$modelerror = which( Sflag[]==8L )     # 8=problem with prediction and/or modelling
-    # currentstatus$skipped = which( Sflag[] == 9L )   # 9 not completed due to a failed attempt
-    # # do some counts
-    # currentstatus$n.todo = length(currentstatus$todo)
-    # currentstatus$n.complete = length(currentstatus$done)
-    # currentstatus$n.outside = length(which(is.finite(currentstatus$outside)))
-    # currentstatus$n.shallow = length(currentstatus$shallow)
-    # currentstatus$n.predareaerror = length(currentstatus$predareaerror)
-    # currentstatus$n.nodata = length(currentstatus$nodata)
-    # currentstatus$n.variogramerror = length(currentstatus$variogramerror)
-    # currentstatus$n.vrangeerror = length(currentstatus$vrangeerror)
-    # currentstatus$n.modelerror = length(currentstatus$modelerror)
-    # currentstatus$n.skipped = length(currentstatus$skipped)
-    # currentstatus$n.total = length(Sflag)
-    # currentstatus$prop_incomp = round( currentstatus$n.todo / ( currentstatus$n.total), 3)
-    # runindex=list( locs=currentstatus$todo[sample.int(length( currentstatus$todo ))] )
-    # nvars = length(runindex)  # runindex must be a list
-    # p$runs = expand.grid(runindex, stringsAsFactors=FALSE, KEEP.OUT.ATTRS=FALSE)
-    # p$nruns = nrow( p$runs )
-    # p$runs_uid = do.call(paste, c(p$runs, sep="~"))
-    # p$rndseed = 1
-    # if ( p$nruns < length( p$clusters ) ) {
-    #   p$clusters = sample( p$clusters, p$nruns )  # if very few runs, use only what is required
-    # }
-    # if (!exists( "clustertype", p) ) p$clustertype = "PSOCK"
-    # if (p$clustertype=="FORK") {
-    #   p$cl = makeCluster( spec=length(p$clusters),  type=p$clustertype ) # SOCK works well but does not load balance as MPI
-    # } else {
-    #   p$cl = makeCluster( spec=p$clusters,  type=p$clustertype ) # SOCK works well but does not load balance as MPI
-    # }
-    # RNGkind("L'Ecuyer-CMRG")  # multiple streams of pseudo-random numbers.
-    # clusterSetRNGStream(p$cl, iseed=p$rndseed )
-    # # if ( !is.null(clusterexport)) clusterExport( p$cl, clusterexport )
-    # uv = unique(p$runs_uid)
-    # uvl = length(uv)
-    # lc = length(p$clusters)
-    # lci = 1:lc
-    # ssplt = list()
-    # for(j in 1:uvl) ssplt[[j]]  = which(p$runs_uid == uv[j])
-    # clustertasklist = rep(list(numeric()),lc)
-    # if (uvl>lc) {
-    #   for(j in 1:uvl) {
-    #     k=j
-    #     if(j>lc) k = j%%lc+1
-    #     clustertasklist[[k]] <- c(clustertasklist[[k]],ssplt[[j]])
-    #   }
-    # }
-    # ssplt = NULL
-    # # stmv_interpolate(p=p)
-    # clusterApply( p$cl, clustertasklist, stmv_interpolate, p=p  )
-    # stopCluster( p$cl )
+    # all low-level operations in one to avoid $!#!@# bigmemory issues
+    Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
+    # to reset all rejected locations
+    toreset = which( Sflag[] > 2)
+    if (length(toreset) > 0) Sflag[toreset] = 0L  # to reset all the problem flags to todo
+    currentstatus = list()
+    currentstatus$todo = which( Sflag[]==0L )       # 0 = TODO
+    currentstatus$done = which( Sflag[]==1L )       # 1 = completed
+    currentstatus$outside = which( Sflag[]==2L )    # 2 = oustide bounds(if any)
+    currentstatus$shallow = which( Sflag[]==3L )    # 3 = depth shallower than p$depth.filter (if it exists .. z is a covariate)
+    currentstatus$predareaerror = which( Sflag[]==4L ) # 4=predictionarea not ok,
+    currentstatus$nodata = which( Sflag[]==5L )     # 5=skipped due to insufficient data,
+    currentstatus$variogramerror = which( Sflag[]==6L ) # 6=skipped .. fast variogram did not work
+    currentstatus$vrangeerror = which( Sflag[]==7L )     # 7=variogram estimated range not ok
+    currentstatus$modelerror = which( Sflag[]==8L )     # 8=problem with prediction and/or modelling
+    currentstatus$skipped = which( Sflag[] == 9L )   # 9 not completed due to a failed attempt
+    # do some counts
+    currentstatus$n.todo = length(currentstatus$todo)
+    currentstatus$n.complete = length(currentstatus$done)
+    currentstatus$n.outside = length(which(is.finite(currentstatus$outside)))
+    currentstatus$n.shallow = length(currentstatus$shallow)
+    currentstatus$n.predareaerror = length(currentstatus$predareaerror)
+    currentstatus$n.nodata = length(currentstatus$nodata)
+    currentstatus$n.variogramerror = length(currentstatus$variogramerror)
+    currentstatus$n.vrangeerror = length(currentstatus$vrangeerror)
+    currentstatus$n.modelerror = length(currentstatus$modelerror)
+    currentstatus$n.skipped = length(currentstatus$skipped)
+    currentstatus$n.total = length(Sflag)
+    currentstatus$prop_incomp = round( currentstatus$n.todo / ( currentstatus$n.total), 3)
+    runindex=list( locs=currentstatus$todo[sample.int(length( currentstatus$todo ))] )
+    nvars = length(runindex)  # runindex must be a list
+    p$runs = expand.grid(runindex, stringsAsFactors=FALSE, KEEP.OUT.ATTRS=FALSE)
+    p$nruns = nrow( p$runs )
+    p$runs_uid = do.call(paste, c(p$runs, sep="~"))
+    p$rndseed = 1
+    if ( p$nruns < length( p$clusters ) ) {
+      p$clusters = sample( p$clusters, p$nruns )  # if very few runs, use only what is required
+    }
+    if (!exists( "clustertype", p) ) p$clustertype = "PSOCK"
+    if (p$clustertype=="FORK") {
+      p$cl = makeCluster( spec=length(p$clusters),  type=p$clustertype ) # SOCK works well but does not load balance as MPI
+    } else {
+      p$cl = makeCluster( spec=p$clusters,  type=p$clustertype ) # SOCK works well but does not load balance as MPI
+    }
+    RNGkind("L'Ecuyer-CMRG")  # multiple streams of pseudo-random numbers.
+    clusterSetRNGStream(p$cl, iseed=p$rndseed )
+    # if ( !is.null(clusterexport)) clusterExport( p$cl, clusterexport )
+    uv = unique(p$runs_uid)
+    uvl = length(uv)
+    lc = length(p$clusters)
+    lci = 1:lc
+    ssplt = list()
+    for(j in 1:uvl) ssplt[[j]]  = which(p$runs_uid == uv[j])
+    clustertasklist = rep(list(numeric()),lc)
+    if (uvl>lc) {
+      for(j in 1:uvl) {
+        k=j
+        if(j>lc) k = j%%lc+1
+        clustertasklist[[k]] <- c(clustertasklist[[k]],ssplt[[j]])
+      }
+    }
+    ssplt = NULL
+    # stmv_interpolate(p=p)
+    clusterApply( p$cl, clustertasklist, stmv_interpolate, p=p  )
+    stopCluster( p$cl )
 
     # random order helps use all cpus
-    currentstatus = stmv_db( p=p, DS="statistics.status" )
-    pp = parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )))
+    # currentstatus = stmv_db( p=p, DS="statistics.status" )
+    # pp = parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )))
 
     # a penultimate save of data as an internal format, just in case the save step or force complete goes funny
     sP = stmv_attach( p$storage.backend, p$ptr$P )[]
