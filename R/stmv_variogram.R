@@ -241,17 +241,18 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
       # -------------------------
 
       # spatial discretization only
-      g = stmv_discretize_coordinates(coords=xy, z=z, discretized_n=125, method="aggregate", FUNC=mean, na.rm=TRUE)
+      XYZ = stmv_discretize_coordinates(coords=xy, z=z, discretized_n=125, method="aggregate", FUNC=mean, na.rm=TRUE)
 
       maxdist = out$range_crude   # begin with this (diagonal)
 
       # gives a fast stable empirical variogram using nl least squares
 
-      XY = as.data.frame(g$xy / out$stmv_internal_scale )  # keeps things smaller in value to avoid floating point issues
-      names(XY) =  c("plon", "plat" ) # arbitrary
+      XYZ[,1] = XYZ[,1] / out$stmv_internal_scale  # keeps things smaller in value to avoid floating point issues
+      XYZ[,2] = XYZ[,2] / out$stmv_internal_scale  # keeps things smaller in value to avoid floating point issues
+      names(XYZ[,1:3]) =  c("plon", "plat", "z" ) # arbitrary
 
       # empirical variogram
-      vEm = gstat::variogram( g$z ~ 1, locations=~plon+plat, data=XY, cutoff=maxdist/out$stmv_internal_scale, width=maxdist/out$stmv_internal_scale/nbreaks, cressie=FALSE )
+      vEm = gstat::variogram( z ~ 1, locations=~plon+plat, data=XYZ, cutoff=maxdist/out$stmv_internal_scale, width=maxdist/out$stmv_internal_scale/nbreaks, cressie=FALSE )
 
       vEm$dist0 = vEm$dist * out$stmv_internal_scale
 
@@ -278,7 +279,7 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
           # message( "Range longer than distance cutoff ... retrying with a larger distance cutoff")
           cnt = cnt + 1
 
-          vEm = gstat::variogram( g$z~1, locations=~plon+plat, data=XY, cutoff=maxdist/out$stmv_internal_scale, width=maxdist/(out$stmv_internal_scale*nbreaks), cressie=FALSE )  # empirical variogram
+          vEm = gstat::variogram( z~1, locations=~plon+plat, data=XYZ, cutoff=maxdist/out$stmv_internal_scale, width=maxdist/(out$stmv_internal_scale*nbreaks), cressie=FALSE )  # empirical variogram
           vEm$dist0 = vEm$dist * out$stmv_internal_scale
           vMod0 = gstat::vgm(psill=2*0.75*runif(1), model="Mat", range=2*1*runif(1), nugget=2*0.25*runif(1), kappa=0.5 ) # starting model parameters, 2*X as the expected value of runif(1) = 0.5
           vFitgs =  try( gstat::fit.variogram( vEm, vMod0, fit.kappa =TRUE, fit.sills=TRUE, fit.ranges=TRUE ) )
