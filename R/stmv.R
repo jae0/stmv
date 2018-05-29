@@ -740,7 +740,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         save( sP0sd, file=p$saved_state_fn$P0sd, compress=TRUE ); sP0sd = NULL
       }
     }
-
+    gc()
   }
 
   # --------------------
@@ -815,6 +815,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     #       save( sP0sd, file=p$saved_state_fn$P0sd, compress=TRUE ); sP0sd = NULL
     #     }
     #   }
+    #   gc()
     #
     # }
 
