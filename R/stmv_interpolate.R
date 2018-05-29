@@ -104,7 +104,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
 
     if ( iip %in% logpoints )  currentstatus = stmv_logfile(p=p, stime=stime)
 
-    if (debugging) {
+    if (0) {
       if ( iip %in% savepoints ) {
         sP = P[]; save( sP, file=p$saved_state_fn$P, compress=TRUE ); sP=NULL
         sPn = Pn[]; save( sPn, file=p$saved_state_fn$Pn, compress=TRUE ); sPn=NULL
@@ -222,7 +222,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
       next()
     }
 
-    if (debugging) {
+    if (0) {
       # check that position indices are working properly
       Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
       Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
