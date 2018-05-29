@@ -249,7 +249,7 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
 
       XYZ[,1] = XYZ[,1] / out$stmv_internal_scale  # keeps things smaller in value to avoid floating point issues
       XYZ[,2] = XYZ[,2] / out$stmv_internal_scale  # keeps things smaller in value to avoid floating point issues
-      names(XYZ[,1:3]) =  c("plon", "plat", "z" ) # arbitrary
+      names(XYZ) =  c("plon", "plat", "z" ) # arbitrary
 
       # empirical variogram
       vEm = gstat::variogram( z ~ 1, locations=~plon+plat, data=XYZ, cutoff=maxdist/out$stmv_internal_scale, width=maxdist/out$stmv_internal_scale/nbreaks, cressie=FALSE )
