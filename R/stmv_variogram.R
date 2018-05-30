@@ -294,7 +294,7 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
           out$fast = list( fit=vFitgs, vgm=vEm, range=distance_range, nu=vFitgs$kappa[2], phi=phi,
             varSpatial=vFitgs$psill[2], varObs=vFitgs$psill[1]  )
           out$fast$range_ok = FALSE
-          if ( out$fast$range < max(out$vgm$dist0)*0.99) out$fast$range_ok = TRUE
+          if ( out$fast$range < max(out$fast$vgm$dist0)*0.99) out$fast$range_ok = TRUE
           if ( distance_range < maxdist ) break()
         }
       }
