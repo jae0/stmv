@@ -2,10 +2,10 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, minresolu
 
   if (is.vector(coo)) {
     ncoo = 1
-    ndata = length(coo)
+    icoo = 1:length(coo)
   } else {
     ncoo = ncol(coo)
-    ndata =   nrow(coo)
+    icoo = 1:nrow(coo)
   }
 
   if (ncoo==1) {
@@ -63,7 +63,7 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, minresolu
 
       if (method=="thin") {
         if (is.null(minresolution)) stop("minresolution is required")
-        res = tapply( X=ndata, INDEX=coo,  FUN=function(w) {length( which(is.finite(w) ))}, simplify=TRUE )
+        res = tapply( X=icoo, INDEX=coo,  FUN=function(w) {length( which(is.finite(w) ))}, simplify=TRUE )
         res = as.data.frame( as.table (res) )
         res[,1] = as.numeric(as.character( res[,1] ))
         res = res[ which( is.finite( res[,2] )) ,]
@@ -79,10 +79,10 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, minresolu
             okeep = floor(invcount[o] * noo)
             if (okeep > 1) {
               ss = oo[ .Internal( sample( noo, okeep, replace=FALSE, prob=NULL)) ]
-              keep = c(keep, ndata[ss] )
+              keep = c(keep, icoo[ss] )
             }
           } else {
-            keep = c(keep, ndata[oo] )
+            keep = c(keep, icoo[oo] )
           }
         }
         return( keep )
@@ -125,7 +125,7 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, minresolu
 
     if (method=="thin") {
       if (is.null(minresolution)) stop("minresolution is required")
-      res = tapply( X=ndata, INDEX=list(coo[,1], coo[,2]),
+      res = tapply( X=icoo, INDEX=list(coo[,1], coo[,2]),
         FUN = function(w) {length( which(is.finite(w) ))}, simplify=TRUE )
       res = as.data.frame( as.table (res) )
       res[,1] = as.numeric(as.character( res[,1] ))
@@ -143,10 +143,10 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, minresolu
           okeep = floor(invcount[o] * noo)
           if (okeep > 1) {
             ss = oo[ .Internal( sample( noo, okeep, replace=FALSE, prob=NULL)) ]
-            keep = c(keep, ndata[ss] )
+            keep = c(keep, icoo[ss] )
           }
         } else {
-          keep = c(keep, ndata[oo] )
+          keep = c(keep, icoo[oo] )
         }
       }
       return( keep )
@@ -191,7 +191,7 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, minresolu
 
 
       if (method=="thin") {
-        res = tapply( X=ndata, INDEX=list(coo[,1], coo[,2], coo[,3]),
+        res = tapply( X=icoo, INDEX=list(coo[,1], coo[,2], coo[,3]),
           FUN = function(w) {length( which(is.finite(w) ))}, simplify=TRUE )
         res = as.data.frame( as.table (res) )
         res[,1] = as.numeric(as.character( res[,1] ))
@@ -210,10 +210,10 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, minresolu
             okeep = floor(invcount[o] * noo)
             if (okeep > 1) {
               ss = oo[ .Internal( sample( noo, okeep, replace=FALSE, prob=NULL)) ]
-              keep = c(keep, ndata[ss] )
+              keep = c(keep, icoo[ss] )
             }
           } else {
-            keep = c(keep, ndata[oo] )
+            keep = c(keep, icoo[oo] )
           }
         }
         return( keep )
