@@ -47,7 +47,7 @@ stmv_discretize_coordinates = function(coords, z=NULL, discretized_n=100, minres
       if ( method=="aggregate" ) {
         # basic aggregation in 2D
         if (is.null(z)) stop("z is required if aggregating")
-        res = tapply( X=z, INDEX=list(coords,
+        res = tapply( X=z, INDEX=coords,
           FUN = function(w) {FUNC(w, ...)}, simplify=TRUE )
         res = as.data.frame( as.table (res) )
         res[,1] = as.numeric(as.character( res[,1] ))
@@ -59,7 +59,7 @@ stmv_discretize_coordinates = function(coords, z=NULL, discretized_n=100, minres
 
       if (method=="thin") {
         if (is.null(minresolution)) stop("minresolution is required")
-        res = tapply( X=ndata, INDEX=list(coords,
+        res = tapply( X=ndata, INDEX=coords,
           FUN = function(w) {length( which(is.finite(w) ))}, simplify=TRUE )
         res = as.data.frame( as.table (res) )
         res[,1] = as.numeric(as.character( res[,1] ))
