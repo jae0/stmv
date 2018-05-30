@@ -1,11 +1,11 @@
 
 stmv__krige = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varObs=NULL, varSpatial=NULL, variablelist=FALSE, ... ) {
-  #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation 
+  #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
   # \ as a 2D gaussian process (basically, simple krigimg or TPS -- time is treated as being independent)
-  #\\ note: time is not being modelled and treated independently 
-  #\\      .. you had better have enough data in each time slice ..  essentially this is kriging 
+  #\\ note: time is not being modelled and treated independently
+  #\\      .. you had better have enough data in each time slice ..  essentially this is kriging
   if (variablelist)  return( c() )
-  
+
   sdTotal = sd(dat[,p$variable$Y], na.rm=T)
 
   dat$mean = NA
@@ -22,29 +22,29 @@ stmv__krige = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varObs=NUL
       pa_i = 1:nrow(pa)
     }
 
-    fspmodel <- try( Krig( dat[xi, p$variables$LOCS], dat[xi, p$variables$Y], 
-      sigma2=varObs, rho=varSpatial , cov.function="stationary.cov", 
+    fspmodel <- try( Krig( dat[xi, p$variables$LOCS], dat[xi, p$variables$Y],
+      sigma2=varObs, rho=varSpatial , cov.function="stationary.cov",
       Covariance="Matern", range=phi, smoothness=nu) )
     if (inherits(fspmodel, "try-error") )  next()
-    dat$mean[xi] = fspmodel$fitted.values 
+    dat$mean[xi] = fspmodel$fitted.values
     ss = lm( dat$mean[xi] ~ dat[xi,p$variables$Y], na.action=na.omit)
     if ( "try-error" %in% class( ss ) ) next()
     rsquared = summary(ss)$r.squared
     if (rsquared < p$stmv_rsquared_threshold ) next()
     pa$mean[pa_i] = predict(fspmodel, x=pa[pa_i, p$variables$LOCS] )
     # pa$sd[pa_i]   = predictSE(fspmodel, x=pa[pa_i, p$variables$LOCS] ) # SE estimates are slooow
- 
+
     if ( 0 ){
       # debugging plots
       ti = 1
       xi = which( dat[ , p$variables$TIME ] == p$prediction.ts[ti] )
       mbas = MBA::mba.surf( dat[xi, c( p$variables$LOCS, p$variables$Y) ], 300, 300, extend=TRUE)$xyz.est
       image(mbas)
- 
+
       surface(fspmodel)
       fsp.p<- predictSurface(fspmodel, nx=500, ny=500 ) # finer grid
       surface(fsp.p, type="I")
- 
+
       fsp.p2<- predictSurfaceSE(fspmodel)
       surface(fsp.p2, type="C")
     }
@@ -59,6 +59,5 @@ stmv__krige = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varObs=NUL
   if (rsquared < p$stmv_rsquared_threshold ) return(NULL)
 
   stmv_stats = list( sdTotal=sdTotal, rsquared=rsquared, ndata=nrow(dat) ) # must be same order as p$statsvars
-  return( list( predictions=pa, stmv_stats=stmv_stats ) )  
+  return( list( predictions=pa, stmv_stats=stmv_stats ) )
 }
-

@@ -14,7 +14,7 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
   ids = array_map( "xy->1", px[, c("plon", "plat")], gridparams=p$gridparams ) # 100X faster than paste / merge
   todrop = which(duplicated( ids) )
   if (length(todrop>0)) px = px[-todrop,]
-  rm(ids, todrop)
+  rm(ids, todrop) ; gc()
 
   # static vars .. don't need to look up
   tokeep = c(p$variables$LOCS )
@@ -29,7 +29,7 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
   }
   px = px[ , tokeep ]
   px_n = nrow(px)
-  nts = vn = NULL
+  nts = vn = NULL; gc()
 
   # add temporal grid
   if ( exists("TIME", p$variables) ) {
@@ -57,7 +57,7 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
     } # end for loop
     nts = vn = NULL
   } # end if
-  rownames(px) = NULL
+  rownames(px) = NULL; gc()
 
 
   # print( "starting gam-timeseries mod/pred")

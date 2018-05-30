@@ -1,9 +1,9 @@
 
 stmv__tps = function( p=NULL, dat=NULL, pa=NULL, lambda=NULL, variablelist=FALSE, ...  ) {
-  #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation 
+  #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
   # \ as a 2D gaussian process (basically, simple krigimg or TPS -- time is treated as being independent)
-  #\\ note: time is not being modelled and treated independently 
-  #\\      .. you had better have enough data in each time slice ..  essentially this is kriging 
+  #\\ note: time is not being modelled and treated independently
+  #\\      .. you had better have enough data in each time slice ..  essentially this is kriging
   if (variablelist)  return( c() )
 
   sdTotal = sd(dat[,p$variable$Y], na.rm=T)
@@ -13,7 +13,7 @@ stmv__tps = function( p=NULL, dat=NULL, pa=NULL, lambda=NULL, variablelist=FALSE
   pa$sd = sdTotal  # leave as this as sd estimation is too expensive
 
   for ( ti in 1:p$nt ) {
-    
+
     if ( exists("TIME", p$variables) ) {
       xi = which( dat[ , p$variables$TIME ] == p$prediction.ts[ti] )
       pa_i = which( pa[, p$variables$TIME] == p$prediction.ts[ti])
@@ -24,7 +24,7 @@ stmv__tps = function( p=NULL, dat=NULL, pa=NULL, lambda=NULL, variablelist=FALSE
 
     ftpsmodel = try( Tps(x=dat[xi, p$variables$LOCS], Y=dat[xi, p$variables$Y], lambda=lambda ) )
     if (inherits(ftpsmodel, "try-error") )  next()
-    dat$mean[xi] = ftpsmodel$fitted.values 
+    dat$mean[xi] = ftpsmodel$fitted.values
     ss = lm( dat$mean[xi] ~ dat[xi,p$variables$Y], na.action=na.omit)
     if ( "try-error" %in% class( ss ) ) next()
     rsquared = summary(ss)$r.squared
@@ -46,6 +46,5 @@ stmv__tps = function( p=NULL, dat=NULL, pa=NULL, lambda=NULL, variablelist=FALSE
   if (rsquared < p$stmv_rsquared_threshold ) return(NULL)
 
   stmv_stats = list( sdTotal=sdTotal, rsquared=rsquared, ndata=nrow(dat) ) # must be same order as p$statsvars
-  return( list( predictions=pa, stmv_stats=stmv_stats ) )  
+  return( list( predictions=pa, stmv_stats=stmv_stats ) )
 }
-
