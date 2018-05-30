@@ -772,25 +772,25 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     } else {
       p$cl = makeCluster( spec=p$clusters,  type=p$clustertype ) # SOCK works well but does not load balance as MPI
     }
-        RNGkind("L'Ecuyer-CMRG")  # multiple streams of pseudo-random numbers.
-        clusterSetRNGStream(p$cl, iseed=p$rndseed )
-        # if ( !is.null(clusterexport)) clusterExport( p$cl, clusterexport )
-        uv = unique(p$runs_uid)
-        uvl = length(uv)
-        lc = length(p$clusters)
-        lci = 1:lc
-        ssplt = list()
-        for(j in 1:uvl) ssplt[[j]]  = which(p$runs_uid == uv[j])
-        clustertasklist = rep(list(numeric()),lc)
-        if (uvl>lc) {
-          for(j in 1:uvl) {
-            k=j
-            if(j>lc) k = j%%lc+1
-            clustertasklist[[k]] <- c(clustertasklist[[k]],ssplt[[j]])
-          }
-        }
-        ssplt = NULL
-        clusterApply( p$cl, clustertasklist, stmv_interpolate_fast, p=p  )
+    RNGkind("L'Ecuyer-CMRG")  # multiple streams of pseudo-random numbers.
+    clusterSetRNGStream(p$cl, iseed=p$rndseed )
+    # if ( !is.null(clusterexport)) clusterExport( p$cl, clusterexport )
+    uv = unique(p$runs_uid)
+    uvl = length(uv)
+    lc = length(p$clusters)
+    lci = 1:lc
+    ssplt = list()
+    for(j in 1:uvl) ssplt[[j]]  = which(p$runs_uid == uv[j])
+    clustertasklist = rep(list(numeric()),lc)
+    if (uvl>lc) {
+      for(j in 1:uvl) {
+        k=j
+        if(j>lc) k = j%%lc+1
+        clustertasklist[[k]] <- c(clustertasklist[[k]],ssplt[[j]])
+      }
+    }
+    ssplt = NULL
+    clusterApply( p$cl, clustertasklist, stmv_interpolate_fast, p=p  )
     stopCluster( p$cl )
 
     if (0) {

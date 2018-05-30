@@ -294,29 +294,38 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     }
 
     if ( is.null(res)) {
-      dat = pa = res = NULL
       Sflag[Si] = 8L   # modelling / prediction did not complete properly
+      dat = pa = res = NULL
       gc()
       next()
     }
 
     if ( inherits(res, "try-error") ) {
-      dat = pa = res = NULL
       Sflag[Si] = 8L   # modelling / prediction did not complete properly
+      dat = pa = res = NULL
       gc()
       next()
     }
 
+    if (!exists("predictions", res)) {
+      Sflag[Si] = 8L   # modelling / prediction did not complete properly
+      dat = pa = res = NULL
+      gc()
+      next()
+    }
 
-    if (exists("predictions", res)) {
-      if (exists("mean", res$predictions)) {
-        if (length(which( is.finite(res$predictions$mean ))) < 5) {
-          dat = pa = res = NULL
-          Sflag[Si] = 8L   # modelling / prediction did not complete properly
-          gc()
-          next()  # looks to be a faulty solution
-        }
-      }
+    if (!exists("mean", res$predictions)) {
+      Sflag[Si] = 8L   # modelling / prediction did not complete properly
+      dat = pa = res = NULL
+      gc()
+      next()
+    }
+
+    if (length(which( is.finite(res$predictions$mean ))) < 5) {
+      Sflag[Si] = 8L   # modelling / prediction did not complete properly
+      dat = pa = res = NULL
+      gc()
+      next()  # looks to be a faulty solution
     }
 
     if (exists( "stmv_quantile_bounds", p)) {
@@ -395,9 +404,9 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
           }
 
         }
-        rm ( pac, piid )
+        pac=piid=NULL
       }
-      rm(pac_i)
+      pac_i=NULL
       gc()
     }
 
@@ -425,7 +434,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
         }
         stdev_update = NULL
         means_update = NULL
-        rm(ui, mm, iumm)
+        ui=mm=iumm=NULL
       }
 
       # first time # no data yet
@@ -460,6 +469,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
         updates = means_update + stdev_update
         if (!is.matrix(updates)) {
           Sflag[Si] = 8L
+          u = u_n = ui = nc =stdev_update = means_update = NULL; gc()
           message( Si )
           message( "update of predictions were problematic ... this should not happen, proabbaly due to NA's" )
           next()
@@ -472,9 +482,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
           P  [iumm,] = means_update[mm,]
           iumm = NULL
         }
-        stdev_update = NULL
-        means_update = NULL
-        updates = ui = mm=NULL
+        stdev_update = means_update = updates = ui = mm=NULL
       }
 
       # do this as a second pass in case NA's were introduced by the update .. unlikely , but just in case
@@ -486,9 +494,9 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
         P  [vi,] = res$predictions$mean[v]
         Psd[vi,] = res$predictions$sd[v]
         vi = NULL
-        gc()
       }
     }
+    gc()
 
     # save stats
     for ( k in 1: length(p$statsvars) ) {
@@ -531,14 +539,12 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
 
     }
 
-    res = NULL
-    pa = NULL
-    gc()
 
     # ----------------------
     # do last. it is an indicator of completion of all tasks
     # restarts would be broken otherwise
     Sflag[Si] = 1L  # mark as complete without issues
+    res = pa = NULL; gc()
 
   }  # end for loop
 
