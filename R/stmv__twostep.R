@@ -14,7 +14,7 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
   ids = array_map( "xy->1", px[, c("plon", "plat")], gridparams=p$gridparams ) # 100X faster than paste / merge
   todrop = which(duplicated( ids) )
   if (length(todrop>0)) px = px[-todrop,]
-  rm(ids, todrop) ; gc()
+  ids = todrop=NULL
 
   # static vars .. don't need to look up
   tokeep = c(p$variables$LOCS )
@@ -29,7 +29,7 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
   }
   px = px[ , tokeep ]
   px_n = nrow(px)
-  nts = vn = NULL; gc()
+  nts = vn = NULL
 
   # add temporal grid
   if ( exists("TIME", p$variables) ) {
@@ -57,7 +57,7 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
     } # end for loop
     nts = vn = NULL
   } # end if
-  rownames(px) = NULL; gc()
+  rownames(px) = NULL
 
 
   # print( "starting gam-timeseries mod/pred")
@@ -76,7 +76,6 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
   pxts = ts_gam$predictions
   rownames(pxts) = NULL
   ts_gam = NULL
-  gc()
 
   names(pxts)[which(names(pxts)=="mean")] = p$variables$Y
   names(pxts)[which(names(pxts)=="sd")] = paste(p$variables$Y, "sd", sep=".")
@@ -89,34 +88,26 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
       image(mbas)
   }
 
-  out = NULL
-
-  # print( "starting spatial boosted mod/pred")
-
   # step 2 :: spatial modelling .. essentially a time-space separable solution
 
   if (!exists( "stmv_twostep_space", p)) p$stmv_twostep_space="krige" # default
 
+  out = NULL
   if ( p$stmv_twostep_space == "krige" ) {
     out = stmv__krige( p, dat=pxts, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial )
-    if (is.null( out)) return(NULL)
   }
 
   if ( p$stmv_twostep_space == "gstat" ) {
     out = stmv__gstat( p, dat=pxts, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial )
-    if (is.null( out)) return(NULL)
   }
 
   if (p$stmv_twostep_space %in% c("tps") ) {
     out = stmv__tps( p, dat=pxts, pa=pa, lambda=varObs/varSpatial  )
-    if (is.null( out)) return(NULL)
   }
 
   if (p$stmv_twostep_space %in% c("fft", "lowpass", "spatial.process", "lowpass_spatial.process") ) {
     out = stmv__fft( p, dat=pxts, pa=pa, nu=nu, phi=phi )
-    if (is.null( out)) return(NULL)
   }
-
 
   return( out )
 }

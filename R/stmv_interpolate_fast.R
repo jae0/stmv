@@ -38,7 +38,7 @@ stmv_interpolate_fast = function( ip=NULL, p ) {
   mAC = as.surface(dgrid, c(AC))$z
   fW = fft(mAC)/(fft(mC) * nr2 * nc2)
 
-  rm(dgrid, AC, mC, mAC); gc()
+  dgrid=AC=mC=mAC=NULL
 
   for ( iip in ip ) {
 
@@ -110,4 +110,3 @@ stmv_interpolate_fast = function( ip=NULL, p ) {
   return( "complete" )
 
 }
-

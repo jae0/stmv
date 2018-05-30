@@ -71,7 +71,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   withdata = which(is.finite( (rowSums(DATA$input[, testvars] )) ) )
   if (length(withdata) < 1) stop( "Missing data or insufficient data")
   DATA$input = DATA$input[withdata, ]
-  rm(withdata)
+  withdata=NULL
 
   # number of time slices
   if (!exists("nt", p)) {
@@ -136,7 +136,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     if (p$storage.backend == "ff" ) {
       p$ptr$Sloc = ff( Sloc, dim=dim(Sloc), file=p$cache$Sloc, overwrite=TRUE )
     }
-  rm( sbox )
+  sbox=NULL
 
   sS = matrix( NaN, nrow=nrow(Sloc), ncol=length( p$statsvars ) ) # NA forces into logical
   if (use_saved_state) {
@@ -519,7 +519,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       if (p$storage.backend == "ff" ) {
         p$ptr$Yi = ff( Yi, dim=dim(Yi), file=p$cache$Yi, overwrite=TRUE )
       }
-    rm(Yi)
+    Yi=NULL
 
     if ( !exists("stmv_distance_scale", p)) {
       Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
@@ -745,7 +745,6 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
           save( sP0sd, file=p$saved_state_fn$P0sd, compress=TRUE ); sP0sd = NULL
         }
       }
-      gc()
     }
   }
 
@@ -823,8 +822,6 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
           save( sP0sd, file=p$saved_state_fn$P0sd, compress=TRUE ); sP0sd = NULL
         }
       }
-      gc()
-
     }
 
   }

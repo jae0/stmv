@@ -66,7 +66,6 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   } }
 
   sp.covar = sp.covar2 = sp.covar.surf = sp.covar.surf2 = dgrid = center = mC = NULL
-  gc()
 
   xi =1:nrow(dat)
   pa_i = 1:nrow(pa)
@@ -98,7 +97,6 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     fY = Re(fft(fft(mY) * sp.covar.kernel, inverse = TRUE))[1:nr,1:nc]
 
     mY = mN = NULL
-    gc()
 
     Z = fY/fN
     fY = fN = NULL
@@ -118,7 +116,6 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
 
     # pa$sd[pa_i] = NA  ## fix as NA
     Z = NULL
-    gc()
   }
 
 

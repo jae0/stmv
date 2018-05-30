@@ -57,7 +57,7 @@ stmv__inla = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
     resolution=p$inla.mesh.hull.resolution )
   # the commented options seem to make mesh gen slow ... should look into this if you use this method
 
-  rm(locs_noise)
+  locs_noise=NULL
 
   if (0)  plot( MESH )  # or ... stmv_plot( p=p, "mesh", MESH=MESH )
 
@@ -86,7 +86,8 @@ stmv__inla = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
   obs_ydata[[ p$variables$Y ]] = dat[, p$variables$Y ]
 
   DATA = inla.stack( tag="obs", data=obs_ydata, A=obs_A, effects=obs_eff, remove.unused=FALSE )
-  rm ( obs_index, obs_eff, obs_ydata, obs_A )
+  obs_index=obs_eff=obs_ydata=obs_A=NULL
+
   # remove.unused=FALSE ensures that we can look at the estimated field effect without
   #   having to do expensive separate predictions.
   # DATA$A is projection matrix to translate from mesh nodes to data nodes
@@ -119,7 +120,7 @@ stmv__inla = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
   PREDS = inla.stack( tag="preds", data=preds_ydata, A=preds_A, effects=preds_eff, remove.unused=FALSE )
   DATA = inla.stack(DATA, PREDS )
   preds_stack_index = inla.stack.index( DATA, "preds")$data  # indices of predictions in stacked data
-  rm ( preds_eff, preds_ydata, preds_A, PREDS, preds_index, preds_locs ); gc()
+  preds_eff=preds_ydata=preds_A=PREDS=preds_index=preds_locs=NULL
 
   if (!exists("stmv_local_modelformula", p) )  p$stmv_local_modelformula = formula( z ~ -1 + intercept + f( spatial.field, model=SPDE ) ) # SPDE is the spatial covariance model .. defined in
 
@@ -136,9 +137,9 @@ stmv__inla = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
     fns = list.files( dirname( spdetmpfn ), all.files=TRUE, full.names=TRUE, recursive=TRUE, include.dirs=TRUE )
     oo = grep( basename(spdetmpfn), fns )
     if(length(oo)>0) file.remove( sort(fns[oo], decreasing=TRUE) )
-    rm ( fns, spdetmpfn, oo);
+    fns=spdetmpfn=oo=NULL
   }
-  rm ( DATA); gc()
+  DATA=NULL
 
   # -----------
   # predictions
@@ -159,7 +160,7 @@ stmv__inla = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
     posterior.samples = inla.posterior.sample(n=p$inla.nsamples, RES)
     rnm = rownames(posterior.samples[[1]]$latent )
     posterior = sapply( posterior.samples, p$stmv.posterior.extract, rnm=rnm )
-    rm(posterior.samples);
+    posterior.samples=NULL
     # robustify the predictions by trimming extreme values .. will have minimal effect upon mean
     # but variance estimates should be useful/more stable as the tails are sometimes quite long
     for (ii in 1:nrow(posterior )) {
@@ -180,7 +181,7 @@ stmv__inla = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
     plot.new(); levelplot( sd   ~ plon+plat, pa, aspect="iso", labels=TRUE, pretty=TRUE, xlab=NULL,ylab=NULL,scales=list(draw=FALSE) )
   }
 
-  rm(MESH)
+  MESH=NULL
 
 # bathymetry.figures( DS="predictions", p=p ) # to debug
   inla.summary = stmv_summary_inla_spde2 ( RES, SPDE )
@@ -197,5 +198,3 @@ stmv__inla = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
   # stats$range = geoR::practicalRange("matern", phi=stats$phi, kappa=stats$nu  )
   return (list(predictions=pa, stmv_stats=stats))
 }
-
-

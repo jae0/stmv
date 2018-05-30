@@ -495,24 +495,22 @@
           YYY = predict( global_model, type="link", se.fit=TRUE )
           Yq = quantile( YYY$fit, probs=p$stmv_quantile_bounds )
           pa = NULL
-          gc()
           if (!inherits(Pbaseline, "try-error")) {
             Pbaseline$fit[ Pbaseline$fit < Yq[1] ] = Yq[1]  # do not permit extrapolation
             Pbaseline$fit[ Pbaseline$fit > Yq[2] ] = Yq[2]
             P0[,it] = Pbaseline$fit
             P0sd[,it] = Pbaseline$se.fit
           }
-          Pbaseline = NULL; gc()
+          Pbaseline = NULL
         } else if (p$stmv_global_modelengine =="bayesx") {
           stop( "not yet tested" ) # TODO
           # Pbaseline = try( predict( global_model, newdata=pa, type="link", se.fit=TRUE ) )
           # pa = NULL
-          # gc()
           # if (!inherits(Pbaseline, "try-error")) {
           #   P0[,it] = Pbaseline$fit
           #   P0sd[,it] = Pbaseline$se.fit
           # }
-          # Pbaseline = NULL; gc()
+          # Pbaseline = NULL
 
         } else if (p$stmv_global_modelengine =="none") {
           # nothing to do
@@ -567,8 +565,7 @@
           depths = stmv_attach( p$storage.backend, p$ptr$Pcov[["z"]] )[]
           ii = which( depths[] < p$depth.filter )
           if (length(ii) > 0) shallower = ii
-          rm(ii)
-          rm(depths)
+          ii= depths=NULL
         }
       }
 
@@ -833,7 +830,6 @@
           sP0 = sP0sd = NULL
         }
       }
-      # gc()
     }
 
     # =--------------------

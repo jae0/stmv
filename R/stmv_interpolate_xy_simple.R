@@ -1,9 +1,9 @@
 
 
 stmv_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NULL,
-  trimquants=TRUE, trimprobs=c(0.025, 0.975), 
+  trimquants=TRUE, trimprobs=c(0.025, 0.975),
   nr=NULL, nc=NULL, phi=1, xwidth=phi*10, ywidth=phi*10, nu=0.5 ) {
-  #\\ reshape after interpolating to fit the output resolution 
+  #\\ reshape after interpolating to fit the output resolution
   #\\ designed for interpolating statistics  ...
 
   if(0) {
@@ -15,15 +15,15 @@ stmv_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NU
       image(data)
       image.plot(data)
       image.plot(image.smooth(data))
-     
+
       dx <- data$x[2] - data$x[1]
       dy <- data$y[2] - data$y[1]
       nr2 = round( nr*2)
       nc2 = round( nc*2)
-      
+
       (o=stmv::stmv_variogram( xy=RMprecip$x, z=RMprecip$y, methods="gstat" ) )
       (o=stmv_variogram( xy=RMprecip$x, z=RMprecip$y, methods="fast" ) )
-  
+
       phi = 2.92
       nu= 0.2338
       pres= min(dx,dy)
@@ -36,16 +36,16 @@ stmv_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NU
     mC[nr, nc] = 1
     fmC = fft(mC) * nr2 * nc2
     mC = NULL
-   
-    
+
+
     # low pass filter kernel
     flpf = NULL
       lpf = stationary.cov( dgrid, center, Covariance="Matern", range=pres*2, nu=nu )
       mlpf = as.surface(dgrid, c(lpf))$z
-      flpf = fft(mlpf) / fmC 
+      flpf = fft(mlpf) / fmC
 
-   
-    # spatial autocorrelation kernel 
+
+    # spatial autocorrelation kernel
     fAC = NULL
     AC = stationary.cov( dgrid, center, Covariance="Matern", range=phi, nu=nu )
     mAC = as.surface(dgrid, c(AC))$z
@@ -55,20 +55,20 @@ stmv_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NU
       mY = mN = matrix(NA,  nrow = nr2, ncol = nc2)
       mY[1:nr,1:nc] = data$z # fill with data in correct locations
       v = which(!is.finite(mY))
-      if (length(v)>0 ) mY[v] = 0 
+      if (length(v)>0 ) mY[v] = 0
       fmY = fft(mY)
 
       mN[1:nr,1:nc] = data$weights
       v = which(!is.finite(mN))
-      if (length(v)>0 )  mN[v] = 0 
+      if (length(v)>0 )  mN[v] = 0
       fmN = fft(mN)
 
 
       # estimates based upon a global nu,phi .. they will fit to the immediate area near data and so retain their structure
-   
+
     Z = matrix(NA, nrow=nr, ncol=nc)
     # low pass filter based upon a global nu,phi .. remove high freq variation
- 
+
       fN = Re(fft(fmN * flpf , inverse = TRUE))[1:nr,1:nc]
       fY = Re(fft(fmY * flpf , inverse = TRUE))[1:nr,1:nc]
       Z = fY/fN
@@ -77,14 +77,14 @@ stmv_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NU
       ub = which( Z > rY[2] )
       if (length(ub) > 0) Z[ub] = NA
       # image.plot(Z)
-      rm( fN, fY )
- 
- 
+      fN = fY =NULL
+
+
       # data
       mY = matrix(NA,  nrow = nr2, ncol = nc2)
       mY[1:nr,1:nc] = Z # fill with data in correct locations
       v = which(!is.finite(mY))
-      if (length(v)>0 ) mY[v] = 0 
+      if (length(v)>0 ) mY[v] = 0
       fmY = fft(mY)
 
     # spatial autocorrelation filter
@@ -92,14 +92,14 @@ stmv_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NU
       fY = Re(fft(fmY * fAC, inverse = TRUE))[1:nr,1:nc]
       Zsp = fY/fN
      # image.plot(Zsp)
- 
+
 
   }
 
   if(0) {
     data = RMelevation
     image( data )
-    datagrid = data[c("x", "y")] 
+    datagrid = data[c("x", "y")]
     locsout = expand.grid( x=datagrid$x, y=datagrid$y)
     x = locsout[,1]
     y = locsout[,2]
@@ -111,16 +111,16 @@ stmv_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NU
     nu = 0.5
     phi = min(dx, dy) / 10
 
-    o = stmv::stmv_variogram( xy=cbind(x,y), z=z, methods="gstat" ) 
+    o = stmv::stmv_variogram( xy=cbind(x,y), z=z, methods="gstat" )
     # suggest: nu=0.3; phi =1.723903
 
-    keep = sample.int( nrow(locsout), 1000 ) 
+    keep = sample.int( nrow(locsout), 1000 )
     x = x[keep]
     y = y[keep]
     z = z[keep]
-    
-    o = stmv::stmv_variogram( xy=cbind(x,y), z=z, methods="gstat" ) 
-    o = stmv::stmv_variogram( xy=cbind(x,y), z=z, methods="fast" ) 
+
+    o = stmv::stmv_variogram( xy=cbind(x,y), z=z, methods="gstat" )
+    o = stmv::stmv_variogram( xy=cbind(x,y), z=z, methods="fast" )
 
   }
 
@@ -140,7 +140,7 @@ stmv_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NU
      nr = length(im2$y)
      nc = length(im2$x)
      pres = min(c(diff( im2$x), diff(im2$y )) )
-     
+
      a = stmv::stmv_variogram( data[,c("x","y")], data[,"z"] )
 
      stmv::matern_phi2distance( phi=a$fast$phi, nu=a$fast$nu, cor=0.95)
@@ -192,18 +192,18 @@ stmv_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NU
     nc2 = round( nc*2)
 
     dgrid = make.surface.grid(list((1:nr2) * dx, (1:nc2) * dy))
-    center = matrix(c((dx * nr2)/2, (dy * nc2)/2), nrow = 1, 
+    center = matrix(c((dx * nr2)/2, (dy * nc2)/2), nrow = 1,
         ncol = 2)
 
-    # define covariance function 
+    # define covariance function
     mC = matrix(0, nrow = nr2, ncol = nc2)
     mC[nr, nc] = 1
     covar = stationary.cov( dgrid, center, Covariance="Matern", range=phi, nu=nu )
     mcovar = as.surface(dgrid, c(covar))$z
     fcovar = fft(mcovar)/(fft(mC) * nr2 * nc2)
- 
-  #  rm(dgrid, covar, mC, mcovar); gc()
-    x_id = stmv::array_map( "xy->1", data[,c("x","y")], 
+
+  #  rm(dgrid, covar, mC, mcovar)
+    x_id = stmv::array_map( "xy->1", data[,c("x","y")],
       dims=c(nr2,nc2), origin=c(min(data$x), min(data$y)), res=c(pres, pres) )
 
     # data
@@ -213,7 +213,7 @@ stmv_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NU
     mY = matrix(0, nrow = nr2, ncol = nc2)
     mY[x_id] = data$z # fill with data in correct locations
     mY[!is.finite(mY)] = 0
-    
+
     # estimates based upon a global nu,phi .. they will fit to the immediate area near data and so retain their structure
     fN = Re(fft(fft(mN) * fcovar , inverse = TRUE))[1:nr,1:nc]
     fY = Re(fft(fft(mY) * fcovar , inverse = TRUE))[1:nr,1:nc]
@@ -241,14 +241,14 @@ stmv_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NU
       nc = length(data$y)
       phi = 1
       xwidth = 2
-      ywidth = 2 
+      ywidth = 2
     }
 
     isurf = fields::interp.surface( data, loc=locsout  )
     # lattice::levelplot( isurf ~ locsout[,1] + locsout[,2], aspect="iso",  col=topo.colors(256) )
     zout = matrix( isurf, nrow=nr, ncol=nc )
     # image(zout)
-    out = fields::image.smooth( zout, theta=phi, xwidth=xwidth, ywidth=ywidth ) 
+    out = fields::image.smooth( zout, theta=phi, xwidth=xwidth, ywidth=ywidth )
     image(out)
     return (out$z)
   }
@@ -258,7 +258,7 @@ stmv_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NU
   if (interp.method == "convoSPAT") {
     require(convoSPAT)
 
-    ## interesting approach similar to stmv but too slow to use 
+    ## interesting approach similar to stmv but too slow to use
     # .. seems to get stuck in optimization .. perhaps use LBFGS?
 
     m <- NSconvo_fit(
@@ -266,7 +266,7 @@ stmv_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NU
       data = ( data[,"z"] ),
       fit.radius = 100, lambda.w = 2,
       # mc.locations = simdata$mc.locations, # key node locations
-      # mean.model = z ~  # linear models only? 
+      # mean.model = z ~  # linear models only?
       cov.model = "exponential",
       N.mc = 16
     )
@@ -274,7 +274,7 @@ stmv_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NU
     out = predict( m, locsout )
     return (out)
   }
- 
+
   # ------
 
   if (interp.method == "inla.spde" ) {
@@ -282,9 +282,9 @@ stmv_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NU
     FM = formula( "Y ~ -1 + intercept + f( spatial.field, model=SPDE )" )
     Y = data$z
     locs= cbind(data$x, data$y)
-    rm (data); gc()
+    data = NULL
     method="fast"  # "direct" is slower and more accurate
-    nsamples=5000 
+    nsamples=5000
   # identity links by default .. add more if needed here
     locs = as.matrix( locs)
     lengthscale = max( diff(range( locs[,1])), diff(range( locs[,2]) )) / 10  # in absence of range estimate take 1/10 of domain size
@@ -300,7 +300,7 @@ stmv_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NU
     obs_eff[["spde"]] = c( obs_index, list(intercept=1) )
     obs_A = list( inla.spde.make.A( mesh=MESH, loc=locs[,] ) ) # no effects
     obs_ydata = list()
-    obs_ydata[[ varY ]] =  Y 
+    obs_ydata[[ varY ]] =  Y
     DATA = inla.stack( tag="obs", data=obs_ydata, A=obs_A, effects=obs_eff, remove.unused=FALSE )
     if ( method=="direct") {
       # direct method
@@ -325,14 +325,14 @@ stmv_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NU
     fns = list.files( dirname( spdetmpfn ), all.files=TRUE, full.names=TRUE, recursive=TRUE, include.dirs=TRUE )
     oo = grep( basename(spdetmpfn), fns )
     if(length(oo)>0) file.remove( sort(fns[oo], decreasing=TRUE) )
-    rm( SPDE, DATA ); gc()
+    SPDE=DATA=NULL
     # predict upon grid
     if ( method=="direct" ) {
       # direct method ... way too slow to use for production runs
       preds = as.data.frame( locsout )
-      preds$xmean =  RES$summary.fitted.values[ i_data, "mean"] 
-      preds$xsd   =  RES$summary.fitted.values[ i_data, "sd"] 
-      rm(RES, MESH); gc()
+      preds$xmean =  RES$summary.fitted.values[ i_data, "mean"]
+      preds$xsd   =  RES$summary.fitted.values[ i_data, "sd"]
+      RES = MESH = NULL
     }
     if (method=="fast") {
       posterior.extract = function(s, rnm) {
@@ -347,11 +347,11 @@ stmv_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NU
       # note: locsout seems to be treated as token locations and really its range and dims controls output
       pG = inla.mesh.projector( MESH, loc=as.matrix( locsout ) )
       posterior.samples = inla.posterior.sample(n=nsamples, RES)
-      rm(RES, MESH); gc()
+      RES = MESH = NULL
       rnm = rownames(posterior.samples[[1]]$latent )
       posterior = sapply( posterior.samples, posterior.extract, rnm=rnm )
       posterior =  posterior    # return to original scale
-      rm(posterior.samples); gc()
+      posterior.samples=NULL
           # robustify the predictions by trimming extreme values .. will have minimal effect upon mean
           # but variance estimates should be useful/more stable as the tails are sometimes quite long
           for (ii in 1:nrow(posterior )) {
@@ -365,7 +365,7 @@ stmv_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NU
       preds = data.frame( plon=pG$loc[,1], plat = pG$loc[,2])
       preds$xmean = c( inla.mesh.project( pG, field=apply( posterior, 1, mean, na.rm=TRUE )  ))
       preds$xsd   = c( inla.mesh.project( pG, field=apply( posterior, 1, sd, na.rm=TRUE )  ))
-      rm (pG)
+      pG=NULL
     }
     if (0) {
       require(lattice)
@@ -374,7 +374,7 @@ stmv_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NU
       levelplot( log (xsd )  ~ plon+plat, preds, aspect="iso",
                 labels=FALSE, pretty=TRUE, xlab=NULL,ylab=NULL,scales=list(draw=FALSE) )
     }
-    return(preds$xmean) 
+    return(preds$xmean)
   }
 
   if (interp.method=="spBayes"){
@@ -461,4 +461,3 @@ stmv_interpolate_xy_simple = function( interp.method, data, locsout, datagrid=NU
   }
 
 }
-   
