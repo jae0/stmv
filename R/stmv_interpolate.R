@@ -200,10 +200,10 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     if (ndata > p$n.max) {
       # U = U[ .Internal( sample( vario_ndata, p$n.max, replace=FALSE, prob=NULL)) ] # simple random
       if (exists("TIME", p$variables)) {
-        iU = stmv_discretize_coordinates( locs=Yloc[U,], times=Ytime[YiU, ], ntarget=p$n.max,
+        iU = stmv_discretize_coordinates( coo=Yloc[U,], times=Ytime[YiU, ], ntarget=p$n.max,
           minresolution=p$downsampling_multiplier*c(p$pres, p$pres, p$tres), method="thin" )
       } else {
-        iU = stmv_discretize_coordinates( locs=Yloc[U,], ntarget=p$n.max,
+        iU = stmv_discretize_coordinates( coo=Yloc[U,], ntarget=p$n.max,
           minresolution=p$downsampling_multiplier*c(p$pres, p$pres ), method="thin" )
       }
       U = U[iU]
