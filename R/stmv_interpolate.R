@@ -112,7 +112,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
         sS = S[]; save( sS, file=p$saved_state_fn$stats, compress=TRUE ); sS=NULL
         sSflag = Sflag[]; save( sSflag, file=p$saved_state_fn$sflag, compress=TRUE ); sSflag=NULL
         currentstatus = stmv_logfile(p=p, stime=stime)
-        gc()
       }
     }
 
@@ -211,7 +210,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
       ndata = length(U)
     }
 
-    iU=dlon=dlat=o=NULL; gc()
+    iU=dlon=dlat=o=NULL
 
     YiU = Yi[U] # YiU and p$stmv_distance_prediction determine the data entering into local model construction
     pa = stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=p$windowsize.half )
@@ -296,35 +295,30 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     if ( is.null(res)) {
       Sflag[Si] = 8L   # modelling / prediction did not complete properly
       dat = pa = res = NULL
-      gc()
       next()
     }
 
     if ( inherits(res, "try-error") ) {
       Sflag[Si] = 8L   # modelling / prediction did not complete properly
       dat = pa = res = NULL
-      gc()
       next()
     }
 
     if (!exists("predictions", res)) {
       Sflag[Si] = 8L   # modelling / prediction did not complete properly
       dat = pa = res = NULL
-      gc()
       next()
     }
 
     if (!exists("mean", res$predictions)) {
       Sflag[Si] = 8L   # modelling / prediction did not complete properly
       dat = pa = res = NULL
-      gc()
       next()
     }
 
     if (length(which( is.finite(res$predictions$mean ))) < 5) {
       Sflag[Si] = 8L   # modelling / prediction did not complete properly
       dat = pa = res = NULL
-      gc()
       next()  # looks to be a faulty solution
     }
 
@@ -407,7 +401,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
         pac=piid=NULL
       }
       pac_i=NULL
-      gc()
     }
 
     # update SD estimates of predictions with those from other locations via the
@@ -446,7 +439,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
         Psd[vi] = res$predictions$sd[v]
       }
       vi = NULL
-      gc()
     }
 
 
@@ -469,7 +461,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
         updates = means_update + stdev_update
         if (!is.matrix(updates)) {
           Sflag[Si] = 8L
-          u = u_n = ui = nc =stdev_update = means_update = NULL; gc()
+          u = u_n = ui = nc =stdev_update = means_update = NULL
           message( Si )
           message( "update of predictions were problematic ... this should not happen, proabbaly due to NA's" )
           next()
@@ -496,7 +488,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
         vi = NULL
       }
     }
-    gc()
 
     # save stats
     for ( k in 1: length(p$statsvars) ) {
@@ -544,7 +535,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     # do last. it is an indicator of completion of all tasks
     # restarts would be broken otherwise
     Sflag[Si] = 1L  # mark as complete without issues
-    res = pa = NULL; gc()
+    res = pa = NULL
 
   }  # end for loop
 
