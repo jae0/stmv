@@ -1,4 +1,4 @@
-stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, minresolution=NULL, coord_is_time=FALSE, ti.offset=NULL, ti.min=NULL, FUNC=mean, method="default", ...) {
+stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=NULL, minresolution=NULL, coord_is_time=FALSE, ti.offset=NULL, ti.min=NULL, FUNC=mean, method="default", ...) {
 
   if (is.vector(coo)) {
     ncoo = 1
