@@ -2608,8 +2608,8 @@ Similarly, substrate grain size (mm) is a pure space model which is a proxy
  Unfortunately, the only available data is an (over-)smoothed surface provided
  by Kostylev and Hannah (2007) and not the source data.
  Some data have been added from the snow crab surveys.
- It is also modeled as a Lognormal process and an FFT sptial process implementat
-ion of the Matérn covariance:
+ It is also modeled as a Lognormal process and an FFT spatial process implementa
+tion of the Matérn covariance:
 \end_layout
 
 \begin_layout Standard
