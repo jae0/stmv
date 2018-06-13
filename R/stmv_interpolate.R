@@ -129,8 +129,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     dlon = abs( Sloc[Si,1] - Yloc[Yi[],1] )
     dlat = abs( Sloc[Si,2] - Yloc[Yi[],2] )
 
-    print( paste(iip, Si, ndata ) )
-
     ndata = 0
     for ( stmv_distance_cur in upsampling )  {
       U = which( {dlon  <= stmv_distance_cur} & {dlat <= stmv_distance_cur} )  # faster to take a block
@@ -141,6 +139,8 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
       Sflag[Si] = 5L   # skipped .. not enough data
       next()
     }
+    
+    print( paste(iip, Si, ndata ) )
 
     if (0) {
       plot( Sloc[,], pch=20, cex=0.5, col="gray")
