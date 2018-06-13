@@ -51,13 +51,8 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
   Yi = stmv_attach( p$storage.backend, p$ptr$Yi )
 
   # misc intermediate calcs to be done outside of parallel loops
-  upsampling = sort( p$sampling[ which( p$sampling > 1 ) ] )
-  upsampling = upsampling[ which(upsampling*p$stmv_distance_scale <= p$stmv_distance_max )]
-
-  # downsampling is not longer used .. a slightly more complex thinning method instead (see below)
-  # downsampling = sort( p$sampling[ which( p$sampling < 1) ] , decreasing=TRUE )
-  # downsampling = downsampling[ which(downsampling*p$stmv_distance_scale >= p$stmv_distance_min )]
-
+  upsampling = c(1,0, 1.25, 1.5, 1.75, 2.0, 2.5) * p$stmv_distance_scale
+  upsampling = upsampling[ which(upsampling <= p$stmv_distance_max )]
 
   # pre-calculate indices and dim for data to use inside the loop
   dat_names = unique( c(  p$variables$Y, p$variable$LOCS, p$variables$local_all,  "weights") )
@@ -105,6 +100,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     if ( iip %in% logpoints )  currentstatus = stmv_logfile(p=p, stime=stime)
 
     if (0) {
+      # only for debugging
       if ( iip %in% savepoints ) {
         sP = P[]; save( sP, file=p$saved_state_fn$P, compress=TRUE ); sP=NULL
         sPn = Pn[]; save( sPn, file=p$saved_state_fn$Pn, compress=TRUE ); sPn=NULL
@@ -132,31 +128,25 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     # find data nearest S[Si,] and with sufficient data
     dlon = abs( Sloc[Si,1] - Yloc[Yi[],1] )
     dlat = abs( Sloc[Si,2] - Yloc[Yi[],2] )
-    U =  which( {dlon  <= p$stmv_distance_scale} & {dlat <= p$stmv_distance_scale} )
-    stmv_distance_cur = p$stmv_distance_scale
-    ndata = length(U)
 
     print( paste(iip, Si, ndata ) )
+
+    ndata = 0
+    for ( stmv_distance_cur in upsampling )  {
+      U = which( {dlon  <= stmv_distance_cur} & {dlat <= stmv_distance_cur} )  # faster to take a block
+      ndata = length(U)
+      if ( ndata >= p$n.min ) break()
+    }
+    if (ndata < p$n.min) {
+      Sflag[Si] = 5L   # skipped .. not enough data
+      next()
+    }
 
     if (0) {
       plot( Sloc[,], pch=20, cex=0.5, col="gray")
       points( Yloc[,], pch=20, cex=0.2, col="green")
       points( Yloc[U,], pch=20, cex=1, col="yellow" )
       points( Sloc[Si,2] ~ Sloc[Si,1], pch=20, cex=5, col="blue" )
-    }
-
-    if (ndata < p$n.min) {
-      # need to upsample
-      for ( usamp in upsampling )  {
-        stmv_distance_cur = p$stmv_distance_scale * usamp
-        U = which( {dlon < stmv_distance_cur} & {dlat < stmv_distance_cur} ) # faster to take a block
-        ndata = length(U)
-        if ( ndata >= p$n.min ) break()
-      }
-      if (ndata < p$n.min) {
-        Sflag[Si] = 5L   # skipped .. not enough data
-        next()
-      }
     }
 
     # crude (mean) variogram across all time slices
