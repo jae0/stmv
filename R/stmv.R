@@ -647,12 +647,10 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   if ("interpolate" %in% runmode ) {
 
     sm = sort( unique( c(1, p$sampling) ) )
-    p_n.min = p$n.min
     p_stmv_distance_scale = p$stmv_distance_scale
 
     for ( smult in sm) {
 
-        p$n.min = p_n.min * smult
         p$stmv_distance_scale = p_stmv_distance_scale * smult
 
         # all low-level operations in one to avoid $!#!@# bigmemory issues
