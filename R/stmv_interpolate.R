@@ -138,7 +138,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
       Sflag[Si] = 5L   # skipped .. not enough data
       next()
     }
-    
+
     print( paste(iip, Si, ndata ) )
 
     if (0) {
@@ -187,16 +187,24 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     }
 
     if (ndata > p$n.max) {
-      # U = U[ .Internal( sample( vario_ndata, p$n.max, replace=FALSE, prob=NULL)) ] # simple random
-      if (exists("TIME", p$variables)) {
-        iU = stmv_discretize_coordinates( coo=Yloc[U,], times=Ytime[YiU, ], ntarget=p$n.max,
-          minresolution=p$downsampling_multiplier*c(p$pres, p$pres, p$tres), method="thin" )
-      } else {
-        iU = stmv_discretize_coordinates( coo=Yloc[U,], ntarget=p$n.max,
-          minresolution=p$downsampling_multiplier*c(p$pres, p$pres ), method="thin" )
-      }
-      U = U[iU]
+      U = U[ .Internal( sample( vario_ndata, p$n.max, replace=FALSE, prob=NULL)) ] # simple random
       ndata = length(U)
+      if (0) {
+        # this solution works over-aggressively some times when all the data are loaded into on location
+          if (exists("TIME", p$variables)) {
+            iU = stmv_discretize_coordinates( coo=Yloc[U,], times=Ytime[YiU, ], ntarget=p$n.max,
+              minresolution=p$downsampling_multiplier*c(p$pres, p$pres, p$tres), method="thin" )
+          } else {
+            iU = stmv_discretize_coordinates( coo=Yloc[U,], ntarget=p$n.max,
+              minresolution=p$downsampling_multiplier*c(p$pres, p$pres ), method="thin" )
+          }
+          U = U[iU]
+          ndata = length(U)
+          if (ndata < p$n.min) {
+            Sflag[Si] = 5L   # skipped .. not enough data
+            next()
+          }
+      }
     }
 
     iU=dlon=dlat=o=NULL
