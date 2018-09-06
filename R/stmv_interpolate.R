@@ -189,7 +189,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     }
 
     if (ndata > p$n.max) {
-      U = U[ .Internal( sample( vario_ndata, p$n.max, replace=FALSE, prob=NULL)) ] # simple random
+      U = U[ .Internal( sample( length(U), p$n.max, replace=FALSE, prob=NULL)) ] # simple random
       ndata = length(U)
       if (0) {
         # this solution works over-aggressively some times when all the data are loaded into on location
