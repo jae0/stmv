@@ -546,7 +546,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     # end of intialization of data structures
     # -----------------------------------------------------
 
-  p <<- p
+  p <<- p  # copy to parent (calling) environment
 
   if ( "initialize_only" %in% runmode ) return(p)
 

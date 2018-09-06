@@ -70,7 +70,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
   local_fn = switch( p$stmv_local_modelengine,
     bayesx = stmv__bayesx,
     gaussianprocess2Dt = stmv__gaussianprocess2Dt,
-    inla = stmv__inla,
     gam = stmv__gam,
     glm = stmv__glm,
     gstat = stmv__gstat,

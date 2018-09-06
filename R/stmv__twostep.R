@@ -61,21 +61,26 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
 
 
   # print( "starting gam-timeseries mod/pred")
-  ts_gam = stmv__gam( p, dat, px ) # currently only a GAM is enabled for the TS component
+  ts_preds = NULL
+  p$stmv_local_modelformula = p$stmv_local_modelformula_time
+  #  if (p$stmv_twostep_time == "inla" ) ts_preds = stmv__inla_ts( p, dat, px )
+  if (p$stmv_twostep_time == "glm" ) ts_preds = stmv__glm( p, dat, px )
+  if (p$stmv_twostep_time == "gam" ) ts_preds = stmv__gam( p, dat, px )
+  if (p$stmv_twostep_time == "bayesx" ) ts_preds = stmv__bayesx( p, dat, px )
 
-  if (is.null( ts_gam)) return(NULL)
-  if (ts_gam$stmv_stats$rsquared < p$stmv_rsquared_threshold ) return(NULL)
+  if (is.null( ts_preds)) return(NULL)
+  if (ts_preds$stmv_stats$rsquared < p$stmv_rsquared_threshold ) return(NULL)
 
   # range checks
   rY = range( dat[,p$variables$Y], na.rm=TRUE)
-  toosmall = which( ts_gam$predictions$mean < rY[1] )
-  toolarge = which( ts_gam$predictions$mean > rY[2] )
-  if (length(toosmall) > 0) ts_gam$predictions$mean[toosmall] =  rY[1]
-  if (length(toolarge) > 0) ts_gam$predictions$mean[toolarge] =  rY[2]
+  toosmall = which( ts_preds$predictions$mean < rY[1] )
+  toolarge = which( ts_preds$predictions$mean > rY[2] )
+  if (length(toosmall) > 0) ts_preds$predictions$mean[toosmall] =  rY[1]
+  if (length(toolarge) > 0) ts_preds$predictions$mean[toolarge] =  rY[2]
 
-  pxts = ts_gam$predictions
+  pxts = ts_preds$predictions
   rownames(pxts) = NULL
-  ts_gam = NULL
+  ts_preds = NULL
 
   names(pxts)[which(names(pxts)=="mean")] = p$variables$Y
   names(pxts)[which(names(pxts)=="sd")] = paste(p$variables$Y, "sd", sep=".")
@@ -101,12 +106,31 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
     out = stmv__gstat( p, dat=pxts, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial )
   }
 
+  # if ( p$stmv_twostep_space == "inla" ) {
+  #   out = stmv__inla_space( p, dat=pxts, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial )
+  # }
+
   if (p$stmv_twostep_space %in% c("tps") ) {
     out = stmv__tps( p, dat=pxts, pa=pa, lambda=varObs/varSpatial  )
   }
 
   if (p$stmv_twostep_space %in% c("fft", "lowpass", "spatial.process", "lowpass_spatial.process") ) {
     out = stmv__fft( p, dat=pxts, pa=pa, nu=nu, phi=phi )
+  }
+
+  if (p$stmv_twostep_space %in% c("gam") ) {
+    p$stmv_local_modelformula = p$stmv_local_modelformula_space
+    out = stmv__gam( p, dat=pxts, pa=pa  )
+  }
+
+  if (p$stmv_twostep_space %in% c("glm") ) {
+    p$stmv_local_modelformula = p$stmv_local_modelformula_space
+    out = stmv__glm( p, dat=pxts, pa=pa  )
+  }
+
+  if (p$stmv_twostep_space %in% c("bayesx") ) {
+    p$stmv_local_modelformula = p$stmv_local_modelformula_space
+    out = stmv__bayesx( p, dat=pxts, pa=pa  )
   }
 
   return( out )
