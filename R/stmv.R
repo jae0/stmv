@@ -530,6 +530,14 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     if ( !exists("stmv_distance_max", p)) p$stmv_distance_max = mean( c(p$stmv_distance_prediction*10, p$stmv_distance_scale * 2 ) )
 
 
+    if (p$stmv_local_modelengine == "twostep") {
+      if (exists("stmv_rsquared_threshold", p) {
+        if (p$stmv_rsquared_threshold > 0) {
+          message( "Ignoring value of p$stmv_rsquared_threshold as it is meaningless with twostep")
+          p$stmv_rsquared_threshold = 0  # override :: this is meaningless when broken apart in space and time ..
+        }
+      }
+    }
 
     message("||| Finished preparing data structures ... ")
     message("||| Once analyses begin, you can view maps from an external R session: ")
@@ -554,12 +562,77 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   if ( any(grepl("debug", runmode)) ) {
     if (!exists("time.start", p) ) p$time.start = Sys.time()
     message( " " )
-    message( "||| Seems like we are continuing from a saved state ... " )
-    browser()
-    # stmv_db( p=p, DS="load_saved_state" )  # try to load saved state back into memory .. otherwise use what is in memory
-    currentstatus = stmv_db( p=p, DS="statistics.status.reset" )  # this resets error flags only
+    message( "||| Debugging from man stmv call." )
+    message( "||| To load from the saved state try: stmv_db( p=p, DS='load_saved_state' ) " )
+    message( "||| To reset stats: currentstatus = stmv_db( p=p, DS='statistics.status.reset' ) " )
+
+    # -----------------------------------------------------
+    if ( "debug" %in% runmode ) {
+      currentstatus = stmv_db( p=p, DS="statistics.status" )
+      pdeb = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) ) # reconstruct reauired params
+      print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ))
+      message( "||| Entering browser mode ...")
+      p <<- pdeb
+      stmv_interpolate (p=pdeb )
+    }
+
+    # -----------------------------------------------------
+
+    if ( "debug_predictions_map" %in% runmode) {
+      if ( is.null(debug_plot_variable_index)) debug_plot_variable_index=1
+      if (debug_data_source=="saved.state" ) {
+        load( p$saved_state_fn$P )
+        if (exists("stmv_global_modelengine", p)) {
+          if (p$stmv_global_modelengine !="none" ) {
+            load( p$saved_state_fn$P0 )
+            sP[] = sP[] + sP0[]
+          }
+        }
+      } else {
+        P = stmv_attach( p$storage.backend, p$ptr$P )
+        sP = P[]
+        if (exists("stmv_global_modelengine", p)) {
+          if (p$stmv_global_modelengine !="none" ) {
+            P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
+            sP = sP[] + P0[]
+          }
+        }
+      }
+      sP = p$stmv_global_family$linkinv( sP[] )
+      if (exists("stmv_Y_transform", p)) {
+        sP = p$stmv_Y_transform$invers (sP[])
+      }
+      if ( debug_plot_log ) sP = log(sP)
+      Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+      for (i in debug_plot_variable_index ) {
+        print(
+          lattice::levelplot( sP[,i] ~ Ploc[,1]+Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
+        )
+      }
+    }
+
+    # -----------------------------------------------------
+
+    if ( "debug_statistics_map" %in% runmode) {
+      if (debug_data_source=="saved.state" ) {
+        load( p$saved_state_fn$stats )
+      } else {
+        sS = stmv_attach( p$storage.backend, p$ptr$S )[]
+      }
+      Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
+      if ( debug_plot_log ) sS = log(sS)
+      if ( is.null(debug_plot_variable_index)) debug_plot_variable_index=1
+      for (i in debug_plot_variable_index ) {
+        print(
+          lattice::levelplot( sS[,i] ~ Sloc[,1]+Sloc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
+        )
+      }
+
+    }
+
   }
 
+  # -----------------------------------------------------
 
   if ( "reset_incomplete_locations" %in% runmode ) {
     # this resets errors flags and areas without viable predictions
@@ -570,77 +643,8 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     }
   }
 
-
   stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data
 
-
-  # -----------------------------------------------------
-  if ( "debug" %in% runmode ) {
-    currentstatus = stmv_db( p=p, DS="statistics.status" )
-    pdeb = parallel_run( p=p,
-      runindex=list( locs=sample( currentstatus$todo ))  # random order helps use all cpus
-    )
-    # FUNC is NULL means no running just return params
-    print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ))
-    message( "||| Entering browser mode ...")
-
-    p <<- pdeb
-    stmv_interpolate (p=pdeb )
-  }
-
-  # -----------------------------------------------------
-
-  if ( "debug_predictions_map" %in% runmode) {
-    if ( is.null(debug_plot_variable_index)) debug_plot_variable_index=1
-    if (debug_data_source=="saved.state" ) {
-      load( p$saved_state_fn$P )
-      if (exists("stmv_global_modelengine", p)) {
-        if (p$stmv_global_modelengine !="none" ) {
-          load( p$saved_state_fn$P0 )
-          sP[] = sP[] + sP0[]
-        }
-      }
-    } else {
-      P = stmv_attach( p$storage.backend, p$ptr$P )
-      sP = P[]
-      if (exists("stmv_global_modelengine", p)) {
-        if (p$stmv_global_modelengine !="none" ) {
-          P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
-          sP = sP[] + P0[]
-        }
-      }
-    }
-    sP = p$stmv_global_family$linkinv( sP[] )
-    if (exists("stmv_Y_transform", p)) {
-      sP = p$stmv_Y_transform$invers (sP[])
-    }
-    if ( debug_plot_log ) sP = log(sP)
-    Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
-    for (i in debug_plot_variable_index ) {
-      print(
-        lattice::levelplot( sP[,i] ~ Ploc[,1]+Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
-      )
-    }
-  }
-
-  # -----------------------------------------------------
-
-  if ( "debug_statistics_map" %in% runmode) {
-    if (debug_data_source=="saved.state" ) {
-      load( p$saved_state_fn$stats )
-    } else {
-      sS = stmv_attach( p$storage.backend, p$ptr$S )[]
-    }
-    Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
-    if ( debug_plot_log ) sS = log(sS)
-    if ( is.null(debug_plot_variable_index)) debug_plot_variable_index=1
-    for (i in debug_plot_variable_index ) {
-      print(
-        lattice::levelplot( sS[,i] ~ Sloc[,1]+Sloc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso")
-      )
-    }
-
-  }
 
   # -----------------------------------------------------
 
