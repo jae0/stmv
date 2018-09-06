@@ -573,6 +573,8 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       print( c( unlist( currentstatus[ c("n.total", "n.shallow", "n.todo", "n.skipped", "n.outside", "n.complete" ) ] ) ))
       message( "||| Entering browser mode ...")
       p <<- pdeb
+      browser()
+      debug(stmv_interpolate)
       stmv_interpolate (p=pdeb )
     }
 

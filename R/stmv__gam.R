@@ -9,12 +9,14 @@ stmv__gam = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
 
   if ( exists("stmv_local_model_distanceweighted", p) ) {
     if (p$stmv_local_model_distanceweighted) {
-      hmod = try( bam( p$stmv_local_modelformula, data=dat, na.action="na.omit", weights=weights, method="fREML", use.chol=TRUE, gc.level=2) )
+      hmod = try( bam( p$stmv_local_modelformula, data=dat, na.action="na.omit", method="fREML", use.chol=TRUE, gc.level=2, weights=weights ) )
     } else {
-      hmod = try( bam( p$stmv_local_modelformula, data=dat, na.action="na.omit", weights=weights ) )
+      hmod = try( bam( p$stmv_local_modelformula, data=dat, na.action="na.omit", method="fREML", use.chol=TRUE, gc.level=2 ) )
     }
-  } else {
-      hmod = try( gam( p$stmv_local_modelformula, data=dat, na.action="na.omit", optimizer=c("outer", "bfgs")  ) )  # gam has become very slow as an option...
+  }
+
+  if ( "try-error" %in% class(hmod) ) {
+    hmod = try( gam( p$stmv_local_modelformula, data=dat, na.action="na.omit" ) )  # try again just with defaults of gam
   }
 
   if ( "try-error" %in% class(hmod) ) return( NULL )
