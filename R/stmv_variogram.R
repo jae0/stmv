@@ -263,7 +263,6 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
         out$fast = fit$summary
         out$fast$fit=fit
         out$fast$vgm=vEm
-        cnt = 10  # force skip the following
 
       } else {
         cnt = 0
@@ -271,10 +270,9 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
 
         while ( cnt < 5  ) {
           maxdist = maxdist * 1.25
-          if ( maxdist < distance_range ) {
+          if ( distance_range > maxdist ) {
             # message ( "Autocorrelation range greater than data range .. retrying a last time at max dist with more data")
-            cnt = 7
-            maxdist = distance_range
+            return(NULL)
           }
           # message( "Range longer than distance cutoff ... retrying with a larger distance cutoff")
           cnt = cnt + 1

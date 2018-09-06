@@ -152,7 +152,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     o = NULL
     o = try( stmv_variogram( xy=Yloc[U,], z=Y[U], methods=p$stmv_variogram_method,
       distance_cutoff=stmv_distance_cur, nbreaks=13 ) )
-    if ( is.null(o)) Sflag[Si] = 6L   # fast variogram did not work
+
     if ( inherits(o, "try-error")) Sflag[Si] = 6L   # fast variogram did not work
     if (exists("stmv_rangecheck", p)) if (p$stmv_rangecheck=="paranoid") if ( Sflag[Si] == 6L ) next()
 
