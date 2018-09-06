@@ -531,7 +531,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
 
     if (p$stmv_local_modelengine == "twostep") {
-      if (exists("stmv_rsquared_threshold", p) {
+      if (exists("stmv_rsquared_threshold", p) ) {
         if (p$stmv_rsquared_threshold > 0) {
           message( "Ignoring value of p$stmv_rsquared_threshold as it is meaningless with twostep")
           p$stmv_rsquared_threshold = 0  # override :: this is meaningless when broken apart in space and time ..
