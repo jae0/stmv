@@ -189,9 +189,10 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     }
 
     if (ndata > p$n.max) {
-      U = U[ .Internal( sample( length(U), p$n.max, replace=FALSE, prob=NULL)) ] # simple random
-      ndata = length(U)
       if (0) {
+        U = U[ .Internal( sample( length(U), p$n.max, replace=FALSE, prob=NULL)) ] # simple random
+        ndata = length(U)
+      }
         # this solution works over-aggressively some times when all the data are loaded into on location
           if (exists("TIME", p$variables)) {
             iU = stmv_discretize_coordinates( coo=Yloc[U,], times=Ytime[YiU, ], ntarget=p$n.max,
@@ -206,7 +207,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
             Sflag[Si] = 5L   # skipped .. not enough data
             next()
           }
-      }
+
     }
 
     iU=dlon=dlat=o=NULL

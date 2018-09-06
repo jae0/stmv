@@ -69,7 +69,7 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=N
         res = res[ which( is.finite( res[,2] )) ,]
         names(res) =c("x", "n")
         ressum = sum(res$n, na.rm=TRUE)
-        ntoremove = ressum - ntarget
+
         invcount = 1/res$n * ntarget / ressum  # proportion to remove to make each cell equal in weight
         keep = NULL
         for (o in 1:nrow(res)) {
@@ -133,7 +133,7 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=N
       res = res[ which( is.finite( res[,3] )) ,]
       names(res) =c("x", "y", "n")
       ressum = sum(res$n, na.rm=TRUE)
-      ntoremove = ressum - ntarget
+
       invcount = 1/res$n * ntarget / ressum  # proportion to remove to make each cell equal in weight
       keep = NULL
       for (o in 1:nrow(res)) {
@@ -200,7 +200,7 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=N
         res = res[ which( is.finite( res[,4] )) ,]
         names(res) =c("x", "y", "t", "n")
         ressum = sum(res$n, na.rm=TRUE)
-        ntoremove = ressum - ntarget
+
         invcount = 1/res$n * ntarget / ressum  # proportion to remove to make each cell equal in weight
         keep = NULL
         for (o in 1:nrow(res)) {
