@@ -9,17 +9,54 @@ stmv_variablelist = function( p ) {
       if (p$stmv_local_modelformula != "none") {
         oo = all.vars( p$stmv_local_modelformula )
         if (length(oo) > 0) {
-          p$variables$local_all = oo
+          p$variables$local_all = unique(c(p$variables$local_all, oo))
         }
         oo = all.vars( p$stmv_local_modelformula[[3]] )
         if (length(oo) > 0) {
           pp = unique( c( grep("cos.w", oo), grep("sin.w", oo), which(oo %in% c(p$variables$LOCS, "yr") ) ) )
           if (length(pp) > 0) oo = oo[-pp]
-          p$variables$local_cov = oo
+          p$variables$local_cov = unique(c(p$variables$local_cov, oo))
         }
       }
     }
   }
+
+  if (exists("stmv_local_modelformula_time", p)) {
+    if (!is.null(p$stmv_local_modelformula_time)) {
+      if (p$stmv_local_modelformula_time != "none") {
+        oo = all.vars( p$stmv_local_modelformula_time )
+        if (length(oo) > 0) {
+          p$variables$local_all = unique(c(p$variables$local_all, oo))
+        }
+        oo = all.vars( p$stmv_local_modelformula_time[[3]] )
+        if (length(oo) > 0) {
+          pp = unique( c( grep("cos.w", oo), grep("sin.w", oo), which(oo %in% c(p$variables$LOCS, "yr") ) ) )
+          if (length(pp) > 0) oo = oo[-pp]
+          p$variables$local_cov = unique(c(p$variables$local_cov, oo))
+        }
+      }
+    }
+  }
+
+ 
+  if (exists("stmv_local_modelformula_space", p)) {
+    if (!is.null(p$stmv_local_modelformula_space)) {
+      if (p$stmv_local_modelformula_space != "none") {
+        oo = all.vars( p$stmv_local_modelformula_space )
+        if (length(oo) > 0) {
+          p$variables$local_all = unique(c(p$variables$local_all, oo))
+        }
+        oo = all.vars( p$stmv_local_modelformula_space[[3]] )
+        if (length(oo) > 0) {
+          pp = unique( c( grep("cos.w", oo), grep("sin.w", oo), which(oo %in% c(p$variables$LOCS, "yr") ) ) )
+          if (length(pp) > 0) oo = oo[-pp]
+          p$variables$local_cov = unique(c(p$variables$local_cov, oo))
+        }
+      }
+    }
+  }
+
+
   p$variables$global_all = NULL
   p$variables$global_cov = NULL
   if (exists("stmv_global_modelformula", p)) {
