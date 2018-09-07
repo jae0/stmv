@@ -194,8 +194,9 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
         ndata = length(U)
       }
           if (exists("TIME", p$variables)) {
-            iU = stmv_discretize_coordinates( coo=cbind(Yloc[U,], Ytime[YiU,]), ntarget=p$n.max,
+            iU = stmv_discretize_coordinates( coo=cbind(Yloc[U,], Ytime[U,]), ntarget=p$n.max,
               minresolution=p$downsampling_multiplier*c(p$pres, p$pres, p$tres), method="thin" )
+              browser()
           } else {
             iU = stmv_discretize_coordinates( coo=Yloc[U,], ntarget=p$n.max,
               minresolution=p$downsampling_multiplier*c(p$pres, p$pres ), method="thin" )
