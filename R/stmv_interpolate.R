@@ -193,21 +193,20 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
         U = U[ .Internal( sample( length(U), p$n.max, replace=FALSE, prob=NULL)) ] # simple random
         ndata = length(U)
       }
-          if (exists("TIME", p$variables)) {
-            iU = stmv_discretize_coordinates( coo=cbind(Yloc[U,], Ytime[U,]), ntarget=p$n.max,
-              minresolution=p$downsampling_multiplier*c(p$pres, p$pres, p$tres), method="thin" )
-              browser()
-          } else {
-            iU = stmv_discretize_coordinates( coo=Yloc[U,], ntarget=p$n.max,
-              minresolution=p$downsampling_multiplier*c(p$pres, p$pres ), method="thin" )
-          }
-          U = U[iU]
-          ndata = length(U)
-          if (ndata < p$n.min) {
-            Sflag[Si] = 5L   # skipped .. not enough data
-            next()
-          }
 
+      if (exists("TIME", p$variables)) {
+        iU = stmv_discretize_coordinates( coo=cbind(Yloc[U,], Ytime[U,]), ntarget=p$n.max,
+          minresolution=p$downsampling_multiplier*c(p$pres, p$pres, p$tres), method="thin" )
+      } else {
+        iU = stmv_discretize_coordinates( coo=Yloc[U,], ntarget=p$n.max,
+          minresolution=p$downsampling_multiplier*c(p$pres, p$pres ), method="thin" )
+      }
+      ndata = length(iU)
+      if (ndata < p$n.min) {
+        Sflag[Si] = 5L   # skipped .. not enough data
+        next()
+      }
+      U = U[iU]
     }
 
     iU=dlon=dlat=o=NULL
