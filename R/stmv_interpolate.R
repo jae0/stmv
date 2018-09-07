@@ -155,8 +155,8 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
 
     if ( is.null(o)) Sflag[Si] = 6L   # fast variogram did not work
     if ( inherits(o, "try-error")) Sflag[Si] = 6L   # fast variogram did not work
-    if ( Sflag[Si] == 6L ) next()
-    #if (exists("stmv_rangecheck", p)) if (p$stmv_rangecheck=="paranoid") if ( Sflag[Si] == 6L ) next()
+    if ( exists("stmv_rangecheck", p) ) if (p$stmv_rangecheck=="paranoid") if ( Sflag[Si] == 6L ) next()
+    # no range means that it is essentially flat .. guess using current distance or fail is paranoid
 
     ores = NULL
     if ( exists(p$stmv_variogram_method, o)) {
@@ -187,6 +187,8 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
         }
       }
     }
+
+
 
     if (ndata > p$n.max) {
       if (0) {
