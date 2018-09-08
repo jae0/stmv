@@ -155,18 +155,24 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
 
     if ( is.null(o)) Sflag[Si] = 6L   # fast variogram did not work
     if ( inherits(o, "try-error")) Sflag[Si] = 6L   # fast variogram did not work
-    if ( exists("stmv_rangecheck", p) ) if (p$stmv_rangecheck=="paranoid") if ( Sflag[Si] == 6L ) next()
-    # no range means that it is essentially flat .. guess using current distance or fail is paranoid
+    if ( Sflag[Si] == 6L ) {
+      if ( exists("stmv_rangecheck", p) ) {
+        if (p$stmv_rangecheck=="paranoid") {
+          # no range means that it is essentially flat .. guess using current distance or fail is paranoid
+          next()
+        }
+      }
+    }
 
     ores = NULL
-    if ( exists(p$stmv_variogram_method, o)) {
-      ores = o[[p$stmv_variogram_method]] # store current best estimate of variogram characteristics
-      if ( !exists("range_ok", ores) ){
-        Sflag[Si] = 7L
-      } else {
-        if ( ores[["range_ok"]] ) {
-          stmv_distance_cur = ores[["range"]]
-          vario_U  = which( {dlon  <= ores[["range"]] } & {dlat <= ores[["range"]]} )
+    if (!is.null(o)) {
+      if ( exists(p$stmv_variogram_method, o)) {
+        ores = o[[p$stmv_variogram_method]] # store current best estimate of variogram characteristics
+        if ( !exists("range_ok", ores) ) {
+          Sflag[Si] = 7L
+        } else {
+          if ( ores[["range_ok"]] ) stmv_distance_cur = ores[["range"]]
+          vario_U  = which( {dlon  <= stmv_distance_cur } & {dlat <= stmv_distance_cur} )
           vario_ndata =length(vario_U)
           if (vario_ndata < p$n.min) {
             # insufficient data at estimated range
@@ -188,14 +194,11 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
       }
     }
 
-
-
     if (ndata > p$n.max) {
-      if (0) {
-        U = U[ .Internal( sample( length(U), p$n.max, replace=FALSE, prob=NULL)) ] # simple random
-        ndata = length(U)
-      }
-
+      # if (0) {
+      #   U = U[ .Internal( sample( length(U), p$n.max, replace=FALSE, prob=NULL)) ] # simple random
+      #   ndata = length(U)
+      # }
       if (exists("TIME", p$variables)) {
         iU = stmv_discretize_coordinates( coo=cbind(Yloc[U,], Ytime[U,]), ntarget=p$n.max,
           minresolution=p$downsampling_multiplier*c(p$pres, p$pres, p$tres), method="thin" )
@@ -277,7 +280,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     # print( "starting interpolation" )
 
 
-    ores$vgm = NULL # can be large
+    if (!is.null(ores)) ores$vgm = NULL # can be large
 
     # model and prediction .. outputs are in scale of the link (and not response)
     # the following permits user-defined models (might want to use compiler::cmpfun )
