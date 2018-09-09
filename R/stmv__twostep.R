@@ -71,7 +71,6 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
   if (p$stmv_twostep_time == "bayesx" ) ts_preds = stmv__bayesx( p, dat, px )
 
   if (is.null( ts_preds)) return(NULL)
-  if (ts_preds$stmv_stats$rsquared < p$stmv_rsquared_threshold ) return(NULL)
 
   # range checks
   rY = range( dat[,p$variables$Y], na.rm=TRUE)
@@ -89,10 +88,11 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
 
   if(0){
       # debugging plots
-      ti = 668
-      xi = which( pxts[ , p$variables$TIME ] == p$prediction.ts[ti] )
-      mbas = MBA::mba.surf( pxts[xi, c( p$variables$LOCS, p$variables$Y) ], 300, 300, extend=TRUE)$xyz.est
-      image(mbas)
+      for (ti in 1:p$nt){
+        xi = which( pxts[ , p$variables$TIME ] == p$prediction.ts[ti] )
+        mbas = MBA::mba.surf( pxts[xi, c( p$variables$LOCS, p$variables$Y) ], 300, 300, extend=TRUE)$xyz.est
+        image(mbas)
+      }
   }
 
   # step 2 :: spatial modelling .. essentially a time-space separable solution

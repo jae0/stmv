@@ -20,26 +20,17 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
   # -----------------------------------------------------
   if (!exists("stmvSaveDir", p)) p$stmvSaveDir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
-
   if ( !file.exists(p$stmvSaveDir)) dir.create( p$stmvSaveDir, recursive=TRUE, showWarnings=FALSE )
 
-
-  p$nlogs = nlogs
-
-  p = stmv_parameters(p=p) # fill in parameters with defaults where required
-
-  p = stmv_db( p=p, DS="filenames" )
-
-
   message( "||| Initializing data files ... " )
-  p$time.start = Sys.time()
-
-  message( " ")
   message( "||| In case something should go wrong, intermediary outputs will be placed at:" )
   message( "|||",  p$stmvSaveDir  )
   message( " ")
 
-
+  p$nlogs = nlogs
+  p = stmv_parameters(p=p) # fill in parameters with defaults where required
+  p = stmv_db( p=p, DS="filenames" )
+  p$time.start = Sys.time()
 
   p$ptr = list() # location for data pointers
 
@@ -113,7 +104,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     }
   }
 
-  # NOTE:: must not sink the following memory allocation into a deeper funcion as
+  # NOTE:: must not sink the following memory allocation steps into a deeper function as
   # NOTE:: bigmemory RAM seems to lose the pointers if they are not made simultaneously ?
 
   # init output data objects
@@ -560,6 +551,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
 
   if ( any(grepl("debug", runmode)) ) {
+
     if (!exists("time.start", p) ) p$time.start = Sys.time()
     message( " " )
     message( "||| Debugging from man stmv call." )

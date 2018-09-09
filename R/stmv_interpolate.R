@@ -153,25 +153,50 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     o = try( stmv_variogram( xy=Yloc[U,], z=Y[U], methods=p$stmv_variogram_method,
       distance_cutoff=stmv_distance_cur, nbreaks=13 ) )
 
+    tryagain = FALSE
+    if ( is.null(o)) tryagain=TRUE
+    if ( inherits(o, "try-error")) tryagain=TRUE
+    if (!is.null(o)) {
+      if ( !inherits(o, "try-error")) {
+        if ( exists("stmv_rangecheck", p) ) {
+          if (p$stmv_rangecheck=="paranoid") {
+            if ( exists(p$stmv_variogram_method, o)) {
+              if ( exists("range_ok", o[[p$stmv_variogram_method]]) ) {
+                if ( !o[[p$stmv_variogram_method]][["range_ok"]] ) {
+                  tryagain=TRUE
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if ( tryagain ) {
+      # slower but more reliable
+      p$stmv_variogram_method = "geoR"
+      o = try( stmv_variogram( xy=Yloc[U,], z=Y[U], methods=p$stmv_variogram_method,
+        distance_cutoff=stmv_distance_cur, nbreaks=13 ) )
+    }
+
     if ( is.null(o)) Sflag[Si] = 6L   # fast variogram did not work
     if ( inherits(o, "try-error")) Sflag[Si] = 6L   # fast variogram did not work
     if ( Sflag[Si] == 6L ) {
       if ( exists("stmv_rangecheck", p) ) {
         if (p$stmv_rangecheck=="paranoid") {
-          # no range means that it is essentially flat .. guess using current distance or fail is paranoid
           next()
         }
       }
     }
 
     ores = NULL
-    if (!is.null(o)) {
-      if ( exists(p$stmv_variogram_method, o)) {
-        ores = o[[p$stmv_variogram_method]] # store current best estimate of variogram characteristics
-        if ( !exists("range_ok", ores) ) {
+    if ( exists(p$stmv_variogram_method, o)) {
+      ores = o[[p$stmv_variogram_method]] # store current best estimate of variogram characteristics
+      if ( exists("range_ok", ores) ) {
+        if ( !ores[["range_ok"]] ) {
           Sflag[Si] = 7L
         } else {
-          if ( ores[["range_ok"]] ) stmv_distance_cur = ores[["range"]]
+          stmv_distance_cur = ores[["range"]]
           vario_U  = which( {dlon  <= stmv_distance_cur } & {dlat <= stmv_distance_cur} )
           vario_ndata =length(vario_U)
           if (vario_ndata < p$n.min) {
@@ -191,6 +216,8 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
           ndata = vario_ndata
           vario_U = vario_ndata = NULL
         }
+      } else {
+        Sflag[Si] = 7L
       }
     }
 
@@ -286,7 +313,9 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     # the following permits user-defined models (might want to use compiler::cmpfun )
 
     res =NULL
-    res = try( local_fn( p=p, dat=dat, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial, sloc=Sloc[Si,], distance=stmv_distance_cur ) )
+    res = try(
+      local_fn( p=p, dat=dat, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial, sloc=Sloc[Si,], distance=stmv_distance_cur )
+    )
 
     if (debugging) print( str(res))
 
