@@ -152,64 +152,68 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     o = NULL
     o = try( stmv_variogram( xy=Yloc[U,], z=Y[U], methods=p$stmv_variogram_method, distance_cutoff=stmv_distance_cur, nbreaks=13 ) )
 
-    if ( is.null(o)) Sflag[Si] = 6L   # fast variogram did not work
-    if ( !is.null(o)) if ( inherits(o, "try-error")) Sflag[Si] = 6L   # fast variogram did not work
-
-    if ( Sflag[Si] == 6L ) if ( exists("stmv_rangecheck", p) ) if (p$stmv_rangecheck=="paranoid") next()
-
-    ores = NULL
-    if ( exists(p$stmv_variogram_method, o)) {
-      ores = o[[p$stmv_variogram_method]] # store current best estimate of variogram characteristics
-      if ( exists("range_ok", ores) ) {
-        if ( !ores[["range_ok"]] ) {
-          Sflag[Si] = 7L
-        } else {
-          stmv_distance_cur = ores[["range"]]
-          vario_U  = which( {dlon  <= stmv_distance_cur } & {dlat <= stmv_distance_cur} )
-          vario_ndata =length(vario_U)
-          if (vario_ndata < p$n.min) {
-            # insufficient data at estimated range
-            # ..could  stop analysis but this is not necessary .. range identifies the distance
-            # at which AC is no differnt from background noise and so addition of more distant data
-            # does not alter interpretation.
-            # NOTE: this range is a crude estimate that averages across years (if any) ...
-            if (exists("stmv_rangecheck", p)) {
-              if (p$stmv_rangecheck=="paranoid") {
-                Sflag[Si] = 5L
-                next()
+    if ( is.null(o)) {
+      Sflag[Si] = 6L   # fast variogram did not work
+    } else {
+      if ( inherits(o, "try-error")) {
+        Sflag[Si] = 6L   # fast variogram did not work
+      }
+      ores = NULL
+      if ( exists(p$stmv_variogram_method, o)) {
+        ores = o[[p$stmv_variogram_method]] # store current best estimate of variogram characteristics
+        if ( exists("range_ok", ores) ) {
+          if ( !ores[["range_ok"]] ) {
+            Sflag[Si] = 7L
+          } else {
+            stmv_distance_cur = ores[["range"]]
+            vario_U  = which( {dlon  <= stmv_distance_cur } & {dlat <= stmv_distance_cur} )
+            vario_ndata =length(vario_U)
+            if (vario_ndata < p$n.min) {
+              # insufficient data at estimated range
+              # ..could  stop analysis but this is not necessary .. range identifies the distance
+              # at which AC is no differnt from background noise and so addition of more distant data
+              # does not alter interpretation.
+              # NOTE: this range is a crude estimate that averages across years (if any) ...
+              if (exists("stmv_rangecheck", p)) {
+                if (p$stmv_rangecheck=="paranoid") {
+                  Sflag[Si] = 5L
+                  next()
+                }
               }
             }
+            U  = vario_U
+            ndata = vario_ndata
+            vario_U = vario_ndata = NULL
           }
-          U  = vario_U
-          ndata = vario_ndata
-          vario_U = vario_ndata = NULL
+        } else {
+          Sflag[Si] = 7L
         }
-      } else {
-        Sflag[Si] = 7L
+      }
+
+      if (debugging) print( paste("... range=", round(ores[['range']],3), ", ", nu=", ores$nu, ", phi=", ores$phi, ndata=", ndata ) )
+
+      if (ndata > p$n.max) {
+        # if (0) {
+        #   U = U[ .Internal( sample( length(U), p$n.max, replace=FALSE, prob=NULL)) ] # simple random
+        #   ndata = length(U)
+        # }
+        if (exists("TIME", p$variables)) {
+          iU = stmv_discretize_coordinates( coo=cbind(Yloc[U,], Ytime[U,]), ntarget=p$n.max,
+            minresolution=p$downsampling_multiplier*c(p$pres, p$pres, p$tres), method="thin" )
+        } else {
+          iU = stmv_discretize_coordinates( coo=Yloc[U,], ntarget=p$n.max,
+            minresolution=p$downsampling_multiplier*c(p$pres, p$pres ), method="thin" )
+        }
+        ndata = length(iU)
+        if (ndata < p$n.min) {
+          Sflag[Si] = 5L   # skipped .. not enough data
+          next()
+        }
+        U = U[iU]
       }
     }
 
-    print( paste("... range=", round(ores[['range']],3), ", ", nu=", ores$nu, ", phi=", ores$phi, ndata=", ndata ) )
-
-    if (ndata > p$n.max) {
-      # if (0) {
-      #   U = U[ .Internal( sample( length(U), p$n.max, replace=FALSE, prob=NULL)) ] # simple random
-      #   ndata = length(U)
-      # }
-      if (exists("TIME", p$variables)) {
-        iU = stmv_discretize_coordinates( coo=cbind(Yloc[U,], Ytime[U,]), ntarget=p$n.max,
-          minresolution=p$downsampling_multiplier*c(p$pres, p$pres, p$tres), method="thin" )
-      } else {
-        iU = stmv_discretize_coordinates( coo=Yloc[U,], ntarget=p$n.max,
-          minresolution=p$downsampling_multiplier*c(p$pres, p$pres ), method="thin" )
-      }
-      ndata = length(iU)
-      if (ndata < p$n.min) {
-        Sflag[Si] = 5L   # skipped .. not enough data
-        next()
-      }
-      U = U[iU]
-    }
+    if ( exists("stmv_rangecheck", p) ) if (p$stmv_rangecheck=="paranoid") next()
 
     iU=dlon=dlat=o=NULL
 
