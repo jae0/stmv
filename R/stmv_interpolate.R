@@ -148,13 +148,9 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
       points( Sloc[Si,2] ~ Sloc[Si,1], pch=20, cex=5, col="blue" )
     }
 
-    # crude (mean) variogram across all time slices  .. overall range estimation is the priority and so this shoud be ok
-    xyblocked = stmv_discretize_coordinates( coo=Yloc[U,], z=Y[U],  ntarget=p$n.max,
-      minresolution=p$downsampling_multiplier*c(p$pres, p$pres ), method="aggregate", FUNC=mean, na.rm=TRUE )
-
+    # NOTE: this range is a crude estimate that averages across years (if any) ...
     o = NULL
-    o = try( stmv_variogram( xy=xyblocked[,c(1,2)], z=xyblocked[,3], methods=p$stmv_variogram_method,
-      distance_cutoff=stmv_distance_cur, nbreaks=13 ) )
+    o = try( stmv_variogram( xy=Yloc[U,], z=Y[U], methods=p$stmv_variogram_method, distance_cutoff=stmv_distance_cur, nbreaks=13 ) )
 
     if ( is.null(o)) Sflag[Si] = 6L   # fast variogram did not work
     if ( !is.null(o)) if ( inherits(o, "try-error")) Sflag[Si] = 6L   # fast variogram did not work
@@ -192,6 +188,8 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
         Sflag[Si] = 7L
       }
     }
+
+    print( paste("... range=", ores[['range']], ", ", nu=", ores[['nu']], ", phi=", ores[['phi']], ndata=", ndata ) )
 
     if (ndata > p$n.max) {
       # if (0) {
