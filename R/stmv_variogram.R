@@ -45,17 +45,17 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
         # $fast$range_ok: TRUE
         # $fast$objfn: 0.07454
 
-        gr = stmv_variogram( xy, z, methods="fast.rf", plotdata=TRUE ) # nls
-        # $fast.rf$vgm_var_max: 0.7987
-        # $fast.rf$vgm_dist_max: 171425
-        # $fast.rf$autocorrelation_function: "matern"
-        # $fast.rf$nu: 0.5
-        # $fast.rf$phi: 29060
-        # $fast.rf$varSpatial: 0.5956
-        # $fast.rf$varObs: 0
-        # $fast.rf$range: 87056
-        # $fast.rf$range_ok: TRUE
-        # $fast.rf$objfn: 0.1278
+        gr = stmv_variogram( xy, z, methods="fast", plotdata=TRUE ) # nls
+        # $fast$vgm_var_max: 0.7987
+        # $fast$vgm_dist_max: 171425
+        # $fast$autocorrelation_function: "matern"
+        # $fast$nu: 0.5
+        # $fast$phi: 29060
+        # $fast$varSpatial: 0.5956
+        # $fast$varObs: 0
+        # $fast$range: 87056
+        # $fast$range_ok: TRUE
+        # $fast$objfn: 0.1278
 
         gr = stmv_variogram( xy, z, methods="fields", plotdata=TRUE ) # ml via profile likelihood
         # $fields$range: 80595
@@ -194,18 +194,34 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
 
   xy = xy + out$stmv_internal_scale * runif(2*out$Ndata, -1e-4, 1e-4) # add a small error term to prevent some errors in GRMF methods
 
+
+
   # ------------------------
   # ------------------------
 
-  if ("CompRandFld_binomial" %in% methods) {
-    require( CompRandFld )
-    vario = EVariogram(data=z, coordx=as.matrix(xy/out$stmv_internal_scale),
-                       maxdist=out$distance_cutoff/out$stmv_internal_scale, numbins=nbreaks, type="lorelogram")
-    vg = vario$variograms
-    vx = vario$centers
-    fit = stmv_variogram_optimization( vx=vx, vg=vg, plotvgm=plotdata, stmv_internal_scale=out$stmv_internal_scale  ) # nu=0.5 == exponential variogram
-    out$CompRandFld = fit$summary
+  if ("fast" %in% methods) {
+    require( RandomFields )
+    # essentially "RandomFields" (below) method but force a solution if it fails
+
+    # try 1
+    rownames( xy) = 1:nrow(xy)  # seems to require rownames ...
+    Yyy <- RFspatialPointsDataFrame( coords=xy, data=z, RFparams=list(vdim=1, n=1) )
+    vario = RFempiricalvariogram( data=Yyy )
+    # remove the (0,0) point -- force intercept
+    todrop = which( !is.finite(vario@emp.vario )) # occasionally NaN's are created!
+    todrop = unique( c(1, todrop) )
+    vg = vario@emp.vario[-todrop]
+    vx = vario@centers[-todrop]
+    fit = stmv_variogram_optimization( vx=vx, vg=vg, plotvgm=plotdata, stmv_internal_scale=out$stmv_internal_scale )
+    out$fast = fit$summary
+    out$fast$range_ok = ifelse( out$fast$range < out$distance_cutoff*0.99, TRUE, FALSE )
+
+    if (out$fast$range_ok) return(out)
+
     if( 0) {
+      scale = matern_phi2phi( mRange=out$fast$phi, mSmooth=out$fast$nu, parameterization_input="stmv", parameterization_output="RandomFields" )
+      plot(vario, model=RMmatern( nu=out$fast$nu, var=out$fast$varSpatial, scale=scale) + RMnugget(var=out$fast$varObs) )
+      plot.new()
       xlim= c(0, fit$summary$vgm_dist_max*1.1)
       ylim= c(0, fit$summary$vgm_var_max*1.1)
       plot( fit$summary$vx, fit$summary$vg, col="green", xlim=xlim, ylim=ylim )
@@ -218,14 +234,104 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
       abline( h=fit$summary$varObs + fit$summary$varSpatial, lty="dashed", col="grey" )
       abline( v=fit$summary$range, lty="dashed", col="grey")
     }
+
+    # if here, then range was problematic
+    # try 2
+    model = RMmatern( nu=NA, var=NA, scale=NA) + RMnugget(var=NA)
+    o = RFfit(model, x=xy/out$stmv_internal_scale, data=z, allowdistanceZero=TRUE,  modus_operandi="easygoing", allowdistanceZero=TRUE)
+    oo=summary(o)
+
+    scale = matern_phi2phi(
+      mRange=oo$param["value", "matern.s"],
+      mSmooth=oo$param["value", "matern.nu"],
+      parameterization_input="RandomFields",
+      parameterization_output="stmv" ) * out$stmv_internal_scale
+
+    out$fast = list ( fit=o, vgm=o[2], model=oo, range=NA,
+              varSpatial=oo$param["value", "matern.var"],
+              varObs=oo$param["value", "nugget.var"],
+              phi=scale,
+              nu=oo$param["value", "matern.nu"], # RF::nu == geoR:: kappa (bessel smoothness param)
+              error=NA )
+    out$fast$range = matern_phi2distance( phi=out$fast$phi, nu=out$fast$nu  )
+    out$fast$range_ok = ifelse( out$fast$range < out$distance_cutoff*0.99, TRUE, FALSE )
+
+
+    if (plotdata) {
+      xub = max(out$distance_cutoff, out$fast$range, out$fast$vgm@centers) *1.25
+      plot.new()
+      py = as.vector(out$fast$vgm@emp.vario)
+      px = out$fast$vgm@centers * out$stmv_internal_scale
+      plot(  py ~ px, pch=20, ylim=c(0, max(py)*1.1 )  )
+      abline( h=out$fast$varSpatial + out$fast$varObs  )
+      abline( h=out$fast$varObs )
+      abline( v=out$fast$range )
+
+      x = seq( 0, xub, length.out=100 )
+      acor = stmv_matern( x, mRange=out$fast$phi, mSmooth=out$fast$nu  )
+      acov = out$fast$varObs  + out$fast$varSpatial*(1- acor)
+      lines( acov~x , col="red" )
+    }
+
+    # try 3
+
+    require( geoR )
+    vEm = try( variog( coords=xy/out$stmv_internal_scale, data=z, uvec=nbreaks, max.dist=out$distance_cutoff/out$stmv_internal_scale ) )
+    if  (inherits(vEm, "try-error") )  return(NULL)
+    vEm$u0 = vEm$u * out$stmv_internal_scale
+
+    vMod = try( variofit( vEm, nugget=0.5*out$varZ, kappa=0.5, cov.model="matern",
+      ini.cov.pars=c(0.5*out$varZ, 1 ) ,
+      fix.kappa=FALSE, fix.nugget=FALSE, max.dist=out$distance_cutoff/out$stmv_internal_scale, weights="cressie" ) )
+      # kappa is the smoothness parameter , also called "nu" by others incl. RF
+    if  (inherits(vMod, "try-error") )  return(NULL)
+    scale = matern_phi2phi( mRange=vMod$cov.pars[2], mSmooth=vMod$kappa,
+      parameterization_input="geoR", parameterization_output="stmv" ) * out$stmv_internal_scale
+
+    out$fast = list( fit=vMod, vgm=vEm, model=vMod, range=NA,
+            varSpatial= vMod$cov.pars[1], varObs=vMod$nugget,
+            nu=vMod$kappa,  phi=scale )
+    out$fast$range = matern_phi2distance( phi=out$fast$phi, nu=out$fast$nu  )
+    out$fast$range_ok = ifelse( out$fast$range < out$distance_cutoff*0.99, TRUE, FALSE )
+
+    if (plotdata) {
+      # not rescaled ...
+      xub = max(out$distance_cutoff, out$fast$vgm$u ) *1.25
+      # plot.new()
+      # plot(vEm)
+      # lines(vMod)
+      # plot.new()
+      # plot( out$fast$vgm )
+      plot.new()
+      plot( out$fast$vgm$v ~ out$fast$vgm$u0, pch=20 ,
+           xlim=c(0,xub), ylim=c(0, max(out$fast$varSpatial + out$fast$varObs, out$varZ)) )
+      abline( h=out$fast$varSpatial + out$fast$varObs)
+      abline( h=out$fast$varObs )
+
+      x = seq( 0, xub, length.out=100 )
+      acor = fast::matern( x, phi=vMod$cov.pars[2]* out$stmv_internal_scale, kappa=vMod$kappa  )
+      acov = out$fast$varObs +  out$fast$varSpatial * (1-acor)  ## geoR is 1/2 of gstat and RandomFields gamma's
+      lines( acov ~ x , col="orange" )
+      abline( v=vMod$practicalRange*out$stmv_internal_scale, col="green" )
+
+      # check to see if the same as above .. yes!
+      acor2 = stmv_matern( x, mRange=out$fast$phi, mSmooth=out$fast$nu  )
+      acov2 = out$fast$varObs +  out$fast$varSpatial * (1-acor2)  ## geoR is 1/2 of gstat and RandomFields gamma's
+      lines( acov2 ~ x , col="red" )
+      abline( v=out$fast$range, col="orange" )
+
+    }
+
+    return(out)
+
   }
 
 
-  # ------------------------
+  # -------------------------
   # ------------------------
 
 
-  if ( "fast" %in% methods)  {
+  if ( "fast.recursive" %in% methods)  {
     # gives a fast stable empirical variogram using nl least squares and a coarse-grained discretization
     # essentially the same as gstat method but coarse grained discretization
 
@@ -260,9 +366,9 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
 
       if ( fit$summary$range_ok ) {
 
-        out$fast = fit$summary
-        out$fast$fit=fit
-        out$fast$vgm=vEm
+        out$fast.recursive = fit$summary
+        out$fast.recursive$fit=fit
+        out$fast.recursive$vgm=vEm
 
       } else {
         cnt = 0
@@ -289,10 +395,10 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
           nu=vFitgs$kappa[2]
           distance_range = matern_phi2distance( phi=phi, nu=nu  )
 
-          out$fast = list( fit=vFitgs, vgm=vEm, range=distance_range, nu=vFitgs$kappa[2], phi=phi,
+          out$fast.recursive = list( fit=vFitgs, vgm=vEm, range=distance_range, nu=vFitgs$kappa[2], phi=phi,
             varSpatial=vFitgs$psill[2], varObs=vFitgs$psill[1]  )
-          out$fast$range_ok = FALSE
-          if ( out$fast$range < max(out$fast$vgm$dist0)*0.99) out$fast$range_ok = TRUE
+          out$fast.recursive$range_ok = FALSE
+          if ( out$fast.recursive$range < max(out$fast.recursive$vgm$dist0)*0.99) out$fast.recursive$range_ok = TRUE
           if ( distance_range < maxdist ) break()
         }
       }
@@ -303,15 +409,15 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
         plot.new()
         plot(vEm, model=vFitgs, add=T)
         plot.new()
-        plot( gamma ~ dist0, data=out$fast$vgm, xlim=c(0,xub),
-             ylim=c(0,max(out$fast$vgm$gamma)*1.1), col="blue", pch=20 )
-        abline( h=out$fast$varSpatial + out$fast$varObs )
-        abline( h=out$fast$varObs )
-        abline( v=out$fast$range )
+        plot( gamma ~ dist0, data=out$fast.recursive$vgm, xlim=c(0,xub),
+             ylim=c(0,max(out$fast.recursive$vgm$gamma)*1.1), col="blue", pch=20 )
+        abline( h=out$fast.recursive$varSpatial + out$fast.recursive$varObs )
+        abline( h=out$fast.recursive$varObs )
+        abline( v=out$fast.recursive$range )
         abline (v=0)
         x = seq( 0, xub, length.out=100 )
-        acor = stmv_matern( x, mRange=out$fast$phi, mSmooth=out$fast$nu  )
-        acov = out$fast$varObs + out$fast$varSpatial * (1- acor)
+        acor = stmv_matern( x, mRange=out$fast.recursive$phi, mSmooth=out$fast.recursive$nu  )
+        acov = out$fast.recursive$varObs + out$fast.recursive$varSpatial * (1- acor)
         lines( acov~x , col="red" )
 
         if (0) {
@@ -349,30 +455,15 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
   # ------------------------
   # ------------------------
 
-
-  if ( "fast.rf" %in% methods)  {
-    # gives a fast stable empirical variogram .. problem is it extends too far out and there is no control of this distance except after the fact`
-
-    require( RandomFields ) ## max likilihood
-    RFoptions( allowdistanceZero=TRUE ) #, modus_operandi="easygoing" )
-
-    rownames( xy) = 1:nrow(xy)  # seems to require rownames ...
-    Yyy <- RFspatialPointsDataFrame( coords=xy, data=z, RFparams=list(vdim=1, n=1) )
-    vario = RFempiricalvariogram( data=Yyy )
-    # remove the (0,0) point -- force intercept
-    todrop = which( !is.finite(vario@emp.vario )) # occasionally NaN's are created!
-    todrop = unique( c(1, todrop) )
-    vg = vario@emp.vario[-todrop]
-    vx = vario@centers[-todrop]
-    fit = stmv_variogram_optimization( vx=vx, vg=vg, plotvgm=plotdata, stmv_internal_scale=out$stmv_internal_scale )
-    out$fast.rf = fit$summary
-
+  if ("CompRandFld_binomial" %in% methods) {
+    require( CompRandFld )
+    vario = EVariogram(data=z, coordx=as.matrix(xy/out$stmv_internal_scale),
+                       maxdist=out$distance_cutoff/out$stmv_internal_scale, numbins=nbreaks, type="lorelogram")
+    vg = vario$variograms
+    vx = vario$centers
+    fit = stmv_variogram_optimization( vx=vx, vg=vg, plotvgm=plotdata, stmv_internal_scale=out$stmv_internal_scale  ) # nu=0.5 == exponential variogram
+    out$CompRandFld = fit$summary
     if( 0) {
-
-      scale = matern_phi2phi( mRange=out$fast.rf$phi, mSmooth=out$fast.rf$nu, parameterization_input="stmv", parameterization_output="RandomFields" )
-      plot(vario, model=RMmatern( nu=out$fast.rf$nu, var=out$fast.rf$varSpatial, scale=scale) + RMnugget(var=out$fast.rf$varObs) )
-
-      plot.new()
       xlim= c(0, fit$summary$vgm_dist_max*1.1)
       ylim= c(0, fit$summary$vgm_var_max*1.1)
       plot( fit$summary$vx, fit$summary$vg, col="green", xlim=xlim, ylim=ylim )
@@ -385,7 +476,6 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
       abline( h=fit$summary$varObs + fit$summary$varSpatial, lty="dashed", col="grey" )
       abline( v=fit$summary$range, lty="dashed", col="grey")
     }
-    return(out)
   }
 
 

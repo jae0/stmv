@@ -148,46 +148,18 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
       points( Sloc[Si,2] ~ Sloc[Si,1], pch=20, cex=5, col="blue" )
     }
 
-    # crude (mean) variogram across all time slices
+    # crude (mean) variogram across all time slices  .. overall range estimation is the priority and so this shoud be ok
+    xyblocked = stmv_discretize_coordinates( coo=Yloc[U,], z=Y[U],  ntarget=p$n.max,
+      minresolution=p$downsampling_multiplier*c(p$pres, p$pres ), method="aggregate", FUNC=mean, na.rm=TRUE )
+
     o = NULL
-    o = try( stmv_variogram( xy=Yloc[U,], z=Y[U], methods=p$stmv_variogram_method,
+    o = try( stmv_variogram( xy=xyblocked[,c(1,2)], z=xyblocked[,3], methods=p$stmv_variogram_method,
       distance_cutoff=stmv_distance_cur, nbreaks=13 ) )
 
-    tryagain = FALSE
-    if ( is.null(o)) tryagain=TRUE
-    if ( inherits(o, "try-error")) tryagain=TRUE
-    if (!is.null(o)) {
-      if ( !inherits(o, "try-error")) {
-        if ( exists("stmv_rangecheck", p) ) {
-          if (p$stmv_rangecheck=="paranoid") {
-            if ( exists(p$stmv_variogram_method, o)) {
-              if ( exists("range_ok", o[[p$stmv_variogram_method]]) ) {
-                if ( !o[[p$stmv_variogram_method]][["range_ok"]] ) {
-                  tryagain=TRUE
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    if ( tryagain ) {
-      # slower but more reliable
-      p$stmv_variogram_method = "geoR"
-      o = try( stmv_variogram( xy=Yloc[U,], z=Y[U], methods=p$stmv_variogram_method,
-        distance_cutoff=stmv_distance_cur, nbreaks=13 ) )
-    }
-
     if ( is.null(o)) Sflag[Si] = 6L   # fast variogram did not work
-    if ( inherits(o, "try-error")) Sflag[Si] = 6L   # fast variogram did not work
-    if ( Sflag[Si] == 6L ) {
-      if ( exists("stmv_rangecheck", p) ) {
-        if (p$stmv_rangecheck=="paranoid") {
-          next()
-        }
-      }
-    }
+    if ( !is.null(o)) if ( inherits(o, "try-error")) Sflag[Si] = 6L   # fast variogram did not work
+
+    if ( Sflag[Si] == 6L ) if ( exists("stmv_rangecheck", p) ) if (p$stmv_rangecheck=="paranoid") next()
 
     ores = NULL
     if ( exists(p$stmv_variogram_method, o)) {
