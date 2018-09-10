@@ -161,6 +161,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
       ores = NULL
       if ( exists(p$stmv_variogram_method, o)) {
         ores = o[[p$stmv_variogram_method]] # store current best estimate of variogram characteristics
+        if (debugging) print( paste("... range=", round(ores[['range']],3), ", ", nu=", ores$nu, ", phi=", ores$phi, ndata=", ndata ) )
         if ( exists("range_ok", ores) ) {
           if ( !ores[["range_ok"]] ) {
             Sflag[Si] = 7L
@@ -190,7 +191,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
         }
       }
 
-      if (debugging) print( paste("... range=", round(ores[['range']],3), ", ", nu=", ores$nu, ", phi=", ores$phi, ndata=", ndata ) )
 
       if (ndata > p$n.max) {
         # if (0) {

@@ -289,8 +289,8 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
       }
     }
 
-    return(NULL)
-    
+    return(out)
+
   }
 
 
