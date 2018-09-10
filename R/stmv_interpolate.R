@@ -189,7 +189,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
       }
     }
 
-    print( paste("... range=", ores[['range']], ", ", nu=", ores[['nu']], ", phi=", ores[['phi']], ndata=", ndata ) )
+    print( paste("... range=", round(ores[['range']],3), ", ", nu=", ores$nu, ", phi=", ores$phi, ndata=", ndata ) )
 
     if (ndata > p$n.max) {
       # if (0) {

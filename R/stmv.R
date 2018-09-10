@@ -567,7 +567,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       p <<- pdeb
       browser()
       debug(stmv_interpolate)
-      stmv_interpolate (p=pdeb )
+      stmv_interpolate (p=pdeb, debugging=TRUE )
     }
 
     # -----------------------------------------------------

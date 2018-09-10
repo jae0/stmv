@@ -269,23 +269,28 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
 
 
     # try 4
-    model = RMmatern( nu=NA, var=NA, scale=NA) + RMnugget(var=NA)
-    o = try( RFfit(model, x=XYZ[,c(1,2)]/out$stmv_internal_scale, data=XYZ[,3], allowdistanceZero=TRUE,  modus_operandi="easygoing", allowdistanceZero=TRUE) )
-    if (!inherits(o, "try-error") ) {
-      oo=summary(o)
-      scale = matern_phi2phi( mRange=oo$param["value", "matern.s"], mSmooth=oo$param["value", "matern.nu"],
-        parameterization_input="RandomFields", parameterization_output="stmv" ) * out$stmv_internal_scale
-      out$fast = list ( fit=o, vgm=o[2], model=oo, range=NA,
-        varSpatial=oo$param["value", "matern.var"],
-        varObs=oo$param["value", "nugget.var"],
-        phi=scale,
-        nu=oo$param["value", "matern.nu"], # RF::nu == geoR:: kappa (bessel smoothness param)
-        error=NA )
-      out$fast$range = matern_phi2distance( phi=out$fast$phi, nu=out$fast$nu  )
-      out$fast$range_ok = ifelse( out$fast$range < out$distance_cutoff*0.99, TRUE, FALSE )
-      if( out$fast$range_ok ) return(out)
+    if (0) {
+      # occasionally really very slow ... test again at some future time
+      model = RMmatern( nu=NA, var=NA, scale=NA) + RMnugget(var=NA)
+      o = try( RFfit(model, x=XYZ[,c(1,2)]/out$stmv_internal_scale, data=XYZ[,3], allowdistanceZero=TRUE,  modus_operandi="easygoing", allowdistanceZero=TRUE) )
+      if (!inherits(o, "try-error") ) {
+        oo=summary(o)
+        scale = matern_phi2phi( mRange=oo$param["value", "matern.s"], mSmooth=oo$param["value", "matern.nu"],
+          parameterization_input="RandomFields", parameterization_output="stmv" ) * out$stmv_internal_scale
+        out$fast = list ( fit=o, vgm=o[2], model=oo, range=NA,
+          varSpatial=oo$param["value", "matern.var"],
+          varObs=oo$param["value", "nugget.var"],
+          phi=scale,
+          nu=oo$param["value", "matern.nu"], # RF::nu == geoR:: kappa (bessel smoothness param)
+          error=NA )
+        out$fast$range = matern_phi2distance( phi=out$fast$phi, nu=out$fast$nu  )
+        out$fast$range_ok = ifelse( out$fast$range < out$distance_cutoff*0.99, TRUE, FALSE )
+        if( out$fast$range_ok ) return(out)
+      }
     }
 
+    return(NULL)
+    
   }
 
 
