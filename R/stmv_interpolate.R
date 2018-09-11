@@ -129,7 +129,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     # obtain indices of data locations withing a given spatial range, optimally determined via variogram
 
     if ( exists("TIME", p$variables)) {
-      W = stmv_subset_distance( sloc=Sloc[Si,], yloc=Yloc[Yi[],], yval=Y[Yi[],], timevar=Ytime[Yi[],]
+      W = stmv_subset_distance( sloc=Sloc[Si,], yloc=Yloc[Yi[],], yval=Y[Yi[],], timevar=Ytime[Yi[],],
         upsampling=upsampling, n.min=p$n.min, n.max=p$n.max, vgm_method=p$stmv_variogram_method,
         minresolution=p$downsampling_multiplier*c(p$pres, p$pres, p$tres) )
     } else {
