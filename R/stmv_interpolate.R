@@ -124,7 +124,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
       # 8=problem with prediction and/or modelling
       # 9=attempting ... if encountered then it was some general problem  or was interrrupted
 
-    print( paste("index =", iip, ";  Si = ", Si, ";  ndata = ", W[["ndata"]] ) )
+    print( paste("index =", iip, ";  Si = ", Si ) )
 
     # obtain indices of data locations withing a given spatial range, optimally determined via variogram
 
@@ -139,25 +139,24 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     }
 
     Sflag[Si] = W[["flag"]]  # update flags
-
-      if (0) {
-        plot( Sloc[,], pch=20, cex=0.5, col="gray")
-        points( Yloc[,], pch=20, cex=0.2, col="green")
-        points( Yloc[W[["U"]],], pch=20, cex=1, col="yellow" )
-        points( Sloc[Si,2] ~ Sloc[Si,1], pch=20, cex=5, col="blue" )
-      }
-
-    if (exists("stmv_rangecheck", p)) {
-      if (p$stmv_rangecheck=="paranoid") {
-        Sflag[Si] = 5L
-        next()
+    if ( Sflag[Si] != 0L ) {
+      if (exists("stmv_rangecheck", p)) {
+        if (p$stmv_rangecheck=="paranoid") {
+          next()
+        }
       }
     }
 
-    iU=dlon=dlat=o=NULL
+    if (0) {
+      plot( Sloc[,], pch=20, cex=0.5, col="gray")
+      points( Yloc[,], pch=20, cex=0.2, col="green")
+      points( Yloc[W[["U"]],], pch=20, cex=1, col="yellow" )
+      points( Sloc[Si,2] ~ Sloc[Si,1], pch=20, cex=5, col="blue" )
+    }
 
+    browser()
 
-    YiU = Yi[W["U"]] # YiU and p$stmv_distance_prediction determine the data entering into local model construction
+    YiU = Yi[W[["U"]]] # YiU and p$stmv_distance_prediction determine the data entering into local model construction
     pa = stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=p$windowsize.half )
       if (is.null(pa)) {
         Sflag[Si] = 4L
