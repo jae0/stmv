@@ -124,115 +124,55 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
       # 8=problem with prediction and/or modelling
       # 9=attempting ... if encountered then it was some general problem  or was interrrupted
 
-    # find data nearest S[Si,] and with sufficient data
-    dlon = abs( Sloc[Si,1] - Yloc[Yi[],1] )
-    dlat = abs( Sloc[Si,2] - Yloc[Yi[],2] )
+    print( paste("index =", iip, ";  Si = ", Si, ";  ndata = ", W[["ndata"]] ) )
 
-    ndata = 0
-    for ( stmv_distance_cur in upsampling )  {
-      U = which( {dlon  <= stmv_distance_cur} & {dlat <= stmv_distance_cur} )  # faster to take a block
-      ndata = length(U)
-      if ( ndata >= p$n.min ) break()
-    }
-    if (ndata < p$n.min) {
-      Sflag[Si] = 5L   # skipped .. not enough data
-      next()
-    }
+    # obtain indices of data locations withing a given spatial range, optimally determined via variogram
 
-    print( paste(iip, Si, ndata ) )
-
-    if (0) {
-      plot( Sloc[,], pch=20, cex=0.5, col="gray")
-      points( Yloc[,], pch=20, cex=0.2, col="green")
-      points( Yloc[U,], pch=20, cex=1, col="yellow" )
-      points( Sloc[Si,2] ~ Sloc[Si,1], pch=20, cex=5, col="blue" )
-    }
-
-    # NOTE: this range is a crude estimate that averages across years (if any) ...
-    o = NULL
-    o = try( stmv_variogram( xy=Yloc[U,], z=Y[U], methods=p$stmv_variogram_method, distance_cutoff=stmv_distance_cur, nbreaks=13 ) )
-
-    if ( is.null(o)) {
-      Sflag[Si] = 6L   # fast variogram did not work
+    if ( exists("TIME", p$variables)) {
+      W = stmv_subset_distance( sloc=Sloc[Si,], yloc=Yloc[Yi[],], yval=Y[Yi[],], timevar=Ytime[Yi[],]
+        upsampling=upsampling, n.min=p$n.min, n.max=p$n.max, vgm_method=p$stmv_variogram_method,
+        minresolution=p$downsampling_multiplier*c(p$pres, p$pres, p$tres) )
     } else {
-      if ( inherits(o, "try-error")) {
-        Sflag[Si] = 6L   # fast variogram did not work
-      }
-      ores = NULL
-      if ( exists(p$stmv_variogram_method, o)) {
-        ores = o[[p$stmv_variogram_method]] # store current best estimate of variogram characteristics
-        if (debugging) print( paste("... range=", round(ores[['range']],3), ", ", nu=", ores$nu, ", phi=", ores$phi, ndata=", ndata ) )
-        if ( exists("range_ok", ores) ) {
-          if ( !ores[["range_ok"]] ) {
-            Sflag[Si] = 7L
-          } else {
-            stmv_distance_cur = ores[["range"]]
-            vario_U  = which( {dlon  <= stmv_distance_cur } & {dlat <= stmv_distance_cur} )
-            vario_ndata =length(vario_U)
-            if (vario_ndata < p$n.min) {
-              # insufficient data at estimated range
-              # ..could  stop analysis but this is not necessary .. range identifies the distance
-              # at which AC is no differnt from background noise and so addition of more distant data
-              # does not alter interpretation.
-              # NOTE: this range is a crude estimate that averages across years (if any) ...
-              if (exists("stmv_rangecheck", p)) {
-                if (p$stmv_rangecheck=="paranoid") {
-                  Sflag[Si] = 5L
-                  next()
-                }
-              }
-            }
-            U  = vario_U
-            ndata = vario_ndata
-            vario_U = vario_ndata = NULL
-          }
-        } else {
-          Sflag[Si] = 7L
-        }
-      }
-
-
-      if (ndata > p$n.max) {
-        # if (0) {
-        #   U = U[ .Internal( sample( length(U), p$n.max, replace=FALSE, prob=NULL)) ] # simple random
-        #   ndata = length(U)
-        # }
-        if (exists("TIME", p$variables)) {
-          iU = stmv_discretize_coordinates( coo=cbind(Yloc[U,], Ytime[U,]), ntarget=p$n.max,
-            minresolution=p$downsampling_multiplier*c(p$pres, p$pres, p$tres), method="thin" )
-        } else {
-          iU = stmv_discretize_coordinates( coo=Yloc[U,], ntarget=p$n.max,
-            minresolution=p$downsampling_multiplier*c(p$pres, p$pres ), method="thin" )
-        }
-        ndata = length(iU)
-        if (ndata < p$n.min) {
-          Sflag[Si] = 5L   # skipped .. not enough data
-          next()
-        }
-        U = U[iU]
-      }
+      W = stmv_subset_distance( sloc=Sloc[Si,], yloc=Yloc[Yi[],], yval=Y[Yi[],],
+        upsampling=upsampling, n.min=p$n.min, n.max=p$n.max, vgm_method=p$stmv_variogram_method,
+        minresolution=p$downsampling_multiplier*c(p$pres, p$pres ) )
     }
 
-    if ( exists("stmv_rangecheck", p) ) if (p$stmv_rangecheck=="paranoid") next()
+    Sflag[Si] = W[["flag"]]  # update flags
+
+      if (0) {
+        plot( Sloc[,], pch=20, cex=0.5, col="gray")
+        points( Yloc[,], pch=20, cex=0.2, col="green")
+        points( Yloc[W[["U"]],], pch=20, cex=1, col="yellow" )
+        points( Sloc[Si,2] ~ Sloc[Si,1], pch=20, cex=5, col="blue" )
+      }
+
+    if (exists("stmv_rangecheck", p)) {
+      if (p$stmv_rangecheck=="paranoid") {
+        Sflag[Si] = 5L
+        next()
+      }
+    }
 
     iU=dlon=dlat=o=NULL
 
-    YiU = Yi[U] # YiU and p$stmv_distance_prediction determine the data entering into local model construction
+
+    YiU = Yi[W["U"]] # YiU and p$stmv_distance_prediction determine the data entering into local model construction
     pa = stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=p$windowsize.half )
-    if (is.null(pa)) {
-      Sflag[Si] = 4L
-      message( Si )
-      message("Error with issue with prediction grid ... null .. this should not happen")
-      next()
-    }
+      if (is.null(pa)) {
+        Sflag[Si] = 4L
+        message( Si )
+        message("Error with issue with prediction grid ... null .. this should not happen")
+        next()
+      }
 
     if (0) {
       # check that position indices are working properly
       Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
       Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
-      plot( Yloc[U,2]~ Yloc[U,1], col="red", pch=".",
-        ylim=range(c(Yloc[U,2], Sloc[Si,2], Ploc[pa$i,2]) ),
-        xlim=range(c(Yloc[U,1], Sloc[Si,1], Ploc[pa$i,1]) ) ) # all data
+      plot( Yloc[W["U"],2]~ Yloc[W["U"],1], col="red", pch=".",
+        ylim=range(c(Yloc[W["U"],2], Sloc[Si,2], Ploc[pa$i,2]) ),
+        xlim=range(c(Yloc[W["U"],1], Sloc[Si,1], Ploc[pa$i,1]) ) ) # all data
       points( Yloc[YiU,2] ~ Yloc[YiU,1], col="green" )  # with covars and no other data issues
       points( Sloc[Si,2] ~ Sloc[Si,1], col="blue" ) # statistical locations
       # statistical output locations
@@ -247,9 +187,10 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
 
     # prep dependent data
     # reconstruct data for modelling (dat) and data for prediction purposes (pa)
-    dat = matrix( 1, nrow=ndata, ncol=dat_nc )
+    dat = matrix( 1, nrow=W[["ndata"]], ncol=dat_nc )
     dat[,iY] = Y[YiU] # these are residuals if there is a global model
-    dat[,ilocs] = Yloc[YiU,] + stmv_distance_cur * runif(2*ndata, -1e-6, 1e-6) # add a small error term to prevent some errors when duplicate locations exist; stmv_distance_cur offsets to positive values
+    # add a small error term to prevent some errors when duplicate locations exist; stmv_distance_cur offsets to positive values
+    dat[,ilocs] = Yloc[YiU,] + W[["stmv_distance_cur"]] * runif(2*W[["ndata"]], -1e-6, 1e-6)
 
 
     if (p$nloccov > 0) dat[,icov] = Ycov[YiU,] # no need for other dim checks as this is user provided
@@ -259,19 +200,19 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
 
     # remember that these are crude mean/discretized estimates
     nu = phi = varSpatial = varObs = NULL
-    if (!is.null(ores)) {
-      if (exists("nu", ores)) if (is.finite(ores$nu)) nu = ores$nu
-      if (exists("phi", ores)) if (is.finite(ores$phi)) if (ores$phi > (p$pres/2)) phi = ores$phi
-      if (exists("varSpatial", ores)) if (is.finite(ores$varSpatial)) varSpatial = ores$varSpatial
-      if (exists("varObs", ores))  if (is.finite(ores$varObs)) if (ores$varObs > p$eps) varObs = ores$varObs
+    if ( exists("ores", W)) {
+      if (exists("nu", W[["ores"]])) if (is.finite(W[["ores"]][["nu"]])) nu = W[["ores"]][["nu"]]
+      if (exists("phi", W[["ores"]])) if (is.finite(W[["ores"]][["phi"]])) if (W[["ores"]][["phi"]] > (p$pres/2)) phi = W[["ores"]][["phi"]]
+      if (exists("varSpatial", W[["ores"]])) if (is.finite(W[["ores"]][["varSpatial"]])) varSpatial = W[["ores"]][["varSpatial"]]
+      if (exists("varObs", W[["ores"]]))  if (is.finite(W[["ores"]][["varObs"]])) if (W[["ores"]][["varObs"]] > p$eps) varObs = W[["ores"]][["varObs"]]
     }
 
     if (is.null(nu)) nu = p$stmv_lowpass_nu
     if (is.null(nu)) nu = 0.5
     if (!is.finite(nu)) nu = 0.5
 
-    if (is.null(phi)) phi = stmv_distance_cur/sqrt(8*nu) # crude estimate of phi based upon current scaling  distance approximates the range at 90% autocorrelation(e.g., see Lindgren et al. 2011)
-    if (!is.finite(phi)) phi = stmv_distance_cur/sqrt(8*nu)
+    if (is.null(phi)) phi = W[["stmv_distance_cur"]]/sqrt(8*nu) # crude estimate of phi based upon current scaling  distance approximates the range at 90% autocorrelation(e.g., see Lindgren et al. 2011)
+    if (!is.finite(phi)) phi = W[["stmv_distance_cur"]]/sqrt(8*nu)
 
     if (is.null(varSpatial)) varSpatial =0.5 * var( dat[, p$variables$Y], na.rm=TRUE)
 
@@ -280,15 +221,14 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
 
     # print( "starting interpolation" )
 
-
-    if (!is.null(ores)) ores$vgm = NULL # can be large
+    if ( exists("ores", W)) W[["ores"]][["vgm"]] = NULL
 
     # model and prediction .. outputs are in scale of the link (and not response)
     # the following permits user-defined models (might want to use compiler::cmpfun )
 
     res =NULL
     res = try(
-      local_fn( p=p, dat=dat, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial, sloc=Sloc[Si,], distance=stmv_distance_cur )
+      local_fn( p=p, dat=dat, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial, sloc=Sloc[Si,], distance=W[["stmv_distance_cur"]] )
     )
 
     if (debugging) print( str(res))
@@ -351,12 +291,12 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
       res$stmv_stats["range"] = NA
       res$stmv_stats["phi"] = NA
       res$stmv_stats["nu"] = NA
-      if ( !is.null(ores)) {
-        if ( exists("varSpatial", ores) ) res$stmv_stats["sdSpatial"] = sqrt( ores[["varSpatial"]] )
-        if ( exists("varObs", ores) ) res$stmv_stats["sdObs"] = sqrt(ores[["varObs"]])
-        if ( exists("range", ores) ) res$stmv_stats["range"] = ores[["range"]]
-        if ( exists("phi", ores) ) res$stmv_stats["phi"] = ores[["phi"]]
-        if ( exists("nu", ores) ) res$stmv_stats["nu"] = ores[["nu"]]
+      if ( exists("ores", W)) {
+        if ( exists("varSpatial", W[["ores"]]) ) res$stmv_stats["sdSpatial"] = sqrt( W[["ores"]][["varSpatial"]] )
+        if ( exists("varObs", W[["ores"]]) ) res$stmv_stats["sdObs"] = sqrt(W[["ores"]][["varObs"]])
+        if ( exists("range", W[["ores"]]) ) res$stmv_stats["range"] = W[["ores"]][["range"]]
+        if ( exists("phi", W[["ores"]]) ) res$stmv_stats["phi"] = W[["ores"]][["phi"]]
+        if ( exists("nu", W[["ores"]]) ) res$stmv_stats["nu"] = W[["ores"]][["nu"]]
       }
     }
 
