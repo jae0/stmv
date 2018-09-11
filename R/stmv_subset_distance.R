@@ -2,8 +2,8 @@
 
       # find data nearest sloc and with sufficient data
       out = NULL
-      dlon = abs( sloc[,1] - yloc[,1] )
-      dlat = abs( sloc[,2] - yloc[,2] )
+      dlon = abs( sloc[1] - yloc[,1] )
+      dlat = abs( sloc[2] - yloc[,2] )
       ndata = 0
       for ( stmv_distance_cur in upsampling )  {
         U = which( {dlon  <= stmv_distance_cur} & {dlat <= stmv_distance_cur} )  # faster to take a block
@@ -75,7 +75,7 @@
       # last try, we are here because (vario_ndata > n.max)
       # try to trim
       if ( !is.null(timevar) ) {
-        iU = stmv_discretize_coordinates( coo=cbind(yloc[vario_U,], timevar[vario_U,]), ntarget=n.max, minresolution=minresolution, method="thin" )
+        iU = stmv_discretize_coordinates( coo=cbind(yloc[vario_U,], timevar[vario_U]), ntarget=n.max, minresolution=minresolution, method="thin" )
       } else {
         iU = stmv_discretize_coordinates( coo=yloc[vario_U,], ntarget=n.max, minresolution=minresolution, method="thin" )
       }
