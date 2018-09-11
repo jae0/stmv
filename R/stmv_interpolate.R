@@ -154,8 +154,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
       points( Sloc[Si,2] ~ Sloc[Si,1], pch=20, cex=5, col="blue" )
     }
 
-    browser()
-
     YiU = Yi[W[["U"]]] # YiU and p$stmv_distance_prediction determine the data entering into local model construction
     pa = stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=p$windowsize.half )
       if (is.null(pa)) {
@@ -169,9 +167,9 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
       # check that position indices are working properly
       Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
       Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
-      plot( Yloc[W["U"],2]~ Yloc[W["U"],1], col="red", pch=".",
-        ylim=range(c(Yloc[W["U"],2], Sloc[Si,2], Ploc[pa$i,2]) ),
-        xlim=range(c(Yloc[W["U"],1], Sloc[Si,1], Ploc[pa$i,1]) ) ) # all data
+      plot( Yloc[W[["U"]],2] ~ Yloc[W[["U"]],1], col="red", pch=".",
+        ylim=range(c(Yloc[W[["U"]],2], Sloc[Si,2], Ploc[pa$i,2]) ),
+        xlim=range(c(Yloc[W[["U"]],1], Sloc[Si,1], Ploc[pa$i,1]) ) ) # all data
       points( Yloc[YiU,2] ~ Yloc[YiU,1], col="green" )  # with covars and no other data issues
       points( Sloc[Si,2] ~ Sloc[Si,1], col="blue" ) # statistical locations
       # statistical output locations
@@ -199,7 +197,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
 
     # remember that these are crude mean/discretized estimates
     nu = phi = varSpatial = varObs = NULL
-    if ( exists("ores", W)) {
+    if ( !is.na(W[["ores"]])) {
       if (exists("nu", W[["ores"]])) if (is.finite(W[["ores"]][["nu"]])) nu = W[["ores"]][["nu"]]
       if (exists("phi", W[["ores"]])) if (is.finite(W[["ores"]][["phi"]])) if (W[["ores"]][["phi"]] > (p$pres/2)) phi = W[["ores"]][["phi"]]
       if (exists("varSpatial", W[["ores"]])) if (is.finite(W[["ores"]][["varSpatial"]])) varSpatial = W[["ores"]][["varSpatial"]]
@@ -220,7 +218,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
 
     # print( "starting interpolation" )
 
-    if ( exists("ores", W)) W[["ores"]][["vgm"]] = NULL
+    if ( !is.na(W[["ores"]]) ) W[["ores"]][["vgm"]] = NULL
 
     # model and prediction .. outputs are in scale of the link (and not response)
     # the following permits user-defined models (might want to use compiler::cmpfun )
@@ -230,7 +228,10 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
       local_fn( p=p, dat=dat, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial, sloc=Sloc[Si,], distance=W[["stmv_distance_cur"]] )
     )
 
-    if (debugging) print( str(res))
+    if (debugging) {
+      print (str(W) )
+      print( str(res) )
+    }
 
     if (0) {
       lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==2012.05,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
@@ -290,7 +291,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
       res$stmv_stats["range"] = NA
       res$stmv_stats["phi"] = NA
       res$stmv_stats["nu"] = NA
-      if ( exists("ores", W)) {
+      if ( !is.na(W[["ores"]])) {
         if ( exists("varSpatial", W[["ores"]]) ) res$stmv_stats["sdSpatial"] = sqrt( W[["ores"]][["varSpatial"]] )
         if ( exists("varObs", W[["ores"]]) ) res$stmv_stats["sdObs"] = sqrt(W[["ores"]][["varObs"]])
         if ( exists("range", W[["ores"]]) ) res$stmv_stats["range"] = W[["ores"]][["range"]]
