@@ -65,7 +65,7 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
 
   p$stmv_local_modelformula = p$stmv_local_modelformula_time
 
-  #  if (p$stmv_twostep_time == "inla" ) ts_preds = stmv__inla_ts( p, dat, px )
+  if (p$stmv_twostep_time == "inla" ) ts_preds = stmv__inla_ts( p, dat, px )
   if (p$stmv_twostep_time == "glm" ) ts_preds = stmv__glm( p, dat, px )
   if (p$stmv_twostep_time == "gam" ) ts_preds = stmv__gam( p, dat, px )
   if (p$stmv_twostep_time == "bayesx" ) ts_preds = stmv__bayesx( p, dat, px )

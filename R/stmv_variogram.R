@@ -229,8 +229,8 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
     vEm = try( variog( coords=XYZ[,c(1,2)]/out$stmv_internal_scale, data=XYZ[,3], uvec=nbreaks, max.dist=out$distance_cutoff/out$stmv_internal_scale ) )
     if (!inherits(vEm, "try-error") ) {
       vEm$u0 = vEm$u * out$stmv_internal_scale
-      vMod = try( variofit( vEm, nugget=0.5*out$varZ, kappa=0.5, cov.model="matern",
-      ini.cov.pars=c(0.5*out$varZ, 1 ) ,
+      vMod = try( variofit( vEm, nugget=out$varZ/3, kappa=0.5, cov.model="matern",
+      ini.cov.pars=c(out$varZ/3, 1 ) ,
       fix.kappa=FALSE, fix.nugget=FALSE, max.dist=out$distance_cutoff/out$stmv_internal_scale, weights="cressie" ) )
       # kappa is the smoothness parameter , also called "nu" by others incl. RF
       if  (inherits(vMod, "try-error") )  return(NULL)
@@ -251,10 +251,10 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
     uv = as.data.frame(XYZ[,c(1,2)]/out$stmv_internal_scale )
     names(uv) =  c("plon", "plat" ) # arbitrary
     co = out$distance_cutoff / out$stmv_internal_scale
-    vEm = try( variogram( w~1, locations=~plon+plat, data=uv, cutoff=co, width=co/nbreaks, cressie=FALSE ) ) # empirical variogram
+    vEm = try( variogram( w~1, locations=~plon+plat, data=uv, cutoff=co, width=co/nbreaks, cressie=TRUE ) ) # empirical variogram
     if (!inherits(vEm, "try-error") ) {
       vEm$dist0 = vEm$dist * out$stmv_internal_scale
-      vMod0 = vgm(psill=0.75, model="Mat", range=1, nugget=0.25, kappa=0.5 ) # starting model parameters
+      vMod0 = vgm(psill=2/3*out$varZ, model="Mat", range=1, nugget=out$varZ/3, kappa=1/2 ) # starting model parameters
       vFitgs =  try( fit.variogram( vEm, vMod0, fit.kappa =TRUE, fit.sills=TRUE, fit.ranges=TRUE ) )
       ## gstat's kappa is the Bessel function's "nu" smoothness parameter
       if (!inherits(vFitgs, "try-error") ) {
@@ -272,7 +272,7 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
     if (0) {
       # occasionally really very slow ... test again at some future time
       model = RMmatern( nu=NA, var=NA, scale=NA) + RMnugget(var=NA)
-      o = try( RFfit(model, x=XYZ[,c(1,2)]/out$stmv_internal_scale, data=XYZ[,3], allowdistanceZero=TRUE,  modus_operandi="easygoing", allowdistanceZero=TRUE) )
+      o = try( RFfit(model, x=XYZ[,c(1,2)]/out$stmv_internal_scale, data=XYZ[,3], allowdistanceZero=TRUE,  modus_operandi="normal", lowerbound_var_factor=2000, allowdistanceZero=TRUE) )
       if (!inherits(o, "try-error") ) {
         oo=summary(o)
         scale = matern_phi2phi( mRange=oo$param["value", "matern.s"], mSmooth=oo$param["value", "matern.nu"],
@@ -516,7 +516,7 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
     vEm = try( variogram( z~1, locations=~plon+plat, data=xy, cutoff=co, width=co/nbreaks, cressie=FALSE ) ) # empirical variogram
     if (inherits(vEm, "try-error") ) return(NULL)
     vEm$dist0 = vEm$dist * out$stmv_internal_scale
-    vMod0 = vgm(psill=0.75, model="Mat", range=1, nugget=0.25, kappa=0.5 ) # starting model parameters
+    vMod0 = vgm(psill=2/3*out$varZ, model="Mat", range=1, nugget=out$varZ/3, kappa=1/2 ) # starting model parameters
     vFitgs =  try( fit.variogram( vEm, vMod0, fit.kappa =TRUE, fit.sills=TRUE, fit.ranges=TRUE ) ) ## gstat's kappa is the Bessel function's "nu" smoothness parameter
     if (inherits(vFitgs, "try-error") )  return(NULL)
 
