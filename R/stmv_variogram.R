@@ -220,8 +220,12 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
     fit = try( stmv_variogram_optimization( vx=vx, vg=vg, plotvgm=plotdata, stmv_internal_scale=out$stmv_internal_scale ))
     if ( !inherits(fit, "try-error") ) {
       out$fast = fit$summary
-      out$fast$range_ok = ifelse( out$fast$range < out$distance_cutoff*0.99, TRUE, FALSE )
-      if (out$fast$range_ok) return(out)
+      if (exists("range", out$fast)) {
+        if (is.finite(out$fast$range)) {
+          out$fast$range_ok = ifelse( out$fast$range < out$distance_cutoff*0.99, TRUE, FALSE )
+          if (exists("range_ok", out$fast)) if( out$fast$range_ok ) return(out)
+        }
+      }
     }
 
     # try 2
@@ -237,11 +241,12 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
       scale = matern_phi2phi( mRange=vMod$cov.pars[2], mSmooth=vMod$kappa,
       parameterization_input="geoR", parameterization_output="stmv" ) * out$stmv_internal_scale
       out$fast = list( fit=vMod, vgm=vEm, model=vMod, range=NA,
-      varSpatial= vMod$cov.pars[1], varObs=vMod$nugget,
-      nu=vMod$kappa,  phi=scale )
+      varSpatial= vMod$cov.pars[1], varObs=vMod$nugget, nu=vMod$kappa,  phi=scale )
       out$fast$range = matern_phi2distance( phi=out$fast$phi, nu=out$fast$nu  )
-      out$fast$range_ok = ifelse( out$fast$range < out$distance_cutoff*0.99, TRUE, FALSE )
-      if( out$fast$range_ok ) return(out)
+      if (is.finite(out$fast$range)) {
+        out$fast$range_ok = ifelse( out$fast$range < out$distance_cutoff*0.99, TRUE, FALSE )
+        if (exists("range_ok", out$fast)) if( out$fast$range_ok ) return(out)
+      }
     }
 
 
@@ -262,8 +267,10 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
         out$fast = list( fit=vFitgs, vgm=vEm, range=NA, nu=vFitgs$kappa[2], phi=scale,
         varSpatial=vFitgs$psill[2], varObs=vFitgs$psill[1]  )  # gstat::"range" == range parameter == phi
         out$fast$range = matern_phi2distance( phi=out$fast$phi, nu=out$fast$nu  )
-        out$fast$range_ok = ifelse( out$fast$range < out$distance_cutoff*0.99, TRUE, FALSE )
-        if( out$fast$range_ok ) return(out)
+        if (is.finite(out$fast$range)) {
+          out$fast$range_ok = ifelse( out$fast$range < out$distance_cutoff*0.99, TRUE, FALSE )
+          if (exists("range_ok", out$fast)) if( out$fast$range_ok ) return(out)
+        }
       }
     }
 
@@ -284,8 +291,10 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
           nu=oo$param["value", "matern.nu"], # RF::nu == geoR:: kappa (bessel smoothness param)
           error=NA )
         out$fast$range = matern_phi2distance( phi=out$fast$phi, nu=out$fast$nu  )
-        out$fast$range_ok = ifelse( out$fast$range < out$distance_cutoff*0.99, TRUE, FALSE )
-        if( out$fast$range_ok ) return(out)
+        if (is.finite(out$fast$range)) {
+          out$fast$range_ok = ifelse( out$fast$range < out$distance_cutoff*0.99, TRUE, FALSE )
+          if (exists("range_ok", out$fast)) if( out$fast$range_ok ) return(out)
+        }
       }
     }
 
