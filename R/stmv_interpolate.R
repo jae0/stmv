@@ -28,6 +28,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
   # data for modelling
   S = stmv_attach( p$storage.backend, p$ptr$S )
   Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
+  E = stmv_error_codes()
 
   Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
   Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
@@ -112,17 +113,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
 
     Si = p$runs[ iip, "locs" ]
 
-    if ( Sflag[Si] != 0L ) next()  # previously attempted .. skip
-      # 0=to do
-      # 1=complete
-      # 2=oustide bounds(if any) -
-      # 3=shallow(if z is a covariate) -
-      # 4=predictionarea not ok,
-      # 5=skipped due to insufficient data,
-      # 6=skipped .. fast variogram did not work
-      # 7=variogram estimated range not ok
-      # 8=problem with prediction and/or modelling
-      # 9=attempting ... if encountered then it was some general problem  or was interrrupted
+    if ( Sflag[Si] != E[["todo"]] ) next()  # previously attempted .. skip
 
     print( paste("index =", iip, ";  Si = ", Si ) )
 
@@ -157,7 +148,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     YiU = Yi[W[["U"]]] # YiU and p$stmv_distance_prediction determine the data entering into local model construction
     pa = stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=p$windowsize.half )
       if (is.null(pa)) {
-        Sflag[Si] = 4L
+        Sflag[Si] = E[["prediction_area"]]
         message( Si )
         message("Error with issue with prediction grid ... null .. this should not happen")
         next()
@@ -240,31 +231,31 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     }
 
     if ( is.null(res)) {
-      Sflag[Si] = 8L   # modelling / prediction did not complete properly
+      Sflag[Si] = E[["prediction_error"]]   # modelling / prediction did not complete properly
       dat = pa = res = NULL
       next()
     }
 
     if ( inherits(res, "try-error") ) {
-      Sflag[Si] = 8L   # modelling / prediction did not complete properly
+      Sflag[Si] =  E[["prediction_error"]]   # modelling / prediction did not complete properly
       dat = pa = res = NULL
       next()
     }
 
     if (!exists("predictions", res)) {
-      Sflag[Si] = 8L   # modelling / prediction did not complete properly
+      Sflag[Si] =  E[["prediction_error"]]   # modelling / prediction did not complete properly
       dat = pa = res = NULL
       next()
     }
 
     if (!exists("mean", res$predictions)) {
-      Sflag[Si] = 8L   # modelling / prediction did not complete properly
+      Sflag[Si] =  E[["prediction_error"]]   # modelling / prediction did not complete properly
       dat = pa = res = NULL
       next()
     }
 
     if (length(which( is.finite(res$predictions$mean ))) < 5) {
-      Sflag[Si] = 8L   # modelling / prediction did not complete properly
+      Sflag[Si] =  E[["prediction_error"]]   # modelling / prediction did not complete properly
       dat = pa = res = NULL
       next()  # looks to be a faulty solution
     }
@@ -278,211 +269,30 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
       toolow = toohigh = tq= NULL
     }
 
-    # stats collator
-    if (!exists("stmv_stats",  res) ) res$stmv_stats = list()
 
-    if (!exists("sdSpatial", res$stmv_stats)) {
-      # some methods can generate spatial stats simultaneously ..
-      # it is faster to keep them all together instead of repeating here
-      # field and RandomFields gaussian processes seem most promising ...
-      # default to fields for speed:
-      res$stmv_stats["sdSpatial"] = NA
-      res$stmv_stats["sdObs"] = NA
-      res$stmv_stats["range"] = NA
-      res$stmv_stats["phi"] = NA
-      res$stmv_stats["nu"] = NA
-      if ( !is.na(W[["ores"]])) {
-        if ( exists("varSpatial", W[["ores"]]) ) res$stmv_stats["sdSpatial"] = sqrt( W[["ores"]][["varSpatial"]] )
-        if ( exists("varObs", W[["ores"]]) ) res$stmv_stats["sdObs"] = sqrt(W[["ores"]][["varObs"]])
-        if ( exists("range", W[["ores"]]) ) res$stmv_stats["range"] = W[["ores"]][["range"]]
-        if ( exists("phi", W[["ores"]]) ) res$stmv_stats["phi"] = W[["ores"]][["phi"]]
-        if ( exists("nu", W[["ores"]]) ) res$stmv_stats["nu"] = W[["ores"]][["nu"]]
-      }
+    # extract stats and compute a few more things
+    sf = stmv_statistics_update( p=p, res=res, W=W, sloc=Sloc[Si,] )
+    if (! sf=="error" ) {
+      Sflag[Si] =  E[["prediction_error"]]
+      res = pa = NULL
+      next()
     }
 
-    if ( exists("TIME", p$variables) ){
-      # annual ts, seasonally centered and spatially
-      # pa_i = which( Sloc[Si,1]==Ploc[,1] & Sloc[Si,2]==Ploc[,2] )
-      pac_i = which( res$predictions$plon==Sloc[Si,1] & res$predictions$plat==Sloc[Si,2] )
-      # plot( mean~tiyr, res$predictions[pac_i,])
-      # plot( mean~tiyr, res$predictions, pch="." )
-      res$stmv_stats["ar_timerange"] = NA
-      res$stmv_stats["ar_1"] = NA
-
-      if (length(pac_i) > 5) {
-        pac = res$predictions[ pac_i, ]
-        pac$dyr = pac[, p$variables$TIME] - trunc(pac[, p$variables$TIME] )
-        piid = which( zapsmall( pac$dyr - p$dyear_centre) == 0 )
-        pac = pac[ piid, c(p$variables$TIME, "mean")]
-        pac = pac[ order(pac[,p$variables$TIME]),]
-        if (length(piid) > 5 ) {
-          ts.stat = NULL
-          ts.stat = try( stmv_timeseries( pac$mean, method="fft" ) )
-          if (!is.null(ts.stat) && !inherits(ts.stat, "try-error") ) {
-            res$stmv_stats["ar_timerange"] = ts.stat$quantilePeriod
-            if (all( is.finite(pac$mean))) {
-              afin = which (is.finite(pac$mean) )
-              if (length(afin) > 5 && var( pac$mean, na.rm=TRUE) > p$eps ) {
-                ar1 = NULL
-                ar1 = try( ar( pac$mean, order.max=1 ) )
-                if (!inherits(ar1, "try-error")) {
-                  if ( length(ar1$ar) == 1 ) {
-                    res$stmv_stats["ar_1"] = ar1$ar
-                  }
-                }
-              }
-            }
-            if ( !is.finite(res$stmv_stats[["ar_1"]]) ) {
-              ar1 = try( cor( pac$mean[1:(length(piid) - 1)], pac$mean[2:(length(piid))], use="pairwise.complete.obs" ) )
-              if (!inherits(ar1, "try-error")) res$stmv_stats["ar_1"] = ar1
-            }
-          }
-
-          ### Do the logistic model here ! -- if not already done ..
-          if (!exists("ts_K", res$stmv_stats)) {
-            # model as a logistic with ts_r, ts_K, etc .. as stats outputs
-
-          }
-
-        }
-        pac=piid=NULL
-      }
-      pac_i=NULL
+    res$stmv_stats = NULL # reduce memory usage
+    sf = stmv_predictions_update(p=p, preds=res$predictions )
+    if (! sf=="error" ) {
+      Sflag[Si] = E[["prediction_error"]]
+      res = pa = NULL
+      next()
     }
 
-    # update SD estimates of predictions with those from other locations via the
-    # incremental  method ("online algorithm") of mean estimation after Knuth ;
-    # see https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
-    # update means: inverse-variance weighting
-    # see https://en.wikipedia.org/wiki/Inverse-variance_weighting
-
-    npred = nrow(res$predictions)
-
-    if ( ! exists("TIME", p$variables) ) {
-
-      u = which( is.finite( P[res$predictions$i] ) )  # these have data already .. update
-      if ( length( u ) > 1 ) {
-        ui = res$predictions$i[u]  # locations of P to modify
-        Pn[ui] = Pn[ui] + 1 # update counts
-        stdev_update =  Psd[ui] + ( res$predictions$sd[u] -  Psd[ui] ) / Pn[ui]
-        means_update = ( P[ui] / Psd[ui]^2 + res$predictions$mean[u] / res$predictions$sd[u]^2 ) / ( Psd[ui]^(-2) + res$predictions$sd[u]^(-2) )
-        mm = which(is.finite( means_update + stdev_update ))
-        if( length(mm)> 0) {
-          iumm = ui[mm]
-          Psd[iumm] = stdev_update[mm]
-          P  [iumm] = means_update[mm]
-        }
-        stdev_update = NULL
-        means_update = NULL
-        ui=mm=iumm=NULL
-      }
-
-      # first time # no data yet
-      v = setdiff(1:npred, u)
-      if ( length(v) > 0 ) {
-        vi = res$predictions$i[v]
-        Pn [vi] = 1
-        P  [vi] = res$predictions$mean[v]
-        Psd[vi] = res$predictions$sd[v]
-      }
-      vi = NULL
-    }
-
-
-    if ( exists("TIME", p$variables) ) {
-      u = which( is.finite( P[res$predictions$i,1] ) )  # these have data already .. update
-      u_n = length( u )
-      if ( u_n > 1 ) {  # ignore if only one point .. mostly because it can cause issues with matrix form ..
-        # locations of P to modify
-        ui = sort(unique(res$predictions$i[u]))
-        nc = ncol(P)
-        if (p$storage.backend == "ff" ) {
-          add.ff(Pn, 1, ui, 1:nc ) # same as Pn[ui,] = Pn[ui]+1 but 2X faster
-        } else {
-          Pn[ui,] = Pn[ui,] + 1
-        }
-        stdev_update =  Psd[ui,] + ( res$predictions$sd[u] -  Psd[ui,] ) / Pn[ui,]
-        means_update = ( P[ui,] / Psd[ui,]^2 + res$predictions$mean[u] / res$predictions$sd[u]^2 ) /
-          ( Psd[ui,]^(-2) + res$predictions$sd[u]^(-2) )
-
-        updates = means_update + stdev_update
-        if (!is.matrix(updates)) {
-          Sflag[Si] = 8L
-          u = u_n = ui = nc =stdev_update = means_update = NULL
-          message( Si )
-          message( "update of predictions were problematic ... this should not happen, proabbaly due to NA's" )
-          next()
-        }
-
-        mm = which( is.finite( rowSums(updates)))  # created when preds go outside quantile bounds .. this removes all data from a given location rather than the space-time .. severe but likely due to a poor prediction and so remove all (it is also faster this way as few manipulations)
-        if( length(mm)> 0) {
-          iumm = ui[mm]
-          Psd[iumm,] = stdev_update[mm,]
-          P  [iumm,] = means_update[mm,]
-          iumm = NULL
-        }
-        stdev_update = means_update = updates = ui = mm=NULL
-      }
-
-      # do this as a second pass in case NA's were introduced by the update .. unlikely , but just in case
-      v = which( !is.finite( P[res$predictions$i,1] ) )  # these have data already .. update
-      nv = length(v)          # no data yet
-      if ( nv > 0 ) {
-        vi = sort(unique(res$predictions$i[v]))
-        Pn [vi,] = 1
-        P  [vi,] = res$predictions$mean[v]
-        Psd[vi,] = res$predictions$sd[v]
-        vi = NULL
-      }
-    }
-
-    # save stats
-    for ( k in 1: length(p$statsvars) ) {
-      if (exists( p$statsvars[k], res$stmv_stats )) {
-        S[Si,k] = res$stmv_stats[[ p$statsvars[k] ]]
-      }
-    }
-
-    if (debugging) {
-        v = res$predictions
-        if ( exists("TIME", p$variables) ){
-          v = v[which( v[,p$variables$TIME]==2000.55),]
-        }
-        require(lattice)
-        print(
-          levelplot( mean ~ plon+plat, v, aspect="iso", labels=TRUE, pretty=TRUE, xlab=NULL,ylab=NULL,scales=list(draw=TRUE) )
-      )
-    }
-
-    if (0) {
-      if ("time slice at 2012.05") {
-        lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==2012.05,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
-      }
-
-      if ("all TIME time slices from latest predictions") {
-        for( i in sort(unique(res$predictions[,p$variables$TIME])))  {
-          print(lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==i,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
-        }
-      }
-
-      if ("all nt time slices in stored predictions P") {
-        for (i in 1:p$nt) {
-          print( lattice::levelplot( P[pa$i,i] ~ Ploc[pa$i,1] + Ploc[ pa$i, 2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
-        }
-      }
-
-      if ("no time slices in P") {
-          print( lattice::levelplot( P[pa$i] ~ Ploc[pa$i,1] + Ploc[ pa$i, 2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
-      }
-
-    }
+    res = pa = NULL
 
 
     # ----------------------
     # do last. it is an indicator of completion of all tasks
     # restarts would be broken otherwise
-    Sflag[Si] = 1L  # mark as complete without issues
-    res = pa = NULL
+    Sflag[Si] = E[["complete"]]  # mark as complete without issues
 
   }  # end for loop
 

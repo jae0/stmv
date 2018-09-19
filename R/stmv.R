@@ -82,7 +82,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
 
   # construct prediction/output grid area ('pa')
-  p$windowsize.half = floor(p$stmv_distance_prediction/p$pres) # convert distance to discretized increments of row/col indices
+  p$windowsize.half = floor(p$stmv_distance_prediction/p$pres) # convert distance to discretized increments of row/col indices; stmv_distance_prediction = 0.75* stmv_distance_statsgrid (unless overridden)
 
   if (exists("stmv_Y_transform", p)) {
     DATA$input[, p$variables$Y ] = p$stmv_Y_transform$transf(DATA$input[, p$variables$Y ] )
@@ -633,7 +633,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     toredo = stmv_db( p=p, DS="flag.incomplete.predictions" )
     if ( !is.null(toredo) && length(toredo) > 0) {
       Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-      Sflag[toredo]=0L
+      Sflag[toredo] = stmv_error_codes()[["todo"]]
     }
   }
 
@@ -643,7 +643,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   # -----------------------------------------------------
 
   if ("interpolate" %in% runmode ) {
-
+    E = stmv_error_codes()
     sm = sort( unique( c(1, p$sampling) ) )
     p_stmv_distance_scale = p$stmv_distance_scale
 
@@ -654,19 +654,20 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         # all low-level operations in one to avoid $!#!@# bigmemory issues
         Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
         # to reset all rejected locations
-        toreset = which( Sflag[] > 2)
+        toreset = which( Sflag[] > E[["outside_bounds"]])
+
         if (length(toreset) > 0) Sflag[toreset] = 0L  # to reset all the problem flags to todo
         currentstatus = list()
-        currentstatus$todo = which( Sflag[]==0L )       # 0 = TODO
-        currentstatus$done = which( Sflag[]==1L )       # 1 = completed
-        currentstatus$outside = which( Sflag[]==2L )    # 2 = oustide bounds(if any)
-        currentstatus$shallow = which( Sflag[]==3L )    # 3 = depth shallower than p$depth.filter (if it exists .. z is a covariate)
-        currentstatus$predareaerror = which( Sflag[]==4L ) # 4=predictionarea not ok,
-        currentstatus$nodata = which( Sflag[]==5L )     # 5=skipped due to insufficient data,
-        currentstatus$variogramerror = which( Sflag[]==6L ) # 6=skipped .. fast variogram did not work
-        currentstatus$vrangeerror = which( Sflag[]==7L )     # 7=variogram estimated range not ok
-        currentstatus$modelerror = which( Sflag[]==8L )     # 8=problem with prediction and/or modelling
-        currentstatus$skipped = which( Sflag[] == 9L )   # 9 not completed due to a failed attempt
+        currentstatus$todo = which( Sflag[]==E[["todo"]] )       # 0 = TODO
+        currentstatus$done = which( Sflag[]==E[["complete"]] )       # 1 = completed
+        currentstatus$outside = which( Sflag[]==E[["outside_bounds"]] )    # 2 = oustide bounds(if any)
+        currentstatus$shallow = which( Sflag[]==E[["too_shallow"]] )    # 3 = depth shallower than p$depth.filter (if it exists .. z is a covariate)
+        currentstatus$predareaerror = which( Sflag[]==E[["prediction_area"]] ) # 4=predictionarea not ok,
+        currentstatus$nodata = which( Sflag[]==E[["insufficient_data"]] )     # 5=skipped due to insufficient data,
+        currentstatus$variogramerror = which( Sflag[]==E[["variogram_failure"]] ) # 6=skipped .. fast variogram did not work
+        currentstatus$vrangeerror = which( Sflag[]==E[["variogram_range_limit"]] )     # 7=variogram estimated range not ok
+        currentstatus$modelerror = which( Sflag[]==E[["prediction_error"]] )     # 8=problem with prediction and/or modelling
+        currentstatus$skipped = which( Sflag[] == E[["unknown"]] )   # 9 not completed due to a failed attempt
         # do some counts
         currentstatus$n.todo = length(currentstatus$todo)
         currentstatus$n.complete = length(currentstatus$done)
@@ -718,7 +719,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         ssplt = NULL
         # stmv_interpolate(p=p)
         clusterApply( p$cl, clustertasklist, stmv_interpolate, p=p  )
-        stopCluster( p$cl )
+        try(stopCluster( p$cl ))
     }
 
     if (0) {
@@ -797,7 +798,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     }
     ssplt = NULL
     clusterApply( p$cl, clustertasklist, stmv_interpolate_fast, p=p  )
-    stopCluster( p$cl )
+    try(stopCluster( p$cl ))
 
     if (0) {
       # random order helps use all cpus

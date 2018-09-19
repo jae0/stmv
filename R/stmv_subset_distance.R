@@ -1,5 +1,7 @@
     stmv_subset_distance = function( sloc, yloc, yval, timevar=NULL, upsampling, n.min=30, n.max=10000, vgm_method="fast", minresolution=NULL ) {
 
+      E = stmv_error_codes()
+
       # find data nearest sloc and with sufficient data
       out = NULL
       dlon = abs( sloc[1] - yloc[,1] )
@@ -11,11 +13,11 @@
         if ( ndata >= n.min ) break()
       }
 
-      out = list(flag=0L, ndata=ndata, stmv_distance_cur=stmv_distance_cur, U=U, ores=NA )  # basic threshold ... now tweak it
+      out = list(flag=E[["todo"]], ndata=ndata, stmv_distance_cur=stmv_distance_cur, U=U, ores=NA )  # basic threshold ... now tweak it
 
       if (out$ndata < n.min) {
         # retain crude estimate and run with it
-        out$flag = 5L
+        out$flag = E[["insufficient_data"]]
         return( out )   #not enough data
       }
 
@@ -25,30 +27,30 @@
 
       if ( is.null(o)) {
         # retain crude estimate and run with it
-        out$flag = 6L
+        out$flag = E[["variogram_failure"]]
         return( out )     # fast variogram did not work
       }
       if ( inherits(o, "try-error")) {
         # retain crude estimate and run with it
-        out$flag = 6L
+        out$flag = E[["variogram_failure"]]
         return( out )     # fast variogram did not work
       }
       if ( !exists(vgm_method, o)) {
         # retain crude estimate and run with it
-        out$flag = 6L
+        out$flag =  E[["variogram_failure"]]
         return( out )     # fast variogram did not work
       }
 
       # if (debugging) print( paste("... range=", round(ores[['range']],3), ", ", nu=", ores$nu, ", phi=", ores$phi, ndata=", ndata ) )
 
       if ( !exists("range_ok", o[[vgm_method]]) ) {
-        out$flag = 7L
+        out$flag =  E[["variogram_range_limit"]]
         return( out )     #
       }
 
       if ( !o[[vgm_method]][["range_ok"]] ) {
         # retain crude estimate and run with it
-        out$flag = 7L
+        out$flag =  E[["variogram_range_limit"]]
         return(out)
       }
 
@@ -59,7 +61,7 @@
 
       if (vario_ndata < n.min) {
         # retain crude estimate and run with it
-        out$flag = 6L
+        out$flag =  E[["variogram_failure"]]
         return(out)
       }
 
@@ -85,7 +87,7 @@
 
       if (vario_ndata < n.min) {
         # retain crude estimate and run with it
-        out$flag = 5L
+        out$flag =  E[["insufficient_data"]]
         return(out)
       }
 

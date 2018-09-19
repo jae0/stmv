@@ -116,26 +116,28 @@
 
     if ( DS %in% c( "statistics.status", "statistics.status.reset") ) {
 
+      E = stmv_error_codes()
       Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
       if ( DS=="statistics.status.reset" ) {
         # to reset all rejected locations
-        toreset = which( Sflag[] > 2)
+        toreset = which( Sflag[] >  E[["outside_bounds"]])
         if (length(toreset) > 0) {
-          Sflag[toreset] = 0L  # to reset all the problem flags to todo
+          Sflag[toreset] = E[["todo"]] # to reset all the problem flags to todo
         }
       }
       out = list()
-      out$todo = which( Sflag[]==0L )       # 0 = TODO
-      out$done = which( Sflag[]==1L )       # 1 = completed
-      out$outside = which( Sflag[]==2L )    # 2 = oustide bounds(if any)
-      out$shallow = which( Sflag[]==3L )    # 3 = depth shallower than p$depth.filter (if it exists .. z is a covariate)
-      out$predareaerror = which( Sflag[]==4L ) # 4=predictionarea not ok,
-      out$nodata = which( Sflag[]==5L )     # 5=skipped due to insufficient data,
-      out$variogramerror = which( Sflag[]==6L ) # 6=skipped .. fast variogram did not work
-      out$vrangeerror = which( Sflag[]==7L )     # 7=variogram estimated range not ok
-      out$modelerror = which( Sflag[]==8L )     # 8=problem with prediction and/or modelling
-      out$skipped = which( Sflag[] == 9L )   # 9 not completed due to a failed attempt
 
+      out$todo = which( Sflag[]==E[["todo"]] )       # 0 = TODO
+      out$done = which( Sflag[]==E[["complete"]] )       # 1 = completed
+      out$outside = which( Sflag[]==E[["outside_bounds"]] )    # 2 = oustide bounds(if any)
+      out$shallow = which( Sflag[]==E[["too_shallow"]] )    # 3 = depth shallower than p$depth.filter (if it exists .. z is a covariate)
+      out$predareaerror = which( Sflag[]==E[["prediction_area"]] ) # 4=predictionarea not ok,
+      out$nodata = which( Sflag[]==E[["insufficient_data"]] )     # 5=skipped due to insufficient data,
+      out$variogramerror = which( Sflag[]==E[["variogram_failure"]] ) # 6=skipped .. fast variogram did not work
+      out$vrangeerror = which( Sflag[]==E[["variogram_range_limit"]] )     # 7=variogram estimated range not ok
+      out$modelerror = which( Sflag[]==E[["prediction_error"]] )     # 8=problem with prediction and/or modelling
+      out$skipped = which( Sflag[] == E[["unknown"]] )   # 9 not completed due to a failed attempt
+    #
       # do some counts
       out$n.todo = length(out$todo)
       out$n.complete = length(out$done)
@@ -163,17 +165,16 @@
           lines( bnds$polygon[] , col="green", pch=2 )
           points( Sloc[which(bnds$inside.polygon==1),], pch=".", col="orange", cex=5 )
         }
-        points( Sloc[which( Sflag[]== 0L),], pch=".", col="blue", cex=5 )
-        points( Sloc[which( Sflag[]== 1L),], pch=".", col="purple", cex=5 )
-        points( Sloc[which( Sflag[]== 2L),], pch=".", col="red", cex=5 )
-        points( Sloc[which( Sflag[]== 3L),], pch=".", col="yellow", cex=5 )
-        points( Sloc[which( Sflag[]== 4L),], pch=".", col="green", cex=5 )
-        points( Sloc[which( Sflag[]== 5L),], pch=".", col="red2", cex=5 )
-        points( Sloc[which( Sflag[]== 6L),], pch=".", col="yellow2", cex=5 )
-        points( Sloc[which( Sflag[]== 7L),], pch=".", col="green2", cex=5 )
-        points( Sloc[which( Sflag[]== 8L),], pch=".", col="green3", cex=5 )
-        points( Sloc[which( Sflag[]== 9L),], pch=".", col="magenta", cex=5 )
-
+        points( Sloc[which( Sflag[]== E[["todo"]]),], pch=".", col="blue", cex=5 )
+        points( Sloc[which( Sflag[]== E[["complete"]]),], pch=".", col="purple", cex=5 )
+        points( Sloc[which( Sflag[]== E[["outside_bounds"]]),], pch=".", col="red", cex=5 )
+        points( Sloc[which( Sflag[]== E[["too_shallow"]]),], pch=".", col="yellow", cex=5 )
+        points( Sloc[which( Sflag[]== E[["prediction_area"]]),], pch=".", col="green", cex=5 )
+        points( Sloc[which( Sflag[]== E[["insufficient_data"]]),], pch=".", col="red2", cex=5 )
+        points( Sloc[which( Sflag[]== E[["variogram_failure"]]),], pch=".", col="yellow2", cex=5 )
+        points( Sloc[which( Sflag[]== E[["variogram_range_limit"]]),], pch=".", col="green2", cex=5 )
+        points( Sloc[which( Sflag[]== E[["prediction_error"]]),], pch=".", col="green3", cex=5 )
+        points( Sloc[which( Sflag[]== E[["unknown"]]),], pch=".", col="magenta", cex=5 )
       }
     }
 
@@ -192,8 +193,10 @@
       pidS = array_map( "xy->1", Sloc, gridparams=p$gridparams )
       overlap = match( pidS, pidP )
       outside = which( !is.finite( overlap ))
+
+      E = stmv_error_codes()
       Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-      if (length(outside)  > 0 ) Sflag[outside] = 2L  # outside of prediction domain
+      if (length(outside)  > 0 ) Sflag[outside] = E[["outside_bounds"]]  # outside of prediction domain
 
       # catch data boundaries if present
       if (exists( "boundary", p) && p$boundary) {
@@ -208,7 +211,7 @@
         if (!is.null(bnds)) {
           if( !("try-error" %in% class(bnds) ) ) {
             outside = which( bnds$inside.polygon == 0 ) # outside boundary
-            if (length(outside)>0) Sflag[outside] = 2L
+            if (length(outside)>0) Sflag[outside] = E[["outside_bounds"]]
         }}
         bnds = NULL
         message( paste( "||| Time taken to estimate spatial bounds (mins):", round( difftime( Sys.time(), timeb0, units="mins" ),3) ) )
@@ -233,8 +236,8 @@
           above = which( is.finite( match( sid, pidA ) ))
 
           Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-          if (length(below) > 0 ) Sflag[below] = 0L
-          if (length(above) > 0 ) Sflag[above] = 3L
+          if (length(below) > 0 ) Sflag[below] = E[["todo"]]
+          if (length(above) > 0 ) Sflag[above] = E[["too_shallow"]]
 
           if (0) {
             Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
@@ -246,7 +249,7 @@
                 lines( bnds$polygon[] , col="green", pch=2 )
               }
             }
-            points( Sloc[which( Sflag[]== 0L),], pch=".", col="blue" )
+            points( Sloc[which( Sflag[]==E[["todo"]]),], pch=".", col="blue" )
           }
         }
       }
@@ -259,6 +262,7 @@
 
     if (DS== "flag.incomplete.predictions") {
       # statistics locations where estimations need to be redone
+      E = stmv_error_codes()
       P = stmv_attach( p$storage.backend, p$ptr$P )
       if (ncol(P) == 1 ) {
         noP = which( !is.finite( P[]) )
@@ -279,7 +283,7 @@
         inrange = which( (uP >= min(uS)) & (uP <= max(uS)) )
         if (length( inrange) > 0) uP = uP[inrange]
         uP = unique(uP)
-        Sflag[uP] = 0L  # force set to redo
+        Sflag[uP] = E[["todo"]]  # force set to redo
       }
 
       return(uP)
