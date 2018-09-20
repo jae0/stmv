@@ -271,7 +271,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
 
 
     # extract stats and compute a few more things
-    sf = stmv_statistics_update( p=p, res=res, W=W, sloc=Sloc[Si,] )
+    sf = stmv_statistics_update( p=p, res=res, W=W, Si=Si )
     if (! sf=="error" ) {
       Sflag[Si] =  E[["prediction_error"]]
       res = pa = NULL

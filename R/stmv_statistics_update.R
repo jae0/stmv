@@ -1,6 +1,7 @@
-stmv_statistics_update =  function(p, res, W, sloc) {
+stmv_statistics_update =  function(p, res, W, Si ) {
   # compute and extract misc summary statistics from results
   S = stmv_attach( p$storage.backend, p$ptr$S )
+  Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
 
   sflag = "good"
 
@@ -32,8 +33,8 @@ stmv_statistics_update =  function(p, res, W, sloc) {
 
   if ( exists("TIME", p$variables) ){
     # annual ts, seasonally centered and spatially
-    # pa_i = which( sloc[1]==Ploc[,1] & sloc[2]==Ploc[,2] )
-    pac_i = which( res$predictions$plon==sloc[1] & res$predictions$plat==sloc[2] )
+    # pa_i = which( Sloc[Si,1]==Ploc[,1] & Sloc[Si,2]==Ploc[,2] )
+    pac_i = which( res$predictions$plon==Sloc[Si,1] & res$predictions$plat==Sloc[Si,2] )
     # plot( mean~tiyr, res$predictions[pac_i,])
     # plot( mean~tiyr, res$predictions, pch="." )
     out["ar_timerange"] = NA

@@ -91,7 +91,7 @@ stmv_predictions_update = function(p, preds ) {
   }
 
     if (0) {
-        v = res$predictions
+        v = preds
         if ( exists("TIME", p$variables) ){
           v = v[which( v[,p$variables$TIME]==2000.55),]
         }
@@ -101,20 +101,22 @@ stmv_predictions_update = function(p, preds ) {
       )
 
       if ("time slice at 2012.05") {
-        lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==2012.05,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
+        lattice::levelplot( mean ~ plon + plat, data=preds[preds[,p$variables$TIME]==2012.05,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
       }
       if ("all TIME time slices from latest predictions") {
-        for( i in sort(unique(res$predictions[,p$variables$TIME])))  {
-          print(lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==i,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
+        for( i in sort(unique(preds[,p$variables$TIME])))  {
+          print(lattice::levelplot( mean ~ plon + plat, data=preds[preds[,p$variables$TIME]==i,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
         }
       }
       if ("all nt time slices in stored predictions P") {
+        Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
         # pa comes from stmv_interpolate ... not carried here
         for (i in 1:p$nt) {
           print( lattice::levelplot( P[pa$i,i] ~ Ploc[pa$i,1] + Ploc[ pa$i, 2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
         }
       }
       if ("no time slices in P") {
+        Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
           print( lattice::levelplot( P[pa$i] ~ Ploc[pa$i,1] + Ploc[ pa$i, 2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
       }
     }
