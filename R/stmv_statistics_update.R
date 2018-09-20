@@ -18,7 +18,7 @@ stmv_statistics_update =  function(p, res, W, sloc) {
     out["range"] = NA
     out["phi"] = NA
     out["nu"] = NA
-    if (!is.NULL(W)) {
+    if (!is.null(W)) {
       if ( !is.na(W[["ores"]])) {
         if ( exists("varSpatial", W[["ores"]]) ) out["sdSpatial"] = sqrt( W[["ores"]][["varSpatial"]] )
         if ( exists("varObs", W[["ores"]]) )     out["sdObs"] = sqrt(W[["ores"]][["varObs"]])
