@@ -4,7 +4,7 @@
       Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
       Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
       Y = stmv_attach( p$storage.backend, p$ptr$Y )
-      Yi = stmv_attach( p$storage.backend, p$ptr$Yi )
+      Yi = stmv_attach( p$storage.backend, p$ptr$Yi )  # initial indices of good data 
 
       # find data nearest Sloc[Si,] and with sufficient data
       out = NULL

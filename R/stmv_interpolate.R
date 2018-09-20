@@ -145,7 +145,8 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
       points( Sloc[Si,2] ~ Sloc[Si,1], pch=20, cex=5, col="blue" )
     }
 
-    YiU = Yi[W[["U"]]] # YiU and p$stmv_distance_prediction determine the data entering into local model construction
+    # W[["U"]]] -- the indices of locally useful data and p$stmv_distance_prediction determine the data entering into local model construction
+
     pa = stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=p$windowsize.half )
       if (is.null(pa)) {
         Sflag[Si] = E[["prediction_area"]]
@@ -161,7 +162,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
       plot( Yloc[W[["U"]],2] ~ Yloc[W[["U"]],1], col="red", pch=".",
         ylim=range(c(Yloc[W[["U"]],2], Sloc[Si,2], Ploc[pa$i,2]) ),
         xlim=range(c(Yloc[W[["U"]],1], Sloc[Si,1], Ploc[pa$i,1]) ) ) # all data
-      points( Yloc[YiU,2] ~ Yloc[YiU,1], col="green" )  # with covars and no other data issues
+      points( Yloc[W[["U"]],2] ~ Yloc[W[["U"]],1], col="green" )  # with covars and no other data issues
       points( Sloc[Si,2] ~ Sloc[Si,1], col="blue" ) # statistical locations
       # statistical output locations
       grids= aegis::spatial_grid(p, DS="planar.coords" )
@@ -176,13 +177,13 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     # prep dependent data
     # reconstruct data for modelling (dat) and data for prediction purposes (pa)
     dat = matrix( 1, nrow=W[["ndata"]], ncol=dat_nc )
-    dat[,iY] = Y[YiU] # these are residuals if there is a global model
+    dat[,iY] = Y[W[["U"]]] # these are residuals if there is a global model
     # add a small error term to prevent some errors when duplicate locations exist; stmv_distance_cur offsets to positive values
-    dat[,ilocs] = Yloc[YiU,] + W[["stmv_distance_cur"]] * runif(2*W[["ndata"]], -1e-6, 1e-6)
+    dat[,ilocs] = Yloc[W[["U"]],] + W[["stmv_distance_cur"]] * runif(2*W[["ndata"]], -1e-6, 1e-6)
 
 
-    if (p$nloccov > 0) dat[,icov] = Ycov[YiU,] # no need for other dim checks as this is user provided
-    if (exists("TIME", p$variables)) dat[, itime_cov] = as.matrix(stmv_timecovars( vars=ti_cov, ti=Ytime[YiU, ] ) )
+    if (p$nloccov > 0) dat[,icov] = Ycov[W[["U"]],] # no need for other dim checks as this is user provided
+    if (exists("TIME", p$variables)) dat[, itime_cov] = as.matrix(stmv_timecovars( vars=ti_cov, ti=Ytime[W[["U"]], ] ) )
     dat = as.data.frame(dat)
     names(dat) = dat_names
 
@@ -261,7 +262,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     }
 
     if (exists( "stmv_quantile_bounds", p)) {
-      tq = quantile( Y[YiU], probs=p$stmv_quantile_bounds, na.rm=TRUE  )
+      tq = quantile( Y[W[["U"]]], probs=p$stmv_quantile_bounds, na.rm=TRUE  )
       toolow  = which( res$predictions$mean < tq[1] )
       toohigh = which( res$predictions$mean > tq[2] )
       if (length( toolow) > 0)  res$predictions$mean[ toolow] = tq[1]
