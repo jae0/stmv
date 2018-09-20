@@ -49,7 +49,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )
   }
 
-  Yi = stmv_attach( p$storage.backend, p$ptr$Yi )
 
   # misc intermediate calcs to be done outside of parallel loops
   upsampling = c(1,0, 1.25, 1.5, 1.75, 2.0, 2.5) * p$stmv_distance_scale
@@ -67,6 +66,15 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     ti_cov = setdiff(p$variables$local_all, c(p$variables$Y, p$variables$LOCS, p$variables$local_cov ) )
     itime_cov = which(dat_names %in% ti_cov)
   }
+
+
+  if ( exists("TIME", p$variables)) {
+    minresolution = p$downsampling_multiplier*c(p$pres, p$pres, p$tres)
+  } else {
+    minresolution = p$downsampling_multiplier*c(p$pres, p$pres )
+  }
+
+
 
   local_fn = switch( p$stmv_local_modelengine,
     bayesx = stmv__bayesx,
@@ -119,15 +127,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
 
     # obtain indices of data locations withing a given spatial range, optimally determined via variogram
 
-    if ( exists("TIME", p$variables)) {
-      W = stmv_subset_distance( sloc=Sloc[Si,], yloc=Yloc[Yi[],], yval=Y[Yi[],], timevar=Ytime[Yi[],],
-        upsampling=upsampling, n.min=p$n.min, n.max=p$n.max, vgm_method=p$stmv_variogram_method,
-        minresolution=p$downsampling_multiplier*c(p$pres, p$pres, p$tres) )
-    } else {
-      W = stmv_subset_distance( sloc=Sloc[Si,], yloc=Yloc[Yi[],], yval=Y[Yi[],],
-        upsampling=upsampling, n.min=p$n.min, n.max=p$n.max, vgm_method=p$stmv_variogram_method,
-        minresolution=p$downsampling_multiplier*c(p$pres, p$pres ) )
-    }
+    W = stmv_subset_distance( Si, upsampling=upsampling, n.min=p$n.min, n.max=p$n.max, vgm_method=p$stmv_variogram_method, minresolution=minresolution )
 
     Sflag[Si] = W[["flag"]]  # update flags
     if ( Sflag[Si] != 0L ) {
