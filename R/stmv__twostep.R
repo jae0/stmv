@@ -79,6 +79,8 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
   if (length(toosmall) > 0) ts_preds$predictions$mean[toosmall] =  rY[1]
   if (length(toolarge) > 0) ts_preds$predictions$mean[toolarge] =  rY[2]
 
+  ts_preds_rsquared = ts_preds$stmv_stats$rsquared  # store for now until return call
+
   pxts = ts_preds$predictions
   rownames(pxts) = NULL
   ts_preds = NULL
@@ -135,6 +137,9 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
     p$stmv_local_modelformula = p$stmv_local_modelformula_space
     out = stmv__bayesx( p, dat=pxts, pa=pa  )
   }
+
+  # override the spatial rsquared with the timeseries model as that is more meaningful (based upon the raw data, rather than a "boosted" series)
+  out$stmv_stats$rsquared = ts_preds_rsquared
 
   return( out )
 
