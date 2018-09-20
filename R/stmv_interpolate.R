@@ -272,7 +272,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
 
     # extract stats and compute a few more things
     sf = stmv_statistics_update( p=p, res=res, W=W, Si=Si )
-    if (! sf=="error" ) {
+    if ( sf=="error" ) {
       Sflag[Si] =  E[["prediction_error"]]
       res = pa = NULL
       next()
@@ -280,7 +280,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
 
     res$stmv_stats = NULL # reduce memory usage
     sf = stmv_predictions_update(p=p, preds=res$predictions )
-    if (! sf=="error" ) {
+    if ( sf=="error" ) {
       Sflag[Si] = E[["prediction_error"]]
       res = pa = NULL
       next()

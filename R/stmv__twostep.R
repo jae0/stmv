@@ -95,6 +95,7 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
       }
   }
 
+
   # step 2 :: spatial modelling .. essentially a time-space separable solution
 
   if (!exists( "stmv_twostep_space", p)) p$stmv_twostep_space="krige" # default
@@ -136,4 +137,12 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
   }
 
   return( out )
+
+  if (0) {
+    lattice::levelplot( mean ~ plon + plat, data=out$predictions[out$predictions[,p$variables$TIME]==2012.05,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
+    lattice::levelplot( mean ~ plon + plat, data=out$predictions, col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
+    for( i in sort(unique(out$predictions[,p$variables$TIME])))  print(lattice::levelplot( mean ~ plon + plat, data=out$predictions[out$predictions[,p$variables$TIME]==i,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
+  }
+
+
 }
