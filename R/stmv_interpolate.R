@@ -1,8 +1,8 @@
 
 
-stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... ) {
+stmv_interpolate = function( ip=NULL, stp, debugging=FALSE, stime=Sys.time(), ... ) {
   #\\ core function to interpolate (model and predict) in parallel
-
+  p = stp
   if (0) {
     # for debugging  runs ..
     currentstatus = stmv_db( p=p, DS="statistics.status" )

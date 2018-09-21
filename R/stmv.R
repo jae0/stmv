@@ -718,7 +718,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         }
         ssplt = NULL
         # stmv_interpolate(p=p)
-        clusterApply( p$cl, clustertasklist, stmv_interpolate, p=p  )
+        clusterApply( p$cl, clustertasklist, stmv_interpolate, stp=p  )
         try(stopCluster( p$cl ))
     }
 
