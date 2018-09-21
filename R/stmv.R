@@ -530,6 +530,16 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       }
     }
 
+  p$upsampling = c(1,0, 1.25, 1.5, 1.75, 2.0, 2.5) * p$stmv_distance_scale
+  p$upsampling = p$upsampling[ which(p$upsampling <= p$stmv_distance_max )]
+
+  if ( exists("TIME", p$variables)) {
+    p$minresolution = p$downsampling_multiplier*c(p$pres, p$pres, p$tres)
+  } else {
+    p$minresolution = p$downsampling_multiplier*c(p$pres, p$pres )
+  }
+
+
     message("||| Finished preparing data structures ... ")
     message("||| Once analyses begin, you can view maps from an external R session: ")
     message("||| p = stmv_db( p=list(data_root=project.datadirectory('aegis', 'temperature'), variables=list(Y='t'), spatial.domain='canada.east' )), DS='load.parameters' )" )
@@ -718,7 +728,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         }
         ssplt = NULL
         # stmv_interpolate(p=p)
-        clusterApply( p$cl, clustertasklist, stmv_interpolate, stp=p  )
+        clusterApply( p$cl, clustertasklist, stmv_interpolate, p=p  )
         try(stopCluster( p$cl ))
     }
 

@@ -1,8 +1,7 @@
 
 
-stmv_interpolate = function( ip=NULL, stp, debugging=FALSE, stime=Sys.time(), ... ) {
+stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... ) {
   #\\ core function to interpolate (model and predict) in parallel
-  p = stp
   if (0) {
     # for debugging  runs ..
     currentstatus = stmv_db( p=p, DS="statistics.status" )
@@ -51,8 +50,6 @@ stmv_interpolate = function( ip=NULL, stp, debugging=FALSE, stime=Sys.time(), ..
 
 
   # misc intermediate calcs to be done outside of parallel loops
-  upsampling = c(1,0, 1.25, 1.5, 1.75, 2.0, 2.5) * p$stmv_distance_scale
-  upsampling = upsampling[ which(upsampling <= p$stmv_distance_max )]
 
   # pre-calculate indices and dim for data to use inside the loop
   dat_names = unique( c(  p$variables$Y, p$variable$LOCS, p$variables$local_all,  "weights") )
@@ -67,12 +64,6 @@ stmv_interpolate = function( ip=NULL, stp, debugging=FALSE, stime=Sys.time(), ..
     itime_cov = which(dat_names %in% ti_cov)
   }
 
-
-  if ( exists("TIME", p$variables)) {
-    minresolution = p$downsampling_multiplier*c(p$pres, p$pres, p$tres)
-  } else {
-    minresolution = p$downsampling_multiplier*c(p$pres, p$pres )
-  }
 
 
 
@@ -127,7 +118,7 @@ stmv_interpolate = function( ip=NULL, stp, debugging=FALSE, stime=Sys.time(), ..
 
     # obtain indices of data locations withing a given spatial range, optimally determined via variogram
 
-    W = stmv_subset_distance( Si, upsampling=upsampling, n.min=p$n.min, n.max=p$n.max, vgm_method=p$stmv_variogram_method, minresolution=minresolution )
+    W = stmv_subset_distance( Si, p=p )
 
     Sflag[Si] = W[["flag"]]  # update flags
     if ( Sflag[Si] != 0L ) {
