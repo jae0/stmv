@@ -2010,6 +2010,10 @@ In the spatiotemporal setting, separable models are almost always used for
  
 \end_layout
 
+\begin_layout Section
+Spatiotemporal models of variability (stmv)
+\end_layout
+
 \begin_layout Standard
 A central assumption of all spatial and spatiotemporal models is that the
  form and magnitude of the autocorrelation in space and usually also in
@@ -2017,14 +2021,10 @@ A central assumption of all spatial and spatiotemporal models is that the
  This can be forced to be the case by modeling the mean effects and operating
  upon a residual error that is stationary.
  However, in practice, there is spatial heterogeneity of variance as well
- which cannot be easily modeled in a simple regression context.
+ which cannot be easily modeled though a simple regression context.
  This is notoriously the case with biology where aggregation and behavior
- is highly clustered and context (location and time) dependent (nonlinear).
+ is highly context (location and time) dependent (nonlinear).
  
-\end_layout
-
-\begin_layout Section
-Spatiotemporal models of variability (stmv)
 \end_layout
 
 \begin_layout Standard
