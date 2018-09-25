@@ -6,6 +6,11 @@
 \origin unavailable
 \textclass paper
 \use_default_options true
+\begin_modules
+theorems-ams
+eqs-within-sections
+figs-within-sections
+\end_modules
 \maintain_unincluded_children false
 \language english
 \language_package none
@@ -28,7 +33,7 @@
 \output_sync 0
 \bibtex_command default
 \index_command default
-\paperfontsize 11
+\paperfontsize default
 \spacing single
 \use_hyperref true
 \pdf_bookmarks false
@@ -39,9 +44,9 @@
 \pdf_pdfborder true
 \pdf_colorlinks false
 \pdf_backref section
-\pdf_pdfusetitle false
+\pdf_pdfusetitle true
 \papersize default
-\use_geometry false
+\use_geometry true
 \use_package amsmath 2
 \use_package amssymb 2
 \use_package cancel 0
@@ -52,13 +57,13 @@
 \use_package stackrel 0
 \use_package stmaryrd 0
 \use_package undertilde 0
-\cite_engine basic
-\cite_engine_type default
+\cite_engine natbib
+\cite_engine_type authoryear
 \biblio_style plain
 \use_bibtopic false
 \use_indices false
 \paperorientation portrait
-\suppress_date true
+\suppress_date false
 \justification true
 \use_refstyle 0
 \use_minted 0
@@ -88,6 +93,29 @@
 
 \begin_layout Title
 Spatiotemporal models of variability
+\end_layout
+
+\begin_layout Author
+Jae S.
+ Choi
+\end_layout
+
+\begin_layout Institution
+Population Ecology Division, Fisheries and Oceans Canada, Bedford Institute
+ of Oceanography
+\end_layout
+
+\begin_layout Address
+1 Challenger Drive, Dartmouth, Nova Scotia, Canada
+\end_layout
+
+\begin_layout Standard
+Version: 09/24/2018
+\end_layout
+
+\begin_layout Abstract
+A review of continuous models of spatiotemporal variability in a fisheries
+ oceanography context.
 \end_layout
 
 \begin_layout Section
@@ -140,7 +168,7 @@ e numbers as the number of informative factors increase and the kinds of
  Further, the locations of such strata can shift if they are based upon
  features that are not geographically fixed, such as with temperature, oxygen
  levels, abundance of prey or predators, light levels, etc.
- This approach, therefore, crudely 
+ The fixed area approach, therefore, crudely 
 \begin_inset Quotes eld
 \end_inset
 
@@ -156,8 +184,8 @@ extraneous
 \begin_inset Quotes erd
 \end_inset
 
- factors by a crude re-weighting of the total variance such that they can,
- thereafter, be ignored.
+ factors by re-weighting of the total variance such that they can, thereafter,
+ be ignored.
  These factors, are however, also highly informative and ignoring them for
  the sake of simplicity by 
 \begin_inset Quotes eld
@@ -662,7 +690,7 @@ semivariogram
 
 \begin_layout LyX-Code
 \begin_inset Note Note
-status collapsed
+status open
 
 \begin_layout LyX-Code
 #------------------ ## plot of matern covariance 
@@ -1937,13 +1965,23 @@ Gaussian Process
 \end_inset
 
 , then the spatial covariance can be modeled with a flexible form such as
- the Matérn: 
-\begin_inset Formula $C(\Delta s)_{\text{Matérn}}=\sigma_{s}^{2}\frac{1}{2^{\nu-1}\Gamma(\nu)}(\sqrt{2\nu}|\Delta s|/\phi)^{\nu}\ K_{\nu}(\sqrt{2\nu|}\Delta s|/\phi)$
+ the Matérn:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+C(\Delta s)_{\text{Matérn}}=\sigma_{s}^{2}\frac{1}{2^{\nu-1}\Gamma(\nu)}(\sqrt{2\nu}|\Delta s|/\phi)^{\nu}\ K_{\nu}(\sqrt{2\nu|}\Delta s|/\phi).
+\]
+
 \end_inset
 
-.
- Similarly, the temporal covariance can be formulated as any reasonable
- autocorrelation model such as for example the exponential: 
+ 
+\end_layout
+
+\begin_layout Standard
+Similarly, the temporal covariance can be formulated as any reasonable autocorre
+lation model such as for example the exponential: 
 \begin_inset Formula $C(\Delta t)_{\text{Exponential}}=\sigma_{t}^{2}e^{-|\Delta t|/\phi_{t}}$
 \end_inset
 
@@ -1963,8 +2001,8 @@ While conceptually coherent and elegant, the evaluation of the likelihoods
 \end_inset
 
  operations.
- This has been a bottleneck to further development of these covariance-based
- methods in large scaled problems of space and space-time.
+ This has been a bottleneck to further development and use of these covariance-b
+ased methods in large scaled problems of space and space-time.
  Approximations have been suggested to overcome this computational limit:
  modeling the spatial process 
 \begin_inset Formula $\omega$
@@ -2032,13 +2070,21 @@ In
 \series bold
 stmv
 \series default
-, we address this nonstationarity and nonseparability of spatial and temporal
- structure and associated issues of computational speed and complexity by
- formulating a simplistic but operational approach to the overall spatiotemporal
- problem.
+, this 
+\series bold
+nonstationarity
+\series default
+ and 
+\series bold
+nonseparability
+\series default
+ of spatial and temporal structure and associated issues of computational
+ speed and complexity is addressed by formulating a simple, operational
+ approach to the overall spatiotemporal problem.
  This is done by reducing the problem into small manageable subdomains where
  assumptions of stationary are valid and modeling of spatiotemporal processes
- become computationally feasible.
+ and associated parameters become computationally feasible and supported
+ by data in the subdomain.
  There is, therefore, some conceptual similarity of this approach to 
 \begin_inset Quotes eld
 \end_inset
@@ -2048,12 +2094,13 @@ geographically weighted regression
 \end_inset
 
  (e.g., Fotheringham et al.
- 2002) in that each subdomain can have their own model parameters 
+ 2002) in that each subdomain can have their own model parameters, 
 \begin_inset Formula $\beta_{s,t}$
 \end_inset
 
 .
- However, these latter approaches permit only the model parameters 
+ However, geographically weighted regression permit only the model parameters
+ 
 \begin_inset Formula $\beta_{s,t}$
 \end_inset
 
@@ -2113,7 +2160,7 @@ To be more precise, in the spatiotemporal domain
 \noun default
 \color inherit
  in a spatial lattice (or conceivably as centroids of a mesh, though this
- is not yet implemented).
+ is not yet implemented; Figure 5.1).
  The norm (distance) of data from each node is 
 \begin_inset Formula $h_{m}=||s_{m},s_{Y}||$
 \end_inset
@@ -2141,7 +2188,15 @@ To be more precise, in the spatiotemporal domain
 \begin_inset Formula $p<0.05$
 \end_inset
 
-).
+) and associated parameter values are 
+\begin_inset Quotes qld
+\end_inset
+
+supported
+\begin_inset Quotes qrd
+\end_inset
+
+.
  
 \family roman
 \series medium
@@ -2163,7 +2218,7 @@ The data found within the subdomain
 \begin_inset Formula $\{Y_{s,t}|(s,t)\in D|h_{m}<h_{u}\}$
 \end_inset
 
- which will be notationally abbreviated as 
+ is notationally abbreviated as 
 \begin_inset Formula $Y_{s,t|m}$
 \end_inset
 
@@ -2172,12 +2227,68 @@ The data found within the subdomain
 \end_layout
 
 \begin_layout Standard
-Operating upon all components of the regression model is computationally
- prohibitive.
+\begin_inset Graphics
+	filename concept1.pdf
+	lyxscale 50
+	scale 25
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Figure 5.1 Spatial distribution of data (blue dots) overlaid by a statistical
+ grid in 
+\series bold
+stmv
+\series default
+.
+ The 
+\begin_inset Formula $m$
+\end_inset
+
+ nodes represent the centers of each local subdomain 
+\begin_inset Formula $S_{m}$
+\end_inset
+
+ which extends to a distance (right-facing arrows; solid circles) that varies
+ depending upon the underlying spatial variability of the data and is defined
+ in 
+\series bold
+stmv 
+\series default
+as the distance at which the spatial autocorrelation drops to some small
+ value (
+\begin_inset Formula $p<0.05$
+\end_inset
+
+).
+ Data within this distance and parameters obtained from the local analysis
+ are used to complete the local model of the spatial or spatiotemporal processes
+ and then predict/interpolate to some fraction of the local spatial range
+ (default is 75%; down-facing arrow, stippled circle).
+ Every statistical node is visited with many overlapping predictions that
+ are locally averaged (weighted by number of predictions and prediction
+ variance).
+ As grid size decreases the number of models increases.
+ This also reduces computation load and RAM requirements.
+ However, the utility of the model also declines due to small sample sizes
+ entering analyses.
+ Judicious choice of statistical grid density as well as maximum and minimum
+ number of data points and upper and lower bounds of spatial bounds must
+ be balanced.
+ This balancing has not been made automatic (yet).
+ 
+\end_layout
+
+\begin_layout Standard
+Operating upon all components of the regression model simultaneously is
+ computationally prohibitive.
  Even with very simplistic Generalized Additive Model (GAM) or Generalized
  Additive Mixed effects Model (GAMM) parameterizations of spatial and temporal
- structure, the solutions take many days on fast machines (5 GHz CPU, 64GB
- RAM in 2016), depending of course upon the amount of data and resolution
+ structure, the solutions take many days/weeks on fast machines (5 GHz CPU,
+ 64GB RAM in 2016), depending of course upon the amount of data and resolution
  and model complexity.
  As a compromise between model complexity and computational speed, 
 \series bold
@@ -2306,16 +2417,18 @@ The local spatial autocorrelation scale is derived from a rapid (coarse
  To be symmetrical in time, one would also need to determine temporal nodes
  and define appropriate temporal autocorrelation scales.
  In practice, temporal data are often sparse and limiting in survey data
- and so data from all time periods are used.
- Once the approximate bounds of the subdomain are estimated, the 
+ and so data from all time periods are used, essentially amounting to a
+ temporally averaged spatial autocorrelation.
+ Once the approximate bounds of the subdomain (support) are estimated, the
+ 
 \begin_inset Formula $\varphi_{s,t|m}$
 \end_inset
 
- are modeled as some functional 
+ are modeled as some function 
 \begin_inset Formula $f_{m}(\cdot)\equiv\boldsymbol{\varphi}_{s,t|m}^{T}\boldsymbol{\beta}_{s,t|m}$
 \end_inset
 
- a Fourier series with two harmonics, one interannual and one subannual
+ of a Fourier series with two harmonics, one interannual and one subannual
  (seasonal): 
 \family roman
 \series medium
@@ -2341,15 +2454,7 @@ The local spatial autocorrelation scale is derived from a rapid (coarse
 .
  In other words, a full temporal autocorrelation (covariance) model is not
  used but rather one that uses only a subset of the components at fixed
- wavelengths.
- The spatial coordinate space (depth, northing and easting) are (optionally)
- used as covariate or covariate-smooths in a GAM as they can be informative
- when large variations in topography exist or sampling is sparse inside
- the subdomain 
-\begin_inset Formula $f_{m}(\text{ interannual, seasonal, northing, easting, depth })$
-\end_inset
-
-:
+ wavelengths:
 \end_layout
 
 \begin_layout Standard
@@ -2481,14 +2586,30 @@ augmented
 \begin_layout Standard
 The current approach represents a practical balance between computational
  time and model complexity/realism.
- The difficulty with the current implementation of 
+ 
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\noun off
+\color none
+For additional speed, an FFT-based Matérn convolution implementation is
+ used.
+ 
+\end_layout
+
+\begin_layout Standard
+As 
 \series bold
 stmv
 \series default
- is the focus upon prediction using a mosaic of solutions in space.
- This complicates overall likelihood or AIC evaluation and therefore global
- model evaluation.
- At present, predictive success is the only means to evaluate utility.
+ focuses upon prediction using a mosaic of solutions in space, overall likelihoo
+d or AIC evaluation is a challenge.
+ At present, predictive success is the only means to evaluate utility and
+ eventually some form of Expectation-Maximization approaches might be fruitful,
+ once computational speeds improve.
  A fully Bayesian approach is being considered that removes the need to
  work with 
 \begin_inset Quotes qld
@@ -2499,69 +2620,115 @@ external drift
 \end_inset
 
  and facilitates global model evaluation.
- However, this approach would increase computational time potentially to
- unreasonable levels, rendering it impractical in a stock assessment framework
- where time lines are generally limited.
+ However, this approach is also awaiting increased computational power.
  These and other more flexible and complex models can be defined in this
- framework and they will be expanded upon in future versions of this document.
+ modular framework and they will be expanded upon in future versions of
+ this document.
  
+\end_layout
+
+\begin_layout Standard
+To facilitate usage and mapping of 
+\series bold
+stmv
+\series default
+ to other domains, the data handling methods and model parameterizations
+ are encoded in a separate R-library,
+\series bold
+ aegis 
+\series default
+which can be found at http://github.com/jae0/aegis.
 \end_layout
 
 \begin_layout Section
-The snow crab assessment
+Using stmv
 \end_layout
 
 \begin_layout Standard
-The snow crab estimation process interpolates a number of covariates to
- the same continuous spatial support of the snow crab assessment as they
- are surveyed using alternate survey designs.
- This is required to refine predictions of snow crab abundance and habitat
- while avoiding issues of bias due to aliasing (also known as 
-\begin_inset Quotes qld
-\end_inset
-
-upscaling
-\begin_inset Quotes qrd
-\end_inset
-
- and 
-\begin_inset Quotes qld
-\end_inset
-
-downscaling
-\begin_inset Quotes qrd
-\end_inset
-
- issues).
- Some of these covariates change on geological time scales relative to the
- timescale of the biological and ecological processes of interest and so
- can be considered functionally a 
-\begin_inset Quotes eld
-\end_inset
-
-pure
-\begin_inset Quotes erd
-\end_inset
-
- spatial model (though of course they are not truly static).
- And others that are more biological in nature vary at similar or even shorter
- time scales and so require a temporal component.
- Here we detail some of these core data sources and their model assumptions
- in the context of the temporal autocorrelation scale of snow crab abundance
- in the Maritimes Region of Canada.
- The data handling methods and model parameterizations are encoded in the
- 
+The stmv library depends upon a number of important R-packages.
+ The full list is: alphahull, bigmemory, devtools, ff, fields, gstat, geoR,
+ lattice, lubridate, mgcv, mvtnorm, parallel, sp, rgdal, RandomFields, RandomFie
+ldsUtils, truncnorm.
+ It also uses the aegis, aegis.env packages which are found only on github.
+ The latter two optionally uses raster, maps, mapdata, ROracle.
+ Most dependencies should be pulled in automatically, but there may need
+ to be some manual intervention.
+ By default, bigmemory is used as a storage engine to facilitate parallel
+ operations.
+ In Linux, the use of parallel operations through MPI or socket communication
+ is well established, in MacOS and MSWindows, it is not certain and so one
+ may be forced to use local cores only.
+ In using 
 \series bold
-aegis 
+stmv 
 \series default
-R-package (http://github.com/jae0/aegis).
+in clusters, one must be careful of the amount of communications overhead
+ especially when large data volumes are involved.
+ Your mileage will vary.
+ For most usage, local-core operations should be sufficient.
 \end_layout
 
 \begin_layout Standard
-Bathymetry (depth; m) is a spatial covariate which is informative in that
- it determines ambient light levels, surface complexity/rugosity, hydrodynamic
- stability and overall environmental stability.
- Here, it is modeled as a Lognormal process:
+The following is the primary call to the library:
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv::stmv( p=p, runmode="interpolate" )
+\end_layout
+
+\begin_layout Standard
+Other 
+\begin_inset Quotes qld
+\end_inset
+
+runmode
+\begin_inset Quotes qrd
+\end_inset
+
+ values exist, but they are primarily for debugging and testing purposes.
+ All functionally is really controlled through the options in the parameter
+ list 
+\begin_inset Quotes qld
+\end_inset
+
+p
+\begin_inset Quotes qrd
+\end_inset
+
+.
+ Most of the defaults options work well and should only be altered if absolutely
+ necessary.
+ The more user-modifiable options are listed in the examples below with
+ explanations.
+ 
+\end_layout
+
+\begin_layout Subsection
+Example 1: pure spatial models of bathymetry and substrate grainsize
+\end_layout
+
+\begin_layout Standard
+As some oceanographic features change on geological time scales, we can
+ treat them as a pure spatial problem, though of course, in reality they
+ are not truly static.
+ Bathymetry (depth; m) is one such feature that is highly informative in
+ that it determines ambient light levels, surface complexity/rugosity, hydrodyna
+mic stability and overall environmental stability.
+ 
+\end_layout
+
+\begin_layout Standard
+In 
+\series bold
+aegis
+\series default
+, it is modeled as a Lognormal process using 
+\series bold
+stmv
+\series default
+:
 \end_layout
 
 \begin_layout Standard
@@ -2618,6 +2785,237 @@ augment
 \end_layout
 
 \begin_layout Standard
+The above model is formulated as follows:
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+p = list( 
+\end_layout
+
+\begin_deeper
+\begin_layout Quotation
+
+\size scriptsize
+stmv_dimensionality="space", # spatial process on ..
+ no need for temporal components
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_Y_transform =list(
+\end_layout
+
+\begin_deeper
+\begin_layout Quotation
+
+\size scriptsize
+transf = function(x) {x + 2000} ,
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+invers = function(x) {x - 2000}
+\end_layout
+
+\end_deeper
+\begin_layout Quotation
+
+\size scriptsize
+), # data range is from -1667 to 5467 m: make all positive valued to make
+ lognormal better behaved
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_global_modelengine = "glm", # basic glm is used to operate on lognormal
+ space 
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_global_modelformula = formula(z ~ 1), # constant with log gaussian
+ making it a lognormal model, really just to get to link space
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_global_family = gaussian(link="log"), # lognormal
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_local_modelengine="fft",
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_fft_filter = "lowpass_spatial.process", # act as a low pass filter first
+ before matern ..
+ depth has enough data for this
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_lowpass_phi = 0.5, # low pass FFT filter range ..
+ 0.5 seems to be optimal (by visual inspection)
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_lowpass_nu = 0.5, # this makes it ~ exponential covariance
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e.
+ generation of the ** statistics ** )
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_distance_scale = 30, # km ...
+ approx guess of 95% AC range
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_distance_max = 60,
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+n.min = 400, # min number of data points req before attempting to model timeserie
+s in a localized space
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+n.max = 8000 # no real upper bound..
+ just speed
+\end_layout
+
+\end_deeper
+\begin_layout Quotation
+
+\size scriptsize
+)
+\end_layout
+
+\begin_layout Standard
+The core model specification is as above.
+ Other parameters are, however, required to operate with data inputs and
+ locations for results output, etc.
+ To facilitate this, 
+\series bold
+aegis
+\series default
+ takes care of a lot of the details.
+ 
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+p = aegis::bathymetry_parameters( 
+\end_layout
+
+\begin_deeper
+\begin_layout Quotation
+
+\size scriptsize
+p=p ,
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+project.name = "bathymetry", 
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+data_root = project.datadirectory( "aegis", "bathymetry" ), 
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+DATA = 'bathymetry.db( p=p, DS="stmv.inputs" )', 
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+spatial.domain.subareas = c( "canada.east.superhighres", "canada.east.highres",
+ "canada.east", "SSE", "SSE.mpa" , "snowcrab"), 
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+pres_discretization_bathymetry = 1 / 100, # 1==p$pres; controls resolution
+ of data prior to modeling (km ..
+ ie 100 linear units smaller than the final discretization pres) 
+\end_layout
+
+\end_deeper
+\begin_layout Quotation
+
+\size scriptsize
+) 
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+# this adds additional options related to data sources, etc.
+\end_layout
+
+\begin_layout Standard
+
+\size scriptsize
+# and then run with:
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv( p=p, runmode=c( "globalmodel", "interpolate" ) ) # This will take
+ from 40-70 hrs, depending upon system 
+\end_layout
+
+\begin_layout Standard
+Once complete, wrapping functions exist within 
+\series bold
+aegis 
+\series default
+to assimilate the results and continue with analysis and figure generation:
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+aegis::bathymetry.db( p=p, DS="complete.redo" ) # finalise 
+\end_layout
+
+\begin_layout Standard
 Similarly, substrate grain size (mm) is a pure space model which is a proxy
  measure of the type of substrate (mud, sand, gravel, rock, etc.) and so
  informative for benthic, demersal and infaunal habitat.
@@ -2642,6 +3040,221 @@ tion of the Matérn covariance:
 \end_inset
 
 
+\end_layout
+
+\begin_layout Standard
+This model is parameterized as:
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+ram_required_main_process = 3 # GB
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+ram_required_per_process = 2 # GB in 2017, approximate upper bound, usually
+ 2-4 GB/process
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+ncpu = min( parallel::detectCores(), floor( (ram_local()-ram_required_main_proce
+ss) / ram_required_per_process ) )
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+p = aegis::substrate_parameters(
+\end_layout
+
+\begin_deeper
+\begin_layout Quotation
+
+\size scriptsize
+project.name = "substrate",
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+data_root = project.datadirectory( "aegis", "substrate" ),
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+spatial.domain.subareas = c( "canada.east.highres", "canada.east", "SSE", "snowcrab",
+ "SSE.mpa" ),
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_dimensionality="space",
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_global_modelengine = "gam",
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_global_modelformula = formula( paste(
+\end_layout
+
+\begin_deeper
+\begin_layout Quotation
+
+\size scriptsize
+'substrate.grainsize ~ s( b.sdTotal, k=3, bs="ts") + s(log(z), k=3, bs="ts")
+ ',
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+'+s(log(dZ), k=3, bs="ts") +s(log(ddZ), k=3, bs="ts") + s(log(b.range), k=3,
+ bs="ts")') ), # a GAM model 
+\end_layout
+
+\end_deeper
+\begin_layout Quotation
+
+\size scriptsize
+stmv_global_family = gaussian(link="log"),
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+# a log-normal works ok but a model of log-transformed data works better
+ ..
+ ie, working upon medians which is really OK
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_local_modelengine="fft", # currently the preferred approach
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_lowpass_phi = 1*2, # p$res *2 = 1 *2:: FFT based method when operating
+ globally
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_lowpass_nu = 0.5, # this is exponential covar
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_variogram_method = "fast",
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_eps = 0.001, # distance units for eps noise to permit mesh gen for boundarie
+s
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_rsquared_threshold = 0.1, # lower threshold
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e.
+ generation of the ** statistics ** )
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_distance_scale = 40, # km ...
+ approx guess of 95% AC range
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_distance_max = 80,
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+sampling = c( 1, 4/3, 5/3 ), # fractions of distance scale and n.min to try
+ when insufficient data are found
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+depth.filter = 0.1, # the depth covariate is input in m, so, choose stats
+ locations with elevation > 0 m as being on land
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+n.min = 400, # n.min/n.max changes with resolution
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+n.max = 4000, # numerical time/memory constraint -- anything larger takes
+ too much time ..
+ anything less ..
+ errors
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+clusters=rep("localhost", ncpu ))
+\end_layout
+
+\end_deeper
+\begin_layout Quotation
+
+\size scriptsize
+)
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv( p=p, runmode=c("globalmodel", "interpolate" ) ) # no global_model
+ and force a clean restart
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+substrate.db( p=p, DS="complete.redo" ) # gather results
+\end_layout
+
+\begin_layout Subsection
+Example 2: inseparable spatiotemporal model of temperature
 \end_layout
 
 \begin_layout Standard
@@ -2734,6 +3347,321 @@ The temperature data originate from a number of different sources, including
  the snow crab survey, groundfish survey, AZMP survey, FSRS survey, scallop
  survey and many other opportunistic samples maintained and kindly provided
  by Roger Petitpas (OSD, DFO).
+ It can be parameterized as:
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+year.assessment = 2017
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+ram_required_main_process = 22 # GB
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+ram_required_per_process = 4 # GB in 2017, for GAM
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+ncpu = min( parallel::detectCores(), floor( (ram_local()-ram_required_main_proce
+ss) / ram_required_per_process ) )
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+p = aegis::temperature_parameters(
+\end_layout
+
+\begin_deeper
+\begin_layout Quotation
+
+\size scriptsize
+year.assessment=year.assessment, # must be first element
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+project.name = "temperature",
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+data_root = project.datadirectory( "aegis", "temperature" ),
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+spatial.domain = "canada.east", # default
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+DATA = 'temperature.db( p=p, DS="stmv.inputs" )',
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+additional.data=c("groundfish", "snowcrab", "USSurvey_NEFSC", "lobster"),
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+pres_discretization_temperature = 1 / 100, # 1==p$pres; controls resolution
+ of data prior to modeling (km ..
+ ie 100 linear units smaller than the final discretization pres)
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+yrs = 1950:year.assessment,
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_dimensionality="space-year-season",
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_global_modelengine = "none",
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_global_modelformula = "none", # only marginally useful ..
+ consider removing it and use "none",
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_global_family ="none",
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_local_modelengine = "twostep" ,
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_twostep_time = "gam",
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_local_modelformula_time = formula( paste(
+\end_layout
+
+\begin_deeper
+\begin_layout Quotation
+
+\size scriptsize
+'t', '~ s(yr, k=12, bs="ts") + s(cos.w, k=3, bs="ts") + s(sin.w, k=3, bs="ts")
+ ',
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+'+ s( cos.w, sin.w, yr, k=50, bs="ts")',
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+'+ s(log(z), k=3, bs="ts") '
+\end_layout
+
+\end_deeper
+\begin_layout Quotation
+
+\size scriptsize
+) ) ,
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_twostep_space = "fft", # everything else is too slow ...
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_fft_filter="spatial.process", # fft==spatial.process, krige (very slow),
+ lowpass, lowpass_spatial.process
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_local_model_distanceweighted = TRUE,
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_gam_optimizer=c("outer", "bfgs"),
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_variogram_method = "fast",
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_eps = 0.1, # distance units for eps noise to permit mesh gen for boundaries
+ (INLA-based methods)
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_rsquared_threshold = 0, # lower threshold ..
+ not used if twostep method
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_distance_statsgrid = 10, # resolution (km) of data aggregation (i.e.
+ generation of the ** statistics ** )
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_distance_scale = 30, # km ...
+ approx guess of 95% AC range
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_distance_max = 50,
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+sampling = c( 1, 1.25 ), # fractions of distance scale and n.min to try when
+ insufficient data
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+n.min = 20*(year.assessment-1950), # ~ 1000 min number of data points req
+ before attempting to model timeseries in a localized space
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+n.max = 5000, # no real upper bound..
+ just speed / RAM limits
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+clusters = rep("localhost", ncpu)
+\end_layout
+
+\end_deeper
+\begin_layout Quotation
+
+\size scriptsize
+)
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv( p=p, runmode="interpolate")
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+temperature.db( p=p, DS="predictions.redo" ) # 10 min
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+temperature.db( p=p, DS="stmv.stats.redo" ) # warp to sub grids
+\end_layout
+
+\begin_layout Subsection
+Example 3: inseparable spatiotemporal model of snow crab habitat and abundance
+ 
+\end_layout
+
+\begin_layout Standard
+The snow crab estimation process uses the above and other covariates interpolate
+d to the same continuous spatial support of the snow crab assessment.
+ This is required to refine predictions of snow crab abundance and habitat
+ while avoiding issues of bias due to aliasing (also known as 
+\begin_inset Quotes qld
+\end_inset
+
+upscaling
+\begin_inset Quotes qrd
+\end_inset
+
+ and 
+\begin_inset Quotes qld
+\end_inset
+
+downscaling
+\begin_inset Quotes qrd
+\end_inset
+
+ issues).
+ Some of these covariates change on geological time scales relative to the
+ timescale of the biological and ecological processes of interest and so
+ can be considered functionally a 
+\begin_inset Quotes eld
+\end_inset
+
+pure
+\begin_inset Quotes erd
+\end_inset
+
+ spatial model (though of course they are not truly static).
+ And others that are more biological in nature vary at similar or even shorter
+ time scales and so require a temporal component.
+ Here we detail some of these core data sources and their model assumptions
+ in the context of the temporal autocorrelation scale of snow crab abundance
+ in the Maritimes Region of Canada.
+ 
 \end_layout
 
 \begin_layout Standard
@@ -2819,6 +3747,243 @@ on maps that rely upon presence-absence data.
 \end_layout
 
 \begin_layout Standard
+The above model is parameterized as:
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+year.assessment = 2017
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+p = bio.snowcrab::load.environment( year.assessment=year.assessment )
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+p = snowcrab_stmv( p=p, DS="parameters",
+\end_layout
+
+\begin_deeper
+\begin_layout Quotation
+
+\size scriptsize
+variables=list(Y="snowcrab.large.males_presence_absence"),
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+selection=list(
+\end_layout
+
+\begin_deeper
+\begin_layout Quotation
+
+\size scriptsize
+type = "presence_absence",
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+sex=0, # male
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+mat=1, # do not use maturity status in groundfish data as it is suspect
+ ..
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+spec_bio=bio.taxonomy::taxonomy.recode( from="spec", to="parsimonious", tolookup=2
+526 ),
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+len= c( 95, 200 )/10, # mm -> cm ; aegis_db in cm
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+drop.groundfish.data=TRUE # esp from 1970 to 1999 measurement of invertebrates
+ was sporadic ..
+ zero-values are dropped as they are unreliable
+\end_layout
+
+\end_deeper
+\begin_layout Quotation
+
+\size scriptsize
+),
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+DATA = 'snowcrab_stmv( p=p, DS="stmv_inputs" )',
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+aegis_project_datasources = c("speciescomposition" ),
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_global_family = binomial( link="log" ),
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_global_modelengine ="gam",
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_stmv_global_modelformula = formula( paste(
+\end_layout
+
+\begin_deeper
+\begin_layout Quotation
+
+\size scriptsize
+' snowcrab.large.males_presence_absence ~ s(t, k=3, bs="ts") + s(tmean.climatology,
+ k=3, bs="ts") + s(tsd.climatology, k=3, bs="ts") ',
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+' + s( log(z), k=3, bs="ts") + s( log(dZ), k=3, bs="ts") + s( log(ddZ),
+ k=3, bs="ts") ',
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+' + s(log(substrate.grainsize), k=3, bs="ts") + s(pca1, k=3, bs="ts") + s(pca2,
+ k=3, bs="ts") ' )),
+\end_layout
+
+\end_deeper
+\begin_layout Quotation
+
+\size scriptsize
+stmv_local_modelengine = "twostep",
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_twostep_space = "gam", # fft==spatial.process, krige (very slow), lowpass,
+ lowpass_spatial.process
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_local_modelformula_space = formula( paste(
+\end_layout
+
+\begin_deeper
+\begin_layout Quotation
+
+\size scriptsize
+'snowcrab.large.males_abundance', '~ s(log(z), k=3, bs="ts") + s(plon, k=3,
+ bs="ts") + s(plat, k=3, bs="ts") + s( log(z), plon, plat, k=27, bs="ts")
+ ') ),
+\end_layout
+
+\end_deeper
+\begin_layout Quotation
+
+\size scriptsize
+stmv_twostep_time = "gam",
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_local_modelformula_time = formula( paste(
+\end_layout
+
+\begin_deeper
+\begin_layout Quotation
+
+\size scriptsize
+'snowcrab.large.males_abundance', ' ~ s(yr, k=10, bs="ts") + s(cos.w, k=3,
+ bs="ts") + s(sin.w, k=3, bs="ts") ',
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+'+ s( cos.w, sin.w, yr, k=45, bs="ts")') ),
+\end_layout
+
+\end_deeper
+\begin_layout Quotation
+
+\size scriptsize
+stmv_gam_optimizer=c("outer", "bfgs"),
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_distance_statsgrid = 2, # resolution (km) of data aggregation (i.e.
+ generation of the ** statistics ** ),
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_distance_scale = 50
+\end_layout
+
+\end_deeper
+\begin_layout Quotation
+
+\size scriptsize
+)
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv( p=p, runmode=c("globalmodel", "interpolate" ) ) # no global_model
+ and force a clean restart
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+snowcrab_stmv( p=p, DS="predictions.redo" ) # warp predictions to other grids
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+snowcrab_stmv( p=p, DS="stmv.stats.redo" ) # warp stats to other grids
+\end_layout
+
+\begin_layout Standard
 For the estimation of abundance, the positive valued data 
 \begin_inset Formula $Y$
 \end_inset
@@ -2842,6 +4007,317 @@ For the estimation of abundance, the positive valued data
 \end_inset
 
 
+\end_layout
+
+\begin_layout Standard
+The parametrization of the above model is as follows:
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+year.assessment = 2017
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+p = bio.snowcrab::load.environment( year.assessment=year.assessment )
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+# 11 hrs with these settings,
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+p = snowcrab_stmv( p=p, DS="parameters",
+\end_layout
+
+\begin_deeper
+\begin_layout Quotation
+
+\size scriptsize
+variables=list(Y="snowcrab.large.males_abundance"),
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+selection=list(
+\end_layout
+
+\begin_deeper
+\begin_layout Quotation
+
+\size scriptsize
+type = "abundance",
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+sex=0, # male
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+mat=1, # do not use maturity status in groundfish data as it is suspect
+ ..
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+spec_bio=bio.taxonomy::taxonomy.recode( from="spec", to="parsimonious", tolookup=2
+526 ),
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+len= c( 95, 200 )/10, # mm -> cm ; aegis_db in cm
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+drop.groundfish.data=TRUE # esp from 1970 to 1999 measurement of invertebrates
+ was sporadic ..
+ zero-values are dropped as they are unreliable
+\end_layout
+
+\end_deeper
+\begin_layout Quotation
+
+\size scriptsize
+),
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+DATA = 'snowcrab_stmv( p=p, DS="stmv_inputs" )',
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_Y_transform =list(
+\end_layout
+
+\begin_deeper
+\begin_layout Quotation
+
+\size scriptsize
+transf = function(x) {x/6675} ,
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+invers = function(x) {x*6675}
+\end_layout
+
+\end_deeper
+\begin_layout Quotation
+
+\size scriptsize
+), # transform data to unit interval to stabilize variance and speed up
+ convergence
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_global_modelengine ="gam",
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_global_family = gaussian(link="log"),
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_global_modelformula = formula( paste(
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+'snowcrab.large.males_abundance', '~ s(t, k=3, bs="ts") + s(tmean.climatology,
+ k=3, bs="ts") + s(tsd.climatology, k=3, bs="ts") ',
+\end_layout
+
+\begin_deeper
+\begin_layout Quotation
+
+\size scriptsize
+' + s( log(z), k=3, bs="ts") + s( log(dZ), k=3, bs="ts") + s( log(ddZ),
+ k=3, bs="ts") ',
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+' + s(log(substrate.grainsize), k=3, bs="ts") + s(pca1, k=3, bs="ts") + s(pca2,
+ k=3, bs="ts") ' )), # no space
+\end_layout
+
+\end_deeper
+\begin_layout Quotation
+
+\size scriptsize
+stmv_local_modelengine = "twostep",
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_twostep_time = "gam",
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_local_modelformula_time = formula( paste(
+\end_layout
+
+\begin_deeper
+\begin_layout Quotation
+
+\size scriptsize
+'snowcrab.large.males_abundance', '~ s(yr, k=10, bs="ts") + s(cos.w, k=3, bs="ts")
+ + s(sin.w, k=3, bs="ts") ',
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+' + s(cos.w, sin.w, yr, bs="ts", k=20) ',
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+' + s(plon, k=3, bs="ts") + s(plat, k=3, bs="ts") + s(plon, plat, k=20,
+ bs="ts") ' ) ),
+\end_layout
+
+\end_deeper
+\begin_layout Quotation
+
+\size scriptsize
+stmv_twostep_space = "fft", # fft==spatial.process, krige (very slow), lowpass,
+ lowpass_spatial.process
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_fft_filter="spatial.process", # fft==spatial.process, krige (very slow),
+ lowpass, lowpass_spatial.process
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_local_model_distanceweighted = TRUE,
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_gam_optimizer=c("outer", "bfgs") ,
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_variogram_method = "fast",
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_distance_statsgrid = 2, # resolution (km) of data aggregation (i.e.
+ generation of the ** statistics ** )
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv_distance_scale = 50
+\end_layout
+
+\end_deeper
+\begin_layout Quotation
+
+\size scriptsize
+)
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+# range( INP$snowcrab.large.males_abundance )
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+# [1] 14.3 6675.0
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+# o = snowcrab_stmv(p=p, DS="stmv_inputs" ) # create fields for
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+stmv( p=p, runmode=c("globalmodel", "interpolate" ) ) # for a clean start
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+# stmv( p=p, runmode=c("globalmodel", "interpolate" ), use_saved_state=TRUE
+ ) # for a restart ..
+ not working?
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+# if (really.finished) stmv_db( p=p, DS="cleanup.all" )
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+snowcrab_stmv( p=p, DS="predictions.redo" ) # warp predictions to other grids
+ (if any)
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+snowcrab_stmv( p=p, DS="stmv.stats.redo" ) # warp stats to other grids (if
+ any)
+\end_layout
+
+\begin_layout Section
+References and useful papers
 \end_layout
 
 \begin_layout Standard

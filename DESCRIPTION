@@ -9,21 +9,22 @@ Depends: R (>= 3.0.0),
 Imports:
   lubridate,
   alphahull,
-  parallel,
-  sp,
-  mgcv,
-  lattice,
-  geoR,
-  fields,
-  RandomFields,
-  RandomFieldsUtils,
-  parallel,
   bigmemory,
   devtools,
+  fields,
+  gstat,
+  geoR,
+  lattice,
+  mgcv,
+  parallel,
+  RandomFields,
+  RandomFieldsUtils,
+  rgdal,
+  sp,
   aegis,
   aegis.env
 Suggests:
-  INLA, gstat
+  INLA
 NeedsCompilation: no
 ByteCompile: TRUE
 License: MIT
