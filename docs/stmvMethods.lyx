@@ -3791,6 +3791,13 @@ type = "presence_absence",
 \begin_layout Quotation
 
 \size scriptsize
+biologicals = list(
+\end_layout
+
+\begin_deeper
+\begin_layout Quotation
+
+\size scriptsize
 sex=0, # male
 \end_layout
 
@@ -3817,9 +3824,36 @@ len= c( 95, 200 )/10, # mm -> cm ; aegis_db in cm
 \begin_layout Quotation
 
 \size scriptsize
+ranged_data="len"
+\end_layout
+
+\end_deeper
+\begin_layout Quotation
+
+\size scriptsize
+),
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+survey=list(
+\end_layout
+
+\begin_deeper
+\begin_layout Quotation
+
+\size scriptsize
 drop.groundfish.data=TRUE # esp from 1970 to 1999 measurement of invertebrates
- was sporadic ..
+ was sporatic ..
  zero-values are dropped as they are unreliable
+\end_layout
+
+\end_deeper
+\begin_layout Quotation
+
+\size scriptsize
+)
 \end_layout
 
 \end_deeper
@@ -4047,7 +4081,7 @@ variables=list(Y="snowcrab.large.males_abundance"),
 \begin_layout Quotation
 
 \size scriptsize
-selection=list(
+sselection=list(
 \end_layout
 
 \begin_deeper
@@ -4057,6 +4091,13 @@ selection=list(
 type = "abundance",
 \end_layout
 
+\begin_layout Quotation
+
+\size scriptsize
+biologicals=list(
+\end_layout
+
+\begin_deeper
 \begin_layout Quotation
 
 \size scriptsize
@@ -4086,9 +4127,7 @@ len= c( 95, 200 )/10, # mm -> cm ; aegis_db in cm
 \begin_layout Quotation
 
 \size scriptsize
-drop.groundfish.data=TRUE # esp from 1970 to 1999 measurement of invertebrates
- was sporadic ..
- zero-values are dropped as they are unreliable
+ranged_data="len"
 \end_layout
 
 \end_deeper
@@ -4098,6 +4137,29 @@ drop.groundfish.data=TRUE # esp from 1970 to 1999 measurement of invertebrates
 ),
 \end_layout
 
+\begin_layout Quotation
+
+\size scriptsize
+survey=list(
+\end_layout
+
+\begin_deeper
+\begin_layout Quotation
+
+\size scriptsize
+drop.groundfish.data=TRUE # esp from 1970 to 1999 measurement of invertebrates
+ was sporatic ..
+ zero-values are dropped as they are unreliable
+\end_layout
+
+\end_deeper
+\begin_layout Quotation
+
+\size scriptsize
+)
+\end_layout
+
+\end_deeper
 \begin_layout Quotation
 
 \size scriptsize
