@@ -118,10 +118,20 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
 
     # obtain indices of data locations withing a given spatial range, optimally determined via variogram
 
-    W = stmv_subset_distance( Si, p=p )
+    W = try( stmv_subset_distance( Si, p=p ) )
+    if ( is.null(W) ) {
+      Sflag[Si] = E["insufficient_data"]
+      W = NULL
+      next()
+    }
+    if ( inherits(W, "try-error") ) {
+      Sflag[Si] = E["insufficient_data"]
+      W = NULL
+      next()
+    }
 
     Sflag[Si] = W[["flag"]]  # update flags
-    if ( Sflag[Si] != 0L ) {
+    if ( Sflag[Si] != E["todo"] ) {
       if (exists("stmv_rangecheck", p)) {
         if (p$stmv_rangecheck=="paranoid") {
           next()
@@ -138,13 +148,19 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
 
     # W[["U"]]] -- the indices of locally useful data and p$stmv_distance_prediction determine the data entering into local model construction
 
-    pa = stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=p$windowsize.half )
-      if (is.null(pa)) {
-        Sflag[Si] = E[["prediction_area"]]
-        message( Si )
-        message("Error with issue with prediction grid ... null .. this should not happen")
-        next()
-      }
+    pa = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=p$windowsize.half ) )
+    if (is.null(pa)) {
+      Sflag[Si] = E[["prediction_area"]]
+      W = pa = NULL
+      message( Si )
+      message("Error with issue with prediction grid ... null .. this should not happen")
+      next()
+    }
+    if ( inherits(pa, "try-error") ) {
+      W = pa = NULL
+      Sflag[Si] = E["prediction_area"]
+      next()
+    }
 
     if (0) {
       # check that position indices are working properly
@@ -208,7 +224,17 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
 
     res =NULL
     res = try(
-      local_fn( p=p, dat=dat, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial, sloc=Sloc[Si,], distance=W[["stmv_distance_cur"]] )
+      local_fn(
+        p=p,
+        dat=dat,
+        pa=pa,
+        nu=nu,
+        phi=phi,
+        varObs=varObs,
+        varSpatial=varSpatial,
+        sloc=Sloc[Si,],
+        distance=W[["stmv_distance_cur"]]
+      )
     )
 
     if (debugging) {
@@ -263,18 +289,38 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
 
 
     # extract stats and compute a few more things
-    sf = stmv_statistics_update( p=p, res=res, W=W, Si=Si )
+    sf = try( stmv_statistics_update( p=p, res=res, W=W, Si=Si ) )
+    if ( is.null(sf) ) {
+      Sflag[Si] = E["prediction_area"]
+      res = pa = sf = NULL
+      next()
+    }
+    if ( inherits(sf, "try-error") ) {
+      Sflag[Si] = E["prediction_area"]
+      res = pa = sf = NULL
+      next()
+    }
     if ( sf=="error" ) {
       Sflag[Si] =  E[["prediction_error"]]
-      res = pa = NULL
+      res = pa = sf = NULL
       next()
     }
 
     res$stmv_stats = NULL # reduce memory usage
-    sf = stmv_predictions_update(p=p, preds=res$predictions )
+    sf = try( stmv_predictions_update(p=p, preds=res$predictions ) )
+    if ( is.null(sf) ) {
+      Sflag[Si] = E["prediction_area"]
+      res = pa = sf = NULL
+      next()
+    }
+    if ( inherits(sf, "try-error") ) {
+      Sflag[Si] = E["prediction_area"]
+      res = pa = sf = NULL
+      next()
+    }
     if ( sf=="error" ) {
       Sflag[Si] = E[["prediction_error"]]
-      res = pa = NULL
+      res = pa = sf = NULL
       next()
     }
 
