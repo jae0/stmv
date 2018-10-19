@@ -120,18 +120,18 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
 
     W = try( stmv_subset_distance( Si, p=p ) )
     if ( is.null(W) ) {
-      Sflag[Si] = E["insufficient_data"]
+      Sflag[Si] = E[["insufficient_data"]]
       W = NULL
       next()
     }
     if ( inherits(W, "try-error") ) {
-      Sflag[Si] = E["insufficient_data"]
+      Sflag[Si] = E[["insufficient_data"]]
       W = NULL
       next()
     }
 
     Sflag[Si] = W[["flag"]]  # update flags
-    if ( Sflag[Si] != E["todo"] ) {
+    if ( Sflag[Si] != E[["todo"]] ) {
       if (exists("stmv_rangecheck", p)) {
         if (p$stmv_rangecheck=="paranoid") {
           next()
@@ -158,7 +158,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     }
     if ( inherits(pa, "try-error") ) {
       W = pa = NULL
-      Sflag[Si] = E["prediction_area"]
+      Sflag[Si] = E[["prediction_area"]]
       next()
     }
 
@@ -291,12 +291,12 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     # extract stats and compute a few more things
     sf = try( stmv_statistics_update( p=p, res=res, W=W, Si=Si ) )
     if ( is.null(sf) ) {
-      Sflag[Si] = E["prediction_area"]
+      Sflag[Si] = E[["prediction_area"]]
       res = pa = sf = NULL
       next()
     }
     if ( inherits(sf, "try-error") ) {
-      Sflag[Si] = E["prediction_area"]
+      Sflag[Si] = E[["prediction_area"]]
       res = pa = sf = NULL
       next()
     }
@@ -309,12 +309,12 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     res$stmv_stats = NULL # reduce memory usage
     sf = try( stmv_predictions_update(p=p, preds=res$predictions ) )
     if ( is.null(sf) ) {
-      Sflag[Si] = E["prediction_area"]
+      Sflag[Si] = E[["prediction_area"]]
       res = pa = sf = NULL
       next()
     }
     if ( inherits(sf, "try-error") ) {
-      Sflag[Si] = E["prediction_area"]
+      Sflag[Si] = E[["prediction_area"]]
       res = pa = sf = NULL
       next()
     }

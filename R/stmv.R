@@ -1,13 +1,13 @@
 
 
 stmv = function( p, runmode="interpolate", DATA=NULL,
-  use_saved_state=FALSE, save_completed_data=TRUE, force_complete_solution=TRUE, nlogs=100,
+  use_saved_state=NULL, save_completed_data=TRUE, force_complete_solution=TRUE, nlogs=100,
   debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE ) {
 
   if (0) {
     nlogs = 25
     force_complete_solution=FALSE
-    use_saved_state=TRUE
+    use_saved_state="ram" # or "disk"
     DATA=NULL
     storage.backend="bigmemory.ram"
     save_completed_data=TRUE  # export out of stmv system for use outside (e.g., by aegis)
@@ -19,6 +19,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   #\\ speed ratings: bigmemory.ram (1), ff (2), bigmemory.filebacked (3)
 
   # -----------------------------------------------------
+
   if (!exists("stmvSaveDir", p)) p$stmvSaveDir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
   if ( !file.exists(p$stmvSaveDir)) dir.create( p$stmvSaveDir, recursive=TRUE, showWarnings=FALSE )
 
@@ -109,33 +110,43 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
   # init output data objects
   # statistics storage matrix ( aggregation window, coords ) .. no inputs required
-  sbox = list(
-    plats = seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ),
-    plons = seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ) )
+  sbox = Sloc = NULL
+    sbox = list(
+      plats = seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ),
+      plons = seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ) )
+    # statistics coordinates
+    Sloc = as.matrix( expand.grid( sbox$plons, sbox$plats ))
+    nSloc = nrow(Sloc)
+      if (p$storage.backend == "bigmemory.ram" ) {
+        tmp_Sloc = big.matrix(nrow=nSloc, ncol=ncol(Sloc), type="double"  )
+        tmp_Sloc[] = Sloc[]
+        p$ptr$Sloc  = bigmemory::describe( tmp_Sloc  )
+      }
+      if (p$storage.backend == "bigmemory.filebacked" ) {
+        p$ptr$Sloc  = p$cache$Sloc
+        bigmemory::as.big.matrix( Sloc, type="double", backingfile=basename(p$bm$Sloc), descriptorfile=basename(p$cache$Sloc), backingpath=p$stmvSaveDir )
+      }
+      if (p$storage.backend == "ff" ) {
+        p$ptr$Sloc = ff( Sloc, dim=dim(Sloc), file=p$cache$Sloc, overwrite=TRUE )
+      }
+  sbox = Sloc = NULL
 
-  # statistics coordinates
-  Sloc = as.matrix( expand.grid( sbox$plons, sbox$plats ))
-    if (p$storage.backend == "bigmemory.ram" ) {
-      tmp_Sloc = big.matrix(nrow=nrow(Sloc), ncol=ncol(Sloc), type="double"  )
-      tmp_Sloc[] = Sloc[]
-      p$ptr$Sloc  = bigmemory::describe( tmp_Sloc  )
+  
+  sS = NULL
+  if (!is.null(use_saved_state)) {
+    if (use_saved_state=="ram") {
+      # nothing needs to be done as pointers are already set up and pointed to the data
+    } 
+    if (use_saved_state=="disk") {
+      if (file.exists(p$saved_state_fn$stats)) load( p$saved_state_fn$stats )
+      if (is.vector(sS)) sS = as.matrix(sS, nrow=nSloc, ncol=1)
     }
-    if (p$storage.backend == "bigmemory.filebacked" ) {
-      p$ptr$Sloc  = p$cache$Sloc
-      bigmemory::as.big.matrix( Sloc, type="double", backingfile=basename(p$bm$Sloc), descriptorfile=basename(p$cache$Sloc), backingpath=p$stmvSaveDir )
-    }
-    if (p$storage.backend == "ff" ) {
-      p$ptr$Sloc = ff( Sloc, dim=dim(Sloc), file=p$cache$Sloc, overwrite=TRUE )
-    }
-  sbox=NULL
-
-  sS = matrix( NaN, nrow=nrow(Sloc), ncol=length( p$statsvars ) ) # NA forces into logical
-  if (use_saved_state) {
-    if (file.exists(p$saved_state_fn$stats)) load( p$saved_state_fn$stats )
-    if (is.vector(sS)) sS = as.matrix(sS, nrow=Sloc, ncol=1)
+  } else {
+    sS = matrix( NaN, nrow=nSloc, ncol=length( p$statsvars ) ) # NA forces into logical
   }
+  if (!is.null(sS)) {
     if (p$storage.backend == "bigmemory.ram" ) {
-      tmp_S = big.matrix(nrow=nrow(Sloc), ncol=length( p$statsvars ), type="double"  )
+      tmp_S = big.matrix(nrow=nSloc, ncol=length( p$statsvars ), type="double"  )
       tmp_S[] = sS[]
       p$ptr$S  = bigmemory::describe( tmp_S )
     }
@@ -146,23 +157,23 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     if (p$storage.backend == "ff" ) {
       p$ptr$S = ff( sS, dim=dim(sS), file=p$cache$S, overwrite=TRUE )
     }
-
-
-  sSflag = matrix( 0L, nrow=nrow(Sloc), ncol=1 )  # 0L is the todo flag
-  if (use_saved_state) {
-    if (file.exists(p$saved_state_fn$sflag)) load( p$saved_state_fn$sflag )
-    if (is.vector(sSflag)) sSflag = as.matrix(sSflag, nrow=Sloc, ncol=1)
+    sS = NULL
   }
-  # 0=to do
-  # 1=complete
-  # 2=oustide bounds(if any)
-  # 3=shallow(if z is a covariate)
-  # 4=range not ok,
-  # 5=skipped due to insufficient data,
-  # 6=skipped .. fast variogram did not work
-  # 7=variogram estimated range not ok
-  # 8=problem with prediction and/or modelling
-  # 9=attempting ... if encountered then it was some general problem  or was interrrupted
+
+
+  sSflag = NULL
+  if (!is.null(use_saved_state)) {
+    if (use_saved_state=="ram") {
+      # nothing needs to be done as pointers are already set up and pointed to the data
+    } 
+    if (use_saved_state=="disk") {
+      if (file.exists(p$saved_state_fn$sflag)) load( p$saved_state_fn$sflag )
+      if (is.vector(sSflag)) sSflag = as.matrix(sSflag, nrow=nSloc, ncol=1)
+    }
+  } else {
+    sSflag = matrix( stmv_error_codes()[["todo"]], nrow=nSloc, ncol=1 )   
+  }
+  if (!is.null(sSflag)) {
     if (p$storage.backend == "bigmemory.ram" ) {
       tmp_Sflag = big.matrix(nrow=length(sSflag), ncol=1, type="double" )
       tmp_Sflag[] = sSflag[]
@@ -175,9 +186,9 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     if (p$storage.backend == "ff" ) {
       p$ptr$Sflag = ff( sSflag, dim=dim(sSflag), file=p$cache$Sflag, overwrite=TRUE )
     }
+    sSflag = NULL
+  }
 
-
-  sS = sSflag =  Sloc = NULL
 
   # data to be worked upon .. either the raw data or covariate-residuals
   Ydata = as.matrix(DATA$input[, p$variables$Y ])
@@ -304,12 +315,20 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
 
 
-    # predictions and associated stats
-    sP = matrix( NaN, nrow=nPlocs, ncol=p$nt )
-    if (use_saved_state) {
+  # predictions and associated stats
+  sP = NULL
+  if (!is.null(use_saved_state)) {
+    if (use_saved_state=="ram") {
+      # nothing needs to be done as pointers are already set up and pointed to the data
+    } 
+    if (use_saved_state=="disk") {
       if (file.exists(p$saved_state_fn$P)) load( p$saved_state_fn$P )
       if (is.vector(sP)) sP=as.matrix(sP, nrow=nPlocs, ncol=1)
     }
+  } else {
+     sP = matrix( NaN, nrow=nPlocs, ncol=p$nt )
+  }
+  if (!is.null(sP)) {
       if (p$storage.backend == "bigmemory.ram" ) {
         tmp_P = big.matrix( nrow=nrow(sP), ncol=ncol(sP), type="double" )
         tmp_P[] = sP[]
@@ -323,49 +342,68 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         p$ptr$P = ff( sP, dim=dim(sP), file=p$cache$P, overwrite=TRUE )
       }
     sP = NULL
+  }
 
 
-    # count of prediction estimates
-    sPn = matrix( NaN, nrow=nPlocs, ncol=p$nt )
-    if (use_saved_state) {
+  # count of prediction estimates
+  sPn = NULL
+  if (!is.null(use_saved_state)) {
+    if (use_saved_state=="ram") {
+      # nothing needs to be done as pointers are already set up and pointed to the data
+    } 
+    if (use_saved_state=="disk") {
       if (file.exists(p$saved_state_fn$Pn)) load( p$saved_state_fn$Pn )
       if (is.vector(sPn)) sPn = as.matrix(sPn, nrow=nPlocs, ncol=1)
     }
-      if (p$storage.backend == "bigmemory.ram" ) {
-        tmp_Pn = big.matrix( nrow=nrow(sPn), ncol=ncol(sPn), type="double" )
-        tmp_Pn[] = sPn[]
-        p$ptr$Pn = bigmemory::describe( tmp_Pn )
-      }
-      if (p$storage.backend == "bigmemory.filebacked" ) {
-        p$ptr$Pn  = p$cache$Pn
-        bigmemory::as.big.matrix( sPn, type="double", backingfile=basename(p$bm$Pn), descriptorfile=basename(p$cache$Pn), backingpath=p$stmvSaveDir )
-      }
-      if (p$storage.backend == "ff" ) {
-        p$ptr$Pn = ff( sPn, dim=dim(sPn), file=p$cache$Pn, overwrite=TRUE )
-      }
+  } else {
+    sPn = matrix( NaN, nrow=nPlocs, ncol=p$nt )
+  }
+  if (!is.null(sPn)) {
+   if (p$storage.backend == "bigmemory.ram" ) {
+      tmp_Pn = big.matrix( nrow=nrow(sPn), ncol=ncol(sPn), type="double" )
+      tmp_Pn[] = sPn[]
+      p$ptr$Pn = bigmemory::describe( tmp_Pn )
+    }
+    if (p$storage.backend == "bigmemory.filebacked" ) {
+      p$ptr$Pn  = p$cache$Pn
+      bigmemory::as.big.matrix( sPn, type="double", backingfile=basename(p$bm$Pn), descriptorfile=basename(p$cache$Pn), backingpath=p$stmvSaveDir )
+    }
+    if (p$storage.backend == "ff" ) {
+      p$ptr$Pn = ff( sPn, dim=dim(sPn), file=p$cache$Pn, overwrite=TRUE )
+    }
     sPn = NULL
+  }
 
 
-    # sd of prediction estimates
-    sPsd = matrix( NaN, nrow=nPlocs, ncol=p$nt )
-    if (use_saved_state) {
+
+  # sd of prediction estimates
+  sPsd = NULL
+  if (!is.null(use_saved_state)) {
+    if (use_saved_state=="ram") {
+      # nothing needs to be done as pointers are already set up and pointed to the data
+    } 
+    if (use_saved_state=="disk") {
       if (file.exists(p$saved_state_fn$Psd)) load( p$saved_state_fn$Psd )
       if (is.vector(sPsd)) sPsd = as.matrix(sPsd, nrow=nPlocs, ncol=1)
     }
-      if (p$storage.backend == "bigmemory.ram" ) {
-        tmp_Psd = big.matrix( nrow=nrow(sPsd), ncol=ncol(sPsd), type="double" )
-        tmp_Psd[] = sPsd[]
-        p$ptr$Psd =bigmemory::describe( tmp_Psd )
-      }
-      if (p$storage.backend == "bigmemory.filebacked" ) {
-        p$ptr$Psd  = p$cache$Psd
-        bigmemory::as.big.matrix( sPsd, type="double", backingfile=basename(p$bm$Psd), descriptorfile=basename(p$cache$Psd), backingpath=p$stmvSaveDir )
-      }
-      if (p$storage.backend == "ff" ) {
-        p$ptr$Psd = ff( sPsd, dim=dim(sPsd), file=p$cache$Psd, overwrite=TRUE )
-      }
+  } else {
+    sPsd = matrix( NaN, nrow=nPlocs, ncol=p$nt )
+  }
+  if (!is.null(sPsd)) {
+    if (p$storage.backend == "bigmemory.ram" ) {
+      tmp_Psd = big.matrix( nrow=nrow(sPsd), ncol=ncol(sPsd), type="double" )
+      tmp_Psd[] = sPsd[]
+      p$ptr$Psd =bigmemory::describe( tmp_Psd )
+    }
+    if (p$storage.backend == "bigmemory.filebacked" ) {
+      p$ptr$Psd  = p$cache$Psd
+      bigmemory::as.big.matrix( sPsd, type="double", backingfile=basename(p$bm$Psd), descriptorfile=basename(p$cache$Psd), backingpath=p$stmvSaveDir )
+    }
+    if (p$storage.backend == "ff" ) {
+      p$ptr$Psd = ff( sPsd, dim=dim(sPsd), file=p$cache$Psd, overwrite=TRUE )
+    }
     sPsd = NULL
-
+  }
 
     # prediction coordinates
     Ploc = as.matrix( DATA$output$LOCS )
@@ -390,45 +428,62 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       if (p$stmv_global_modelengine !="none" ) {
         # create prediction suface .. additive offsets
 
-        sP0 = matrix( NaN, nrow=nPlocs, ncol=p$nt )
-        if (use_saved_state) {
-          if (file.exists(p$saved_state_fn$P0)) load( p$saved_state_fn$P0 )
-          if (is.vector(sP0)) sP0 = as.matrix(sP0, nrow=nPlocs, ncol=1)
-        }
-        if (p$storage.backend == "bigmemory.ram" ) {
-          tmp_P0= big.matrix( nrow=nrow(sP0), ncol=ncol(sP0) , type="double" )
-          tmp_P0[] = sP0[]
-          p$ptr$P0 = bigmemory::describe(tmp_P0 )
-        }
-        if (p$storage.backend == "bigmemory.filebacked" ) {
-          p$ptr$P0  = p$cache$P0
-          bigmemory::as.big.matrix( sP0, type="double", backingfile=basename(p$bm$P0), descriptorfile=basename(p$cache$P0), backingpath=p$stmvSaveDir )
-        }
-        if (p$storage.backend == "ff" ) {
-          p$ptr$P0 = ff( sP0, dim=dim(sP0), file=p$cache$P0, overwrite=TRUE )
-        }
-        sP0 = NULL
+    sP0 = NULL
+    if (!is.null(use_saved_state)) {
+      if (use_saved_state=="ram") {
+        # nothing needs to be done as pointers are already set up and pointed to the data
+      } 
+      if (use_saved_state=="disk") {
+        if (file.exists(p$saved_state_fn$P0)) load( p$saved_state_fn$P0 )
+        if (is.vector(sP0)) sP0 = as.matrix(sP0, nrow=nPlocs, ncol=1)
+      }
+    } else {
+      sP0 = matrix( NaN, nrow=nPlocs, ncol=p$nt )
+    }
+    if (!is.null(sP0)) {
+      if (p$storage.backend == "bigmemory.ram" ) {
+        tmp_P0= big.matrix( nrow=nrow(sP0), ncol=ncol(sP0) , type="double" )
+        tmp_P0[] = sP0[]
+        p$ptr$P0 = bigmemory::describe(tmp_P0 )
+      }
+      if (p$storage.backend == "bigmemory.filebacked" ) {
+        p$ptr$P0  = p$cache$P0
+        bigmemory::as.big.matrix( sP0, type="double", backingfile=basename(p$bm$P0), descriptorfile=basename(p$cache$P0), backingpath=p$stmvSaveDir )
+      }
+      if (p$storage.backend == "ff" ) {
+        p$ptr$P0 = ff( sP0, dim=dim(sP0), file=p$cache$P0, overwrite=TRUE )
+      }
+      sP0 = NULL
+    }
 
 
-        sP0sd = matrix( NaN, nrow=nPlocs, ncol=p$nt )
-        if (use_saved_state) {
-          if (file.exists(p$saved_state_fn$P0sd)) load( p$saved_state_fn$P0sd )
-          if (is.vector(sP0sd)) sP0sd = as.matrix(sP0sd, nrow=nPlocs, ncol=1)
-        }
-        if (p$storage.backend == "bigmemory.ram" ) {
-          tmp_P0sd= big.matrix( nrow=nrow(sP0sd), ncol=ncol(sP0sd) , type="double" )
-          tmp_P0sd[] = sP0sd[]
-          p$ptr$P0sd = bigmemory::describe(tmp_P0sd )
-        }
-        if (p$storage.backend == "bigmemory.filebacked" ) {
-          p$ptr$P0sd  = p$cache$P0sd
-          bigmemory::as.big.matrix( sP0sd, type="double", backingfile=basename(p$bm$P0sd), descriptorfile=basename(p$cache$P0sd), backingpath=p$stmvSaveDir )
-        }
-        if (p$storage.backend == "ff" ) {
-          p$ptr$P0sd = ff( sP0sd, dim=dim(sP0sd), file=p$cache$P0sd, overwrite=TRUE )
-        }
-        sP0sd=NULL;
-
+    sP0sd = NULL
+    if (!is.null(use_saved_state)) {
+      if (use_saved_state=="ram") {
+        # nothing needs to be done as pointers are already set up and pointed to the data
+      } 
+      if (use_saved_state=="disk") {
+        if (file.exists(p$saved_state_fn$P0sd)) load( p$saved_state_fn$P0sd )
+        if (is.vector(sP0sd)) sP0sd = as.matrix(sP0sd, nrow=nPlocs, ncol=1)
+      }
+    } else {
+      sP0sd = matrix( NaN, nrow=nPlocs, ncol=p$nt )
+    }
+    if (!is.null(sP0sd)) {
+      if (p$storage.backend == "bigmemory.ram" ) {
+        tmp_P0sd= big.matrix( nrow=nrow(sP0sd), ncol=ncol(sP0sd) , type="double" )
+        tmp_P0sd[] = sP0sd[]
+        p$ptr$P0sd = bigmemory::describe(tmp_P0sd )
+      }
+      if (p$storage.backend == "bigmemory.filebacked" ) {
+        p$ptr$P0sd  = p$cache$P0sd
+        bigmemory::as.big.matrix( sP0sd, type="double", backingfile=basename(p$bm$P0sd), descriptorfile=basename(p$cache$P0sd), backingpath=p$stmvSaveDir )
+      }
+      if (p$storage.backend == "ff" ) {
+        p$ptr$P0sd = ff( sP0sd, dim=dim(sP0sd), file=p$cache$P0sd, overwrite=TRUE )
+      }
+      sP0sd=NULL;
+    }
 
         # test to see if all covars are static as this can speed up the initial predictions
         message(" ")
@@ -449,7 +504,9 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
           }
         }
 
-        if (!use_saved_state) {
+        if (!is.null(use_saved_state)) {
+            # nothing needs to be done as pointers are already set up and pointed to the data
+        } else {
           pc = p # copy
           if (exists("all.covars.static", pc)) if (!pc$all.covars.static) if (exists("clusters.covars", pc) ) pc$clusters = pc$clusters.covars
           # takes about 28 GB per run .. adjust cluster number temporarily
@@ -460,7 +517,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       }
     }
 
-    if (!use_saved_state) {
+    if (is.null(use_saved_state)) {
       stmv_db( p=p, DS="statistics.Sflag" )
     }
 
@@ -666,7 +723,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         # to reset all rejected locations
         toreset = which( Sflag[] > E[["outside_bounds"]])
 
-        if (length(toreset) > 0) Sflag[toreset] = 0L  # to reset all the problem flags to todo
+        if (length(toreset) > 0) Sflag[toreset] = E[["todo"]]  # to reset all the problem flags to todo
         currentstatus = list()
         currentstatus$todo = which( Sflag[]==E[["todo"]] )       # 0 = TODO
         currentstatus$done = which( Sflag[]==E[["complete"]] )       # 1 = completed
