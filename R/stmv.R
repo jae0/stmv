@@ -131,12 +131,12 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       }
   sbox = Sloc = NULL
 
-  
+
   sS = NULL
   if (!is.null(use_saved_state)) {
     if (use_saved_state=="ram") {
       # nothing needs to be done as pointers are already set up and pointed to the data
-    } 
+    }
     if (use_saved_state=="disk") {
       if (file.exists(p$saved_state_fn$stats)) load( p$saved_state_fn$stats )
       if (is.vector(sS)) sS = as.matrix(sS, nrow=nSloc, ncol=1)
@@ -165,13 +165,13 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   if (!is.null(use_saved_state)) {
     if (use_saved_state=="ram") {
       # nothing needs to be done as pointers are already set up and pointed to the data
-    } 
+    }
     if (use_saved_state=="disk") {
       if (file.exists(p$saved_state_fn$sflag)) load( p$saved_state_fn$sflag )
       if (is.vector(sSflag)) sSflag = as.matrix(sSflag, nrow=nSloc, ncol=1)
     }
   } else {
-    sSflag = matrix( stmv_error_codes()[["todo"]], nrow=nSloc, ncol=1 )   
+    sSflag = matrix( stmv_error_codes()[["todo"]], nrow=nSloc, ncol=1 )
   }
   if (!is.null(sSflag)) {
     if (p$storage.backend == "bigmemory.ram" ) {
@@ -320,7 +320,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   if (!is.null(use_saved_state)) {
     if (use_saved_state=="ram") {
       # nothing needs to be done as pointers are already set up and pointed to the data
-    } 
+    }
     if (use_saved_state=="disk") {
       if (file.exists(p$saved_state_fn$P)) load( p$saved_state_fn$P )
       if (is.vector(sP)) sP=as.matrix(sP, nrow=nPlocs, ncol=1)
@@ -350,7 +350,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   if (!is.null(use_saved_state)) {
     if (use_saved_state=="ram") {
       # nothing needs to be done as pointers are already set up and pointed to the data
-    } 
+    }
     if (use_saved_state=="disk") {
       if (file.exists(p$saved_state_fn$Pn)) load( p$saved_state_fn$Pn )
       if (is.vector(sPn)) sPn = as.matrix(sPn, nrow=nPlocs, ncol=1)
@@ -381,7 +381,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   if (!is.null(use_saved_state)) {
     if (use_saved_state=="ram") {
       # nothing needs to be done as pointers are already set up and pointed to the data
-    } 
+    }
     if (use_saved_state=="disk") {
       if (file.exists(p$saved_state_fn$Psd)) load( p$saved_state_fn$Psd )
       if (is.vector(sPsd)) sPsd = as.matrix(sPsd, nrow=nPlocs, ncol=1)
@@ -432,7 +432,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     if (!is.null(use_saved_state)) {
       if (use_saved_state=="ram") {
         # nothing needs to be done as pointers are already set up and pointed to the data
-      } 
+      }
       if (use_saved_state=="disk") {
         if (file.exists(p$saved_state_fn$P0)) load( p$saved_state_fn$P0 )
         if (is.vector(sP0)) sP0 = as.matrix(sP0, nrow=nPlocs, ncol=1)
@@ -461,7 +461,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     if (!is.null(use_saved_state)) {
       if (use_saved_state=="ram") {
         # nothing needs to be done as pointers are already set up and pointed to the data
-      } 
+      }
       if (use_saved_state=="disk") {
         if (file.exists(p$saved_state_fn$P0sd)) load( p$saved_state_fn$P0sd )
         if (is.vector(sP0sd)) sP0sd = as.matrix(sP0sd, nrow=nPlocs, ncol=1)
@@ -718,6 +718,8 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
         p$stmv_distance_scale = p_stmv_distance_scale * smult
 
+        currentstatus = stmv_db( p=p, DS="statistics.status" )
+if (0) {
         # all low-level operations in one to avoid $!#!@# bigmemory issues
         Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
         # to reset all rejected locations
@@ -748,7 +750,6 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         currentstatus$n.skipped = length(currentstatus$skipped)
         currentstatus$n.total = length(Sflag)
         currentstatus$prop_incomp = round( currentstatus$n.todo / ( currentstatus$n.total), 3)
-
         if ( currentstatus$n.todo == 0 ) next()
 
         runindex=list( locs=currentstatus$todo[sample.int(length( currentstatus$todo ))] )
@@ -788,12 +789,13 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         clusterApply( p$cl, clustertasklist, stmv_interpolate, p=p  )
         try(stopCluster( p$cl ))
     }
+}
 
-    if (0) {
+    # if (0) {
       # calling using parallel_run causes memory leak ?? JC 2018
       currentstatus = stmv_db( p=p, DS="statistics.status" )
       pp = parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )))
-    }
+    # }
 
     if (0) {
       # a penultimate save of data as an internal format, just in case the save step or force complete goes funny
