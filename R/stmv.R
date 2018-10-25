@@ -716,7 +716,6 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
     for ( smult in sm) {
         p$stmv_distance_scale = p_stmv_distance_scale * smult
-        
         p$clusters = p$clusters[-1] # as ram reqeuirements increase drop cpus
         
         currentstatus = stmv_db( p=p, DS="statistics.status" )
