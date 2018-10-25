@@ -787,7 +787,7 @@ if (0) {
         ssplt = NULL
         # stmv_interpolate(p=p)
         clusterApply( p$cl, clustertasklist, stmv_interpolate, p=p  )
-        try(stopCluster( p$cl ))
+    #    try(stopCluster( p$cl ))
     }
 }
 
@@ -867,7 +867,7 @@ if (0) {
     }
     ssplt = NULL
     clusterApply( p$cl, clustertasklist, stmv_interpolate_fast, p=p  )
-    try(stopCluster( p$cl ))
+    # try(stopCluster( p$cl ))
 
     if (0) {
       # random order helps use all cpus
