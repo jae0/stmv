@@ -834,46 +834,44 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
     print( "Force completing full interpolation using fast interpolation upon the stragglers" )
 
-    runindex=list( time_index=1:p$nt )
-    nvars = length(runindex)  # runindex must be a list
-    p$runs = expand.grid(runindex, stringsAsFactors=FALSE, KEEP.OUT.ATTRS=FALSE)
-    p$nruns = nrow( p$runs )
-    p$runs_uid = do.call(paste, c(p$runs, sep="~"))
-    p$rndseed = 1
-    if ( p$nruns < length( p$clusters ) ) {
-      p$clusters = sample( p$clusters, p$nruns )  # if very few runs, use only what is required
-    }
-    if (!exists( "clustertype", p) ) p$clustertype = "PSOCK"
-    if (p$clustertype=="FORK") {
-      p$cl = makeCluster( spec=length(p$clusters),  type=p$clustertype ) # SOCK works well but does not load balance as MPI
-    } else {
-      p$cl = makeCluster( spec=p$clusters,  type=p$clustertype ) # SOCK works well but does not load balance as MPI
-    }
-    RNGkind("L'Ecuyer-CMRG")  # multiple streams of pseudo-random numbers.
-    clusterSetRNGStream(p$cl, iseed=p$rndseed )
-    # if ( !is.null(clusterexport)) clusterExport( p$cl, clusterexport )
-    uv = unique(p$runs_uid)
-    uvl = length(uv)
-    lc = length(p$clusters)
-    lci = 1:lc
-    ssplt = list()
-    for(j in 1:uvl) ssplt[[j]]  = which(p$runs_uid == uv[j])
-    clustertasklist = rep(list(numeric()),lc)
-    if (uvl>lc) {
-      for(j in 1:uvl) {
-        k=j
-        if(j>lc) k = j%%lc+1
-        clustertasklist[[k]] <- c(clustertasklist[[k]],ssplt[[j]])
-      }
-    }
-    ssplt = NULL
-    clusterApply( p$cl, clustertasklist, stmv_interpolate_fast, p=p  )
-    # try(stopCluster( p$cl ))
+    # runindex=list( time_index=1:p$nt )
+    # nvars = length(runindex)  # runindex must be a list
+    # p$runs = expand.grid(runindex, stringsAsFactors=FALSE, KEEP.OUT.ATTRS=FALSE)
+    # p$nruns = nrow( p$runs )
+    # p$runs_uid = do.call(paste, c(p$runs, sep="~"))
+    # p$rndseed = 1
+    # if ( p$nruns < length( p$clusters ) ) {
+    #   p$clusters = sample( p$clusters, p$nruns )  # if very few runs, use only what is required
+    # }
+    # if (!exists( "clustertype", p) ) p$clustertype = "PSOCK"
+    # if (p$clustertype=="FORK") {
+    #   p$cl = makeCluster( spec=length(p$clusters),  type=p$clustertype ) # SOCK works well but does not load balance as MPI
+    # } else {
+    #   p$cl = makeCluster( spec=p$clusters,  type=p$clustertype ) # SOCK works well but does not load balance as MPI
+    # }
+    # RNGkind("L'Ecuyer-CMRG")  # multiple streams of pseudo-random numbers.
+    # clusterSetRNGStream(p$cl, iseed=p$rndseed )
+    # # if ( !is.null(clusterexport)) clusterExport( p$cl, clusterexport )
+    # uv = unique(p$runs_uid)
+    # uvl = length(uv)
+    # lc = length(p$clusters)
+    # lci = 1:lc
+    # ssplt = list()
+    # for(j in 1:uvl) ssplt[[j]]  = which(p$runs_uid == uv[j])
+    # clustertasklist = rep(list(numeric()),lc)
+    # if (uvl>lc) {
+    #   for(j in 1:uvl) {
+    #     k=j
+    #     if(j>lc) k = j%%lc+1
+    #     clustertasklist[[k]] <- c(clustertasklist[[k]],ssplt[[j]])
+    #   }
+    # }
+    # ssplt = NULL
+    # clusterApply( p$cl, clustertasklist, stmv_interpolate_fast, p=p  )
+    # # try(stopCluster( p$cl ))
 
-    if (0) {
       # random order helps use all cpus
-      pp = parallel_run( stmv_interpolate_fast, p=p, runindex=list( time_index=sample(1:p$nt)) )
-    }
+    pp = parallel_run( stmv_interpolate_fast, p=p, runindex=list( time_index=sample(1:p$nt)) )
 
     if (0) {
       # a penultimate save of data as an internal format, just in case
