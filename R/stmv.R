@@ -715,88 +715,13 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     p_stmv_distance_scale = p$stmv_distance_scale
 
     for ( smult in sm) {
-        p$stmv_distance_scale = p_stmv_distance_scale * smult
-        p$clusters = p$clusters[-1] # as ram reqeuirements increase drop cpus
-        
-        currentstatus = stmv_db( p=p, DS="statistics.status" )
-# parallel_run is now magically working again ... JC
-# if (0) {
-#         # all low-level operations in one to avoid $!#!@# bigmemory issues
-#         Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-#         # to reset all rejected locations
-#         toreset = which( Sflag[] > E[["outside_bounds"]])
-# 
-#         if (length(toreset) > 0) Sflag[toreset] = E[["todo"]]  # to reset all the problem flags to todo
-#         currentstatus = list()
-#         currentstatus$todo = which( Sflag[]==E[["todo"]] )       # 0 = TODO
-#         currentstatus$done = which( Sflag[]==E[["complete"]] )       # 1 = completed
-#         currentstatus$outside = which( Sflag[]==E[["outside_bounds"]] )    # 2 = oustide bounds(if any)
-#         currentstatus$shallow = which( Sflag[]==E[["too_shallow"]] )    # 3 = depth shallower than p$depth.filter (if it exists .. z is a covariate)
-#         currentstatus$predareaerror = which( Sflag[]==E[["prediction_area"]] ) # 4=predictionarea not ok,
-#         currentstatus$nodata = which( Sflag[]==E[["insufficient_data"]] )     # 5=skipped due to insufficient data,
-#         currentstatus$variogramerror = which( Sflag[]==E[["variogram_failure"]] ) # 6=skipped .. fast variogram did not work
-#         currentstatus$vrangeerror = which( Sflag[]==E[["variogram_range_limit"]] )     # 7=variogram estimated range not ok
-#         currentstatus$modelerror = which( Sflag[]==E[["prediction_error"]] )     # 8=problem with prediction and/or modelling
-#         currentstatus$skipped = which( Sflag[] == E[["unknown"]] )   # 9 not completed due to a failed attempt
-#         # do some counts
-#         currentstatus$n.todo = length(currentstatus$todo)
-#         currentstatus$n.complete = length(currentstatus$done)
-#         currentstatus$n.outside = length(which(is.finite(currentstatus$outside)))
-#         currentstatus$n.shallow = length(currentstatus$shallow)
-#         currentstatus$n.predareaerror = length(currentstatus$predareaerror)
-#         currentstatus$n.nodata = length(currentstatus$nodata)
-#         currentstatus$n.variogramerror = length(currentstatus$variogramerror)
-#         currentstatus$n.vrangeerror = length(currentstatus$vrangeerror)
-#         currentstatus$n.modelerror = length(currentstatus$modelerror)
-#         currentstatus$n.skipped = length(currentstatus$skipped)
-#         currentstatus$n.total = length(Sflag)
-#         currentstatus$prop_incomp = round( currentstatus$n.todo / ( currentstatus$n.total), 3)
-#         if ( currentstatus$n.todo == 0 ) next()
-# 
-#         runindex=list( locs=currentstatus$todo[sample.int(length( currentstatus$todo ))] )
-#         nvars = length(runindex)  # runindex must be a list
-#         p$runs = expand.grid(runindex, stringsAsFactors=FALSE, KEEP.OUT.ATTRS=FALSE)
-#         p$nruns = nrow( p$runs )
-#         p$runs_uid = do.call(paste, c(p$runs, sep="~"))
-#         p$rndseed = 1
-#         if ( p$nruns < length( p$clusters ) ) {
-#           p$clusters = sample( p$clusters, p$nruns )  # if very few runs, use only what is required
-#         }
-#         if (!exists( "clustertype", p) ) p$clustertype = "PSOCK"
-#         if (p$clustertype=="FORK") {
-#           p$cl = makeCluster( spec=length(p$clusters),  type=p$clustertype ) # SOCK works well but does not load balance as MPI
-#         } else {
-#           p$cl = makeCluster( spec=p$clusters,  type=p$clustertype ) # SOCK works well but does not load balance as MPI
-#         }
-#         RNGkind("L'Ecuyer-CMRG")  # multiple streams of pseudo-random numbers.
-#         clusterSetRNGStream(p$cl, iseed=p$rndseed )
-#         # if ( !is.null(clusterexport)) clusterExport( p$cl, clusterexport )
-#         uv = unique(p$runs_uid)
-#         uvl = length(uv)
-#         lc = length(p$clusters)
-#         lci = 1:lc
-#         ssplt = list()
-#         for(j in 1:uvl) ssplt[[j]]  = which(p$runs_uid == uv[j])
-#         clustertasklist = rep(list(numeric()),lc)
-#         if (uvl>lc) {
-#           for(j in 1:uvl) {
-#             k=j
-#             if(j>lc) k = j%%lc+1
-#             clustertasklist[[k]] <- c(clustertasklist[[k]],ssplt[[j]])
-#           }
-#         }
-#         ssplt = NULL
-#         # stmv_interpolate(p=p)
-#         clusterApply( p$cl, clustertasklist, stmv_interpolate, p=p  )
-#     #    try(stopCluster( p$cl ))
-#     }
-# }
-
-    # if (0) {
-      # calling using parallel_run causes memory leak ?? JC 2018
+      p$stmv_distance_scale = p_stmv_distance_scale * smult
+      p$clusters = p$clusters[-1] # as ram reqeuirements increase drop cpus
+      currentstatus = stmv_db( p=p, DS="statistics.status" )
+     # calling using parallel_run causes memory leak ?? JC 2018
       currentstatus = stmv_db( p=p, DS="statistics.status" )
       pp = parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )))
-    # }
+    }
 
     if (0) {
       # a penultimate save of data as an internal format, just in case the save step or force complete goes funny
