@@ -38,7 +38,7 @@ stmv_variablelist = function( p ) {
     }
   }
 
- 
+
   if (exists("stmv_local_modelformula_space", p)) {
     if (!is.null(p$stmv_local_modelformula_space)) {
       if (p$stmv_local_modelformula_space != "none") {

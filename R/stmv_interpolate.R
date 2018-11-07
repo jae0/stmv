@@ -46,7 +46,9 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
   # misc intermediate calcs to be done outside of parallel loops
 
   # pre-calculate indices and dim for data to use inside the loop
-  dat_names = unique( c(  p$variables$Y, p$variable$LOCS, p$variables$local_all,  "weights") )
+  dat_names = unique( c(  p$variables$Y, p$variable$LOCS, p$variables$local_all,  "weights") )  # excludes p$variables$TIME
+  # unless it is an explicit covariate and not a seasonal component there is no need for it
+  # .. prediction grids create these from a time grid on the fly
   dat_nc = length( dat_names )
   iY = which(dat_names== p$variables$Y)
   ilocs = which( dat_names %in% p$variable$LOCS )
