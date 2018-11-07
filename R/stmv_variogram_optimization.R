@@ -34,8 +34,8 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, eps=1e-9
       return(obj)
     }
     par = c(tau.sq=vgm_var_max*0.2, sigma.sq=vgm_var_max*0.8, phi=1, nu=0.5)
-    lower =c(0, 0, 0.1, 0.1 )
-    upper =c(vgm_var_max*2, vgm_var_max*2, 5, 5)
+    lower =c(0, 0, 0.75, 0.3 )
+    upper =c(vgm_var_max*2, vgm_var_max*2, 3, 3)
 
     fit = try( optim( par=par, vg=vg, vx=vx, method="L-BFGS-B", lower=lower, upper=upper, fn=vario_function ) )
   }
