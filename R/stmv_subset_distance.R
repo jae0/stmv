@@ -1,4 +1,4 @@
-    stmv_subset_distance = function( Si, p ) {
+    stmv_subset_distance = function( Si, p, returntype="defaut" ) {
 
       E = stmv_error_codes()
       Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
@@ -20,6 +20,8 @@
       yiu = Yi[U]
 
       out = list(flag=E[["todo"]], ndata=ndata, stmv_distance_cur=stmv_distance_cur, U=yiu, ores=NA )  # basic threshold ... now tweak it
+
+      if (returntype=="basic") return (out)
 
       if (out$ndata < p$n.min) {
         # retain crude estimate and run with it
