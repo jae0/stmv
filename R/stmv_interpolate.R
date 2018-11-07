@@ -134,42 +134,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     names(dat) = dat_names
 
 
-    if ( exists("force_complete_solution", p)) {
-      if (p$force_complete_solution) {
-        # augment data with prior estimates and predictions
-        dist_fc = floor(W[["stmv_distance_cur"]]/p$pres)
-        pa_fc = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=dist_fc ) )
-        if (is.null(pa_fc)) {
-          Sflag[Si] = E[["prediction_area"]]
-          message( Si )
-          message("Error with issue with prediction grid ... null .. this should not happen")
-          next()
-        }
-        if ( inherits(pa_fc, "try-error") ) {
-          pa_fc = NULL
-          Sflag[Si] = E[["prediction_area"]]
-          next()
-        }
-        if (nrow(pa_fc) > 1) {
-          augmented_data = P[pa_fc$i]
-          good = which( is.finite(augmented_data))
-          ngood = length(good)
-          if ( ngood > 1) {
-            pa_fc = pa_fc[good,]
-            pa_fc[, p$variable$Y] = augmented_data[good] # copy
-            if ( (ngood + W[["ndata"]] ) > p$n.max ) {
-              nmore = p$n.max - W[["ndata"]]
-              keep = .Internal( sample( ngood, nmore, replace=FALSE, prob=NULL) ) # thin
-              pa_fc = pa_fc[keep,]
-            }
-            pa_fc$weights = 1
-            dat = rbind(dat, pa_fc[, dat_names])
-          }
-        }
-        pa_fc = keep = augmented_data = nmore = ngood = NULL
-      }
-    }
-
     # remember that these are crude mean/discretized estimates
     nu = phi = varSpatial = varObs = NULL
     if ( !is.na(W[["ores"]])) {
@@ -205,10 +169,11 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
       Sflag[Si] = E[["prediction_area"]]
       message( Si )
       message("Error with issue with prediction grid ... null .. this should not happen")
+      pa = W = NULL
       next()
     }
     if ( inherits(pa, "try-error") ) {
-      pa = NULL
+      pa = W = NULL
       Sflag[Si] = E[["prediction_area"]]
       next()
     }
@@ -229,6 +194,45 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
       points( grids$plat[pa$iplat] ~ grids$plon[ pa$iplon] , col="cyan", pch=20, cex=0.01 ) # check on Proc iplat indexing
       points( Ploc[pa$i,2] ~ Ploc[ pa$i, 1] , col="black", pch=20, cex=0.7 ) # check on pa$i indexing -- prediction locations
     }
+
+
+    if ( exists("force_complete_solution", p)) {
+      if (p$force_complete_solution) {
+        # augment data with prior estimates and predictions
+        dist_fc = floor(W[["stmv_distance_cur"]]/p$pres)
+        pa_fc = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=dist_fc ) )
+        if (is.null(pa_fc)) {
+          Sflag[Si] = E[["prediction_area"]]
+          message( Si )
+          message("Error with issue with prediction grid ... null .. this should not happen")
+          W = pa_fc = dist_fc = NULL
+          next()
+        }
+        if ( inherits(pa_fc, "try-error") ) {
+          W = pa_fc = dist_fc = NULL
+          Sflag[Si] = E[["prediction_area"]]
+          next()
+        }
+        if (nrow(pa_fc) > 1) {
+          augmented_data = P[pa_fc$i]
+          good = which( is.finite(augmented_data))
+          ngood = length(good)
+          if ( ngood > 1) {
+            pa_fc = pa_fc[good,]
+            pa_fc[, p$variable$Y] = augmented_data[good] # copy
+            if ( (ngood + W[["ndata"]] ) > p$n.max ) {
+              nmore = p$n.max - W[["ndata"]]
+              keep = .Internal( sample( ngood, nmore, replace=FALSE, prob=NULL) ) # thin
+              pa_fc = pa_fc[keep,]
+            }
+            pa_fc$weights = 1
+            dat = rbind(dat, pa_fc[, dat_names])
+          }
+        }
+        pa_fc = keep = augmented_data = nmore = ngood = NULL
+      }
+    }
+
 
     # model and prediction .. outputs are in scale of the link (and not response)
     # the following permits user-defined models (might want to use compiler::cmpfun )
