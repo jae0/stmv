@@ -220,18 +220,18 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
       )
     )
 
-
-  if (interp.method == "multilevel.b.splines") {
-    library(MBA)
-    out = mba.surf(data, no.X=nr, no.Y=nc, extend=TRUE)
-    if (0) {
-      image(out, xaxs = "r", yaxs = "r", main="Observed response")
-      locs= cbind(data$x, data$y)
-      points(locs)
-      contour(out, add=T)
-    }
-    return(out$xyz.est)
-  }
+  #
+  # if (interp.method == "multilevel.b.splines") {
+  #   library(MBA)
+  #   out = mba.surf(data, no.X=nr, no.Y=nc, extend=TRUE)
+  #   if (0) {
+  #     image(out, xaxs = "r", yaxs = "r", main="Observed response")
+  #     locs= cbind(data$x, data$y)
+  #     points(locs)
+  #     contour(out, add=T)
+  #   }
+  #   return(out$xyz.est)
+  # }
 
 
     if (debugging) {
