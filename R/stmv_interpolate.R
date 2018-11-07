@@ -157,11 +157,13 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
           if ( ngood > 1) {
             pa_fc = pa_fc[good,]
             pa_fc[, p$variable$Y] = augmented_data[good] # copy
-            if ( (ngood + W["ndata"] ) > p$n.max ) {
+            if ( (ngood + W[["ndata"]] ) > p$n.max ) {
               nmore = p$n.max - W[["ndata"]]
               keep = .Internal( sample( ngood, nmore, replace=FALSE, prob=NULL) ) # thin
-              dat = cbind(dat, pa_fc[keep, dat_names])
+              pa_fc = pa_fc[keep,]
             }
+            pa_fc$weights = 1
+            dat = rbind(dat, pa_fc[, dat_names])
           }
         }
         pa_fc = keep = augmented_data = nmore = ngood = NULL
