@@ -150,7 +150,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
           Sflag[Si] = E[["prediction_area"]]
           next()
         }
-        if (nrow(pa) > 1) {
+        if (nrow(pa_fc) > 1) {
           augmented_data = P[pa_fc$i]
           good = which( is.finite(augmented_data))
           ngood = length(good)
