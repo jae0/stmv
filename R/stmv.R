@@ -577,6 +577,8 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     if ( !exists("stmv_distance_min", p)) p$stmv_distance_min = mean( c(p$stmv_distance_prediction, p$stmv_distance_scale /20 ) )
     if ( !exists("stmv_distance_max", p)) p$stmv_distance_max = mean( c(p$stmv_distance_prediction*10, p$stmv_distance_scale * 2 ) )
 
+    p$stmv_distance_scale0 = p$stmv_distance_scale  # store copy as this can get modified below
+
 
     if (p$stmv_local_modelengine == "twostep") {
       if (exists("stmv_rsquared_threshold", p) ) {
@@ -710,43 +712,48 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   # -----------------------------------------------------
 
   if ("interpolate" %in% runmode ) {
-    E = stmv_error_codes()
+    p$clusters0 = p$clusters
+    p$stmv_augmenteddata = FALSE  # must be false here as there are not interpolations yet
     sm = sort( unique( c(1, p$sampling) ) )
-    p_stmv_distance_scale = p$stmv_distance_scale
-
     for ( smult in sm) {
-      p$stmv_distance_scale = p_stmv_distance_scale * smult
+      p$stmv_distance_scale = p$stmv_distance_scale0 * smult
       p$clusters = p$clusters[-1] # as ram reqeuirements increase drop cpus
-      currentstatus = stmv_db( p=p, DS="statistics.status" )
      # calling using parallel_run causes memory leak ?? JC 2018
-      currentstatus = stmv_db( p=p, DS="statistics.status" )
-      pp = parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )))
-    }
-
-    if (0) {
-      # a penultimate save of data as an internal format, just in case the save step or force complete goes funny
-      sP = stmv_attach( p$storage.backend, p$ptr$P )[]
-      sPn = stmv_attach( p$storage.backend, p$ptr$Pn )[]
-      sPsd = stmv_attach( p$storage.backend, p$ptr$Psd )[]
-      sS = stmv_attach( p$storage.backend, p$ptr$S )[]
-      sSflag = stmv_attach( p$storage.backend, p$ptr$Sflag )[]
-      if (exists("stmv_global_modelengine", p)) {
-        if (p$stmv_global_modelengine !="none" ) {
-          sP0 = stmv_attach( p$storage.backend, p$ptr$P0 )[]
-          sP0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )[]
-        }
+      toredo = stmv_db( p=p, DS="flag.incomplete.predictions" )
+      if ( !is.null(toredo) && length(toredo) > 0) {
+        Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
+        Sflag[toredo] = stmv_error_codes()[["todo"]]
       }
-      save( sP, file=p$saved_state_fn$P, compress=TRUE ); sP = NULL
-      save( sPn, file=p$saved_state_fn$Pn, compress=TRUE ); sPn = NULL
-      save( sPsd, file=p$saved_state_fn$Psd, compress=TRUE ); sPsd=NULL
-      save( sS, file=p$saved_state_fn$stats, compress=TRUE ); sS = NULL
-      save( sSflag, file=p$saved_state_fn$sflag, compress=TRUE ); sSflag = NULL
+      currentstatus = stmv_db( p=p, DS="statistics.status" )
+      parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )))
+    }
+  }
 
-      if (exists("stmv_global_modelengine", p)) {
-        if (p$stmv_global_modelengine !="none" ) {
-          save( sP0,   file=p$saved_state_fn$P0,   compress=TRUE ); sP0 = NULL
-          save( sP0sd, file=p$saved_state_fn$P0sd, compress=TRUE ); sP0sd = NULL
-        }
+  # --------------------
+
+  if (use_saved_state) {
+    # a penultimate save of data as an internal format, just in case the save step or force complete goes funny
+    sP = stmv_attach( p$storage.backend, p$ptr$P )[]
+    sPn = stmv_attach( p$storage.backend, p$ptr$Pn )[]
+    sPsd = stmv_attach( p$storage.backend, p$ptr$Psd )[]
+    sS = stmv_attach( p$storage.backend, p$ptr$S )[]
+    sSflag = stmv_attach( p$storage.backend, p$ptr$Sflag )[]
+    if (exists("stmv_global_modelengine", p)) {
+      if (p$stmv_global_modelengine !="none" ) {
+        sP0 = stmv_attach( p$storage.backend, p$ptr$P0 )[]
+        sP0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )[]
+      }
+    }
+    save( sP, file=p$saved_state_fn$P, compress=TRUE ); sP = NULL
+    save( sPn, file=p$saved_state_fn$Pn, compress=TRUE ); sPn = NULL
+    save( sPsd, file=p$saved_state_fn$Psd, compress=TRUE ); sPsd=NULL
+    save( sS, file=p$saved_state_fn$stats, compress=TRUE ); sS = NULL
+    save( sSflag, file=p$saved_state_fn$sflag, compress=TRUE ); sSflag = NULL
+
+    if (exists("stmv_global_modelengine", p)) {
+      if (p$stmv_global_modelengine !="none" ) {
+        save( sP0,   file=p$saved_state_fn$P0,   compress=TRUE ); sP0 = NULL
+        save( sP0sd, file=p$saved_state_fn$P0sd, compress=TRUE ); sP0sd = NULL
       }
     }
   }
@@ -754,77 +761,22 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   # --------------------
 
   if (force_complete_solution) {
-    # finalize all interpolations where there are missing data/predictions using fft-based fast smooth
-    # all low-level operations in one to avoid $!#!@# bigmemory issues
-
     print( "Force completing full interpolation using fast interpolation upon the stragglers" )
+    # finalize all interpolations where there are missing data/predictions using
+    # interpolation based on data and augmented by previous predictions
+    # NOTE:: no covariates are used
 
-    # runindex=list( time_index=1:p$nt )
-    # nvars = length(runindex)  # runindex must be a list
-    # p$runs = expand.grid(runindex, stringsAsFactors=FALSE, KEEP.OUT.ATTRS=FALSE)
-    # p$nruns = nrow( p$runs )
-    # p$runs_uid = do.call(paste, c(p$runs, sep="~"))
-    # p$rndseed = 1
-    # if ( p$nruns < length( p$clusters ) ) {
-    #   p$clusters = sample( p$clusters, p$nruns )  # if very few runs, use only what is required
-    # }
-    # if (!exists( "clustertype", p) ) p$clustertype = "PSOCK"
-    # if (p$clustertype=="FORK") {
-    #   p$cl = makeCluster( spec=length(p$clusters),  type=p$clustertype ) # SOCK works well but does not load balance as MPI
-    # } else {
-    #   p$cl = makeCluster( spec=p$clusters,  type=p$clustertype ) # SOCK works well but does not load balance as MPI
-    # }
-    # RNGkind("L'Ecuyer-CMRG")  # multiple streams of pseudo-random numbers.
-    # clusterSetRNGStream(p$cl, iseed=p$rndseed )
-    # # if ( !is.null(clusterexport)) clusterExport( p$cl, clusterexport )
-    # uv = unique(p$runs_uid)
-    # uvl = length(uv)
-    # lc = length(p$clusters)
-    # lci = 1:lc
-    # ssplt = list()
-    # for(j in 1:uvl) ssplt[[j]]  = which(p$runs_uid == uv[j])
-    # clustertasklist = rep(list(numeric()),lc)
-    # if (uvl>lc) {
-    #   for(j in 1:uvl) {
-    #     k=j
-    #     if(j>lc) k = j%%lc+1
-    #     clustertasklist[[k]] <- c(clustertasklist[[k]],ssplt[[j]])
-    #   }
-    # }
-    # ssplt = NULL
-    # clusterApply( p$cl, clustertasklist, stmv_interpolate_fast, p=p  )
-    # # try(stopCluster( p$cl ))
-
-      # random order helps use all cpus
-    pp = parallel_run( stmv_interpolate_fast, p=p, runindex=list( time_index=sample(1:p$nt)) )
-
-    if (0) {
-      # a penultimate save of data as an internal format, just in case
-      sP = stmv_attach( p$storage.backend, p$ptr$P )[]
-      sPn = stmv_attach( p$storage.backend, p$ptr$Pn )[]
-      sPsd = stmv_attach( p$storage.backend, p$ptr$Psd )[]
-      sS = stmv_attach( p$storage.backend, p$ptr$S )[]
-      sSflag = stmv_attach( p$storage.backend, p$ptr$Sflag )[]
-      if (exists("stmv_global_modelengine", p)) {
-        if (p$stmv_global_modelengine !="none" ) {
-          sP0 = stmv_attach( p$storage.backend, p$ptr$P0 )[]
-          sP0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )[]
-        }
-      }
-      save( sP, file=p$saved_state_fn$P, compress=TRUE ); sP = NULL
-      save( sPn, file=p$saved_state_fn$Pn, compress=TRUE ); sPn = NULL
-      save( sPsd, file=p$saved_state_fn$Psd, compress=TRUE ); sPsd=NULL
-      save( sS, file=p$saved_state_fn$stats, compress=TRUE ); sS = NULL
-      save( sSflag, file=p$saved_state_fn$sflag, compress=TRUE ); sSflag = NULL
-
-      if (exists("stmv_global_modelengine", p)) {
-        if (p$stmv_global_modelengine !="none" ) {
-          save( sP0,   file=p$saved_state_fn$P0,   compress=TRUE ); sP0 = NULL
-          save( sP0sd, file=p$saved_state_fn$P0sd, compress=TRUE ); sP0sd = NULL
-        }
-      }
+    p$clusters = p$clusters0
+    p$stmv_distance_scale = p$stmv_distance_scale0
+    toredo = stmv_db( p=p, DS="flag.incomplete.predictions" )
+    if ( !is.null(toredo) && length(toredo) > 0) {
+      Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
+      Sflag[toredo] = stmv_error_codes()[["todo"]]
     }
-
+    currentstatus = stmv_db( p=p, DS="statistics.status" )
+    p$stmv_local_modelengine = stmv__mba
+    p$stmv_augmenteddata = TRUE
+    parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )))
   }
 
 
