@@ -775,7 +775,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     currentstatus = stmv_db( p=p, DS="statistics.status" )
     p$stmv_local_modelengine = "fft"
     if (!exists("stmv_fft_filter", p)) p$stmv_fft_filter="spatial.process"  #  fft==spatial.process, krige (very slow), lowpass, lowpass_spatial.process
-    if (p$stmv_fft_filter="lowpass" ) {
+    if (p$stmv_fft_filter=="lowpass" ) {
       if (!exists("stmv_lowpass_phi", p))  p$stmv_lowpass_phi = p$pres / 5 # FFT-baed methods cov range parameter .. not required for "spatial.process" ..
       if (!exists("stmv_lowpass_nu", p))  p$stmv_lowpass_nu = 0.5  #exponential
     }
