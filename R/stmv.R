@@ -713,7 +713,6 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
   if ("interpolate" %in% runmode ) {
     p$clusters0 = p$clusters
-    p$stmv_augmenteddata = FALSE  # must be false here as there are not interpolations yet
     sm = sort( unique( c(1, p$sampling) ) )
     for ( smult in sm) {
       p$stmv_distance_scale = p$stmv_distance_scale0 * smult
@@ -765,7 +764,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     # finalize all interpolations where there are missing data/predictions using
     # interpolation based on data and augmented by previous predictions
     # NOTE:: no covariates are used
-
+    p$force_complete_solution = TRUE
     p$clusters = p$clusters0
     p$stmv_distance_scale = p$stmv_distance_scale0
     toredo = stmv_db( p=p, DS="flag.incomplete.predictions" )
@@ -775,7 +774,6 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     }
     currentstatus = stmv_db( p=p, DS="statistics.status" )
     p$stmv_local_modelengine = stmv__mba
-    p$stmv_augmenteddata = TRUE
     parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )))
   }
 

@@ -2,6 +2,7 @@
 
 stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... ) {
   #\\ core function to interpolate (model and predict) in parallel
+
   if (0) {
     # for debugging  runs ..
     currentstatus = stmv_db( p=p, DS="statistics.status" )
@@ -39,15 +40,8 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
   Pn = stmv_attach( p$storage.backend, p$ptr$Pn )
   Psd = stmv_attach( p$storage.backend, p$ptr$Psd )
 
-
-  if (p$nloccov > 0) {
-    Ycov = stmv_attach( p$storage.backend, p$ptr$Ycov )
-  }
-
-  if ( exists("TIME", p$variables) ) {
-    Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )
-  }
-
+  if (p$nloccov > 0) Ycov = stmv_attach( p$storage.backend, p$ptr$Ycov )
+  if ( exists("TIME", p$variables) ) Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )
 
   # misc intermediate calcs to be done outside of parallel loops
 
@@ -63,9 +57,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     ti_cov = setdiff(p$variables$local_all, c(p$variables$Y, p$variables$LOCS, p$variables$local_cov ) )
     itime_cov = which(dat_names %in% ti_cov)
   }
-
-
-
 
   local_fn = switch( p$stmv_local_modelengine,
     bayesx = stmv__bayesx,
@@ -97,97 +88,53 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
   for ( iip in ip ) {
 
     if ( iip %in% logpoints )  currentstatus = stmv_logfile(p=p, stime=stime)
-
-    if (0) {
-      # only for debugging
-      if ( iip %in% savepoints ) {
-        sP = P[]; save( sP, file=p$saved_state_fn$P, compress=TRUE ); sP=NULL
-        sPn = Pn[]; save( sPn, file=p$saved_state_fn$Pn, compress=TRUE ); sPn=NULL
-        sPsd = Psd[]; save( sPsd, file=p$saved_state_fn$Psd, compress=TRUE ); sPsd=NULL
-        sS = S[]; save( sS, file=p$saved_state_fn$stats, compress=TRUE ); sS=NULL
-        sSflag = Sflag[]; save( sSflag, file=p$saved_state_fn$sflag, compress=TRUE ); sSflag=NULL
-        currentstatus = stmv_logfile(p=p, stime=stime)
-      }
-    }
-
     Si = p$runs[ iip, "locs" ]
-
     if ( Sflag[Si] != E[["todo"]] ) next()  # previously attempted .. skip
-
     print( paste("index =", iip, ";  Si = ", Si ) )
 
     # obtain indices of data locations withing a given spatial range, optimally determined via variogram
 
-    W = try( stmv_subset_distance( Si, p=p ) )
+    W = WA = NULL
+    if ( exists("force_complete_solution", p)) {
+      if (p$force_complete_solution) {
+        # skip variogram estimation as that is cpu/ram-intensive .. used as a last resort when regular interpolations have failed
+        W = try( stmv_subset_distance( Si, p=p, returntype="basic" ) )
+        # WA = augmented data
+      }
+    } else {
+      # default i.e., usual run is to compute variograms etc ..
+      W = try( stmv_subset_distance( Si, p=p, returntype="default" ) )
+    }
     if ( is.null(W) ) {
       Sflag[Si] = E[["insufficient_data"]]
-      W = NULL
+      W = WA = NULL
       next()
     }
     if ( inherits(W, "try-error") ) {
       Sflag[Si] = E[["insufficient_data"]]
-      W = NULL
+      W = WA = NULL
       next()
     }
-
     Sflag[Si] = W[["flag"]]  # update flags
     if ( Sflag[Si] != E[["todo"]] ) {
       if (exists("stmv_rangecheck", p)) {
         if (p$stmv_rangecheck=="paranoid") {
+          W = WA = NULL
           next()
         }
       }
     }
 
-    if (0) {
-      plot( Sloc[,], pch=20, cex=0.5, col="gray")
-      points( Yloc[,], pch=20, cex=0.2, col="green")
-      points( Yloc[W[["U"]],], pch=20, cex=1, col="yellow" )
-      points( Sloc[Si,2] ~ Sloc[Si,1], pch=20, cex=5, col="blue" )
-    }
-
-    # W[["U"]]] -- the indices of locally useful data and p$stmv_distance_prediction determine the data entering into local model construction
-
-    pa = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=p$windowsize.half ) )
-    if (is.null(pa)) {
-      Sflag[Si] = E[["prediction_area"]]
-      W = pa = NULL
-      message( Si )
-      message("Error with issue with prediction grid ... null .. this should not happen")
-      next()
-    }
-    if ( inherits(pa, "try-error") ) {
-      W = pa = NULL
-      Sflag[Si] = E[["prediction_area"]]
-      next()
-    }
-
-    if (0) {
-      # check that position indices are working properly
-      Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
-      Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
-      plot( Yloc[W[["U"]],2] ~ Yloc[W[["U"]],1], col="red", pch=".",
-        ylim=range(c(Yloc[W[["U"]],2], Sloc[Si,2], Ploc[pa$i,2]) ),
-        xlim=range(c(Yloc[W[["U"]],1], Sloc[Si,1], Ploc[pa$i,1]) ) ) # all data
-      points( Yloc[W[["U"]],2] ~ Yloc[W[["U"]],1], col="green" )  # with covars and no other data issues
-      points( Sloc[Si,2] ~ Sloc[Si,1], col="blue" ) # statistical locations
-      # statistical output locations
-      grids= aegis::spatial_grid(p, DS="planar.coords" )
-      points( grids$plat[round( (Sloc[Si,2]-p$origin[2])/p$pres) + 1]
-            ~ grids$plon[round( (Sloc[Si,1]-p$origin[1])/p$pres) + 1] , col="purple", pch=25, cex=5 )
-
-      points( grids$plat[pa$iplat] ~ grids$plon[ pa$iplon] , col="cyan", pch=20, cex=0.01 ) # check on Proc iplat indexing
-      points( Ploc[pa$i,2] ~ Ploc[ pa$i, 1] , col="black", pch=20, cex=0.7 ) # check on pa$i indexing -- prediction locations
-    }
-
+    # if here then W exists and there is something to do
+    # NOTE:: W[["U"]] are the indices of locally useful data
+    # p$stmv_distance_prediction determine the data entering into local model construction
 
     # prep dependent data
-    # reconstruct data for modelling (dat) and data for prediction purposes (pa)
+    # reconstruct data for modelling (dat)
     dat = matrix( 1, nrow=W[["ndata"]], ncol=dat_nc )
     dat[,iY] = Y[W[["U"]]] # these are residuals if there is a global model
     # add a small error term to prevent some errors when duplicate locations exist; stmv_distance_cur offsets to positive values
     dat[,ilocs] = Yloc[W[["U"]],] + W[["stmv_distance_cur"]] * runif(2*W[["ndata"]], -1e-6, 1e-6)
-
 
     if (p$nloccov > 0) dat[,icov] = Ycov[W[["U"]],] # no need for other dim checks as this is user provided
     if (exists("TIME", p$variables)) dat[, itime_cov] = as.matrix(stmv_timecovars( vars=ti_cov, ti=Ytime[W[["U"]], ] ) )
@@ -211,17 +158,51 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     if (!is.finite(phi)) phi = W[["stmv_distance_cur"]]/sqrt(8*nu)
 
     if (is.null(varSpatial)) varSpatial =0.5 * var( dat[, p$variables$Y], na.rm=TRUE)
-
     if (is.null(varObs)) varObs = varSpatial
-
-
-    # print( "starting interpolation" )
-
     if ( !is.na(W[["ores"]]) ) W[["ores"]][["vgm"]] = NULL
+
+    if (debugging) {
+      print( "starting interpolation" )
+      # check data and statistical locations
+      plot( Sloc[,], pch=20, cex=0.5, col="gray")
+      points( Yloc[,], pch=20, cex=0.2, col="green")
+      points( Yloc[W[["U"]],], pch=20, cex=1, col="yellow" )
+      points( Sloc[Si,2] ~ Sloc[Si,1], pch=20, cex=5, col="blue" )
+    }
+
+    # construct data (including covariates) for prediction locations (pa)
+    pa = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=p$windowsize.half ) )
+    if (is.null(pa)) {
+      Sflag[Si] = E[["prediction_area"]]
+      message( Si )
+      message("Error with issue with prediction grid ... null .. this should not happen")
+      next()
+    }
+    if ( inherits(pa, "try-error") ) {
+      pa = NULL
+      Sflag[Si] = E[["prediction_area"]]
+      next()
+    }
+
+    if (debugging) {
+      # check that position indices are working properly
+      Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
+      Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
+      plot( Yloc[W[["U"]],2] ~ Yloc[W[["U"]],1], col="red", pch=".",
+        ylim=range(c(Yloc[W[["U"]],2], Sloc[Si,2], Ploc[pa$i,2]) ),
+        xlim=range(c(Yloc[W[["U"]],1], Sloc[Si,1], Ploc[pa$i,1]) ) ) # all data
+      points( Yloc[W[["U"]],2] ~ Yloc[W[["U"]],1], col="green" )  # with covars and no other data issues
+      points( Sloc[Si,2] ~ Sloc[Si,1], col="blue" ) # statistical locations
+      # statistical output locations
+      grids= aegis::spatial_grid(p, DS="planar.coords" )
+      points( grids$plat[round( (Sloc[Si,2]-p$origin[2])/p$pres) + 1]
+            ~ grids$plon[round( (Sloc[Si,1]-p$origin[1])/p$pres) + 1] , col="purple", pch=25, cex=5 )
+      points( grids$plat[pa$iplat] ~ grids$plon[ pa$iplon] , col="cyan", pch=20, cex=0.01 ) # check on Proc iplat indexing
+      points( Ploc[pa$i,2] ~ Ploc[ pa$i, 1] , col="black", pch=20, cex=0.7 ) # check on pa$i indexing -- prediction locations
+    }
 
     # model and prediction .. outputs are in scale of the link (and not response)
     # the following permits user-defined models (might want to use compiler::cmpfun )
-
     res =NULL
     res = try(
       local_fn(
@@ -237,15 +218,28 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
       )
     )
 
+
+  if (interp.method == "multilevel.b.splines") {
+    library(MBA)
+    out = mba.surf(data, no.X=nr, no.Y=nc, extend=TRUE)
+    if (0) {
+      image(out, xaxs = "r", yaxs = "r", main="Observed response")
+      locs= cbind(data$x, data$y)
+      points(locs)
+      contour(out, add=T)
+    }
+    return(out$xyz.est)
+  }
+
+
     if (debugging) {
       print (str(W) )
       print( str(res) )
-    }
-
-    if (0) {
-      lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==2012.05,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
-      lattice::levelplot( mean ~ plon + plat, data=res$predictions, col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
-      for( i in sort(unique(res$predictions[,p$variables$TIME])))  print(lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==i,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
+      if (0) {
+        lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==2012.05,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
+        lattice::levelplot( mean ~ plon + plat, data=res$predictions, col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
+        for( i in sort(unique(res$predictions[,p$variables$TIME])))  print(lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==i,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
+      }
     }
 
     if ( is.null(res)) {
@@ -331,6 +325,18 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     # do last. it is an indicator of completion of all tasks
     # restarts would be broken otherwise
     Sflag[Si] = E[["complete"]]  # mark as complete without issues
+
+    if (0) {
+      # only for debugging data bigmemory structures
+      if ( iip %in% savepoints ) {
+        sP = P[]; save( sP, file=p$saved_state_fn$P, compress=TRUE ); sP=NULL
+        sPn = Pn[]; save( sPn, file=p$saved_state_fn$Pn, compress=TRUE ); sPn=NULL
+        sPsd = Psd[]; save( sPsd, file=p$saved_state_fn$Psd, compress=TRUE ); sPsd=NULL
+        sS = S[]; save( sS, file=p$saved_state_fn$stats, compress=TRUE ); sS=NULL
+        sSflag = Sflag[]; save( sSflag, file=p$saved_state_fn$sflag, compress=TRUE ); sSflag=NULL
+        currentstatus = stmv_logfile(p=p, stime=stime)
+      }
+    }
 
   }  # end for loop
 
