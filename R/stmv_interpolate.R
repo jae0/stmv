@@ -96,17 +96,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
 
     # obtain indices of data locations withing a given spatial range, optimally determined via variogram
 
-    W = WA = NULL
-    if ( exists("force_complete_solution", p)) {
-      if (p$force_complete_solution) {
-        # skip variogram estimation as that is cpu/ram-intensive .. used as a last resort when regular interpolations have failed
-        W = try( stmv_subset_distance( Si, p=p, returntype="basic" ) )
-        # WA = augmented data
-      }
-    } else {
-      # default i.e., usual run is to compute variograms etc ..
-      W = try( stmv_subset_distance( Si, p=p, returntype="default" ) )
-    }
+    W = try( stmv_subset_distance( Si, p=p ) )
     if ( is.null(W) ) {
       Sflag[Si] = E[["insufficient_data"]]
       W = WA = NULL
@@ -142,6 +132,31 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     if (exists("TIME", p$variables)) dat[, itime_cov] = as.matrix(stmv_timecovars( vars=ti_cov, ti=Ytime[W[["U"]], ] ) )
     dat = as.data.frame(dat)
     names(dat) = dat_names
+
+
+    if ( exists("force_complete_solution", p)) {
+      if (p$force_complete_solution) {
+        # augment data with prior estimates and predictions
+        nun = floor(W[["stmv_distance_cur"]]/p$pres)
+        pa = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=nun ) )
+        if (is.null(pa)) {
+          Sflag[Si] = E[["prediction_area"]]
+          message( Si )
+          message("Error with issue with prediction grid ... null .. this should not happen")
+          next()
+        }
+        if ( inherits(pa, "try-error") ) {
+          pa = NULL
+          Sflag[Si] = E[["prediction_area"]]
+          next()
+        }
+        pa[,p$variable$Y] = P[pa$i]
+        pa = pa[ which(is.finite(pa[,p$variable$Y])) , ]
+        keep = .Internal( sample( nrow(pa), (p$n.max-W[["ndata"]]), replace=FALSE, prob=NULL)) # thin
+        dat = cbind(dat, pa[keep, dat_names])
+      }
+    }
+
 
     # remember that these are crude mean/discretized estimates
     nu = phi = varSpatial = varObs = NULL
