@@ -620,6 +620,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   if ( "initialize_only" %in% runmode ) return(p)
 
   file.create( p$stmv_current_status, showWarnings=FALSE )
+  p$time_start_interpolation = Sys.time()
   currentstatus = stmv_logfile(p = p)  # init log file
 
   if ( any(grepl("debug", runmode)) ) {
