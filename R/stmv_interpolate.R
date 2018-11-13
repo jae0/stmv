@@ -85,8 +85,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     savepoints = sample(logpoints, nsavepoints)
   }
 
-  currentstatus = stmv_logfile(p = p)
-
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
 

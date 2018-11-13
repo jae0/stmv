@@ -619,6 +619,8 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
   if ( "initialize_only" %in% runmode ) return(p)
 
+  file.create( p$stmv_current_status, showWarnings=FALSE )
+  currentstatus = stmv_logfile(p = p)  # init log file
 
   if ( any(grepl("debug", runmode)) ) {
 
