@@ -2,16 +2,17 @@ stmv_logfile = function(p){
 
   time_current = Sys.time()
 
+  time_interpolation = time_current
+  t_suffix = ""
+
   if (exists("time_start_interpolation", p)) {
     time_interpolation = p$time_start_interpolation
     t_suffix = "main"
   }
-
   if (exists("time_start_interpolation_debug", p)) {
     time_interpolation = p$time_start_interpolation_debug
     t_suffix = "debug"
   }
-
   if (exists("time_start_interpolation_force_complete", p)) {
     time_interpolation = p$time_start_interpolation_force_complete
     t_suffix = "force-complete"
