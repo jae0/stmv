@@ -20,6 +20,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
   # -----------------------------------------------------
 
+  if (!exists("time_start", p) ) p$time_start = Sys.time()
   if (!exists("stmvSaveDir", p)) p$stmvSaveDir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
   if ( !file.exists(p$stmvSaveDir)) dir.create( p$stmvSaveDir, recursive=TRUE, showWarnings=FALSE )
 
@@ -31,7 +32,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   p$nlogs = nlogs
   p = stmv_parameters(p=p) # fill in parameters with defaults where required
   p = stmv_db( p=p, DS="filenames" )
-  p$time.start = Sys.time()
+
 
   p$ptr = list() # location for data pointers
 
@@ -490,7 +491,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         message( "||| Predicting global effect of covariates at each prediction location ... ")
         message( "||| depending upon the size of the prediction grid and number of cpus (~1hr?).. ")
 
-        p$timec_covariates_0 =  Sys.time()
+        p$time_covariates_0 =  Sys.time()
         if (exists("COV", p$variables)) {
           if (length(p$variables$COV) > 0) {
             nc_cov =NULL
@@ -511,7 +512,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
           if (exists("all.covars.static", pc)) if (!pc$all.covars.static) if (exists("clusters.covars", pc) ) pc$clusters = pc$clusters.covars
           # takes about 28 GB per run .. adjust cluster number temporarily
           stmv_db( p=pc, DS="global.prediction.surface" )
-          p$time_covariates = round(difftime( Sys.time(), p$timec_covariates_0 , units="hours"), 3)
+          p$time_covariates = round(difftime( Sys.time(), p$time_covariates_0 , units="hours"), 3)
           message( paste( "||| Time taken to predict covariate surface (hours):", p$time_covariates ) )
         }
       }
@@ -621,7 +622,6 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
   if ( any(grepl("debug", runmode)) ) {
 
-    if (!exists("time.start", p) ) p$time.start = Sys.time()
     message( " " )
     message( "||| Debugging from man stmv call." )
     message( "||| To load from the saved state try: stmv_db( p=p, DS='load_saved_state' ) " )
@@ -636,6 +636,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       p <<- pdeb
       browser()
       debug(stmv_interpolate)
+      pdeb$time_start_interpolation_debug = Sys.time()
       stmv_interpolate (p=pdeb, debugging=TRUE )
     }
 
@@ -724,6 +725,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         Sflag[toredo] = stmv_error_codes()[["todo"]]
       }
       currentstatus = stmv_db( p=p, DS="statistics.status" )
+      p$time_start_interpolation = Sys.time()
       parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )))
     }
   }
@@ -780,6 +782,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       if (!exists("stmv_lowpass_phi", p))  p$stmv_lowpass_phi = p$pres / 5 # FFT-baed methods cov range parameter .. not required for "spatial.process" ..
       if (!exists("stmv_lowpass_nu", p))  p$stmv_lowpass_nu = 0.5  #exponential
     }
+    p$time_start_interpolation_force_complete = Sys.time()
     parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )))
   }
 
@@ -804,8 +807,8 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     }
   }
 
-  p$time_total = round( difftime( Sys.time(), p$time.start, units="hours" ), 3)
-  message( paste( "||| Time taken for full analysis (hours):", p$time_total ) )
-  message( paste( "||| Your parameter 'p' has been updated in case you need to re-run something" ) )
+  p$time_total = round( difftime( Sys.time(), p$time_start, units="hours" ), 3)
+  message( paste( "||| Total time taken (hours):", p$time_total ) )
+  message( paste( "||| NOTE:: parameter 'p' has been updated in case you need to re-run something" ) )
 
 }

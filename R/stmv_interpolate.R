@@ -1,6 +1,6 @@
 
 
-stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... ) {
+stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
   #\\ core function to interpolate (model and predict) in parallel
 
   if (0) {
@@ -9,7 +9,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
     p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) )
     ip = 1:p$nruns
     debugging=TRUE
-    stime=Sys.time()
   }
 
   # ---------------------
@@ -89,7 +88,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
 
-    if ( iip %in% logpoints )  currentstatus = stmv_logfile(p=p, stime=stime)
+    if ( iip %in% logpoints )  currentstatus = stmv_logfile(p=p)
     Si = p$runs[ iip, "locs" ]
     if ( Sflag[Si] != E[["todo"]] ) next()  # previously attempted .. skip
     print( paste("index =", iip, ";  Si = ", Si ) )
@@ -367,7 +366,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, stime=Sys.time(), ... 
         sPsd = Psd[]; save( sPsd, file=p$saved_state_fn$Psd, compress=TRUE ); sPsd=NULL
         sS = S[]; save( sS, file=p$saved_state_fn$stats, compress=TRUE ); sS=NULL
         sSflag = Sflag[]; save( sSflag, file=p$saved_state_fn$sflag, compress=TRUE ); sSflag=NULL
-        currentstatus = stmv_logfile(p=p, stime=stime)
+        currentstatus = stmv_logfile(p=p)
       }
     }
 
