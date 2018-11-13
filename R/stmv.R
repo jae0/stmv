@@ -1,7 +1,7 @@
 
 
 stmv = function( p, runmode="interpolate", DATA=NULL,
-  use_saved_state=NULL, save_completed_data=TRUE, force_complete_solution=TRUE, nlogs=100,
+  use_saved_state=NULL, save_completed_data=TRUE, force_complete_solution=TRUE, nlogs=200,
   debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE ) {
 
   if (0) {
