@@ -2932,20 +2932,14 @@ aegis
 \begin_layout Quotation
 
 \size scriptsize
-p = aegis::bathymetry_parameters( 
+p = aegis::aegis_parameters( 
 \end_layout
 
 \begin_deeper
 \begin_layout Quotation
 
 \size scriptsize
-p=p ,
-\end_layout
-
-\begin_layout Quotation
-
-\size scriptsize
-project.name = "bathymetry", 
+DS = "bathymetry", 
 \end_layout
 
 \begin_layout Quotation
@@ -2958,6 +2952,12 @@ data_root = project.datadirectory( "aegis", "bathymetry" ),
 
 \size scriptsize
 DATA = 'bathymetry.db( p=p, DS="stmv.inputs" )', 
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+spatial.domain = c( "canada.east.superhighres" ), 
 \end_layout
 
 \begin_layout Quotation
@@ -3069,20 +3069,26 @@ ss) / ram_required_per_process ) )
 \begin_layout Quotation
 
 \size scriptsize
-p = aegis::substrate_parameters(
+p = aegis::aegis_parameters(
 \end_layout
 
 \begin_deeper
 \begin_layout Quotation
 
 \size scriptsize
-project.name = "substrate",
+DS = "substrate",
 \end_layout
 
 \begin_layout Quotation
 
 \size scriptsize
 data_root = project.datadirectory( "aegis", "substrate" ),
+\end_layout
+
+\begin_layout Quotation
+
+\size scriptsize
+spatial.domain = c( "canada.east.highres"),
 \end_layout
 
 \begin_layout Quotation
@@ -3378,20 +3384,20 @@ ss) / ram_required_per_process ) )
 \begin_layout Quotation
 
 \size scriptsize
-p = aegis::temperature_parameters(
+p = aegis::aegis_parameters(
 \end_layout
 
 \begin_deeper
 \begin_layout Quotation
 
 \size scriptsize
-year.assessment=year.assessment, # must be first element
+year.assessment=year.assessment, 
 \end_layout
 
 \begin_layout Quotation
 
 \size scriptsize
-project.name = "temperature",
+DS = "temperature",
 \end_layout
 
 \begin_layout Quotation
