@@ -7,7 +7,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   if (0) {
     nlogs = 25
     force_complete_solution=FALSE
-    use_saved_state="ram" # or "disk"
+    use_saved_state=NULL # or "disk"
     DATA=NULL
     storage.backend="bigmemory.ram"
     save_completed_data=TRUE  # export out of stmv system for use outside (e.g., by aegis)
@@ -590,7 +590,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       }
     }
 
-  p$upsampling = c(1,0, 1.25, 1.5, 1.75, 2.0, 2.5) * p$stmv_distance_scale
+  p$upsampling = c(1.0, 1.25, 1.5, 1.75, 2.0, 2.5) * p$stmv_distance_scale
   p$upsampling = p$upsampling[ which(p$upsampling <= p$stmv_distance_max )]
 
   if ( exists("TIME", p$variables)) {

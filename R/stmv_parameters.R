@@ -13,7 +13,7 @@ stmv_parameters = function( p=NULL, ... ) {
 
   if (!exists("clusters", p)) p$clusters = rep("localhost", detectCores() )  # default if not given
   if( !exists( "storage.backend", p))  p$storage.backend="bigmemory.ram"
-  if( !exists( "stmv_variogram_method", p)) p$stmv_variogram_method="fast"   # note GP methods are slow when there is too much data
+  if( !exists( "stmv_variogram_method", p)) p$stmv_variogram_method="gstat"   # note GP methods are slow when there is too much data
   if (!exists( "stmv_global_family", p)) p$stmv_global_family = gaussian(link = "identity")
   if (!exists( "stmv_eps", p)) p$stmv_eps = 0.001  # distance units for eps noise to permit mesh gen for boundaries
   if (!exists( "stmv_quantile_bounds", p)) p$stmv_quantile_bounds = c(0.01, 0.99) # remove these extremes in interpolations

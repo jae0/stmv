@@ -3168,7 +3168,7 @@ stmv_lowpass_nu = 0.5, # this is exponential covar
 \begin_layout Quotation
 
 \size scriptsize
-stmv_variogram_method = "fast",
+stmv_variogram_method = "gstat",
 \end_layout
 
 \begin_layout Quotation
@@ -3536,7 +3536,7 @@ stmv_gam_optimizer=c("outer", "bfgs"),
 \begin_layout Quotation
 
 \size scriptsize
-stmv_variogram_method = "fast",
+stmv_variogram_method = "gstat",
 \end_layout
 
 \begin_layout Quotation
@@ -4309,7 +4309,7 @@ stmv_gam_optimizer=c("outer", "bfgs") ,
 \begin_layout Quotation
 
 \size scriptsize
-stmv_variogram_method = "fast",
+stmv_variogram_method = "gstat",
 \end_layout
 
 \begin_layout Quotation
