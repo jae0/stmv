@@ -201,7 +201,7 @@ stmv_variogram = function( xy=NULL, z=NULL, plotdata=FALSE, methods=c("fast"), d
 
   if ("fast" %in% methods) {
     # try to be through
-
+    stop(" this method is not ready for prime time .. use gstat instead")
     # spatial discretization
     XYZ = stmv_discretize_coordinates(coo=xy, z=z, discretized_n=125, method="aggregate", FUNC=mean, na.rm=TRUE)
     maxdist = out$range_crude   # begin with this (diagonal)
