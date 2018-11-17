@@ -618,8 +618,8 @@
             }
           }
 
-          Pl =  P[] + 1.96* V[]
-          Pu =  P[] - 1.96* V[]
+          Pl =  P[] - 1.96* V[]
+          Pu =  P[] + 1.96* V[]
           P =  P[]
 
           # return to user scale (that of Y)
@@ -668,8 +668,8 @@
             V[shallower] = NA
           }
 
-          Pl =  P[] + 1.96* V[]
-          Pu =  P[] - 1.96* V[]
+          Pl =  P[] - 1.96* V[]
+          Pu =  P[] + 1.96* V[]
           P =  P[]
 
           # return to user scale (that of Y)
