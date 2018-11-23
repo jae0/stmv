@@ -718,6 +718,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     p$clusters0 = p$clusters
     sm = sort( unique( c(1, p$sampling) ) )
     for ( smult in sm) {
+      print( paste("Entering interpolation stage", smult, "of", sm) )
       p$stmv_distance_scale = p$stmv_distance_scale0 * smult
       p$clusters = p$clusters[-1] # as ram reqeuirements increase drop cpus
      # calling using parallel_run causes memory leak ?? JC 2018
@@ -765,7 +766,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   # --------------------
 
   if (force_complete_solution) {
-    print( "Force completing full interpolation using fast interpolation upon the stragglers" )
+    print( "Entering -force complete solution- interpolation stage" )
     # finalize all interpolations where there are missing data/predictions using
     # interpolation based on data and augmented by previous predictions
     # NOTE:: no covariates are used
