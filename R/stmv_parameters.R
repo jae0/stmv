@@ -22,7 +22,7 @@ stmv_parameters = function( p=NULL, ... ) {
   if (!exists( "depth.filter", p)) p$depth.filter = FALSE # if !FALSE .. depth is given as m so, choose andy stats locations with elevation > 1 m as being on land
   if (!exists( "stmv_kernelmethods_use_all_data", p)) p$stmv_kernelmethods_use_all_data =TRUE ## speed and RAM usage improvement is minimal (if any) when off, leave on or remove option and fix as on
 
-  if ( !exists("sampling", p))  p$sampling = c( 1, 1.1, 1.2, 1.5, 1.75, 2 ) # fractions of distance scale to try iteratively increasing distance and n.min
+  if ( !exists("sampling", p))  p$sampling = c( 1, 1.25, 1.5 ) # fractions of distance scale to try iteratively increasing distance and n.min
 
   if ( !exists("downsampling_multiplier", p))  {
     # downsampling (thinning) of data via a simple discretization and uniform weight of data counts in each block .. 1== use current discretization (pres, pres, tres)
