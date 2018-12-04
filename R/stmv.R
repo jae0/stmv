@@ -590,7 +590,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       }
     }
 
-  p$upsampling = c(1.0, 1.25, 1.5, 1.75, 2.0, 2.5) * p$stmv_distance_scale
+  p$upsampling = c(1.0, 1.25, 1.5, 1.75, 2.0) * p$stmv_distance_scale
   p$upsampling = p$upsampling[ which(p$upsampling <= p$stmv_distance_max )]
 
   if ( exists("TIME", p$variables)) {
@@ -716,12 +716,12 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
   if ("interpolate" %in% runmode ) {
     p$clusters0 = p$clusters
-    sm = sort( unique( c(1, p$sampling) ) )
+    sm = sort( unique( c(1, p$sampling[ p$sampling > 1] ) ) )
+    print (paste( "Sampling at the following mulitpliers:", paste0(sm) ))
     for ( smult in sm) {
-      print( paste("Entering interpolation stage", smult, "of", sm) )
+      print( paste("Entering interpolation stage", smult ) )
       p$stmv_distance_scale = p$stmv_distance_scale0 * smult
-      p$clusters = p$clusters[-1] # as ram reqeuirements increase drop cpus
-     # calling using parallel_run causes memory leak ?? JC 2018
+      # p$clusters = p$clusters[-1] # as ram reqeuirements increase drop cpus
       toredo = stmv_db( p=p, DS="flag.incomplete.predictions" )
       if ( !is.null(toredo) && length(toredo) > 0) {
         Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
