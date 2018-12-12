@@ -717,9 +717,10 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   if ("interpolate" %in% runmode ) {
     p$clusters0 = p$clusters
     sm = sort( unique( c(1, p$sampling[ p$sampling > 1] ) ) )
-    print (paste( "Sampling at the following mulitpliers:", paste0(sm) ))
+    print ( "Sampling at the following distance mulitpliers:" )
+    print (sm)
     for ( smult in sm) {
-      print( paste("Entering interpolation stage", smult ) )
+      print( paste("Entering interpolation at distance multiplier:", smult ) )
       p$stmv_distance_scale = p$stmv_distance_scale0 * smult
       # p$clusters = p$clusters[-1] # as ram reqeuirements increase drop cpus
       toredo = stmv_db( p=p, DS="flag.incomplete.predictions" )
