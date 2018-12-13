@@ -361,7 +361,7 @@
       if ( file.exists( fn.global_model ) ) {
         message( "||| A global model already exists. It will be overwritten in 10 seconds.")
         message( "|||   Type <ctrl-c> or <esc> to interrupt. To reuse the saved model ")
-        message( "|||   leave out 'globalmodel' as a runmode option ... overwriting in:")
+        message( "|||   leave out 'global_model' as a runmode option ... overwriting in:")
         for (i in 9:0) {
           Sys.sleep(1)
           cat( i)
@@ -382,8 +382,19 @@
         }
       }
 
+
+      if ( p$stmv_global_modelengine == "userdefined" )  {
+        # need a file with predictions a function to get/return them
+        if (!(exists("run", p$stmv_global_model ))) stop( "Must define p$stmv_global_model$run() as this is a userdefined p$stmv_global_modelengine")
+        global_model = eval(parse(text=p$stmv_global_model$run ))
+        print( summary( global_model ) )
+        save( global_model, file= fn.global_model, compress=TRUE )
+        return ()
+      }
+
       # as a first pass, model the time-independent factors as a user-defined model
       if (p$stmv_global_modelengine=="glm") {
+        warning( "glm does not have a spatial random effect, model covariates could be biased if residual errors are not iid ... ")
         if (!exists("wt", B)) {
           global_model = try(
             glm( formula=p$stmv_global_modelformula, data=B, family=p$stmv_global_family ) )
@@ -394,6 +405,7 @@
       }
 
       if (p$stmv_global_modelengine=="bigglm") {
+        warning( "bigglm does not have a spatial random effect, model covariates could be biased if residual errors are not iid ... ")
         if (!exists("wt", B)) {
           global_model = try(
             bigglm( formula=p$stmv_global_modelformula, data=B, family=p$stmv_global_family ))
@@ -404,6 +416,7 @@
       }
 
       if (p$stmv_global_modelengine=="gam") {
+        warning( "gam does not have a spatial random effect, model covariates could be biased if residual errors are not iid, spatial splines might help but this is not guaranteed. gamm might be a better choice. You have been warned ... ")
         require(mgcv)
         if (!exists("wt", B)) {
           global_model = try(
@@ -416,18 +429,46 @@
         }
       }
 
+
+      if (p$stmv_global_modelengine=="gamm") {
+        warning( "gamm should include a spatial random effect, otherwise model covariates could be biased if residual errors are not iid ... ")
+        require(mgcv)
+        if (!exists("wt", B)) {
+          global_model = try(
+            gam( formula=p$stmv_global_modelformula, data=B,
+              optimizer= p$stmv_gam_optimizer, family=p$stmv_global_family) )
+        } else {
+          global_model = try(
+            gamm( formula=p$stmv_global_modelformula, data=B,
+              optimizer= p$stmv_gam_optimizer, family=p$stmv_global_family, weights=wt ) )
+        }
+      }
+
+
       if (p$stmv_global_modelengine=="bayesx") {
+        warning( "make sure you have a spatial random effect, otherwise model covariates/predictions could be biased if residual errors are not iid ... ")
+
         require(mgcv)
         global_model = try(
           bayesx( formula=p$stmv_global_modelformula, data=B, family=p$stmv_global_family ) )
+      }
+
+
+      if (p$stmv_global_modelengine=="inla") {
+        warning( "make sure you have a spatial random effect, otherwise model covariates/predictions could be biased if residual errors are not iid ... ")
+
+        require(INLA)
+        global_model = try( eval( p$stmv_global_modelformula ) )    # p$stmv_global_modelformula must contain the whole call
+
+          # inla( formula=p$stmv_global_modelformula, data=B, family=p$stmv_global_family ) )
       }
 
       if ( "try-error" %in% class(global_model) ) stop( "The covariate model was problematic" )
       print( summary( global_model ) )
 
       save( global_model, file= fn.global_model, compress=TRUE )
-
-      return ()
+      global_model = NULL
+      return()
     }
 
 
@@ -494,12 +535,38 @@
           names(pa) = c( npa, "dyear" )
         }
 
-        if (p$stmv_global_modelengine %in% c("glm", "bigglm", "gam") ) {
+        if ( p$stmv_global_modelengine == "userdefined" )  {
+          if (exists( "prediction_method", p$stmv_global_model )) {
+            Pbaseline = NULL
+            Pbaseline = try( eval(parse(text=p$stmv_global_model$predict )) )
+            if (inherits(Pbaseline, "try-error")) Pbaseline = NULL
+          } else {
+            # try in case of a default predict method exits
+            warning( "p$stmv_global_model$predict() method was not found trying to do a generic prediction ...")
+            Pbaseline = try( predict( global_model, newdata=pa, type="link", se.fit=TRUE ) )  # must be on link scale
+            if (inherits(Pbaseline, "try-error")) stop ("Prediction failed ... ")
+          }
+          pa = NULL
+
+          if ( ! is.null(Pbaseline) ) {
+            YYY = predict( global_model, type="link", se.fit=TRUE ) # determine bounds from data
+            Yq = quantile( YYY$fit, probs=p$stmv_quantile_bounds )
+            YYY = NULL
+            Pbaseline$fit[ Pbaseline$fit < Yq[1] ] = Yq[1]  # do not permit extrapolation
+            Pbaseline$fit[ Pbaseline$fit > Yq[2] ] = Yq[2]
+            P0[,it] = Pbaseline$fit
+            P0sd[,it] = Pbaseline$se.fit
+            Pbaseline = NULL
+          }
+
+        } else if (p$stmv_global_modelengine %in% c("glm", "bigglm", "gam") ) {
+
           Pbaseline = try( predict( global_model, newdata=pa, type="link", se.fit=TRUE ) )  # must be on link scale
-          YYY = predict( global_model, type="link", se.fit=TRUE )
-          Yq = quantile( YYY$fit, probs=p$stmv_quantile_bounds )
           pa = NULL
           if (!inherits(Pbaseline, "try-error")) {
+            YYY = predict( global_model, type="link", se.fit=TRUE )  # determine bounds from data
+            Yq = quantile( YYY$fit, probs=p$stmv_quantile_bounds )
+            YYY = NULL
             Pbaseline$fit[ Pbaseline$fit < Yq[1] ] = Yq[1]  # do not permit extrapolation
             Pbaseline$fit[ Pbaseline$fit > Yq[2] ] = Yq[2]
             P0[,it] = Pbaseline$fit
@@ -536,6 +603,7 @@
           }
         }
       } # end each timeslice
+      global_model = NULL
     }
 
 
