@@ -386,7 +386,8 @@
       if ( p$stmv_global_modelengine == "userdefined" )  {
         # need a file with predictions a function to get/return them
         if (!(exists("run", p$stmv_global_model ))) stop( "Must define p$stmv_global_model$run() as this is a userdefined p$stmv_global_modelengine")
-        global_model = eval(parse(text=p$stmv_global_model$run ))
+        global_model = try( eval(parse(text=p$stmv_global_model$run )) )
+        if (inherits(global_model, "try-error") ) stop( "Global modlling failed")
         print( summary( global_model ) )
         save( global_model, file= fn.global_model, compress=TRUE )
         return ()
@@ -533,6 +534,17 @@
           npa = names(pa)
           pa = cbind(pa, p$prediction.dyear )
           names(pa) = c( npa, "dyear" )
+        }
+
+        if (0) {
+          p$stmv_global_modelengine = "userdefined"
+          p$stmv_global_model$run = "
+            gam( formula=p$stmv_global_modelformula, data=B,
+              optimizer= p$stmv_gam_optimizer, family=p$stmv_global_family, weights=wt ) )
+          "
+          p$stmv_global_model$predict = "
+            predict( global_model, newdata=pa, type="link", se.fit=TRUE )  # must be 'global_model', newdata=pa'
+          "
         }
 
         if ( p$stmv_global_modelengine == "userdefined" )  {

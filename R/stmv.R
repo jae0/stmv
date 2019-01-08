@@ -190,19 +190,37 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     sSflag = NULL
   }
 
+        if (0) {
+          p$stmv_global_modelengine = "userdefined"
+          p$stmv_global_model$run = "
+            gam( formula=p$stmv_global_modelformula, data=B,
+              optimizer= p$stmv_gam_optimizer, family=p$stmv_global_family, weights=wt ) )
+          "
+          p$stmv_global_model$predict = "
+            predict( global_model, newdata=pa, type="link", se.fit=TRUE )  # must be 'global_model', newdata=pa'
+          "
+        }
+
+
 
   # data to be worked upon .. either the raw data or covariate-residuals
   Ydata = as.matrix(DATA$input[, p$variables$Y ])
   if (exists("stmv_global_modelengine", p)) {
     if (p$stmv_global_modelengine !="none" ) {
-      # at present only those that have a predict and residuals methods ...
-      covmodel = stmv_db( p=p, DS="global_model")
-      # Ypreds = predict(covmodel, type="link", se.fit=FALSE )  ## TODO .. keep track of the SE
-      Ydata  = residuals(covmodel, type="working") # ie. internal (link) scale
-      Yq = quantile( Ydata, probs=p$stmv_quantile_bounds )
-      Ydata[ Ydata < Yq[1] ] = Yq[1]
-      Ydata[ Ydata > Yq[2] ] = Yq[2]
-      covmodel =NULL
+      if (p$stmv_global_modelengine = "userdefined") {
+      
+      } else {
+        # at present only those that have a predict and residuals methods ...
+        covmodel = stmv_db( p=p, DS="global_model")
+        # Ypreds = predict(covmodel, type="link", se.fit=FALSE )  ## TODO .. keep track of the SE
+
+        Ydata  = residuals(covmodel, type="working") # ie. internal (link) scale
+        Yq = quantile( Ydata, probs=p$stmv_quantile_bounds )
+        Ydata[ Ydata < Yq[1] ] = Yq[1]
+        Ydata[ Ydata > Yq[2] ] = Yq[2]
+        covmodel =NULL
+
+      }
     }
   }
   # Ypreds = NULL
