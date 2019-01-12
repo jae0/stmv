@@ -78,7 +78,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
 
   message(" ")
-  message( "||| Initializing temporary storage of data and outputs files... ")
+  message( "||| Initializing temporary storage of data and output files... ")
   message( "||| These are large files (4 to 6 X 5GB), it will take a minute ... ")
   stmv_db( p=p, DS="cleanup" )
 
