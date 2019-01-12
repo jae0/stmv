@@ -208,7 +208,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   Ydata = as.matrix(DATA$input[, p$variables$Y ])
   if (exists("stmv_global_modelengine", p)) {
     if (p$stmv_global_modelengine !="none" ) {
-      if (p$stmv_global_modelengine = "userdefined") {
+      if (p$stmv_global_modelengine == "userdefined") {
 
       } else {
         # at present only those that have a predict and residuals methods ...
