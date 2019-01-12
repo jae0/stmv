@@ -607,7 +607,7 @@
           # could probably catch this and keep storage small but that would make the update math a little more complex
           # this keeps it simple with a quick copy
             if (p$nt  > 1 ) {
-              for (j in ip[2:p$nruns]){
+              for (j in ip[2:p$nt]){
                 P0[,j] = P0[,1]
                 P0sd[,j] = P0sd[,1]
               }
