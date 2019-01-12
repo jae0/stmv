@@ -542,8 +542,9 @@
             gam( formula=p$stmv_global_modelformula, data=B,
               optimizer= p$stmv_gam_optimizer, family=p$stmv_global_family, weights=wt ) )
           "
+          # must be 'global_model', newdata=pa' in following
           p$stmv_global_model$predict = "
-            predict( global_model, newdata=pa, type="link", se.fit=TRUE )  # must be 'global_model', newdata=pa'
+            predict( global_model, newdata=pa, type='link', se.fit=TRUE )
           "
         }
 
@@ -555,7 +556,7 @@
           } else {
             # try in case of a default predict method exits
             warning( "p$stmv_global_model$predict() method was not found trying to do a generic prediction ...")
-            Pbaseline = try( predict( global_model, newdata=pa, type="link", se.fit=TRUE ) )  # must be on link scale
+            Pbaseline = try( predict( global_model, newdata=pa, type='link', se.fit=TRUE ) )  # must be on link scale
             if (inherits(Pbaseline, "try-error")) stop ("Prediction failed ... ")
           }
           pa = NULL
