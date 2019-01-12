@@ -196,8 +196,9 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
             gam( formula=p$stmv_global_modelformula, data=B,
               optimizer= p$stmv_gam_optimizer, family=p$stmv_global_family, weights=wt ) )
           "
+          # must be 'global_model', newdata=pa'
           p$stmv_global_model$predict = "
-            predict( global_model, newdata=pa, type="link", se.fit=TRUE )  # must be 'global_model', newdata=pa'
+            predict( global_model, newdata=pa, type='link', se.fit=TRUE )
           "
         }
 
@@ -208,7 +209,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   if (exists("stmv_global_modelengine", p)) {
     if (p$stmv_global_modelengine !="none" ) {
       if (p$stmv_global_modelengine = "userdefined") {
-      
+
       } else {
         # at present only those that have a predict and residuals methods ...
         covmodel = stmv_db( p=p, DS="global_model")
