@@ -620,12 +620,12 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
 
     message("||| Finished preparing data structures ... ")
-    message("||| Once analyses begin, you can view maps from an external R session: ")
-    message("||| p = stmv_db( p=list(data_root=project.datadirectory('aegis', 'temperature'), variables=list(Y='t'), spatial.domain='canada.east' )), DS='load.parameters' )" )
-    message("||| stmv(p=p, runmode='debug_predictions_map', debug_plot_variable_index=1) # for static maps")
-    message("||| stmv(p=p, runmode='debug_predictions_map', debug_plot_variable_index=1:p$nt, debug_plot_log=TRUE) # for timeseries  of log(Y)")
-    message("||| stmv(p=p, runmode='debug_statistics_map', debug_plot_variable_index=1:length(p$statsvars))  ")
-    message("||| print( p$statsvars) # will get you your stats variables " )
+    # message("||| Once analyses begin, you can view maps from an external R session (e.g. for temperature): ")
+    # message("||| p = stmv_db( p=list(data_root=project.datadirectory('aegis', 'temperature'), variables=list(Y='t'), spatial.domain='canada.east' ), DS='load.parameters' )" )
+    # message("||| see stmv(p=p, runmode='debug_predictions_map', debug_plot_variable_index=1) # for static maps")
+    # message("||| see stmv(p=p, runmode='debug_predictions_map', debug_plot_variable_index=1:p$nt, debug_plot_log=TRUE) # for timeseries  of log(Y)")
+    # message("||| see stmv(p=p, runmode='debug_statistics_map', debug_plot_variable_index=1:length(p$statsvars))  ")
+    # message("||| print( p$statsvars) # will get you your stats variables " )
     message("||| Monitor the status of modelling by looking at the output of the following file:")
     message("||| in linux, you can issue the following command:" )
     message("||| watch -n 60 cat ",  p$stmv_current_status  )
