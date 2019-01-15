@@ -53,7 +53,10 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
   ilocs = which( dat_names %in% p$variable$LOCS )
   # iwei = which( dat_names %in% "weights" )
 
-  if (p$nloccov > 0) icov = which( dat_names %in% p$variables$local_cov )
+  if (p$nloccov > 0) {
+    icov = which( dat_names %in% p$variables$local_cov )
+    icov_local = which( p$variables$COV %in% p$variables$local_cov )
+  }
   if (exists("TIME", p$variables)) {
     ti_cov = setdiff(p$variables$local_all, c(p$variables$Y, p$variables$LOCS, p$variables$local_cov ) )
     itime_cov = which(dat_names %in% ti_cov)
@@ -127,7 +130,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     # add a small error term to prevent some errors when duplicate locations exist; stmv_distance_cur offsets to positive values
     dat[,ilocs] = Yloc[W[["U"]],] + W[["stmv_distance_cur"]] * runif(2*W[["ndata"]], -1e-6, 1e-6)
 
-    if (p$nloccov > 0) dat[,icov] = Ycov[W[["U"]],] # no need for other dim checks as this is user provided
+    if (p$nloccov > 0) dat[,icov] = Ycov[W[["U"]], icov_local] # no need for other dim checks as this is user provided
     if (exists("TIME", p$variables)) dat[, itime_cov] = as.matrix(stmv_timecovars( vars=ti_cov, ti=Ytime[W[["U"]], ] ) )
     dat = as.data.frame(dat)
     names(dat) = dat_names
