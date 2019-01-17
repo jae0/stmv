@@ -135,7 +135,8 @@
       out$nodata = which( Sflag[]==E[["insufficient_data"]] )     # 5=skipped due to insufficient data,
       out$variogramerror = which( Sflag[]==E[["variogram_failure"]] ) # 6=skipped .. fast variogram did not work
       out$vrangeerror = which( Sflag[]==E[["variogram_range_limit"]] )     # 7=variogram estimated range not ok
-      out$modelerror = which( Sflag[]==E[["prediction_error"]] )     # 8=problem with prediction and/or modelling
+      out$predictionerror = which( Sflag[]==E[["prediction_error"]] )     # 8=problem with prediction and/or modelling
+      out$statisticserror = which( Sflag[]==E[["statistics_error"]] ) # 4=predictionarea not ok,
       out$skipped = which( Sflag[] == E[["unknown"]] )   # 9 not completed due to a failed attempt
     #
       # do some counts
@@ -147,7 +148,8 @@
       out$n.nodata = length(out$nodata)
       out$n.variogramerror = length(out$variogramerror)
       out$n.vrangeerror = length(out$vrangeerror)
-      out$n.modelerror = length(out$modelerror)
+      out$n.predictionerror = length(out$predictionerror)
+      out$n.statisticserror = length(out$statisticserror)
       out$n.skipped = length(out$skipped)
       out$n.total = length(Sflag)
 
@@ -174,6 +176,7 @@
         points( Sloc[which( Sflag[]== E[["variogram_failure"]]),], pch=".", col="yellow2", cex=5 )
         points( Sloc[which( Sflag[]== E[["variogram_range_limit"]]),], pch=".", col="green2", cex=5 )
         points( Sloc[which( Sflag[]== E[["prediction_error"]]),], pch=".", col="green3", cex=5 )
+        points( Sloc[which( Sflag[]== E[["statistics_error"]]),], pch=".", col="green3", cex=5 )
         points( Sloc[which( Sflag[]== E[["unknown"]]),], pch=".", col="magenta", cex=5 )
       }
     }
