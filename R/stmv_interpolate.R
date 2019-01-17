@@ -318,7 +318,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
 
     # extract stats and compute a few more things
-    sf = try( stmv_statistics_update2( p=p, res=res, W=W, Si=Si ) )
+    sf = try( stmv_statistics_update( p=p, res=res, W=W, Si=Si ) )
     if ( is.null(sf) ) {
       Sflag[Si] = E[["statistics_update_error"]]
       res = pa = sf = NULL
