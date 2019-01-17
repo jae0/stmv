@@ -81,7 +81,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   message( "||| Initializing temporary storage of data and output files... ")
   message( "||| These are large files (4 to 6 X 5GB), it will take a minute ... ")
   message( "||| Try to turn off swap/paging such that only RAM is used. ")
-  
+
   stmv_db( p=p, DS="cleanup" )
 
 
@@ -192,17 +192,6 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     sSflag = NULL
   }
 
-        if (0) {
-          p$stmv_global_modelengine = "userdefined"
-          p$stmv_global_model$run = "
-            gam( formula=p$stmv_global_modelformula, data=B,
-              optimizer= p$stmv_gam_optimizer, family=p$stmv_global_family, weights=wt ) )
-          "
-          # must be 'global_model', newdata=pa'
-          p$stmv_global_model$predict = "
-            predict( global_model, newdata=pa, type='link', se.fit=TRUE )
-          "
-        }
 
 
 
@@ -211,6 +200,22 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   if (exists("stmv_global_modelengine", p)) {
     if (p$stmv_global_modelengine !="none" ) {
       if (p$stmv_global_modelengine == "userdefined") {
+        covmodel = stmv_db( p=p, DS="global_model")
+        # TODO MUST find a generic form as below
+        # # Ypreds = predict(covmodel, type="link", se.fit=FALSE )  ## TODO .. keep track of the SE
+        if (!exists("predict", p$stmv_global_model)) {
+          message( "p$stmv_global_model$predict =' " )
+          message( "   predict( global_model, newdata=pa, type='link', se.fit=TRUE )' " )
+          message( " where 'global_model', newdata=pa' are required " )
+          stop()
+        }
+        preds = try( eval(parse(text=pp$stmv_global_model$predict )) )
+        preds = p$stmv_global_model$predict( covmodel )  # needs to be tested. .. JC
+        Ydata  = preds - Ydata # ie. i`nternal (link) scale
+        Yq = quantile( Ydata, probs=p$stmv_quantile_bounds )
+        Ydata[ Ydata < Yq[1] ] = Yq[1]
+        Ydata[ Ydata > Yq[2] ] = Yq[2]
+        covmodel =NULL
 
       } else {
         # at present only those that have a predict and residuals methods ...

@@ -391,9 +391,15 @@
 
       if ( p$stmv_global_modelengine == "userdefined" )  {
         # need a file with predictions a function to get/return them
-        if (!(exists("run", p$stmv_global_model ))) stop( "Must define p$stmv_global_model$run() as this is a userdefined p$stmv_global_modelengine")
+        if (!(exists("run", p$stmv_global_model ))) {
+          message( "Must define functions of the form: ")
+          message( " p$stmv_global_model$run =' " )
+          message( "   gam( formula=p$stmv_global_modelformula, data=B, ")
+          message( "     optimizer= p$stmv_gam_optimizer, family=p$stmv_global_family, weights=wt )' " )
+          stop()
+        }
         global_model = try( eval(parse(text=p$stmv_global_model$run )) )
-        if (inherits(global_model, "try-error") ) stop( "Global modlling failed")
+        if (inherits(global_model, "try-error") ) stop( "Global modelling failed")
         print( summary( global_model ) )
         save( global_model, file= fn.global_model, compress=TRUE )
         return ()
