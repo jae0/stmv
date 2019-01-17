@@ -150,6 +150,7 @@
       out$n.variogramerror = length(out$variogramerror)
       out$n.vrangeerror = length(out$vrangeerror)
       out$n.predictionerror = length(out$predictionerror)
+      out$n.predictionupdateerror = length(out$predictionupdateerror)
       out$n.statisticsupdateerror = length(out$statisticsupdateerror)
       out$n.skipped = length(out$skipped)
       out$n.total = length(Sflag)
@@ -177,7 +178,8 @@
         points( Sloc[which( Sflag[]== E[["variogram_failure"]]),], pch=".", col="yellow2", cex=5 )
         points( Sloc[which( Sflag[]== E[["variogram_range_limit"]]),], pch=".", col="green2", cex=5 )
         points( Sloc[which( Sflag[]== E[["prediction_error"]]),], pch=".", col="green3", cex=5 )
-        points( Sloc[which( Sflag[]== E[["statistics_error"]]),], pch=".", col="green3", cex=5 )
+        points( Sloc[which( Sflag[]== E[["prediction_update_error"]]),], pch=".", col="green3", cex=5 )
+        points( Sloc[which( Sflag[]== E[["statistics_update_error"]]),], pch=".", col="green3", cex=5 )
         points( Sloc[which( Sflag[]== E[["unknown"]]),], pch=".", col="magenta", cex=5 )
       }
     }
