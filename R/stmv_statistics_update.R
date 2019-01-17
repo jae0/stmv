@@ -34,7 +34,10 @@ stmv_statistics_update =  function(p, res, W, Si ) {
   if ( exists("TIME", p$variables) ){
     # annual ts, seasonally centered and spatially
     # pa_i = which( Sloc[Si,1]==Ploc[,1] & Sloc[Si,2]==Ploc[,2] )
-    pac_i = which( res$predictions$plon==Sloc[Si,1] & res$predictions$plat==Sloc[Si,2] )
+    pac_i = which(
+      (abs( res$predictions$plon - Sloc[Si,1] ) < p$pres) &
+      (abs( res$predictions$plat - Sloc[Si,2] ) < p$pres)
+    )
     # plot( mean~tiyr, res$predictions[pac_i,])
     # plot( mean~tiyr, res$predictions, pch="." )
     out["ar_timerange"] = NA

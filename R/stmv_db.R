@@ -136,7 +136,8 @@
       out$variogramerror = which( Sflag[]==E[["variogram_failure"]] ) # 6=skipped .. fast variogram did not work
       out$vrangeerror = which( Sflag[]==E[["variogram_range_limit"]] )     # 7=variogram estimated range not ok
       out$predictionerror = which( Sflag[]==E[["prediction_error"]] )     # 8=problem with prediction and/or modelling
-      out$statisticserror = which( Sflag[]==E[["statistics_error"]] ) # 4=predictionarea not ok,
+      out$predictionupdateerror = which( Sflag[]==E[["prediction_update_error"]] )     # 8=problem with prediction and/or modelling
+      out$statisticsupdateerror = which( Sflag[]==E[["statistics_update_error"]] ) # 4=predictionarea not ok,
       out$skipped = which( Sflag[] == E[["unknown"]] )   # 9 not completed due to a failed attempt
     #
       # do some counts
@@ -149,7 +150,7 @@
       out$n.variogramerror = length(out$variogramerror)
       out$n.vrangeerror = length(out$vrangeerror)
       out$n.predictionerror = length(out$predictionerror)
-      out$n.statisticserror = length(out$statisticserror)
+      out$n.statisticsupdateerror = length(out$statisticsupdateerror)
       out$n.skipped = length(out$skipped)
       out$n.total = length(Sflag)
 

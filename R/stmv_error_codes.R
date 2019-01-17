@@ -9,7 +9,8 @@ stmv_error_codes = function() {
   stmv_error["variogram_failure"] = 6L
   stmv_error["variogram_range_limit"] = 7L
   stmv_error["prediction_error"] = 8L
-  stmv_error["statistics_error"] = 9L
+  stmv_error["prediction_update_error"] = 9L
+  stmv_error["statistics_update_error"] = 10L
   stmv_error["unknown"] = -1L
   return(stmv_error)
 }

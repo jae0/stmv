@@ -80,6 +80,8 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   message(" ")
   message( "||| Initializing temporary storage of data and output files... ")
   message( "||| These are large files (4 to 6 X 5GB), it will take a minute ... ")
+  message( "||| Try to turn off swap/paging such that only RAM is used. ")
+  
   stmv_db( p=p, DS="cleanup" )
 
 

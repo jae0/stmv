@@ -279,7 +279,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
     if ( is.null(res)) {
       Sflag[Si] = E[["prediction_error"]]   # modelling / prediction did not complete properly
-      dat = pa = res = NULL
+      dat = pa = NULL
       next()
     }
 
@@ -318,19 +318,19 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
 
     # extract stats and compute a few more things
-    sf = try( stmv_statistics_update( p=p, res=res, W=W, Si=Si ) )
+    sf = try( stmv_statistics_update2( p=p, res=res, W=W, Si=Si ) )
     if ( is.null(sf) ) {
-      Sflag[Si] = E[["statistics_error"]]
+      Sflag[Si] = E[["statistics_update_error"]]
       res = pa = sf = NULL
       next()
     }
     if ( inherits(sf, "try-error") ) {
-      Sflag[Si] = E[["statistics_error"]]
+      Sflag[Si] = E[["statistics_update_error"]]
       res = pa = sf = NULL
       next()
     }
     if ( sf=="error" ) {
-      Sflag[Si] =  E[["statistics_error"]]
+      Sflag[Si] =  E[["statistics_update_error"]]
       res = pa = sf = NULL
       next()
     }
@@ -338,17 +338,17 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     res$stmv_stats = NULL # reduce memory usage
     sf = try( stmv_predictions_update(p=p, preds=res$predictions ) )
     if ( is.null(sf) ) {
-      Sflag[Si] = E[["prediction_error"]]
+      Sflag[Si] = E[["prediction_update_error"]]
       res = pa = sf = NULL
       next()
     }
     if ( inherits(sf, "try-error") ) {
-      Sflag[Si] = E[["prediction_error"]]
+      Sflag[Si] = E[["prediction_update_error"]]
       res = pa = sf = NULL
       next()
     }
     if ( sf=="error" ) {
-      Sflag[Si] = E[["prediction_error"]]
+      Sflag[Si] = E[["prediction_update_error"]]
       res = pa = sf = NULL
       next()
     }
