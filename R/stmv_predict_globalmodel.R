@@ -2,7 +2,7 @@ stmv_predict_globalmodel = function(ip=NULL, p, debugging=FALSE, ... ) {
 
   if (0) {
     # for debugging  runs ..
-    p = parallel_run( p=p, runindex=list( it = 1:p$nt  )
+    p = parallel_run( p=p, runindex=list( it = 1:p$nt  ) )
     ip = 1:p$nruns # == 1:p$nt
     debugging=TRUE
   }
