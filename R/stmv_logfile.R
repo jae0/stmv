@@ -22,8 +22,21 @@ stmv_logfile = function(p){
   dtime = difftime( time_current, time_interpolation )
   dtimehr = difftime( time_current, time_interpolation, units="hours" )
 
-  varstoout = c("n.total", "n.shallow", "n.todo", "n.skipped", "n.predareaerror", "n.nodata", "n.variogramerror",
-    "n.vrangeerror", "n.modelerror", "n.outside", "n.complete", "prop_incomp" )
+  varstoout = c(
+    "n.total",
+    "n.shallow",
+    "n.todo",
+    "n.skipped",
+    "n.outside",
+    "n.nodata",
+    "n.predareaerror",
+    "n.predictionerror",
+    "n.predictionupdateerror",
+    "n.statisticsupdateerror",
+    "n.variogramerror",
+    "n.vrangeerror",
+    "n.complete",
+    "prop_incomp" )
   header = paste( c( varstoout) )
   currentstatus = stmv_db( p=p, DS="statistics.status" )
   currentstatus = c( unlist( currentstatus[ varstoout ] ) )
