@@ -740,10 +740,10 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
   if ( "reset_incomplete_locations" %in% runmode ) {
     # this resets errors flags and areas without viable predictions
-    toredo = stmv_db( p=p, DS="flag.incomplete.predictions" )
-    if ( !is.null(toredo) && length(toredo) > 0) {
+    locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
+    if ( !is.null(locs_to_do) && length(locs_to_do) > 0) {
       Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-      Sflag[toredo] = stmv_error_codes()[["todo"]]
+      Sflag[locs_to_do] = stmv_error_codes()[["todo"]]
     }
   }
 
@@ -761,10 +761,10 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       print( paste("Entering interpolation at distance multiplier:", smult ) )
       p$stmv_distance_scale = p$stmv_distance_scale0 * smult
       # p$clusters = p$clusters[-1] # as ram reqeuirements increase drop cpus
-      toredo = stmv_db( p=p, DS="flag.incomplete.predictions" )
-      if ( !is.null(toredo) && length(toredo) > 0) {
+      locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
+      if ( !is.null(locs_to_do) && length(locs_to_do) > 0) {
         Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-        Sflag[toredo] = stmv_error_codes()[["todo"]]
+        Sflag[locs_to_do] = stmv_error_codes()[["todo"]]
       }
       currentstatus = stmv_db( p=p, DS="statistics.status" )
       p$time_start_interpolation = Sys.time()
@@ -812,10 +812,10 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     p$force_complete_solution = TRUE
     p$clusters = p$clusters0
     p$stmv_distance_scale = p$stmv_distance_scale0
-    toredo = stmv_db( p=p, DS="flag.incomplete.predictions" )
-    if ( !is.null(toredo) && length(toredo) > 0) {
+    locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
+    if ( !is.null(locs_to_do) && length(locs_to_do) > 0) {
       Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-      Sflag[toredo] = stmv_error_codes()[["todo"]]
+      Sflag[locs_to_do] = stmv_error_codes()[["todo"]]
     }
     currentstatus = stmv_db( p=p, DS="statistics.status" )
     p$stmv_local_modelengine = "fft"

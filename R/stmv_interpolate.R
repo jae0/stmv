@@ -99,6 +99,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     # obtain indices of data locations withing a given spatial range, optimally determined via variogram
 
     W = try( stmv_subset_distance( Si=Si, p=p ) )
+
     if ( is.null(W) ) {
       Sflag[Si] = E[["insufficient_data"]]
       W = WA = NULL
@@ -109,7 +110,13 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       W = WA = NULL
       next()
     }
+
     Sflag[Si] = W[["flag"]]  # update flags
+
+    if ( Sflag[Si] == E[["insufficient_data"]] ) {
+      W = WA = NULL
+      next()
+    }
     if ( Sflag[Si] != E[["todo"]] ) {
       if (exists("stmv_rangecheck", p)) {
         if (p$stmv_rangecheck=="paranoid") {
