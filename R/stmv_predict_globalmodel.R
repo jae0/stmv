@@ -2,26 +2,23 @@ stmv_predict_globalmodel = function( ip=NULL, p, global_model, Yq ) {
 
   if (0) {
     # for debugging  runs ..
-    p = parallel_run( p=p, runindex=list( it = 1:p$nt  ) )
+    p = parallel_run( p=p, runindex=list( pnt = 1:p$nt  ) )
     ip = 1:p$nruns # == 1:p$nt
   }
 
   if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
   if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
 
-
   P0 = stmv_attach( p$storage.backend, p$ptr$P0 )  # remember this is on link scale
   P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd ) # and this too
 
+  ooo = p$runs[ip, "pnt"]
 
 # main loop over each output location in S (stats output locations)
-  for ( iip in ip ) {
-
+  for ( it in ooo ) {
+    print(it)
     # downscale and warp from p(0) -> p1
     pa = NULL # construct prediction surface
-
-    it = p$runs[iip, "it"]
-
     if ( length(p$variables$COV) > 0 ) {
       for (i in p$variables$COV ) {
         pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[i]] )
@@ -131,17 +128,31 @@ stmv_predict_globalmodel = function( ip=NULL, p, global_model, Yq ) {
       # could probably catch this and keep storage small but that would make the update math a little more complex
       # this keeps it simple with a quick copy
         if (p$nt  > 1 ) {
-          ooo = p$runs[ip, "it"][-1]
-          # ooo = ip[-1]
-          for (j in ooo){
-            P0[,j] = P0[,1]
-            P0sd[,j] = P0sd[,1]
+          for (j in ooo[-1]){
+            P0[,j] = P0[,ooo[1]]
+            P0sd[,j] = P0sd[,ooo[1]]
           }
         }
         break()  # escape for loop
       }
     }
   } # end each timeslice
-  global_model = NULL
+
   return(NULL)
+
+    if (0) {
+      if ("all nt time slices in stored predictions P") {
+        Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+        # pa comes from stmv_interpolate ... not carried here
+        for (i in 1:p$nt) {
+          i = 1
+          print( lattice::levelplot( P0[,i] ~ Ploc[,1] + Ploc[ , 2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
+        }
+      }
+      if ("no time slices in P") {
+        Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+          print( lattice::levelplot( P0[] ~ Ploc[,1] + Ploc[ , 2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
+      }
+    }
+
 }

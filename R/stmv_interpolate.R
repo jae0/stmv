@@ -278,13 +278,13 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     }
 
     if ( is.null(res)) {
-      Sflag[Si] = E[["prediction_error"]]   # modelling / prediction did not complete properly
+      Sflag[Si] = E[["local_model_error"]]   # modelling / prediction did not complete properly
       dat = pa = NULL
       next()
     }
 
     if ( inherits(res, "try-error") ) {
-      Sflag[Si] =  E[["prediction_error"]]   # modelling / prediction did not complete properly
+      Sflag[Si] =  E[["local_model_error"]]   # modelling / prediction did not complete properly
       dat = pa = res = NULL
       next()
     }

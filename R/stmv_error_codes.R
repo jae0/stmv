@@ -11,6 +11,7 @@ stmv_error_codes = function() {
   stmv_error["prediction_error"] = 8L
   stmv_error["prediction_update_error"] = 9L
   stmv_error["statistics_update_error"] = 10L
+  stmv_error["local_model_error"] = 11L
   stmv_error["unknown"] = -1L
   return(stmv_error)
 }

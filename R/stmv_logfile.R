@@ -24,17 +24,18 @@ stmv_logfile = function(p){
 
   varstoout = c(
     "n.total",
-    "n.shallow",
+    "n.too_shallow",
     "n.todo",
-    "n.skipped",
-    "n.outside",
-    "n.nodata",
-    "n.predareaerror",
-    "n.predictionerror",
-    "n.predictionupdateerror",
-    "n.statisticsupdateerror",
-    "n.variogramerror",
-    "n.vrangeerror",
+    "n.unknown",
+    "n.outside_bounds",
+    "n.insufficient_data",
+    "n.variogram_range_limit",
+    "n.variogram_failure",
+    "n.local_model_error",
+    "n.prediction_area",
+    "n.prediction_error",
+    "n.prediction_update_error",
+    "n.statistics_update_error",
     "n.complete",
     "prop_incomp" )
   header = paste( c( varstoout) )

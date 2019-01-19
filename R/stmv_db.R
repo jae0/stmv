@@ -128,34 +128,36 @@
       out = list()
 
       out$todo = which( Sflag[]==E[["todo"]] )       # 0 = TODO
-      out$done = which( Sflag[]==E[["complete"]] )       # 1 = completed
-      out$outside = which( Sflag[]==E[["outside_bounds"]] )    # 2 = oustide bounds(if any)
-      out$shallow = which( Sflag[]==E[["too_shallow"]] )    # 3 = depth shallower than p$depth.filter (if it exists .. z is a covariate)
-      out$predareaerror = which( Sflag[]==E[["prediction_area"]] ) # 4=predictionarea not ok,
-      out$nodata = which( Sflag[]==E[["insufficient_data"]] )     # 5=skipped due to insufficient data,
-      out$variogramerror = which( Sflag[]==E[["variogram_failure"]] ) # 6=skipped .. fast variogram did not work
-      out$vrangeerror = which( Sflag[]==E[["variogram_range_limit"]] )     # 7=variogram estimated range not ok
-      out$predictionerror = which( Sflag[]==E[["prediction_error"]] )     # 8=problem with prediction and/or modelling
-      out$predictionupdateerror = which( Sflag[]==E[["prediction_update_error"]] )     # 8=problem with prediction and/or modelling
-      out$statisticsupdateerror = which( Sflag[]==E[["statistics_update_error"]] ) # 4=predictionarea not ok,
-      out$skipped = which( Sflag[] == E[["unknown"]] )   # 9 not completed due to a failed attempt
+      out$complete = which( Sflag[]==E[["complete"]] )       # 1 = completed
+      out$outside_bounds = which( Sflag[]==E[["outside_bounds"]] )    # 2 = oustide bounds(if any)
+      out$too_shallow = which( Sflag[]==E[["too_shallow"]] )    # 3 = depth shallower than p$depth.filter (if it exists .. z is a covariate)
+      out$prediction_area = which( Sflag[]==E[["prediction_area"]] ) # 4=predictionarea not ok,
+      out$local_model_error = which( Sflag[]==E[["local_model_error"]] ) # 4=predictionarea not ok,
+      out$insufficient_data = which( Sflag[]==E[["insufficient_data"]] )     # 5=skipped due to insufficient data,
+      out$variogram_failure = which( Sflag[]==E[["variogram_failure"]] ) # 6=skipped .. fast variogram did not work
+      out$variogram_range_limit = which( Sflag[]==E[["variogram_range_limit"]] )     # 7=variogram estimated range not ok
+      out$prediction_error = which( Sflag[]==E[["prediction_error"]] )     # 8=problem with prediction and/or modelling
+      out$prediction_update_error = which( Sflag[]==E[["prediction_update_error"]] )     # 8=problem with prediction and/or modelling
+      out$statistics_update_error = which( Sflag[]==E[["statistics_update_error"]] ) # 4=predictionarea not ok,
+      out$unknown = which( Sflag[] == E[["unknown"]] )   # 9 not completed due to a failed attempt
     #
       # do some counts
       out$n.todo = length(out$todo)
-      out$n.complete = length(out$done)
-      out$n.outside = length(which(is.finite(out$outside)))
-      out$n.shallow = length(out$shallow)
-      out$n.predareaerror = length(out$predareaerror)
-      out$n.nodata = length(out$nodata)
-      out$n.variogramerror = length(out$variogramerror)
-      out$n.vrangeerror = length(out$vrangeerror)
-      out$n.predictionerror = length(out$predictionerror)
-      out$n.predictionupdateerror = length(out$predictionupdateerror)
-      out$n.statisticsupdateerror = length(out$statisticsupdateerror)
-      out$n.skipped = length(out$skipped)
+      out$n.complete = length(out$complete)
+      out$n.outside_bounds = length(which(is.finite(out$outside_bounds)))
+      out$n.too_shallow = length(out$too_shallow)
+      out$n.prediction_area = length(out$prediction_area)
+      out$n.local_model_error = length(out$local_model_error)
+      out$n.insufficient_data = length(out$insufficient_data)
+      out$n.variogram_failure = length(out$variogram_failure)
+      out$n.variogram_range_limit = length(out$variogram_range_limit)
+      out$n.prediction_error = length(out$prediction_error)
+      out$n.prediction_update_error = length(out$prediction_update_error)
+      out$n.statistics_update_error = length(out$statistics_update_error)
+      out$n.unknown = length(out$unknown)
       out$n.total = length(Sflag)
 
-      out$prop_incomp = round( out$n.todo / ( out$n.total - out$n.outside ), 3)
+      out$prop_incomp = round( out$n.todo / ( out$n.total - out$n.outside_bounds ), 3)
       message( paste("||| Proportion to do:", out$prop_incomp, "\n" ))
       return( out )
 
@@ -198,11 +200,11 @@
       pidP = array_map( "xy->1", Ploc, gridparams=p$gridparams )
       pidS = array_map( "xy->1", Sloc, gridparams=p$gridparams )
       overlap = match( pidS, pidP )
-      outside = which( !is.finite( overlap ))
+      outside_bounds = which( !is.finite( overlap ))
 
       E = stmv_error_codes()
       Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-      if (length(outside)  > 0 ) Sflag[outside] = E[["outside_bounds"]]  # outside of prediction domain
+      if (length(outside_bounds)  > 0 ) Sflag[outside_bounds] = E[["outside_bounds"]]  # outside of prediction domain
 
       # catch data boundaries if present
       if (exists( "boundary", p) && p$boundary) {
@@ -216,8 +218,8 @@
         bnds = try( stmv_db( p=p, DS="boundary" ) )
         if (!is.null(bnds)) {
           if( !("try-error" %in% class(bnds) ) ) {
-            outside = which( bnds$inside.polygon == 0 ) # outside boundary
-            if (length(outside)>0) Sflag[outside] = E[["outside_bounds"]]
+            outside_bounds = which( bnds$inside.polygon == 0 ) # outside boundary
+            if (length(outside_bounds)>0) Sflag[outside_bounds] = E[["outside_bounds"]]
         }}
         bnds = NULL
         message( paste( "||| Time taken to estimate spatial bounds (mins):", round( difftime( Sys.time(), timeb0, units="mins" ),3) ) )
