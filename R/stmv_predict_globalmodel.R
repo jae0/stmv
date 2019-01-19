@@ -1,26 +1,20 @@
-stmv_predict_globalmodel = function(ip=NULL, p, debugging=FALSE, ... ) {
+stmv_predict_globalmodel = function( ip=NULL, p ) {
 
   if (0) {
     # for debugging  runs ..
     p = parallel_run( p=p, runindex=list( it = 1:p$nt  ) )
     ip = 1:p$nruns # == 1:p$nt
-    debugging=TRUE
   }
 
-  # ---------------------
-  # deal with additional passed parameters
-  if ( is.null(p) ) p=list()
-  p_add = list(...)
-  if (length(p_add) > 0 ) p = c(p, p_add)
-  i = which(duplicated(names(p), fromLast=TRUE))
-  if ( length(i) > 0 ) p = p[-i] # give any passed parameters a higher priority, overwriting pre-existing variable
-
   if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
-
   if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
 
   global_model = stmv_db( p=p, DS="global_model")
   if (is.null(global_model)) stop("Global model not found.")
+
+  YYY = predict( global_model, type="link", se.fit=TRUE )  # determine bounds from data
+  Yq = quantile( YYY$fit, probs=p$stmv_quantile_bounds )
+  YYY = NULL
 
   P0 = stmv_attach( p$storage.backend, p$ptr$P0 )  # remember this is on link scale
   P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd ) # and this too
@@ -103,9 +97,6 @@ stmv_predict_globalmodel = function(ip=NULL, p, debugging=FALSE, ... ) {
       pa = NULL
 
       if ( ! is.null(Pbaseline) ) {
-        YYY = predict( global_model, type="link", se.fit=TRUE ) # determine bounds from data
-        Yq = quantile( YYY$fit, probs=p$stmv_quantile_bounds )
-        YYY = NULL
         Pbaseline$fit[ Pbaseline$fit < Yq[1] ] = Yq[1]  # do not permit extrapolation
         Pbaseline$fit[ Pbaseline$fit > Yq[2] ] = Yq[2]
         P0[,it] = Pbaseline$fit
@@ -118,9 +109,6 @@ stmv_predict_globalmodel = function(ip=NULL, p, debugging=FALSE, ... ) {
       Pbaseline = try( predict( global_model, newdata=pa, type="link", se.fit=TRUE ) )  # must be on link scale
       pa = NULL
       if (!inherits(Pbaseline, "try-error")) {
-        YYY = predict( global_model, type="link", se.fit=TRUE )  # determine bounds from data
-        Yq = quantile( YYY$fit, probs=p$stmv_quantile_bounds )
-        YYY = NULL
         Pbaseline$fit[ Pbaseline$fit < Yq[1] ] = Yq[1]  # do not permit extrapolation
         Pbaseline$fit[ Pbaseline$fit > Yq[2] ] = Yq[2]
         P0[,it] = Pbaseline$fit
@@ -149,11 +137,14 @@ stmv_predict_globalmodel = function(ip=NULL, p, debugging=FALSE, ... ) {
       # could probably catch this and keep storage small but that would make the update math a little more complex
       # this keeps it simple with a quick copy
         if (p$nt  > 1 ) {
-          for (j in ip[2:p$nt]){
+          ooo = p$runs[ip, "it"][-1]
+          # ooo = ip[-1]
+          for (j in ooo){
             P0[,j] = P0[,1]
             P0sd[,j] = P0sd[,1]
           }
         }
+        break()  # escape for loop
       }
     }
   } # end each timeslice
