@@ -524,123 +524,134 @@
         }
       }
 
-      PP = stmv_attach( p$storage.backend, p$ptr$P )
-      PPsd = stmv_attach( p$storage.backend, p$ptr$Psd )
-      if (exists("stmv_global_modelengine", p)) {
-        if (p$stmv_global_modelengine !="none" ) {
-          P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
-          P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )
-        }
-      }
-
       if ( exists("TIME", p$variables)) {
-        vv = ncol(PP)
-        for (it in 1:p$ny) {
-          y = p$yrs[it]
-          fn_P = file.path( p$stmvSaveDir, paste("stmv.prediction", "mean",  y, "rdata", sep="." ) )
-          fn_Pl = file.path( p$stmvSaveDir, paste("stmv.prediction", "lb",   y, "rdata", sep="." ) )
-          fn_Pu = file.path( p$stmvSaveDir, paste("stmv.prediction", "ub",   y, "rdata", sep="." ) )
-          if ( vv > p$ny ) {
-            ww = (it-1) * p$nw + (1:p$nw)
-            P = PP  [,ww]
-            V = PPsd[,ww] # simpleadditive independent errors assumed
-          } else if ( vv==p$ny) {
-            P = PP[,it]
-            V = PPsd[,it]
-          }
-          if (exists("stmv_global_modelengine", p) ) {
-            if (p$stmv_global_modelengine !="none" ) {
-              ## maybe add via simulation, note: P0 and P are on link scale to this point
-              uu = which(!is.finite(P[]))
-              if (length(uu)>0) P[uu] = 0 # permit global predictions to pass through ..
-              P = P[] + P0[,it]
-              vv = which(!is.finite(V[]))
-              if (length(vv)>0) V[vv] = 0 # permit covariate-base predictions to pass through ..
-              V = sqrt( V[]^2 + P0sd[,it]^2) # simple additive independent errors assumed
+
+        parallel_run(
+          p=p,
+          shallower=shallower,
+          runindex=list( pny=1:p$ny ),
+          FUNC= function( ip=NULL, p ) {
+            if (exists( "libs", p)) RLibrary( p$libs )
+            if (is.null(ip)) ip = 1:p$nruns
+            PP = stmv_attach( p$storage.backend, p$ptr$P )
+            PPsd = stmv_attach( p$storage.backend, p$ptr$Psd )
+            if (exists("stmv_global_modelengine", p)) {
+              if (p$stmv_global_modelengine !="none" ) {
+                P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
+                P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )
+              }
+            }
+            vv = ncol(PP)
+            for (it in ip) {
+              y = p$yrs[ p$runs[it, "pny"] ]
+              if ( vv > p$ny ) {
+                ww = (it-1) * p$nw + (1:p$nw)
+                P = PP  [,ww]
+                V = PPsd[,ww] # simpleadditive independent errors assumed
+              } else if ( vv==p$ny) {
+                P = PP[,it]
+                V = PPsd[,it]
+              }
+              if (exists("stmv_global_modelengine", p) ) {
+                if (p$stmv_global_modelengine !="none" ) {
+                  ## maybe add via simulation, note: P0 and P are on link scale to this point
+                  uu = which(!is.finite(P[]))
+                  if (length(uu)>0) P[uu] = 0 # permit global predictions to pass through ..
+                  P = P[] + P0[,it]
+                  vv = which(!is.finite(V[]))
+                  if (length(vv)>0) V[vv] = 0 # permit covariate-base predictions to pass through ..
+                  V = sqrt( V[]^2 + P0sd[,it]^2) # simple additive independent errors assumed
+                }
+              }
+              if ( !is.null(shallower) ){
+                if ( is.vector(P) ) {
+                  P[shallower] = NA
+                  V[shallower] = NA
+                } else {
+                  P[shallower,] = NA
+                  V[shallower,] = NA
+                }
+              }
+
+              Pl =  P[] - 1.96* V[]
+              Pu =  P[] + 1.96* V[]
+              P =   P[]
+
+              # return to user scale (that of Y)
+              if ( exists( "stmv_global_family", p)) {
+                if (p$stmv_global_family !="none" ) {
+                  Pl = p$stmv_global_family$linkinv( Pl[] )
+                  Pu = p$stmv_global_family$linkinv( Pu[] )
+                  P = p$stmv_global_family$linkinv( P[] )
+                }
+              }
+
+              # any additional transformations
+              if (exists("stmv_Y_transform", p)) {
+                Pl = p$stmv_Y_transform$invers (Pl[])  # p$stmv_Y_transform[2] is the inverse transform
+                Pu = p$stmv_Y_transform$invers (Pu[])
+                P = p$stmv_Y_transform$invers (P[])
+              }
+
+              save( P,  file=file.path( p$stmvSaveDir, paste("stmv.prediction", "mean", y, "rdata", sep="." ) ), compress=T )
+              save( Pl, file=file.path( p$stmvSaveDir, paste("stmv.prediction", "lb",   y, "rdata", sep="." ) ), compress=T )
+              save( Pu, file=file.path( p$stmvSaveDir, paste("stmv.prediction", "ub",   y, "rdata", sep="." ) ), compress=T )
+              # print ( paste("Year:", y)  )
             }
           }
-          if ( !is.null(shallower) ){
-            if ( is.vector(P) ) {
-              P[shallower] = NA
-              V[shallower] = NA
-            } else {
-              P[shallower,] = NA
-              V[shallower,] = NA
-            }
-          }
-
-          Pl =  P[] - 1.96* V[]
-          Pu =  P[] + 1.96* V[]
-          P =  P[]
-
-          # return to user scale (that of Y)
-          if ( exists( "stmv_global_family", p)) {
-            if (p$stmv_global_family !="none" ) {
-              Pl = p$stmv_global_family$linkinv( Pl[] )
-              Pu = p$stmv_global_family$linkinv( Pu[] )
-              P = p$stmv_global_family$linkinv( P[] )
-            }
-          }
-
-          # any additional transformations
-          if (exists("stmv_Y_transform", p)) {
-            Pl = p$stmv_Y_transform$invers (Pl[])  # p$stmv_Y_transform[2] is the inverse transform
-            Pu = p$stmv_Y_transform$invers (Pu[])
-            P = p$stmv_Y_transform$invers (P[])
-          }
-
-          save( P, file=fn_P, compress=T )
-          save( Pl, file=fn_Pl, compress=T )
-          save( Pu, file=fn_Pu, compress=T )
-          print ( paste("Year:", y)  )
-        }
+        )
 
       } else {
         # serial run only ...
 
-          fn_P = file.path( p$stmvSaveDir, paste("stmv.prediction", "mean", "rdata", sep="." ) )
-          fn_Pl = file.path( p$stmvSaveDir, paste("stmv.prediction", "lb", "rdata", sep="." ) )
-          fn_Pu = file.path( p$stmvSaveDir, paste("stmv.prediction", "ub", "rdata", sep="." ) )
-
-          P = PP[]
-          V = PPsd[]
-          if (exists("stmv_global_modelengine", p) ) {
-            if (p$stmv_global_modelengine !="none" ) {
-              uu = which(!is.finite(P[]))
-              if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
-              P = P[] + P0[]  # both on link scale
-              vv = which(!is.finite(V[]))
-              if (length(vv)>0) V[vv] = 0 # permit covariate-base predictions to pass through ..
-              V = sqrt( V[]^2 + P0sd[]^2) # simple additive independent errors assumed
-            }
+        PP = stmv_attach( p$storage.backend, p$ptr$P )
+        PPsd = stmv_attach( p$storage.backend, p$ptr$Psd )
+        if (exists("stmv_global_modelengine", p)) {
+          if (p$stmv_global_modelengine !="none" ) {
+            P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
+            P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )
           }
-          if ( !is.null(shallower) ){
-            P[shallower] = NA
-            V[shallower] = NA
+        }
+
+        P = PP[]
+        V = PPsd[]
+        if (exists("stmv_global_modelengine", p) ) {
+          if (p$stmv_global_modelengine !="none" ) {
+            uu = which(!is.finite(P[]))
+            if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
+            P = P[] + P0[]  # both on link scale
+            vv = which(!is.finite(V[]))
+            if (length(vv)>0) V[vv] = 0 # permit covariate-base predictions to pass through ..
+            V = sqrt( V[]^2 + P0sd[]^2) # simple additive independent errors assumed
           }
+        }
+        if ( !is.null(shallower) ){
+          P[shallower] = NA
+          V[shallower] = NA
+        }
 
-          Pl =  P[] - 1.96* V[]
-          Pu =  P[] + 1.96* V[]
-          P =  P[]
+        Pl =  P[] - 1.96* V[]
+        Pu =  P[] + 1.96* V[]
+        P =  P[]
 
-          # return to user scale (that of Y)
-          if ( exists( "stmv_global_family", p)) {
-            if (p$stmv_global_family !="none" ) {
-              Pl = p$stmv_global_family$linkinv( Pl[] )
-              Pu = p$stmv_global_family$linkinv( Pu[] )
-              P = p$stmv_global_family$linkinv( P[] )
-            }
+        # return to user scale (that of Y)
+        if ( exists( "stmv_global_family", p)) {
+          if (p$stmv_global_family !="none" ) {
+            Pl = p$stmv_global_family$linkinv( Pl[] )
+            Pu = p$stmv_global_family$linkinv( Pu[] )
+            P = p$stmv_global_family$linkinv( P[] )
           }
+        }
 
-          if (exists("stmv_Y_transform", p)) {
-            Pl = p$stmv_Y_transform$invers (Pl[])  # p$stmv_Y_transform[2] is the inverse transform
-            Pu = p$stmv_Y_transform$invers (Pu[])
-            P = p$stmv_Y_transform$invers (P[])
-          }
+        if (exists("stmv_Y_transform", p)) {
+          Pl = p$stmv_Y_transform$invers (Pl[])  # p$stmv_Y_transform[2] is the inverse transform
+          Pu = p$stmv_Y_transform$invers (Pu[])
+          P = p$stmv_Y_transform$invers (P[])
+        }
 
-          save( P, file=fn_P, compress=T )
-          save( Pl, file=fn_Pl, compress=T )
-          save( Pu, file=fn_Pu, compress=T )
+        save( P,  file=file.path( p$stmvSaveDir, paste("stmv.prediction", "mean", "rdata", sep="." ) ), compress=T )
+        save( Pl, file=file.path( p$stmvSaveDir, paste("stmv.prediction", "lb",   "rdata", sep="." ) ), compress=T )
+        save( Pu, file=file.path( p$stmvSaveDir, paste("stmv.prediction", "ub",   "rdata", sep="." ) ), compress=T )
       } # end if TIME
 
 
