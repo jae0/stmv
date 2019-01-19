@@ -548,7 +548,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
           Yq = quantile( YYY$fit, probs=p$stmv_quantile_bounds )
           YYY = NULL
 
-          parallel_run( stmv_predict_globalmodel, p=pc, global_model=global_model, Yq=Yq, runindex=list( it=1:p$nt ) )
+          parallel_run( FUNC=stmv_predict_globalmodel, p=pc, global_model=global_model, Yq=Yq, runindex=list( pnt=1:p$nt ) )
 
           p$time_covariates = round(difftime( Sys.time(), p$time_covariates_0 , units="hours"), 3)
           message( paste( "||| Time taken to predict covariate surface (hours):", p$time_covariates ) )
