@@ -1,4 +1,4 @@
-stmv_predict_globalmodel = function( ip=NULL, p ) {
+stmv_predict_globalmodel = function( ip=NULL, p, global_model, Yq ) {
 
   if (0) {
     # for debugging  runs ..
@@ -9,12 +9,6 @@ stmv_predict_globalmodel = function( ip=NULL, p ) {
   if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
   if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
 
-  global_model = stmv_db( p=p, DS="global_model")
-  if (is.null(global_model)) stop("Global model not found.")
-
-  YYY = predict( global_model, type="link", se.fit=TRUE )  # determine bounds from data
-  Yq = quantile( YYY$fit, probs=p$stmv_quantile_bounds )
-  YYY = NULL
 
   P0 = stmv_attach( p$storage.backend, p$ptr$P0 )  # remember this is on link scale
   P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd ) # and this too

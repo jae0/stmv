@@ -534,13 +534,20 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         if (!is.null(use_saved_state)) {
             # nothing needs to be done as pointers are already set up and pointed to the data
         } else {
-          pc = p # copy
+          pc = p # temp copy
           if (exists("all.covars.static", pc)) if (!pc$all.covars.static) if (exists("clusters.covars", pc) ) pc$clusters = pc$clusters.covars
           # takes up to about 28 GB per run (in temperature).. adjust cluster number temporarily
           # pc = parallel_run( p=pc, runindex=list( it=1:p$nt ) )
           # stmv_predict_globalmodel(p=pc)
 
-          parallel_run( stmv_predict_globalmodel, p=pc, runindex=list( it=1:p$nt ) )
+          global_model = stmv_db( p=p, DS="global_model")
+          if (is.null(global_model)) stop("Global model not found.")
+
+          YYY = predict( global_model, type="link", se.fit=TRUE )  # determine bounds from data
+          Yq = quantile( YYY$fit, probs=p$stmv_quantile_bounds )
+          YYY = NULL
+
+          parallel_run( stmv_predict_globalmodel, p=pc, global_model=global_model, Yq=Yq, runindex=list( it=1:p$nt ) )
 
           p$time_covariates = round(difftime( Sys.time(), p$time_covariates_0 , units="hours"), 3)
           message( paste( "||| Time taken to predict covariate surface (hours):", p$time_covariates ) )
