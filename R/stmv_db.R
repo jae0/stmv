@@ -490,9 +490,6 @@
     # -----
 
 
-    # -----
-
-
     if (DS %in% c("stmv.results", "stmv.prediction", "stmv.stats") )  {
 
       if (DS=="stmv.prediction") {
@@ -526,11 +523,13 @@
 
       if ( exists("TIME", p$variables)) {
 
+        p0 = p
+
         parallel_run(
           p=p,
           shallower=shallower,
           runindex=list( pny=1:p$ny ),
-          FUNC= function( ip=NULL, p ) {
+          FUNC= function( ip=NULL, p, shallower ) {
             if (exists( "libs", p)) RLibrary( p$libs )
             if (is.null(ip)) ip = 1:p$nruns
             PP = stmv_attach( p$storage.backend, p$ptr$P )
@@ -544,6 +543,7 @@
             vv = ncol(PP)
             for (it in ip) {
               y = p$yrs[ p$runs[it, "pny"] ]
+
               if ( vv > p$ny ) {
                 ww = (it-1) * p$nw + (1:p$nw)
                 P = PP  [,ww]
@@ -552,17 +552,20 @@
                 P = PP[,it]
                 V = PPsd[,it]
               }
+
               if (exists("stmv_global_modelengine", p) ) {
                 if (p$stmv_global_modelengine !="none" ) {
                   ## maybe add via simulation, note: P0 and P are on link scale to this point
                   uu = which(!is.finite(P[]))
                   if (length(uu)>0) P[uu] = 0 # permit global predictions to pass through ..
                   P = P[] + P0[,it]
-                  vv = which(!is.finite(V[]))
-                  if (length(vv)>0) V[vv] = 0 # permit covariate-base predictions to pass through ..
+                  nV = which(!is.finite(V[]))
+                  if (length(nV)>0) V[nV] = 0 # permit covariate-base predictions to pass through ..
                   V = sqrt( V[]^2 + P0sd[,it]^2) # simple additive independent errors assumed
                 }
               }
+#            }})
+
               if ( !is.null(shallower) ){
                 if ( is.vector(P) ) {
                   P[shallower] = NA
@@ -579,7 +582,7 @@
 
               # return to user scale (that of Y)
               if ( exists( "stmv_global_family", p)) {
-                if (p$stmv_global_family !="none" ) {
+                if (class(p$stmv_global_family) =="character" && p$stmv_global_family !="none" ) {
                   Pl = p$stmv_global_family$linkinv( Pl[] )
                   Pu = p$stmv_global_family$linkinv( Pu[] )
                   P = p$stmv_global_family$linkinv( P[] )
@@ -620,8 +623,8 @@
             uu = which(!is.finite(P[]))
             if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
             P = P[] + P0[]  # both on link scale
-            vv = which(!is.finite(V[]))
-            if (length(vv)>0) V[vv] = 0 # permit covariate-base predictions to pass through ..
+            nV = which(!is.finite(V[]))
+            if (length(nV)>0) V[nV] = 0 # permit covariate-base predictions to pass through ..
             V = sqrt( V[]^2 + P0sd[]^2) # simple additive independent errors assumed
           }
         }
@@ -636,7 +639,7 @@
 
         # return to user scale (that of Y)
         if ( exists( "stmv_global_family", p)) {
-          if (p$stmv_global_family !="none" ) {
+          if (class(p$stmv_global_family) =="character" && p$stmv_global_family !="none" ) {
             Pl = p$stmv_global_family$linkinv( Pl[] )
             Pu = p$stmv_global_family$linkinv( Pu[] )
             P = p$stmv_global_family$linkinv( P[] )
