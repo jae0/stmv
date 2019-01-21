@@ -25,7 +25,7 @@ stmv_predict_globalmodel = function( ip=NULL, p, global_model, Yq ) {
 
 # main loop over each output location in S (stats output locations)
   for ( it in ooo ) {
-    print(it)
+
     # downscale and warp from p(0) -> p1
     pa = NULL # construct prediction surface
     if ( length(p$variables$COV) > 0 ) {
