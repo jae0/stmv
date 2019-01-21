@@ -831,11 +831,9 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
   # -----------------------------------------------------
 
-  if (save_completed_data) stmv_db( p=p, DS="stmv.results" ) # save to disk for use outside stmv*, returning to user scale
+  if (save_completed_data) {
 
-  # -----------------------------------------------------
-
-  if ( "cleanup" %in% runmode ) {
+    stmv_db( p=p, DS="stmv.results" ) # save to disk for use outside stmv*, returning to user scale
 
     if ( p$storage.backend !="bigmemory.ram" ) {
       resp = readline( "||| Delete temporary files? Type to confirm <YES>:  ")
