@@ -22,7 +22,7 @@ stmv__gam = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
   if ( "try-error" %in% class(hmod) ) return( NULL )
 
   ss = summary(hmod)
-  if (ss$r.sq < p$stmv_rsquared_threshold ) return(NULL)
+#  if (ss$r.sq < p$stmv_rsquared_threshold ) return(NULL)  # smooth/flat surfaces are ok ..
 
   out = try( predict( hmod, newdata=pa, type="response", se.fit=T ) )
 
@@ -33,7 +33,7 @@ stmv__gam = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
 
   stmv_stats = list( sdTotal=sdTotal, rsquared=ss$r.sq, ndata=ss$n ) # must be same order as p$statsvars
 
-  # lattice::levelplot( mean ~ plon + plat, data=pa[pa$tiyr==2012.05,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
+  # lattice::levelplot( mean ~ plon + plat, data=pa[pa$tiyr==min(pa$tiyr),], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
 
   return( list( predictions=pa, stmv_stats=stmv_stats ) )
 }
