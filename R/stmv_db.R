@@ -114,17 +114,10 @@
 
     # -----------------
 
-    if ( DS %in% c( "statistics.status", "statistics.status.reset") ) {
+    if ( DS %in% c( "statistics.status" ) ) {
 
       E = stmv_error_codes()
       Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-      if ( DS=="statistics.status.reset" ) {
-        # to reset all rejected locations
-        toreset = which( Sflag[] >  E[["outside_bounds"]])
-        if (length(toreset) > 0) {
-          Sflag[toreset] = E[["todo"]] # to reset all the problem flags to todo
-        }
-      }
       out = list()
 
       out$todo = which( Sflag[]==E[["todo"]] )       # 0 = TODO
@@ -140,7 +133,7 @@
       out$prediction_update_error = which( Sflag[]==E[["prediction_update_error"]] )     # 8=problem with prediction and/or modelling
       out$statistics_update_error = which( Sflag[]==E[["statistics_update_error"]] ) # 4=predictionarea not ok,
       out$unknown = which( Sflag[] == E[["unknown"]] )   # 9 not completed due to a failed attempt
-    #
+
       # do some counts
       out$n.todo = length(out$todo)
       out$n.complete = length(out$complete)

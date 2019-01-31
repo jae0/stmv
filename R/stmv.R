@@ -757,6 +757,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     sm = sort( unique( c(1, p$sampling[ p$sampling > 1] ) ) )
     print ( "Sampling at the following distance mulitpliers:" )
     print (sm)
+    E = stmv_error_codes()
     for ( smult in sm) {
       print( paste("Entering interpolation at distance multiplier:", smult ) )
       p$stmv_distance_scale = p$stmv_distance_scale0 * smult
@@ -764,8 +765,12 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
       if ( !is.null(locs_to_do) && length(locs_to_do) > 0) {
         Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-        Sflag[locs_to_do] = stmv_error_codes()[["todo"]]
+        Sflag[locs_to_do] = E[["todo"]]
       }
+      Eflags_reset = E[ c( "prediction_area","local_model_error", "insufficient_data", "variogram_failure" ,"variogram_range_limit" , "prediction_error", "prediction_update_error", "statistics_update_error", "unknown" ) ]
+      toreset = which( Sflag[] %in% Eflags_reset )
+      if (length(toreset) > 0) Sflag[toreset] = E[["todo"]]
+
       currentstatus = stmv_db( p=p, DS="statistics.status" )
       p$time_start_interpolation = Sys.time()
       parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )))
