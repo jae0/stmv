@@ -789,7 +789,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       if (length(toreset) > 0) Sflag[toreset] = E[["todo"]]
       currentstatus = stmv_db( p=p, DS="statistics.status" ) # update again
       p$time_start_interpolation = Sys.time()
-      parallel_run( stmv_interpolate2, p=p, runindex=list( locs=sample( currentstatus$todo )))
+      parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )))
     }
   }
 
