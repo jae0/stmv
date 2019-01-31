@@ -108,12 +108,14 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     if ( inherits(W, "try-error") ) {
       Sflag[Si] = E[["insufficient_data"]]
       W = WA = NULL
+      print (" ... skipping: insufficient_data" )
       next()
     }
 
     Sflag[Si] = W[["flag"]]  # update flags
     if ( Sflag[Si] == E[["insufficient_data"]] ) {
       W = WA = NULL
+      print (" ... skipping: insufficient_data" )
       next()
     }
 
@@ -121,6 +123,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       if (exists("stmv_rangecheck", p)) {
         if (p$stmv_rangecheck=="paranoid") {
           W = WA = NULL
+          print (" ... skipping: stmv_rangecheck paranoid" )
           next()
         }
       }
@@ -177,7 +180,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     if (is.null(pa)) {
       Sflag[Si] = E[["prediction_area"]]
       message( Si )
-      message("Error with issue with prediction grid ... null .. this should not happen")
+      message("Error: prediction grid ... null .. this should not happen")
       pa = W = NULL
       next()
     }

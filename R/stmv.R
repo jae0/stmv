@@ -785,7 +785,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         "statistics_update_error",
         "unknown"
       )]
-      toreset = which( Sflag[] %in% Eflags_reset )
+      toreset = which( Sflag[] %in% unlist(Eflags_reset) )
       if (length(toreset) > 0) Sflag[toreset] = E[["todo"]]
       currentstatus = stmv_db( p=p, DS="statistics.status" ) # update again
       p$time_start_interpolation = Sys.time()
