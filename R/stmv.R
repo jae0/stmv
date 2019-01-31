@@ -637,6 +637,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     p$minresolution = p$downsampling_multiplier*c(p$pres, p$pres )
   }
 
+  p$clusters0 = p$clusters  # copy as p$clusters can change ..
 
   message("||| Finished preparing data structures ... ")
   # message("||| Once analyses begin, you can view maps from an external R session (e.g. for temperature): ")
@@ -753,15 +754,16 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   # -----------------------------------------------------
 
   if ("interpolate" %in% runmode ) {
-    p$clusters0 = p$clusters
+    E = stmv_error_codes()
     sm = sort( unique( c(1, p$sampling[ p$sampling > 1] ) ) )
     print ( "Sampling at the following distance mulitpliers:" )
     print (sm)
-    E = stmv_error_codes()
+
     for ( smult in sm) {
       print( paste("Entering interpolation at distance multiplier:", smult ) )
       p$stmv_distance_scale = p$stmv_distance_scale0 * smult
-      # p$clusters = p$clusters[-1] # as ram reqeuirements increase drop cpus
+      ncpus_new = floor( length( p$clusters0 ) / smult )
+      p$clusters = p$clusters0[1:ncpus_new] # as ram reqeuirements increase drop cpus
       locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
       if ( !is.null(locs_to_do) && length(locs_to_do) > 0) {
         Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
@@ -815,7 +817,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     # interpolation based on data and augmented by previous predictions
     # NOTE:: no covariates are used
     p$force_complete_solution = TRUE
-    p$clusters = p$clusters0
+    p$clusters = p$clusters0  # in case interpolation above altered p$clusters 
     p$stmv_distance_scale = p$stmv_distance_scale0
     locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
     if ( !is.null(locs_to_do) && length(locs_to_do) > 0) {
