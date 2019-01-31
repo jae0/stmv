@@ -113,10 +113,10 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
     Sflag[Si] = W[["flag"]]  # update flags
 
-    if ( Sflag[Si] == E[["insufficient_data"]] ) {
-      W = WA = NULL
-      next()
-    }
+    # if ( Sflag[Si] == E[["insufficient_data"]] ) {
+    #   W = WA = NULL
+    #   next()
+    # }
     if ( Sflag[Si] != E[["todo"]] ) {
       if (exists("stmv_rangecheck", p)) {
         if (p$stmv_rangecheck=="paranoid") {
