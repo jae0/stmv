@@ -31,21 +31,17 @@
       o = NULL
       o = try( stmv_variogram( xy=Yloc[yiu,], z=Y[yiu,], methods=p$stmv_variogram_method, distance_cutoff=stmv_distance_cur, nbreaks=13 ) )
 
-      if ( is.null(o)) {
-        # retain crude estimate and run with it
-        out$flag = E[["variogram_failure"]]
-        return( out )     # fast variogram did not work
+      if ( is.null(o)) out$flag = E[["variogram_failure"]]
+      if ( inherits(o, "try-error")) out$flag = E[["variogram_failure"]]
+      if ( !exists(p$stmv_variogram_method, o)) out$flag =  E[["variogram_failure"]]
+
+      if ( out$flag ==  E[["variogram_failure"]] ) {
+        o = try( stmv_variogram( xy=Yloc[yiu,], z=Y[yiu,], methods="fast", distance_cutoff=stmv_distance_cur, nbreaks=13 ) )
+        if ( is.null(o)) out$flag = E[["variogram_failure"]]
+        if ( inherits(o, "try-error")) out$flag = E[["variogram_failure"]]
+        if ( !exists(p$stmv_variogram_method, o)) out$flag =  E[["variogram_failure"]]
       }
-      if ( inherits(o, "try-error")) {
-        # retain crude estimate and run with it
-        out$flag = E[["variogram_failure"]]
-        return( out )     # fast variogram did not work
-      }
-      if ( !exists(p$stmv_variogram_method, o)) {
-        # retain crude estimate and run with it
-        out$flag =  E[["variogram_failure"]]
-        return( out )     # fast variogram did not work
-      }
+      if ( out$flag ==  E[["variogram_failure"]] ) return(out)
 
       # if (debugging) print( paste("... range=", round(ores[['range']],3), ", ", nu=", ores$nu, ", phi=", ores$phi, ndata=", ndata ) )
 
@@ -117,5 +113,5 @@
         return( out)
       }
 
-      return( error("Something went wrong") )
+      return( error("Something unexpected went wrong in stmv_subset_distance") )
     }

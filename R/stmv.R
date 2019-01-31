@@ -703,10 +703,14 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
           }
         }
       }
-      sP = p$stmv_global_family$linkinv( sP[] )
-      if (exists("stmv_Y_transform", p)) {
-        sP = p$stmv_Y_transform$invers (sP[])
+      if (exists("stmv_global_family", p)) {
+        if ( p$stmv_global_family != "none" ) {
+          if (exists("linkinv", p$stmv_global_family)) {
+            sP = p$stmv_global_family$linkinv( sP[] )
+          }
+        }
       }
+      if (exists("stmv_Y_transform", p)) sP = p$stmv_Y_transform$invers (sP[])
       if ( debug_plot_log ) sP = log(sP)
       Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
       for (i in debug_plot_variable_index ) {
@@ -785,7 +789,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       if (length(toreset) > 0) Sflag[toreset] = E[["todo"]]
       currentstatus = stmv_db( p=p, DS="statistics.status" ) # update again
       p$time_start_interpolation = Sys.time()
-      parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )))
+      parallel_run( stmv_interpolate2, p=p, runindex=list( locs=sample( currentstatus$todo )))
     }
   }
 
@@ -842,7 +846,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       if (!exists("stmv_lowpass_nu", p))  p$stmv_lowpass_nu = 0.5  #exponential
     }
     p$time_start_interpolation_force_complete = Sys.time()
-    parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )))
+    parallel_run( stmv_interpolate2, p=p, runindex=list( locs=sample( currentstatus$todo )))
   }
 
 
