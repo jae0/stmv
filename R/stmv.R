@@ -771,9 +771,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
   if ("interpolate" %in% runmode ) {
     E = stmv_error_codes()
-    sm = sort( unique( c(1, p$sampling[ p$sampling > 1] ) ) )
     print ( "Sampling at the following distance mulitpliers:" )
-    print (sm)
     nk = length(p$stmv_distance_scale)
     for ( kk in 1:nk ) {
       p$distance_scale_current = p$stmv_distance_scale[kk]
@@ -797,8 +795,6 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         "statistics_update_error",
         "unknown"
       )]
-
-
       toreset = which( Sflag[] %in% unlist(Eflags_reset) )
       if (length(toreset) > 0) Sflag[toreset] = E[["todo"]]
       currentstatus = stmv_db( p=p, DS="statistics.status" ) # update again

@@ -1,6 +1,6 @@
 
 
-stmv_interpolate = function( ip=NULL, p, distance_scale_current=p$stmv_distance_scale[1], debugging=FALSE, ... ) {
+stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
   #\\ core function to interpolate (model and predict) in parallel
 
   if (0) {
@@ -22,6 +22,8 @@ stmv_interpolate = function( ip=NULL, p, distance_scale_current=p$stmv_distance_
   if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
 
   if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
+
+  if (!exists("distance_scale_current", p)) p$distance_scale_current = p$stmv_distance_scale[1]
 
   #---------------------
   # data for modelling
