@@ -1,6 +1,6 @@
 
 
-stmv_interpolate = function( ip=NULL, p, distance_scale_currentp$stmv_distance_scale[1], debugging=FALSE, ... ) {
+stmv_interpolate = function( ip=NULL, p, distance_scale_current=p$stmv_distance_scale[1], debugging=FALSE, ... ) {
   #\\ core function to interpolate (model and predict) in parallel
 
   if (0) {
