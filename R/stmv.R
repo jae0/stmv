@@ -85,8 +85,29 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   stmv_db( p=p, DS="cleanup" )
 
 
+  if ( !exists("stmv_distance_scale", p)) {
+    message( "||| stmv_distance_scale must be defined" )
+    stop()
+  }
+
+
+  if ( !exists("stmv_distance_statsgrid", p)) {
+    message( "||| stmv_distance_statsgrid must be defined" )
+    stop()
+  }
+
+  if ( !exists("stmv_distance_prediction_fraction", p)) p$stmv_distance_prediction_fraction = 0.75
+
+  if ( !exists("stmv_distance_prediction", p)) {
+    # this is a half window km
+    p$stmv_distance_prediction = p$stmv_distance_statsgrid * p$stmv_distance_prediction_fraction
+  }
+
   # construct prediction/output grid area ('pa')
-  p$windowsize.half = floor(p$stmv_distance_prediction/p$pres) # convert distance to discretized increments of row/col indices; stmv_distance_prediction = 0.75* stmv_distance_statsgrid (unless overridden)
+  if ( !exists("windowsize.half", p)) p$windowsize.half = floor(p$stmv_distance_prediction/p$pres) # convert distance to discretized increments of row/col indices; stmv_distance_prediction = 0.75* stmv_distance_statsgrid (unless overridden)
+
+  if ( !exists("stmv_distance_upsampling_fraction", p)) p$stmv_distance_upsampling_fraction = c(1.0, 1.25, 1.5, 1.75, 2.0)
+
 
   if (exists("stmv_Y_transform", p)) {
     DATA$input[, p$variables$Y ] = p$stmv_Y_transform$transf(DATA$input[, p$variables$Y ] )
@@ -608,15 +629,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       }
     Yi=NULL
 
-    if ( !exists("stmv_distance_scale", p)) {
-      Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
-      p$stmv_distance_scale = min( diff(range( Yloc[,1]) ), diff(range( Yloc[,2]) ) ) / 10
-      message( paste( "||| Crude distance scale:", p$stmv_distance_scale, "" ) )
-    }
-    if ( !exists("stmv_distance_min", p)) p$stmv_distance_min = mean( c(p$stmv_distance_prediction, p$stmv_distance_scale /20 ) )
-    if ( !exists("stmv_distance_max", p)) p$stmv_distance_max = mean( c(p$stmv_distance_prediction*10, p$stmv_distance_scale * 2 ) )
 
-    p$stmv_distance_scale0 = p$stmv_distance_scale  # store copy as this can get modified below
 
 
     if (p$stmv_local_modelengine == "twostep") {
@@ -628,8 +641,6 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       }
     }
 
-  p$upsampling = c(1.0, 1.25, 1.5, 1.75, 2.0) * p$stmv_distance_scale
-  p$upsampling = p$upsampling[ which(p$upsampling <= p$stmv_distance_max )]
 
   if ( exists("TIME", p$variables)) {
     p$minresolution = p$downsampling_multiplier*c(p$pres, p$pres, p$tres)
@@ -677,6 +688,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       p <<- pdeb
       browser()
       debug(stmv_interpolate)
+      pdeb$distance_scale_current = p$stmv_distance_scale[1]
       pdeb$time_start_interpolation_debug = Sys.time()
       stmv_interpolate (p=pdeb, debugging=TRUE )
     }
@@ -762,11 +774,11 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     sm = sort( unique( c(1, p$sampling[ p$sampling > 1] ) ) )
     print ( "Sampling at the following distance mulitpliers:" )
     print (sm)
-
-    for ( smult in sm) {
-      print( paste("Entering interpolation at distance multiplier:", smult ) )
-      p$stmv_distance_scale = p$stmv_distance_scale0 * smult
-      ncpus_new = floor( length( p$clusters0 ) / smult )
+    nk = length(p$stmv_distance_scale)
+    for ( kk in 1:nk ) {
+      p$distance_scale_current = p$stmv_distance_scale[kk]
+      print( paste("Entering interpolation at distance scale", p$distance_scale_current ) )
+      ncpus_new = floor(  p$stmv_distance_scale[1]/ p$distance_scale_current )
       p$clusters = p$clusters0[1:ncpus_new] # as ram reqeuirements increase drop cpus
       locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
       if ( !is.null(locs_to_do) && length(locs_to_do) > 0) {
@@ -785,11 +797,13 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         "statistics_update_error",
         "unknown"
       )]
+
+
       toreset = which( Sflag[] %in% unlist(Eflags_reset) )
       if (length(toreset) > 0) Sflag[toreset] = E[["todo"]]
       currentstatus = stmv_db( p=p, DS="statistics.status" ) # update again
       p$time_start_interpolation = Sys.time()
-      parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )))
+      parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) )
     }
   }
 
@@ -831,8 +845,8 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     # interpolation based on data and augmented by previous predictions
     # NOTE:: no covariates are used
     p$force_complete_solution = TRUE
+    p$distance_scale_current = p$stmv_distance_scale[1]
     p$clusters = p$clusters0  # in case interpolation above altered p$clusters
-    p$stmv_distance_scale = p$stmv_distance_scale0
     locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
     if ( !is.null(locs_to_do) && length(locs_to_do) > 0) {
       Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
@@ -840,13 +854,13 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     }
     currentstatus = stmv_db( p=p, DS="statistics.status" )
     p$stmv_local_modelengine = "fft"
-    if (!exists("stmv_fft_filter", p)) p$stmv_fft_filter="spatial.process"  #  fft==spatial.process, krige (very slow), lowpass, lowpass_spatial.process
+    p$stmv_fft_filter="spatial.process"  #  fft==spatial.process, krige (very slow), lowpass, lowpass_spatial.process
     if (p$stmv_fft_filter=="lowpass" ) {
       if (!exists("stmv_lowpass_phi", p))  p$stmv_lowpass_phi = p$pres / 5 # FFT-baed methods cov range parameter .. not required for "spatial.process" ..
       if (!exists("stmv_lowpass_nu", p))  p$stmv_lowpass_nu = 0.5  #exponential
     }
     p$time_start_interpolation_force_complete = Sys.time()
-    parallel_run( stmv_interpolate2, p=p, runindex=list( locs=sample( currentstatus$todo )))
+    parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )))
   }
 
 

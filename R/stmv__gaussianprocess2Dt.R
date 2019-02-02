@@ -19,6 +19,9 @@ stmv__gaussianprocess2Dt = function(p=NULL, dat=NULL, pa=NULL, variablelist=FALS
   pa$mean = NA
   pa$sd = NA
 
+
+  phi.grid = p$phi.grid * distance  
+
   for ( ti in 1:p$nt ) {
     
     if ( exists("TIME", p$variables) ) {
@@ -31,7 +34,7 @@ stmv__gaussianprocess2Dt = function(p=NULL, dat=NULL, pa=NULL, variablelist=FALS
     z = dat[xi, p$variables$Y]
     
     fsp = try( MLESpatialProcess(xy, z, cov.function=p$fields.cov.function, cov.args=p$fields.cov.args ,
-      theta.grid=p$phi.grid, lambda.grid=p$lambda.grid, ngrid = 10, niter = 15, tol = 0.01, 
+      theta.grid=phi.grid, lambda.grid=p$lambda.grid, ngrid = 10, niter = 15, tol = 0.01, 
       Distance = "rdist", nstep.cv = 50 ) )
 
     if (inherits(fsp, "try-error") )  next()

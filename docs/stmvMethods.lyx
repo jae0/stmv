@@ -2886,15 +2886,10 @@ stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e.
 \begin_layout Quotation
 
 \size scriptsize
-stmv_distance_scale = 30, # km ...
+stmv_distance_scale = c(30, 40, 50), # km ...
  approx guess of 95% AC range
 \end_layout
 
-\begin_layout Quotation
-
-\size scriptsize
-stmv_distance_max = 60,
-\end_layout
 
 \begin_layout Quotation
 
@@ -3194,15 +3189,10 @@ stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e.
 \begin_layout Quotation
 
 \size scriptsize
-stmv_distance_scale = 40, # km ...
+stmv_distance_scale = c(30, 40, 50), # km ...
  approx guess of 95% AC range
 \end_layout
 
-\begin_layout Quotation
-
-\size scriptsize
-stmv_distance_max = 80,
-\end_layout
 
 \begin_layout Quotation
 
@@ -3563,15 +3553,10 @@ stmv_distance_statsgrid = 10, # resolution (km) of data aggregation (i.e.
 \begin_layout Quotation
 
 \size scriptsize
-stmv_distance_scale = 30, # km ...
+stmv_distance_scale = c(30, 40, 50), # km ...
  approx guess of 95% AC range
 \end_layout
 
-\begin_layout Quotation
-
-\size scriptsize
-stmv_distance_max = 50,
-\end_layout
 
 \begin_layout Quotation
 
@@ -3994,7 +3979,7 @@ stmv_distance_statsgrid = 2, # resolution (km) of data aggregation (i.e.
 \begin_layout Quotation
 
 \size scriptsize
-stmv_distance_scale = 50
+stmv_distance_scale = c(40, 50, 60)
 \end_layout
 
 \end_deeper
@@ -4322,7 +4307,7 @@ stmv_distance_statsgrid = 2, # resolution (km) of data aggregation (i.e.
 \begin_layout Quotation
 
 \size scriptsize
-stmv_distance_scale = 50
+stmv_distance_scale = c(40, 50, 60)
 \end_layout
 
 \end_deeper

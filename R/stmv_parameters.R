@@ -34,7 +34,7 @@ stmv_parameters = function( p=NULL, ... ) {
 
   # used by "fields" GRMF functions
   if ( p$stmv_local_modelengine %in% c("gaussianprocess2Dt")) {
-    if (!exists("phi.grid", p) ) p$phi.grid = 10^seq( -6, 6, by=0.5) * p$stmv_distance_scale # maxdist is aprox magnitude of the phi parameter
+    if (!exists("phi.grid", p) ) p$phi.grid = 10^seq( -6, 6, by=0.5)  # maxdist is aprox magnitude of the phi parameter
     if (!exists("lambda.grid", p) ) p$lambda.grid = 10^seq( -9, 3, by=0.5) # ratio of tau sq to sigma sq
   }
 

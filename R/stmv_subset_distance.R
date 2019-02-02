@@ -1,4 +1,4 @@
-    stmv_subset_distance = function( Si, p ) {
+    stmv_subset_distance = function( Si, p, distance_to_upsample ) {
 
       E = stmv_error_codes()
       Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
@@ -11,7 +11,7 @@
       dlon = abs( Sloc[Si,1] - Yloc[Yi[],1] )
       dlat = abs( Sloc[Si,2] - Yloc[Yi[],2] )
       ndata = 0
-      for ( stmv_distance_cur in p$upsampling )  {
+      for ( stmv_distance_cur in distance_to_upsample )  {
         U = which( {dlon  <= stmv_distance_cur} & {dlat <= stmv_distance_cur} )  # faster to take a block
         ndata = length(U)
         if ( ndata >= p$n.min ) break()

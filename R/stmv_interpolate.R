@@ -1,6 +1,6 @@
 
 
-stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
+stmv_interpolate = function( ip=NULL, p, distance_scale_currentp$stmv_distance_scale[1], debugging=FALSE, ... ) {
   #\\ core function to interpolate (model and predict) in parallel
 
   if (0) {
@@ -88,34 +88,37 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     savepoints = sample(logpoints, nsavepoints)
   }
 
+  distance_to_upsample = distance_scale_current * p$stmv_distance_upsampling_fraction
+
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
 
     if ( iip %in% logpoints )  currentstatus = stmv_logfile(p=p)
     Si = p$runs[ iip, "locs" ]
     if ( Sflag[Si] != E[["todo"]] ) next()  # previously attempted .. skip
-    print( paste("index =", iip, ";  Si = ", Si ) )
+    if (debugging) print( paste("index =", iip, ";  Si = ", Si ) )
 
     # obtain indices of data locations withing a given spatial range, optimally determined via variogram
 
-    W = try( stmv_subset_distance( Si=Si, p=p ) )
+    W = try( stmv_subset_distance( Si=Si, p=p, distance_to_upsample=distance_to_upsample ) )
 
     if ( is.null(W) ) {
       Sflag[Si] = E[["insufficient_data"]]
       W = WA = NULL
+      if (debugging) message("Error: insufficient data .. null")
       next()
     }
     if ( inherits(W, "try-error") ) {
       Sflag[Si] = E[["insufficient_data"]]
       W = WA = NULL
-      print (" ... skipping: insufficient_data" )
+      if (debugging) message("Error: insufficient data .. try-error")
       next()
     }
 
     Sflag[Si] = W[["flag"]]  # update flags
     if ( Sflag[Si] == E[["insufficient_data"]] ) {
       W = WA = NULL
-      print (" ... skipping: insufficient_data" )
+      if (debugging) message("Error: insufficient data")
       next()
     }
 
@@ -123,7 +126,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       if (exists("stmv_rangecheck", p)) {
         if (p$stmv_rangecheck=="paranoid") {
           W = WA = NULL
-          print (" ... skipping: stmv_rangecheck paranoid" )
+          if (debugging) message("Error: stmv_rangecheck paranoid")
           next()
         }
       }
@@ -131,7 +134,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
     # if here then W exists and there is something to do
     # NOTE:: W[["U"]] are the indices of locally useful data
-    # p$stmv_distance_prediction determine the data entering into local model construction
+    # p$stmv_distance_prediction determines the data entering into local model construction
 
     # prep dependent data
     # reconstruct data for modelling (dat)
@@ -179,14 +182,15 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     pa = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=p$windowsize.half ) )
     if (is.null(pa)) {
       Sflag[Si] = E[["prediction_area"]]
-      message( Si )
-      message("Error: prediction grid ... null .. this should not happen")
+      if (debugging) message( Si )
+      if (debugging) message("Error: prediction grid ... null .. this should not happen")
       pa = W = NULL
       next()
     }
     if ( inherits(pa, "try-error") ) {
       pa = W = NULL
       Sflag[Si] = E[["prediction_area"]]
+      if (debugging) message("Error: prediction grid ... try-error .. this should not happen")
       next()
     }
 
@@ -215,14 +219,15 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
         pa_fc = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=dist_fc ) )
         if (is.null(pa_fc)) {
           Sflag[Si] = E[["prediction_area"]]
-          message( Si )
-          message("Error with issue with prediction grid ... null .. this should not happen")
+          if (debugging) message( Si )
+          if (debugging) message("Error with issue with prediction grid ... null .. this should not happen")
           W = pa_fc = dist_fc = NULL
           next()
         }
         if ( inherits(pa_fc, "try-error") ) {
           W = pa_fc = dist_fc = NULL
           Sflag[Si] = E[["prediction_area"]]
+          if (debugging) message("Error: prediction grid ... try-error .. this should not happen")
           next()
         }
         if (nrow(pa_fc) > 1) {
@@ -290,30 +295,35 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     if ( is.null(res)) {
       Sflag[Si] = E[["local_model_error"]]   # modelling / prediction did not complete properly
       dat = pa = NULL
+      if (debugging) message("Error: local model error")
       next()
     }
 
     if ( inherits(res, "try-error") ) {
       Sflag[Si] =  E[["local_model_error"]]   # modelling / prediction did not complete properly
       dat = pa = res = NULL
+      if (debugging) message("Error: local model error")
       next()
     }
 
     if (!exists("predictions", res)) {
       Sflag[Si] =  E[["prediction_error"]]   # modelling / prediction did not complete properly
       dat = pa = res = NULL
+      if (debugging) message("Error: prediction error")
       next()
     }
 
     if (!exists("mean", res$predictions)) {
       Sflag[Si] =  E[["prediction_error"]]   # modelling / prediction did not complete properly
       dat = pa = res = NULL
+      if (debugging) message("Error: prediction error")
       next()
     }
 
     if (length(which( is.finite(res$predictions$mean ))) < 5) {
       Sflag[Si] =  E[["prediction_error"]]   # modelling / prediction did not complete properly
       dat = pa = res = NULL
+      if (debugging) message("Error: prediction error")
       next()  # looks to be a faulty solution
     }
 
@@ -332,16 +342,19 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     if ( is.null(sf) ) {
       Sflag[Si] = E[["statistics_update_error"]]
       res = pa = sf = NULL
+      if (debugging) message("Error: statistics update error")
       next()
     }
     if ( inherits(sf, "try-error") ) {
       Sflag[Si] = E[["statistics_update_error"]]
       res = pa = sf = NULL
+      if (debugging) message("Error: statistics update error")
       next()
     }
     if ( sf=="error" ) {
       Sflag[Si] =  E[["statistics_update_error"]]
       res = pa = sf = NULL
+      if (debugging) message("Error: statistics update try-error")
       next()
     }
 
@@ -350,16 +363,19 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     if ( is.null(sf) ) {
       Sflag[Si] = E[["prediction_update_error"]]
       res = pa = sf = NULL
+      if (debugging) message("Error: prediction update error .. is null")
       next()
     }
     if ( inherits(sf, "try-error") ) {
       Sflag[Si] = E[["prediction_update_error"]]
       res = pa = sf = NULL
+      if (debugging) message("Error: prediction update error .. try-error")
       next()
     }
     if ( sf=="error" ) {
       Sflag[Si] = E[["prediction_update_error"]]
       res = pa = sf = NULL
+      if (debugging) message("Error: prediction update error .. general")
       next()
     }
 
