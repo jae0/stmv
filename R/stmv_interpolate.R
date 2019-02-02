@@ -90,7 +90,7 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
     savepoints = sample(logpoints, nsavepoints)
   }
 
-  distance_to_upsample = distance_scale_current * p$stmv_distance_upsampling_fraction
+  distance_to_upsample = p$distance_scale_current * p$stmv_distance_upsampling_fraction
 
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
