@@ -776,7 +776,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     for ( kk in 1:nk ) {
       p$distance_scale_current = p$stmv_distance_scale[kk]
       print( paste("Entering interpolation at distance scale", p$distance_scale_current ) )
-      ncpus_new = floor(  p$stmv_distance_scale[1]/ p$distance_scale_current )
+      ncpus_new = floor( length(p$clusters0) * p$stmv_distance_scale[1]/ p$distance_scale_current )
       p$clusters = p$clusters0[1:ncpus_new] # as ram reqeuirements increase drop cpus
       locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
       if ( !is.null(locs_to_do) && length(locs_to_do) > 0) {
