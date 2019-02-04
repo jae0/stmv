@@ -228,7 +228,6 @@ stmv
  This document will also serve to document these methods.
  The spatially aggregated case will be treated in a separate followup document
  (or appended to this document in some future iteration).
- 
 \end_layout
 
 \begin_layout Section
@@ -1952,7 +1951,6 @@ separable
 \end_inset
 
  – non-separable (both time and space structure evolve in a nonsimple manner).
- 
 \end_layout
 
 \begin_layout Standard
@@ -2045,7 +2043,6 @@ In the spatiotemporal setting, separable models are almost always used for
  the study area is homogeneous and truly first and second order constant
  (i.e., constant mean, variance) across both time and space, a fact that is
  seldom true in most ecological systems (see below).
- 
 \end_layout
 
 \begin_layout Standard
@@ -2117,7 +2114,6 @@ stmv
 \end_inset
 
  to vary.
- 
 \end_layout
 
 \begin_layout Standard
@@ -2228,8 +2224,8 @@ The data found within the subdomain
 
 \begin_layout Standard
 \begin_inset Graphics
-	filename concept1.pdf
-	lyxscale 50
+	filename concept1.svg
+	lyxscale 40
 	scale 25
 
 \end_inset
@@ -2252,7 +2248,7 @@ stmv
 \begin_inset Formula $S_{m}$
 \end_inset
 
- which extends to a distance (right-facing arrows; solid circles) that varies
+ which extends to a distance (right-facing arrows; solid squares) that varies
  depending upon the underlying spatial variability of the data and is defined
  in 
 \series bold
@@ -2265,16 +2261,16 @@ as the distance at which the spatial autocorrelation drops to some small
 
 ).
  Data within this distance and parameters obtained from the local analysis
- are used to complete the local model of the spatial or spatiotemporal processes
- and then predict/interpolate to some fraction of the local spatial range
- (default is 75%; down-facing arrow, stippled circle).
+ are, under the assumption of second order stationarity, used to complete
+ the local model of the spatial or spatiotemporal processes and then predict/int
+erpolate to some fraction of the distance between statistical grid nodes
+ (default is 75%; stippled square).
  Every statistical node is visited with many overlapping predictions that
  are locally averaged (weighted by number of predictions and prediction
  variance).
  As grid size decreases the number of models increases.
- This also reduces computation load and RAM requirements.
- However, the utility of the model also declines due to small sample sizes
- entering analyses.
+ This reduces computation load and RAM requirements; however, the utility
+ of the model also declines due to small sample sizes entering analyses.
  Judicious choice of statistical grid density as well as maximum and minimum
  number of data points and upper and lower bounds of spatial bounds must
  be balanced.
@@ -2702,11 +2698,10 @@ p
  necessary.
  The more user-modifiable options are listed in the examples below with
  explanations.
- 
 \end_layout
 
 \begin_layout Subsection
-Example 1: pure spatial models of bathymetry and substrate grainsize
+Example 1: pure spatial models of bathymetry and substrate grain size
 \end_layout
 
 \begin_layout Standard
@@ -2890,7 +2885,6 @@ stmv_distance_scale = c(30, 40, 50), # km ...
  approx guess of 95% AC range
 \end_layout
 
-
 \begin_layout Quotation
 
 \size scriptsize
@@ -2927,7 +2921,7 @@ aegis
 \begin_layout Quotation
 
 \size scriptsize
-p = aegis::aegis_parameters( 
+p = aegis::aegis_parameters(
 \end_layout
 
 \begin_deeper
@@ -3192,7 +3186,6 @@ stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e.
 stmv_distance_scale = c(30, 40, 50), # km ...
  approx guess of 95% AC range
 \end_layout
-
 
 \begin_layout Quotation
 
@@ -3556,7 +3549,6 @@ stmv_distance_statsgrid = 10, # resolution (km) of data aggregation (i.e.
 stmv_distance_scale = c(30, 40, 50), # km ...
  approx guess of 95% AC range
 \end_layout
-
 
 \begin_layout Quotation
 
