@@ -517,6 +517,7 @@
       if ( exists("TIME", p$variables)) {
 
         p0 = p
+        p$clusters = p$stmv_clusters[[1]]
 
         parallel_run(
           p=p,

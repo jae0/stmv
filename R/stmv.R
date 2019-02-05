@@ -85,17 +85,6 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   stmv_db( p=p, DS="cleanup" )
 
 
-  if ( !exists("stmv_distance_scale", p)) {
-    message( "||| stmv_distance_scale must be defined" )
-    stop()
-  }
-
-
-  if ( !exists("stmv_distance_statsgrid", p)) {
-    message( "||| stmv_distance_statsgrid must be defined" )
-    stop()
-  }
-
   if ( !exists("stmv_distance_prediction_fraction", p)) p$stmv_distance_prediction_fraction = 0.75
 
   if ( !exists("stmv_distance_prediction", p)) {
@@ -648,7 +637,6 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     p$minresolution = p$downsampling_multiplier*c(p$pres, p$pres )
   }
 
-  p$clusters0 = p$clusters  # copy as p$clusters can change ..
 
   message("||| Finished preparing data structures ... ")
   # message("||| Once analyses begin, you can view maps from an external R session (e.g. for temperature): ")
@@ -682,7 +670,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     # -----------------------------------------------------
     if ( "debug" %in% runmode ) {
       currentstatus = stmv_db( p=p, DS="statistics.status" )
-      pdeb = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) ) # reconstruct reauired params
+      pdeb = cd ( p=p, runindex=list( locs=sample( currentstatus$todo )) ) # reconstruct reauired params
       print( c( unlist( currentstatus[ c("n.total", "n.too_shallow", "n.todo", "n.skipped", "n.outside_bounds", "n.complete" ) ] ) ))
       message( "||| Entering browser mode ...")
       p <<- pdeb
@@ -776,8 +764,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     for ( kk in 1:nk ) {
       p$distance_scale_current = p$stmv_distance_scale[kk]
       print( paste("Entering interpolation at distance scale", p$distance_scale_current ) )
-      ncpus_new = floor( length(p$clusters0) * p$stmv_distance_scale[1]/ p$distance_scale_current )
-      p$clusters = p$clusters0[1:ncpus_new] # as ram reqeuirements increase drop cpus
+      p$clusters = p$stmv_clusters[[kk]] # as ram reqeuirements increase drop cpus
       locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
       if ( !is.null(locs_to_do) && length(locs_to_do) > 0) {
         Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
@@ -842,7 +829,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     # NOTE:: no covariates are used
     p$force_complete_solution = TRUE
     p$distance_scale_current = p$stmv_distance_scale[1]
-    p$clusters = p$clusters0  # in case interpolation above altered p$clusters
+    p$clusters = p$stmv_clusters[[1]]  # in case interpolation above altered p$clusters
     locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
     if ( !is.null(locs_to_do) && length(locs_to_do) > 0) {
       Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )

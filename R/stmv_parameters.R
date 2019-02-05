@@ -11,7 +11,36 @@ stmv_parameters = function( p=NULL, ... ) {
 
   if (!exists("stmv_current_status", p))  p$stmv_current_status = file.path( p$stmvSaveDir, "stmv_current_status" )
 
-  if (!exists("clusters", p)) p$clusters = rep("localhost", detectCores() )  # default if not given
+  if ( !exists("stmv_distance_scale", p)) {
+    message( "||| stmv_distance_scale must be defined" )
+    stop()
+  }
+
+  if ( !exists("stmv_distance_statsgrid", p)) {
+    message( "||| stmv_distance_statsgrid must be defined" )
+    stop()
+  }
+
+  nk = length(p$stmv_distance_scale)
+  if (!exists("stmv_clusters", p)) {
+    if (exists( "clusters", p)) {
+      p$stmv_clusters = p$clusters
+    } else {
+      warning( "p$stmv_clusters not specified, using 1 core only" )
+      p$stmv_clusters = "localhost"
+    }
+  }
+
+  if (length(p$stmv_clusters)) != nk) {
+    if (length(p$stmv_clusters) == 1) {
+      oo = p$stmv_clusters
+      p$stmv_clusters = list() # alter original by copy first vector to appropriate length
+      for (nn in 1:nk) p$stmv_clusters[[nn]] = oo
+    } else {
+      stop( "length of the list p$stmv_clusters must match the length of p$stmv_distance_scale" )
+    }
+  }
+
   if( !exists( "storage.backend", p))  p$storage.backend="bigmemory.ram"
   if( !exists( "stmv_variogram_method", p)) p$stmv_variogram_method="gstat"   # note GP methods are slow when there is too much data
   if (!exists( "stmv_global_family", p)) p$stmv_global_family = gaussian(link = "identity")
