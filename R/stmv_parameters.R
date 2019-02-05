@@ -31,7 +31,7 @@ stmv_parameters = function( p=NULL, ... ) {
     }
   }
 
-  if (length(p$stmv_clusters)) != nk) {
+  if (length(p$stmv_clusters) != nk) {
     if (length(p$stmv_clusters) == 1) {
       oo = p$stmv_clusters
       p$stmv_clusters = list() # alter original by copy first vector to appropriate length
