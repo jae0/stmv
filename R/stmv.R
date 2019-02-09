@@ -670,7 +670,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     # -----------------------------------------------------
     if ( "debug" %in% runmode ) {
       currentstatus = stmv_db( p=p, DS="statistics.status" )
-      pdeb = cd ( p=p, runindex=list( locs=sample( currentstatus$todo )) ) # reconstruct reauired params
+      pdeb = parallel_run ( p=p, runindex=list( locs=sample( currentstatus$todo )) ) # reconstruct reauired params
       print( c( unlist( currentstatus[ c("n.total", "n.too_shallow", "n.todo", "n.skipped", "n.outside_bounds", "n.complete" ) ] ) ))
       message( "||| Entering browser mode ...")
       p <<- pdeb
@@ -703,13 +703,13 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
           }
         }
       }
+
       if (exists("stmv_global_family", p)) {
-        if ( p$stmv_global_family != "none" ) {
-          if (exists("linkinv", p$stmv_global_family)) {
-            sP = p$stmv_global_family$linkinv( sP[] )
-          }
+        if (exists("linkinv", p$stmv_global_family)) {
+          sP = p$stmv_global_family$linkinv( sP[] )
         }
       }
+
       if (exists("stmv_Y_transform", p)) sP = p$stmv_Y_transform$invers (sP[])
       if ( debug_plot_log ) sP = log(sP)
       Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
