@@ -53,10 +53,10 @@ stmv_parameters = function( p=NULL, ... ) {
 
   if ( !exists("sampling", p))  p$sampling = c( 1, 1.25, 1.5 ) # fractions of distance scale to try iteratively increasing distance and n.min
 
-  if ( !exists("downsampling_multiplier", p))  {
-    # downsampling (thinning) of data via a simple discretization and uniform weight of data counts in each block .. 1== use current discretization (pres, pres, tres)
-    p$downsampling_multiplier = 1
-  }
+  # downsampling (thinning) of data via a simple discretization and uniform weight of data counts in each block .. 1== use current discretization (pres, pres, tres)
+  if ( !exists("downsampling_multiplier", p))  p$downsampling_multiplier = 1
+
+
 
   if (!exists("stmv_lowpass_phi", p)) p$stmv_lowpass_phi = p$pres*2 # FFT based method when operating gloablly
   if (!exists("stmv_lowpass_nu", p)) p$stmv_lowpass_nu = 0.5 # this is exponential covar
@@ -74,11 +74,23 @@ stmv_parameters = function( p=NULL, ... ) {
     # if (!exists("stmv_gam_optimizer", p)) p$stmv_gam_optimizer="perf"
   }
 
+  if (p$stmv_local_modelengine == "twostep") {
+    if (exists("stmv_rsquared_threshold", p) ) {
+      if (p$stmv_rsquared_threshold > 0) {
+        message( "Ignoring value of p$stmv_rsquared_threshold as it is meaningless with twostep")
+        p$stmv_rsquared_threshold = 0  # override :: this is meaningless when broken apart in space and time ..
+      }
+    }
+  }
+
   if ( p$stmv_local_modelengine %in% c("krige" )) {
      # nothing to add yet ..
   }
 
+
   if (!exists("variables", p)) p$variables=list()
+
+  p = stmv_variablelist(p)
 
   # require knowledge of size of stats output which varies with a given type of analysis
   p$statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "range", "phi", "nu" )
@@ -122,15 +134,33 @@ stmv_parameters = function( p=NULL, ... ) {
     if (p$stmv_global_modelengine %in% c("bigglm", "biglm") ) p$libs = c( p$libs, "biglm" )
   }
 
-  if (exists("TIME", p$variables)) p$libs = c( p$libs, "mgcv" ) # default uses GAM smooths
-
   p$libs = unique( p$libs )
   suppressMessages( RLibrary( p$libs ) )
 
-  p = stmv_variablelist(p)
+
+  if ( !exists("minresolution", p)) {
+    if ( exists("TIME", p$variables)) {
+      p$minresolution = p$downsampling_multiplier*c(p$pres, p$pres, p$tres)
+    } else {
+      p$minresolution = p$downsampling_multiplier*c(p$pres, p$pres )
+    }
+  }
 
   p$nloccov = 0
   if (exists("local_cov", p$variables)) p$nloccov = length(p$variables$local_cov)
+
+  if ( !exists("stmv_distance_prediction_fraction", p)) p$stmv_distance_prediction_fraction = 0.75
+
+  if ( !exists("stmv_distance_prediction", p)) {
+    # this is a half window km
+    p$stmv_distance_prediction = p$stmv_distance_statsgrid * p$stmv_distance_prediction_fraction
+  }
+
+  # construct prediction/output grid area ('pa')
+  if ( !exists("windowsize.half", p)) p$windowsize.half = floor(p$stmv_distance_prediction/p$pres) # convert distance to discretized increments of row/col indices; stmv_distance_prediction = 0.75* stmv_distance_statsgrid (unless overridden)
+
+  if ( !exists("stmv_distance_upsampling_fraction", p)) p$stmv_distance_upsampling_fraction = c(1.0, 1.25, 1.5, 1.75)
+
 
   return(p)
 }

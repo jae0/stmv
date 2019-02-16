@@ -3827,7 +3827,7 @@ survey=list(
 \begin_layout Quotation
 
 \size scriptsize
-drop.groundfish.data=TRUE # esp from 1970 to 1999 measurement of invertebrates
+drop.unreliable.zeros.groundfish.data=TRUE # esp from 1970 to 1999 measurement of invertebrates
  was sporatic ..
  zero-values are dropped as they are unreliable
 \end_layout
@@ -4130,7 +4130,7 @@ survey=list(
 \begin_layout Quotation
 
 \size scriptsize
-drop.groundfish.data=TRUE # esp from 1970 to 1999 measurement of invertebrates
+drop.unreliable.zeros.groundfish.data=TRUE # esp from 1970 to 1999 measurement of invertebrates
  was sporatic ..
  zero-values are dropped as they are unreliable
 \end_layout

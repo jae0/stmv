@@ -85,19 +85,6 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   stmv_db( p=p, DS="cleanup" )
 
 
-  if ( !exists("stmv_distance_prediction_fraction", p)) p$stmv_distance_prediction_fraction = 0.75
-
-  if ( !exists("stmv_distance_prediction", p)) {
-    # this is a half window km
-    p$stmv_distance_prediction = p$stmv_distance_statsgrid * p$stmv_distance_prediction_fraction
-  }
-
-  # construct prediction/output grid area ('pa')
-  if ( !exists("windowsize.half", p)) p$windowsize.half = floor(p$stmv_distance_prediction/p$pres) # convert distance to discretized increments of row/col indices; stmv_distance_prediction = 0.75* stmv_distance_statsgrid (unless overridden)
-
-  if ( !exists("stmv_distance_upsampling_fraction", p)) p$stmv_distance_upsampling_fraction = c(1.0, 1.25, 1.5, 1.75)
-
-
   if (exists("stmv_Y_transform", p)) {
     DATA$input[, p$variables$Y ] = p$stmv_Y_transform$transf(DATA$input[, p$variables$Y ] )
   }
@@ -621,30 +608,15 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
 
 
-    if (p$stmv_local_modelengine == "twostep") {
-      if (exists("stmv_rsquared_threshold", p) ) {
-        if (p$stmv_rsquared_threshold > 0) {
-          message( "Ignoring value of p$stmv_rsquared_threshold as it is meaningless with twostep")
-          p$stmv_rsquared_threshold = 0  # override :: this is meaningless when broken apart in space and time ..
-        }
-      }
-    }
+  message("||| Finished preparing data structures ... \n")
 
+  #  Once analyses begin, you can view maps from an external R session (e.g. for temperature):
+  #  p = stmv_db( p=list(data_root=project.datadirectory('aegis', 'temperature'), variables=list(Y='t'), spatial.domain='canada.east'  DS='load.parameters' )" )
+  #  see stmv(p=p, runmode='debug_predictions_map', debug_plot_variable_index=1) # for static maps
+  #  see stmv(p=p, runmode='debug_predictions_map', debug_plot_variable_index=1:p$nt, debug_plot_log=TRUE) # for timeseries  of log(Y)
+  #  see stmv(p=p, runmode='debug_statistics_map', debug_plot_variable_index=1:length(p$statsvars))
+  #  print( p$statsvars) # will get you your stats variables "
 
-  if ( exists("TIME", p$variables)) {
-    p$minresolution = p$downsampling_multiplier*c(p$pres, p$pres, p$tres)
-  } else {
-    p$minresolution = p$downsampling_multiplier*c(p$pres, p$pres )
-  }
-
-
-  message("||| Finished preparing data structures ... ")
-  # message("||| Once analyses begin, you can view maps from an external R session (e.g. for temperature): ")
-  # message("||| p = stmv_db( p=list(data_root=project.datadirectory('aegis', 'temperature'), variables=list(Y='t'), spatial.domain='canada.east' ), DS='load.parameters' )" )
-  # message("||| see stmv(p=p, runmode='debug_predictions_map', debug_plot_variable_index=1) # for static maps")
-  # message("||| see stmv(p=p, runmode='debug_predictions_map', debug_plot_variable_index=1:p$nt, debug_plot_log=TRUE) # for timeseries  of log(Y)")
-  # message("||| see stmv(p=p, runmode='debug_statistics_map', debug_plot_variable_index=1:length(p$statsvars))  ")
-  # message("||| print( p$statsvars) # will get you your stats variables " )
   message("||| Monitor the status of modelling by looking at the output of the following file:")
   message("||| in linux, you can issue the following command:" )
   message("||| watch -n 60 cat ",  p$stmv_current_status  )
@@ -662,7 +634,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
   if ( any(grepl("debug", runmode)) ) {
 
-    message( " " )
+    message( "\n" )
     message( "||| Debugging from man stmv call." )
     message( "||| To load from the saved state try: stmv_db( p=p, DS='load_saved_state' ) " )
     message( "||| To reset stats: currentstatus = stmv_db( p=p, DS='statistics.status.reset' ) " )
