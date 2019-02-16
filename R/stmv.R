@@ -27,8 +27,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
   message( "||| Initializing data files ... " )
   message( "||| In case something should go wrong, intermediary outputs will be placed at:" )
-  message( "|||",  p$stmvSaveDir  )
-  message( " ")
+  message( "||| ",  p$stmvSaveDir  )
 
   p$nlogs = nlogs
   p = stmv_parameters(p=p) # fill in parameters with defaults where required
@@ -78,7 +77,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   if ( !exists("prediction.ts", p)) p$prediction.ts = 1
 
 
-  message(" ")
+  message( "\n")
   message( "||| Initializing temporary storage of data and output files... ")
   message( "||| These are large files (4 to 6 X 5GB), it will take a minute ... ")
   message( "||| Try to turn off swap/paging such that only RAM is used. ")
@@ -202,9 +201,9 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         # TODO MUST find a generic form as below
         # # Ypreds = predict(covmodel, type="link", se.fit=FALSE )  ## TODO .. keep track of the SE
         if (!exists("predict", p$stmv_global_model)) {
-          message( "p$stmv_global_model$predict =' " )
-          message( "   predict( global_model, newdata=pa, type='link', se.fit=TRUE )' " )
-          message( " where 'global_model', newdata=pa' are required " )
+          message( "||| p$stmv_global_model$predict =' " )
+          message( "|||   predict( global_model, newdata=pa, type='link', se.fit=TRUE )' " )
+          message( "||| where 'global_model', newdata=pa' are required " )
           stop()
         }
         preds = try( eval(parse(text=pp$stmv_global_model$predict )) )
@@ -732,11 +731,11 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
   if ("interpolate" %in% runmode ) {
     E = stmv_error_codes()
-    message ( "\n", "||| Sampling at the following distance mulitpliers:", p$stmv_distance_scale )
+    message ( "\n", "||| Sampling at the following distance mulitpliers: ", paste0(p$stmv_distance_scale, collapse=",") )
     nk = length(p$stmv_distance_scale)
     for ( kk in 1:nk ) {
       p$distance_scale_current = p$stmv_distance_scale[kk]
-      message( "||| Entering interpolation at distance scale", p$distance_scale_current )
+      message( "||| Entering interpolation at distance scale ", p$distance_scale_current )
       p$clusters = p$stmv_clusters[[kk]] # as ram reqeuirements increase drop cpus
       locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
       if ( !is.null(locs_to_do) && length(locs_to_do) > 0) {
