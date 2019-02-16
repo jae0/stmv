@@ -12,7 +12,8 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     storage.backend="bigmemory.ram"
     save_completed_data=TRUE  # export out of stmv system for use outside (e.g., by aegis)
     debug_plot_variable_index=1
-    runmode=c("interpolate", "globalmodel")
+    # runmode=c("interpolate", "globalmodel")
+    # runmode=c("interpolate")
   }
 
   #\\ localized modelling of space and time data to predict/interpolate upon a grid
