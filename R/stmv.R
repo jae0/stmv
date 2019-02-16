@@ -314,8 +314,8 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
           Pcovdata = as.matrix( DATA$output$COV[[covname]] )
           nPcovlocs = nrow(Pcovdata)
           if (nPcovlocs != nPlocs) {
-            message( "Inconsistency between number of prediction locations and prediction covariates: input data needs to be checked:")
-            message( "Usually this due to bathymetry and temperature being out of sync")
+            message( "||| Inconsistency between number of prediction locations and prediction covariates: input data needs to be checked:")
+            message( "||| Usually this due to bathymetry and temperature being out of sync")
 
             print(str(DATA))
             stop()
@@ -609,7 +609,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
 
 
-  message("||| Finished preparing data structures ... \n")
+  message("\n||| Finished preparing data structures ... \n")
 
   #  Once analyses begin, you can view maps from an external R session (e.g. for temperature):
   #  p = stmv_db( p=list(data_root=project.datadirectory('aegis', 'temperature'), variables=list(Y='t'), spatial.domain='canada.east'  DS='load.parameters' )" )
@@ -619,7 +619,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   #  print( p$statsvars) # will get you your stats variables "
 
   message("||| Monitor the status of modelling by looking at the output of the following file:")
-  message("||| in linux, you can issue the following command:" )
+  message("||| in linux, you can issue the following command: \n" )
   message("||| watch -n 60 cat ",  p$stmv_current_status  )
 
 
@@ -732,11 +732,11 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
   if ("interpolate" %in% runmode ) {
     E = stmv_error_codes()
-    print ( "Sampling at the following distance mulitpliers:" )
+    message ( "\n", "||| Sampling at the following distance mulitpliers:", p$stmv_distance_scale )
     nk = length(p$stmv_distance_scale)
     for ( kk in 1:nk ) {
       p$distance_scale_current = p$stmv_distance_scale[kk]
-      print( paste("Entering interpolation at distance scale", p$distance_scale_current ) )
+      message( "||| Entering interpolation at distance scale", p$distance_scale_current )
       p$clusters = p$stmv_clusters[[kk]] # as ram reqeuirements increase drop cpus
       locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
       if ( !is.null(locs_to_do) && length(locs_to_do) > 0) {
@@ -796,7 +796,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   # --------------------
 
   if (force_complete_solution) {
-    print( "Entering -force complete solution- interpolation stage" )
+    message( "\n||| Entering -force complete solution- interpolation stage \n" )
     # finalize all interpolations where there are missing data/predictions using
     # interpolation based on data and augmented by previous predictions
     # NOTE:: no covariates are used
