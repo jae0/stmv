@@ -119,7 +119,7 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
     out = stmv__tps( p, dat=pxts, pa=pa, lambda=varObs/varSpatial  )
   }
 
-  if (p$stmv_twostep_space %in% c("fft", "lowpass", "spatial.process", "lowpass_spatial.process") ) {
+  if (p$stmv_twostep_space %in% c("fft") ) {
     out = stmv__fft( p, dat=pxts, pa=pa, nu=nu, phi=phi )
   }
 

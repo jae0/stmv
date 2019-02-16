@@ -133,7 +133,7 @@ Ecological and biological processes demonstrate variability in space and
  additional information, to some form of stratified random or even blocked
  designs that randomly chooses samples from strata constrained by factors
  believed to be pertinent or informative or at least one tries to abstract
- away as 
+ away as
 \begin_inset Quotes qld
 \end_inset
 
@@ -158,7 +158,7 @@ design
 ) has captured local homogeneities in the process of interest (e.g., abundance
  of some organism); that is, each sample is thought to be more representative
  of the stratum that it represents.
- 
+
 \end_layout
 
 \begin_layout Standard
@@ -168,7 +168,7 @@ e numbers as the number of informative factors increase and the kinds of
  Further, the locations of such strata can shift if they are based upon
  features that are not geographically fixed, such as with temperature, oxygen
  levels, abundance of prey or predators, light levels, etc.
- The fixed area approach, therefore, crudely 
+ The fixed area approach, therefore, crudely
 \begin_inset Quotes eld
 \end_inset
 
@@ -176,7 +176,7 @@ adjusts
 \begin_inset Quotes erd
 \end_inset
 
- for the influence of these 
+ for the influence of these
 \begin_inset Quotes eld
 \end_inset
 
@@ -187,7 +187,7 @@ extraneous
  factors by re-weighting of the total variance such that they can, thereafter,
  be ignored.
  These factors, are however, also highly informative and ignoring them for
- the sake of simplicity by 
+ the sake of simplicity by
 \begin_inset Quotes eld
 \end_inset
 
@@ -197,7 +197,7 @@ factoring them out
 
  can lead to erroneous conclusions about the focal process(es) of interest,
  especially when they are dynamic.
- 
+
 \end_layout
 
 \begin_layout Standard
@@ -212,7 +212,7 @@ There exist two main approaches attempting to incorporate such additional
  et al.' s (2004) exceptionally clear and thorough exposition.
  To assist in the context of stock assessment and general spatial and spatiotemp
 oral modeling of potentially large areas, some of these methods have been
- formulated in an R-package, 
+ formulated in an R-package,
 \begin_inset Quotes eld
 \end_inset
 
@@ -239,11 +239,11 @@ Spatial autocorrelation
 \end_layout
 
 \begin_layout Standard
-To be precise, we focus upon any spatially referenced observation 
+To be precise, we focus upon any spatially referenced observation
 \begin_inset Formula $Y_{s}$
 \end_inset
 
- at locations 
+ at locations
 \family roman
 \series medium
 \shape up
@@ -265,15 +265,15 @@ To be precise, we focus upon any spatially referenced observation
 \bar default
 \noun default
 \color inherit
-, measured in a coordinate space whose domain 
+, measured in a coordinate space whose domain
 \begin_inset Formula $D$
 \end_inset
 
- has dimensionality 
+ has dimensionality
 \begin_inset Formula $d$
 \end_inset
 
- such that 
+ such that
 \family roman
 \series medium
 \shape up
@@ -296,32 +296,32 @@ To be precise, we focus upon any spatially referenced observation
 \noun default
 \color inherit
 .
- We focus upon the simple case of 
+ We focus upon the simple case of
 \begin_inset Formula $d=2$
 \end_inset
 
- spatial dimensions, such that for example, 
+ spatial dimensions, such that for example,
 \begin_inset Formula $s=(\text{northing, easting})$
 \end_inset
 
 .
- The observations 
+ The observations
 \begin_inset Formula $Y_{s}$
 \end_inset
 
- are assumed to be realizations of a 
+ are assumed to be realizations of a
 \series bold
 spatial stochastic process
 \series default
-, 
+,
 \begin_inset Formula $y$
 \end_inset
 
-, that is some latent unobservable but real, stochastic, generative 
+, that is some latent unobservable but real, stochastic, generative
 \series bold
 function
 \series default
- (i.e., a spatial random field) such that 
+ (i.e., a spatial random field) such that
 \begin_inset Formula $y_{s}\rightarrow Y_{s}$
 \end_inset
 
@@ -330,29 +330,29 @@ function
 \end_inset
 
 } spatial locations.
- The manner in which the variability of 
+ The manner in which the variability of
 \begin_inset Formula $y_{s}$
 \end_inset
 
- changes as a function of distance, 
+ changes as a function of distance,
 \begin_inset Formula $h=\parallel s-s'\parallel$
 \end_inset
 
 , is known as the spatial autocorrelation function.
- The 
+ The
 \begin_inset Formula $\parallel\cdot\parallel$
 \end_inset
 
- indicates a spatial norm which in 
+ indicates a spatial norm which in
 \begin_inset Formula $d=2$
 \end_inset
 
- spatial dimensions is simply the Euclidean distance, 
+ spatial dimensions is simply the Euclidean distance,
 \begin_inset Formula $h=(\Delta\text{northing}^{2}+\Delta\text{easting}^{2})^{1/2}$
 \end_inset
 
 .
- 
+
 \end_layout
 
 \begin_layout Standard
@@ -362,7 +362,7 @@ The spatial model is expressed as a regression model of a stochastic process
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula 
+\begin_inset Formula
 \begin{equation}
 g(Y_{s})=\boldsymbol{x}_{s}^{T}\boldsymbol{\boldsymbol{\beta}}+\omega_{s}+\varepsilon_{s},\label{eq:basic_spatial_model}
 \end{equation}
@@ -373,15 +373,15 @@ g(Y_{s})=\boldsymbol{x}_{s}^{T}\boldsymbol{\boldsymbol{\beta}}+\omega_{s}+\varep
 \end_layout
 
 \begin_layout Standard
-where, the observations 
+where, the observations
 \begin_inset Formula $Y_{s}$
 \end_inset
 
- are realizations of some mean process 
+ are realizations of some mean process
 \begin_inset Formula $\boldsymbol{x}_{s}^{T}\boldsymbol{\boldsymbol{\beta}}$
 \end_inset
 
- (sometimes referred to as 
+ (sometimes referred to as
 \begin_inset Quotes eld
 \end_inset
 
@@ -389,21 +389,21 @@ external drift
 \begin_inset Quotes erd
 \end_inset
 
- in the kriging literature), and a residual error process 
+ in the kriging literature), and a residual error process
 \begin_inset Formula $(\omega_{s}+\varepsilon_{s})$
 \end_inset
 
 , operating potentially under the context of Generalized Linear Models via
- the link function 
+ the link function
 \begin_inset Formula $g(\cdot)$
 \end_inset
 
 .
- The 
+ The
 \begin_inset Formula $x_{s}$
 \end_inset
 
- are spatially referenced predictors with associated parameters 
+ are spatially referenced predictors with associated parameters
 \series bold
 
 \begin_inset Formula $\boldsymbol{\beta}$
@@ -412,16 +412,16 @@ external drift
 
 \series default
 .
- The residual error process is decomposed into spatially structured 
+ The residual error process is decomposed into spatially structured
 \begin_inset Formula $\omega_{s}$
 \end_inset
 
- and spatially unstructured 
+ and spatially unstructured
 \begin_inset Formula $\varepsilon_{s}$
 \end_inset
 
  components, both with mean of zero.
- The latter is also commonly called the 
+ The latter is also commonly called the
 \begin_inset Quotes eld
 \end_inset
 
@@ -431,34 +431,34 @@ nugget
 
  error in geostatistics and used to represent measurement and/or microscale
  variability/processes; it is usually assumed to have a Normal distribution
- and standard deviation 
+ and standard deviation
 \begin_inset Formula $\sigma_{\varepsilon}$
 \end_inset
 
 .
- The spatial error is assumed to follow a 
+ The spatial error is assumed to follow a
 \series bold
 Gaussian process
 \series default
- with mean 0 and a spatial covariance function 
+ with mean 0 and a spatial covariance function
 \begin_inset Formula $C(s,s';\theta)$
 \end_inset
 
  that describes form of the variance of the process as a function of distance
- between data, controlled by the parameters 
+ between data, controlled by the parameters
 \begin_inset Formula $\theta$
 \end_inset
 
- and spatially structured standard deviation 
+ and spatially structured standard deviation
 \begin_inset Formula $\sigma_{\omega}$
 \end_inset
 
  (see below).
- The full model specification is, therefore: 
+ The full model specification is, therefore:
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula 
+\begin_inset Formula
 \begin{equation}
 \begin{matrix}g(Y_{s}) & = & \boldsymbol{x}_{s}^{T}\boldsymbol{\boldsymbol{\beta}}+\omega_{s}+\varepsilon_{s},\\
 \varepsilon_{s} & \sim & \text{N}(0,\sigma_{\varepsilon}^{2}),\\
@@ -473,27 +473,27 @@ Gaussian process
 
 \begin_layout Standard
 The above is equivalent to assuming a Multivariate Normal likelihood for
- the observations 
+ the observations
 \begin_inset Formula $\mathbf{Y}=(Y_{s_{1}},\ldots,Y_{s_{K}})^{T}$
 \end_inset
 
-, with mean 
+, with mean
 \begin_inset Formula $\boldsymbol{\mu}=g(\mathbf{Y})=\left[x_{\text{s}_{i}}^{T}\right]_{i=1}^{K}\boldsymbol{\beta}$
 \end_inset
 
- and a covariance matrix 
+ and a covariance matrix
 \begin_inset Formula $\boldsymbol{\mathbf{\Sigma}}=\left[C(\text{s}_{i},\text{s}_{j};\theta)\right]_{i,j=1}^{K}+\tau^{2}I_{K}$
 \end_inset
 
-, such that 
+, such that
 \begin_inset Formula $\mathbf{Y}\sim\text{MVN}(\boldsymbol{\mu},\boldsymbol{\Sigma})$
 \end_inset
 
-; with 
+; with
 \begin_inset Formula $I_{K}$
 \end_inset
 
- an identity matrix of size 
+ an identity matrix of size
 \begin_inset Formula $K$
 \end_inset
 
@@ -504,7 +504,7 @@ The above is equivalent to assuming a Multivariate Normal likelihood for
 \end_layout
 
 \begin_layout Standard
-The spatial covariance function 
+The spatial covariance function
 \begin_inset Formula $C(h)=C(s,s';\theta)$
 \end_inset
 
@@ -514,7 +514,7 @@ The spatial covariance function
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula 
+\begin_inset Formula
 \begin{equation}
 \begin{matrix}C(h)_{\text{Spherical}} & = & \left\{ \begin{matrix}\sigma_{s}^{2}(1-\frac{3}{2}h/\phi+\frac{1}{2}(h/\phi)^{3}); & 0<h<=\phi\\
 0; & h>\phi,
@@ -532,7 +532,7 @@ C(h)_{\text{Matérn}} & = & \sigma_{s}^{2}\frac{1}{2^{\nu-1}\Gamma(\nu)}(\sqrt{2
 \end_layout
 
 \begin_layout Standard
-At zero distance, 
+At zero distance,
 \begin_inset Formula $C(0)=\text{Cov}(Y_{s},Y_{s})=\text{Var}(Y_{s})=\sigma_{\varepsilon}^{2}+\sigma_{s}^{2}$
 \end_inset
 
@@ -540,42 +540,42 @@ At zero distance,
 \emph on
 i.e.
 \emph default
-, global variance), where 
+, global variance), where
 \begin_inset Formula $\sigma_{\varepsilon}$
 \end_inset
 
- is the nonspatial, unstructured error, 
+ is the nonspatial, unstructured error,
 \begin_inset Formula $\sigma_{s}$
 \end_inset
 
- is the spatially structured error, and 
+ is the spatially structured error, and
 \begin_inset Formula $\theta=\{\phi,\nu,p,\ldots\}$
 \end_inset
 
- are function-specific parameters including 
+ are function-specific parameters including
 \begin_inset Formula $\phi$
 \end_inset
 
- the 
+ the
 \emph on
 range
 \emph default
  parameter.
- 
+
 \begin_inset Formula $\Gamma(\cdot)$
 \end_inset
 
- is the Gamma function and 
+ is the Gamma function and
 \begin_inset Formula $K_{\nu}(\cdot)$
 \end_inset
 
- is the Bessel function of the second kind with smoothness 
+ is the Bessel function of the second kind with smoothness
 \begin_inset Formula $\nu$
 \end_inset
 
 .
  The Matérn covariance function is frequently used in the more recent literature
- as the shape of this function is more flexible (Figure 
+ as the shape of this function is more flexible (Figure
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:autocorrelation"
@@ -604,61 +604,61 @@ name "fig:autocorrelation"
 \end_layout
 
 \begin_layout Standard
-Figure 
+Figure
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:autocorrelation"
 
 \end_inset
 
-: Matérn autocorrelation function, 
+: Matérn autocorrelation function,
 \begin_inset Formula $\rho(h)=C(h)/C(0)$
 \end_inset
 
-, the covariance function 
+, the covariance function
 \begin_inset Formula $C(h)$
 \end_inset
 
- scaled by the total variance 
+ scaled by the total variance
 \begin_inset Formula $C(0)$
 \end_inset
 
-, for two values of 
+, for two values of
 \begin_inset Formula $\nu$
 \end_inset
 
  (dark lines).
- As 
+ As
 \begin_inset Formula $\nu$
 \end_inset
 
- increases 
+ increases
 \begin_inset Formula $(\nu=100)$
 \end_inset
 
 , it approaches the Gaussian curve (upper dark curve on the left side) while
- at smaller values 
+ at smaller values
 \begin_inset Formula $(\nu=0.5)$
 \end_inset
 
  the curve is exponential (lower dark curve on the left side).
  This flexibility has made it a popular choice in geostatistics.
- The associated semivariograms (scaled to unit variance) 
+ The associated semivariograms (scaled to unit variance)
 \begin_inset Formula $\gamma(h)$
 \end_inset
 
  are shown in light stippled lines.
- Spatial scale is defined heuristically as the distance 
+ Spatial scale is defined heuristically as the distance
 \begin_inset Formula $h$
 \end_inset
 
  at which the autocorrelation falls to 0.05 (dashed horizontal line)– in
- this example between 2.5 and 3 distance units, depending upon value of 
+ this example between 2.5 and 3 distance units, depending upon value of
 \begin_inset Formula $\nu$
 \end_inset
 
 .
- The semivariance (also called 
+ The semivariance (also called
 \begin_inset Quotes eld
 \end_inset
 
@@ -666,25 +666,25 @@ semivariogram
 \begin_inset Quotes erd
 \end_inset
 
-) 
+)
 \begin_inset Formula $\gamma(h)$
 \end_inset
 
 , is more commonly used in the kriging literature, and is simply the covariance
- function 
+ function
 \begin_inset Formula $C(h)$
 \end_inset
 
- reflected on the horizontal axis of the global variance 
+ reflected on the horizontal axis of the global variance
 \begin_inset Formula $C(0)$
 \end_inset
 
- such that 
+ such that
 \begin_inset Formula $\gamma(h)=C(0)-C(h)=\frac{1}{2}\ \text{Var}[Y_{s}-Y_{s}']=\sigma_{\omega}^{2}[1-\rho(h)]$
 \end_inset
 
 .
- 
+
 \end_layout
 
 \begin_layout LyX-Code
@@ -692,63 +692,63 @@ semivariogram
 status open
 
 \begin_layout LyX-Code
-#------------------ ## plot of matern covariance 
+#------------------ ## plot of matern covariance
 \end_layout
 
 \begin_layout LyX-Code
-phi = 1 
+phi = 1
 \end_layout
 
 \begin_layout LyX-Code
-sigma = 1 
+sigma = 1
 \end_layout
 
 \begin_layout LyX-Code
-nu = 0.5 
+nu = 0.5
 \end_layout
 
 \begin_layout LyX-Code
-x = seq(0, 4, by=0.1) 
+x = seq(0, 4, by=0.1)
 \end_layout
 
 \begin_layout LyX-Code
-matern.covariance = function( sigma, nu, phi, x) {    
+matern.covariance = function( sigma, nu, phi, x) {
 \end_layout
 
 \begin_layout LyX-Code
-  1/(2^(nu-1)*gamma(nu) ) 
+  1/(2^(nu-1)*gamma(nu) )
 \end_layout
 
 \begin_layout LyX-Code
-  * (sqrt(2*nu)*x/phi)^nu * besselK(sqrt(2*nu)*x/phi, nu) 
+  * (sqrt(2*nu)*x/phi)^nu * besselK(sqrt(2*nu)*x/phi, nu)
 \end_layout
 
 \begin_layout LyX-Code
-} 
+}
 \end_layout
 
 \begin_layout LyX-Code
-y = matern.covariance( sigma, nu, phi, x) 
+y = matern.covariance( sigma, nu, phi, x)
 \end_layout
 
 \begin_layout LyX-Code
-plot( y~x, type="l", ylim=c(0,1.1) ) 
+plot( y~x, type="l", ylim=c(0,1.1) )
 \end_layout
 
 \begin_layout LyX-Code
-nu = 100 y100 = matern.covariance( sigma, nu, phi, x) 
+nu = 100 y100 = matern.covariance( sigma, nu, phi, x)
 \end_layout
 
 \begin_layout LyX-Code
-lines( x,y100 ) 
+lines( x,y100 )
 \end_layout
 
 \begin_layout LyX-Code
-text ( 0.3*max(x), 0.9, "nu=100 ~ Gaussian" ) 
+text ( 0.3*max(x), 0.9, "nu=100 ~ Gaussian" )
 \end_layout
 
 \begin_layout LyX-Code
-text ( 0.2*max(x), 0.2, "nu=0.5 ~ Exponential" ) 
+text ( 0.2*max(x), 0.2, "nu=0.5 ~ Exponential" )
 \end_layout
 
 \end_inset
@@ -766,25 +766,25 @@ text ( 0.2*max(x), 0.2, "nu=0.5 ~ Exponential" )
 \begin_layout Standard
 Defining the spatial scale of a given observation or process is imperative
  for the development of any ecological assessment or monitoring.
- The 
+ The
 \series bold
 spatial autocorrelation function
 \series default
- is defined as the covariance function scaled by the global variance: 
+ is defined as the covariance function scaled by the global variance:
 \begin_inset Formula $\rho(h)=C(h)/C(0)$
 \end_inset
 
 .
- Heuristically, we define the 
+ Heuristically, we define the
 \series bold
 spatial autocorrelation scale
 \series default
  to be the distance at which the spatial autocorrelation decreases asymptoticall
-y to 
+y to
 \begin_inset Formula $\rho(x)\rightarrow0.05$
 \end_inset
 
- (occasionally called the 
+ (occasionally called the
 \begin_inset Quotes eld
 \end_inset
 
@@ -804,7 +804,7 @@ practical
  processes/current, and stronger spatial connectivity, habitat heterogeneity,
  then there is a lower likelihood that monitoring such processes will provide
  insights to the internal structure of the area of interest.
- 
+
 \end_layout
 
 \begin_layout Standard
@@ -824,7 +824,7 @@ This is perhaps clearest when spatial scale is studied in the context of
  increase more rapidly than any benefit (e.g., in the simplest case, if one
  is looking only naively at standard error as a measure of benefit, then
  it would increase asymptotically with increased effort with a power of
- 
+
 \begin_inset Formula $-1/2$
 \end_inset
 
@@ -857,11 +857,11 @@ Ecological systems also exist in a temporal frame.
  period to another.
  This discrete-time notion of temporal autocorrelation is the slope parameter
  from a plot of a variable as a function of itself with an offset of one
- time unit: 
+ time unit:
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula 
+\begin_inset Formula
 \[
 \upsilon_{t+1}=\rho\upsilon_{t}+\eta_{t},
 \]
@@ -872,11 +872,11 @@ Ecological systems also exist in a temporal frame.
 \end_layout
 
 \begin_layout Standard
-with 
+with
 \begin_inset Formula $\eta_{t}\sim N(0,\sigma_{t}^{2})$
 \end_inset
 
- and a temporal (linear) autocorrelation parameter 
+ and a temporal (linear) autocorrelation parameter
 \begin_inset Formula $\rho$
 \end_inset
 
@@ -887,25 +887,25 @@ with
  Collectively these are known as AR, ARMA, and ARIMA models.
  The difficulty with these autocorrelation timeseries formulations is the
  requirement of a complete data series without missing data.
- 
+
 \end_layout
 
 \begin_layout Standard
-The 
+The
 \series bold
 cumulative periodogram
 \series default
- expresses the variance 
+ expresses the variance
 \begin_inset Formula $f(\omega$
 \end_inset
 
-) as a function of temporal distance (wavelengths 
+) as a function of temporal distance (wavelengths
 \begin_inset Formula $\omega$
 \end_inset
 
 ) and so is an analogue of the spatial semivariogram.
  It is a discrete sample estimate of the continuous concept of spectral
- density, 
+ density,
 \begin_inset Formula $\gamma(t)$
 \end_inset
 
@@ -913,7 +913,7 @@ cumulative periodogram
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula 
+\begin_inset Formula
 \[
 \begin{array}{ccc}
 \gamma(t)=\int_{-1/2}^{1/2}e^{2\pi i\omega t}f(\omega)d\omega & \longleftrightarrow & f(\omega)=\sum_{h=-\infty}^{h=\infty}\gamma(t)e^{-2\pi i\omega t}.\end{array}
@@ -931,42 +931,42 @@ Usefully, as the autocovariance and spectral density are Fourier transform
  This also of course in classical usage faces the same requirement of a
  complete data series without missing data.
  However, when used as the temporal analogue of an empirical spatial covariance
- generating 
+ generating
 \series bold
 stochastic process
 \series default
 , it remains useful as a first order descriptive tool of the error processe.
  Indeed, any spatial autocorrelation function can be used to describe the
  empirical form of the temporal autocorrelation pattern and modeled in a
- manner completely analogous to the spatial case as a 
+ manner completely analogous to the spatial case as a
 \series bold
 temporal stochastic process
 \series default
-, 
+,
 \begin_inset Formula $y_{t}$
 \end_inset
 
-, that is, some latent, unobservable but real, stochastic, generative 
+, that is, some latent, unobservable but real, stochastic, generative
 \series bold
 function
 \series default
- such that 
+ such that
 \begin_inset Formula $y_{t}\rightarrow Y_{t}$
 \end_inset
 
-, where 
+, where
 \begin_inset Formula $Y_{t}$
 \end_inset
 
- are any temporally referenced observation at some time 
+ are any temporally referenced observation at some time
 \begin_inset Formula $t$
 \end_inset
 
-, measured in a coordinate space whose domain 
+, measured in a coordinate space whose domain
 \begin_inset Formula $D$
 \end_inset
 
- has dimensionality 1 such that 
+ has dimensionality 1 such that
 \family roman
 \series medium
 \shape up
@@ -979,7 +979,7 @@ function
 \begin_inset Formula $\{t\in D\in\Re\}$
 \end_inset
 
- with 
+ with
 \family default
 \series default
 \shape default
@@ -993,11 +993,11 @@ function
 \end_inset
 
  temporal locations.
- The manner in which the variability of 
+ The manner in which the variability of
 \begin_inset Formula $Y_{t}$
 \end_inset
 
- changes as a function of the norm (distance), 
+ changes as a function of the norm (distance),
 \begin_inset Formula $h=\parallel t-t'\parallel$
 \end_inset
 
@@ -1008,7 +1008,7 @@ function
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula 
+\begin_inset Formula
 \begin{equation}
 \begin{matrix}g(Y_{t}) & = & \boldsymbol{x}_{t}^{T}\boldsymbol{\beta}+\omega_{t}+\varepsilon_{t},\\
 \varepsilon_{t} & \sim & \text{N}(0,\sigma_{\varepsilon}^{2}),\\
@@ -1023,7 +1023,7 @@ function
 
 \begin_layout Standard
 The covariance function, for example, when expressed as an exponential decay
- model controlled by time range parameter 
+ model controlled by time range parameter
 \family roman
 \series medium
 \shape up
@@ -1049,7 +1049,7 @@ The covariance function, for example, when expressed as an exponential decay
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula 
+\begin_inset Formula
 \[
 C(t,t';\theta_{t})=\sigma_{t}^{2}e^{-|h|/\phi_{t}}.
 \]
@@ -1068,7 +1068,7 @@ d the issues and vice-versa.
  of an ecological process, we must be precise in its definition.
  The cumulative distribution permits a rapid identification of the time
  scale at which correlation drops to some arbitrary level.
- To be approximately comparable to the spatial scale, we define the 
+ To be approximately comparable to the spatial scale, we define the
 \series bold
 temporal autocorrelation scale
 \series default
@@ -1080,7 +1080,7 @@ temporal autocorrelation scale
  However, similar to spatial scale issues, there is a point where there
  will be diminishing returns for any increase in the resolution of a temporal
  signal.
- 
+
 \end_layout
 
 \begin_layout Standard
@@ -1088,7 +1088,7 @@ temporal autocorrelation scale
 status collapsed
 
 \begin_layout Subsubsection
-(Aside) Background: 
+(Aside) Background:
 \end_layout
 
 \begin_layout Plain Layout
@@ -1165,7 +1165,7 @@ The usual method for smoothing a periodogram has such a fancy name that
 \end_layout
 
 \begin_layout Plain Layout
-\begin_inset Formula 
+\begin_inset Formula
 \[
 \hat{x}_{t}=\frac{x_{t-2}+x_{t-1}+x_{t}+x_{t+1}+x_{t+2}}{5}
 \]
@@ -1192,7 +1192,7 @@ The subscripts for coef [ ] refer to the time difference from the center
 \end_layout
 
 \begin_layout Plain Layout
-\begin_inset Formula 
+\begin_inset Formula
 \[
 \hat{x}_{t}=0.2x_{t-2}+0.2x_{t-1}+0.2x_{t}+0.2x_{t+1}+0.2x_{t+2},
 \]
@@ -1213,7 +1213,7 @@ The modified Daniell kernel is such that the two endpoints in the averaging
 \end_layout
 
 \begin_layout Plain Layout
-\begin_inset Formula 
+\begin_inset Formula
 \[
 \hat{x}_{t}=\frac{x_{t-2}+2x_{t-1}+2x_{t}+2x_{t+1}+x_{t+2}}{8}=0.125x_{t-2}+0.25x_{t-1}+0.25x_{t}+0.25x_{t+1}+0.125x_{t+2}
 \]
@@ -1238,7 +1238,7 @@ Either the Daniell kernel or the modified Daniell kernel can be convoluted
 \end_layout
 
 \begin_layout Plain Layout
-\begin_inset Formula 
+\begin_inset Formula
 \[
 \hat{\hat{x}}_{t}=\frac{\hat{x}_{t-2}+\hat{x}_{t-1}+\hat{x}_{t}+\hat{x}_{t+1}+\hat{x}_{t+2}}{5}
 \]
@@ -1261,7 +1261,7 @@ In R, the command kernel("daniell",c(2,2)) will supply the coefficients
 \end_layout
 
 \begin_layout Plain Layout
-> kernel ("daniell",c(2,2)) 
+> kernel ("daniell",c(2,2))
 \end_layout
 
 \begin_layout Plain Layout
@@ -1274,7 +1274,7 @@ This generates the smoothing formula
 \end_layout
 
 \begin_layout Plain Layout
-\begin_inset Formula 
+\begin_inset Formula
 \[
 \hat{x}_{t}=0.04x_{t-4}+0.08x_{t-3}+0.12x_{t-2}+0.16x_{t-1}+0.20x_{t}+0.16x_{t+1}+0.12x_{t+2}+0.08x_{t+3}+0.04x_{t+4}.
 \]
@@ -1287,7 +1287,7 @@ This generates the smoothing formula
 \begin_layout Plain Layout
 A convolution of the modified method in which the end points have less weight
  is also possible.
- The command 
+ The command
 \end_layout
 
 \begin_layout Plain Layout
@@ -1309,7 +1309,7 @@ Thus the center values are weighted slightly more heavily than in the unmodified
 When we smooth a periodogram, we are smoothing across a frequency interval
  rather than a time interval.
  Remember that the periodogram is determined at the fundamental frequencies
- 
+
 \begin_inset Formula $\omega_{j}=j/n$
 \end_inset
 
@@ -1318,26 +1318,26 @@ When we smooth a periodogram, we are smoothing across a frequency interval
 \end_inset
 
 .
- Let 
+ Let
 \begin_inset Formula $I(\omega_{j})$
 \end_inset
 
- denote the periodogram value at frequency 
+ denote the periodogram value at frequency
 \begin_inset Formula $\omega_{j}=j/n$
 \end_inset
 
 .
  When we use a Daniell kernel with parameter m to smooth a periodogram,
- the smoothed value 
+ the smoothed value
 \begin_inset Formula $\hat{I}(\omega_{j})$
 \end_inset
 
  is a weighted average of periodogram values for frequencies in the range
- 
+
 \begin_inset Formula $(j-m)/n$
 \end_inset
 
- to 
+ to
 \begin_inset Formula $(j+m)/n$
 \end_inset
 
@@ -1349,15 +1349,15 @@ Bandwidth
 \end_layout
 
 \begin_layout Plain Layout
-There are 
+There are
 \begin_inset Formula $L=2m+1$
 \end_inset
 
- fundamental frequency values in the range 
+ fundamental frequency values in the range
 \begin_inset Formula $(j-m)/n$
 \end_inset
 
- to 
+ to
 \begin_inset Formula $(j+m)/n$
 \end_inset
 
@@ -1366,7 +1366,7 @@ There are
 \end_layout
 
 \begin_layout Plain Layout
-\begin_inset Formula 
+\begin_inset Formula
 \[
 B_{\omega}=\frac{L}{n}
 \]
@@ -1384,7 +1384,7 @@ The bandwidth is a measure of the width of the frequency interval(s) used
 \begin_layout Plain Layout
 When unequal weights are used in the smoothing, the bandwidth definition
  is modified.
- Denote the smoothed periodogram value at 
+ Denote the smoothed periodogram value at
 \begin_inset Formula $\omega_{j}=j/n$
 \end_inset
 
@@ -1392,7 +1392,7 @@ When unequal weights are used in the smoothing, the bandwidth definition
 \end_layout
 
 \begin_layout Plain Layout
-\begin_inset Formula 
+\begin_inset Formula
 \[
 \hat{I}(\omega_{j})=\sum_{k=-m}^{+m}h_{k}I\left(\omega_{j}+\frac{k}{n}\right).
 \]
@@ -1403,7 +1403,7 @@ When unequal weights are used in the smoothing, the bandwidth definition
 \end_layout
 
 \begin_layout Plain Layout
-The 
+The
 \begin_inset Formula $h_{k}$
 \end_inset
 
@@ -1412,7 +1412,7 @@ The
 \end_layout
 
 \begin_layout Plain Layout
-\begin_inset Formula 
+\begin_inset Formula
 \[
 B_{\omega}=\frac{L_{h}}{n}=\frac{1/\sum h_{k}^{2}}{n}
 \]
@@ -1466,7 +1466,7 @@ As an example, suppose that the observed series is named x and we wish to
 \end_layout
 
 \begin_layout Plain Layout
-k = kernel("daniell", 4) 
+k = kernel("daniell", 4)
 \end_layout
 
 \begin_layout Plain Layout
@@ -1751,19 +1751,19 @@ In reality, spatial and temporal patterns coexist and co-evolve.
 \begin_layout Standard
 Again, following Banerjee et al.'s (2004) development, spatiotemporal models
  can be seen as a simple extension of the spatial regression model.
- The observations, 
+ The observations,
 \begin_inset Formula $Y_{s,t}$
 \end_inset
 
- are measured in a coordinate space 
+ are measured in a coordinate space
 \begin_inset Formula $\{(s,t)\in D\in\mathfrak{R}^{d}\mathfrak{\times R}\}$
 \end_inset
 
- in the domain 
+ in the domain
 \begin_inset Formula $D$
 \end_inset
 
- of dimensionality 
+ of dimensionality
 \begin_inset Formula $d+1$
 \end_inset
 
@@ -1771,7 +1771,7 @@ Again, following Banerjee et al.'s (2004) development, spatiotemporal models
 \begin_inset Formula $k=1,\dots,K$
 \end_inset
 
-} spatial and 
+} spatial and
 \begin_inset Formula $\{l=1,\dots,L\}$
 \end_inset
 
@@ -1780,7 +1780,7 @@ Again, following Banerjee et al.'s (2004) development, spatiotemporal models
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula 
+\begin_inset Formula
 \[
 g(Y_{s,t})=\boldsymbol{x}_{s,t}^{T}\boldsymbol{\beta}_{s,t}+\omega_{s,t}+\varepsilon_{s,t},
 \]
@@ -1791,11 +1791,11 @@ g(Y_{s,t})=\boldsymbol{x}_{s,t}^{T}\boldsymbol{\beta}_{s,t}+\omega_{s,t}+\vareps
 \end_layout
 
 \begin_layout Standard
-where, 
+where,
 \begin_inset Formula $\boldsymbol{x}_{s,t}^{T}\boldsymbol{\beta}_{s,t}$
 \end_inset
 
- is the mean process (or 
+ is the mean process (or
 \begin_inset Quotes eld
 \end_inset
 
@@ -1804,25 +1804,25 @@ external drift
 \end_inset
 
  in the kriging literature) and the error process is decomposed into a spatiotem
-porally structured component 
+porally structured component
 \begin_inset Formula $\omega$
 \end_inset
 
- and an unstructured component 
+ and an unstructured component
 \begin_inset Formula $\varepsilon$
 \end_inset
 
 , operating again under a generalized linear model framework, through the
- action of the link function 
+ action of the link function
 \begin_inset Formula $g(\cdot)$
 \end_inset
 
 .
- The parameters 
+ The parameters
 \begin_inset Formula $\boldsymbol{\beta}_{s,t}$
 \end_inset
 
- of the spatially and temporally referenced predictors 
+ of the spatially and temporally referenced predictors
 \begin_inset Formula $\boldsymbol{x}_{s,t}$
 \end_inset
 
@@ -1854,7 +1854,7 @@ porally structured component
 \begin_inset Formula $\beta_{s,-}\circledcirc\beta_{-,t}$
 \end_inset
 
- – space and time varying independently (separably, the 
+ – space and time varying independently (separably, the
 \begin_inset Quotes qld
 \end_inset
 
@@ -1878,20 +1878,20 @@ porally structured component
 \end_layout
 
 \begin_layout Standard
-The 
+The
 \emph on
 unstructured
 \emph default
- error is usually assumed to be a Normal 
+ error is usually assumed to be a Normal
 \emph on
 iid
 \emph default
- error process: 
+ error process:
 \begin_inset Formula $\varepsilon_{s,t}\sim N(0,\sigma_{\varepsilon}^{2})$
 \end_inset
 
 .
- However, the manner in which the 
+ However, the manner in which the
 \emph on
 spatiotemporally structured
 \emph default
@@ -1919,11 +1919,11 @@ spatiotemporally structured
 \begin_inset Formula $\omega_{s,-}\circledcirc\omega_{-,t}$
 \end_inset
 
- – 
+ –
 \emph on
 separable
 \emph default
- (spatial and temporal autocorrelations are independent, the 
+ (spatial and temporal autocorrelations are independent, the
 \begin_inset Quotes qld
 \end_inset
 
@@ -1935,11 +1935,11 @@ separable
 \begin_inset Quotes qrd
 \end_inset
 
- indicates additive or multiplicative) with 
+ indicates additive or multiplicative) with
 \begin_inset Formula $\omega_{-,t}\sim\text{GP}(\boldsymbol{0},C(\boldsymbol{\text{t}},\boldsymbol{\text{t}}';\theta_{t}))$
 \end_inset
 
- and 
+ and
 \begin_inset Formula $\omega_{s,-}\sim\text{GP}(\boldsymbol{0},C(\mathbf{s},\mathbf{s}';\theta_{s}))$
 \end_inset
 
@@ -1954,11 +1954,11 @@ separable
 \end_layout
 
 \begin_layout Standard
-If the spatial and temporal errors are assumed to be derived from a 
+If the spatial and temporal errors are assumed to be derived from a
 \series bold
 Gaussian Process
 \series default
- with mean 0 and some covariance 
+ with mean 0 and some covariance
 \begin_inset Formula $C(\cdot,\cdot;\mathbf{\theta})$
 \end_inset
 
@@ -1967,34 +1967,34 @@ Gaussian Process
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula 
+\begin_inset Formula
 \[
 C(\Delta s)_{\text{Matérn}}=\sigma_{s}^{2}\frac{1}{2^{\nu-1}\Gamma(\nu)}(\sqrt{2\nu}|\Delta s|/\phi)^{\nu}\ K_{\nu}(\sqrt{2\nu|}\Delta s|/\phi).
 \]
 
 \end_inset
 
- 
+
 \end_layout
 
 \begin_layout Standard
 Similarly, the temporal covariance can be formulated as any reasonable autocorre
-lation model such as for example the exponential: 
+lation model such as for example the exponential:
 \begin_inset Formula $C(\Delta t)_{\text{Exponential}}=\sigma_{t}^{2}e^{-|\Delta t|/\phi_{t}}$
 \end_inset
 
 .
- 
+
 \end_layout
 
 \begin_layout Standard
 While conceptually coherent and elegant, the evaluation of the likelihoods
  in theses models requires the repeated computation of the inverse of the
- covariance matrix 
+ covariance matrix
 \begin_inset Formula $\Sigma_{n\times n}$
 \end_inset
 
- of size n, an operation that scales with 
+ of size n, an operation that scales with
 \begin_inset Formula $\mathcal{O}(n^{3})$
 \end_inset
 
@@ -2002,7 +2002,7 @@ While conceptually coherent and elegant, the evaluation of the likelihoods
  This has been a bottleneck to further development and use of these covariance-b
 ased methods in large scaled problems of space and space-time.
  Approximations have been suggested to overcome this computational limit:
- modeling the spatial process 
+ modeling the spatial process
 \begin_inset Formula $\omega$
 \end_inset
 
@@ -2022,19 +2022,19 @@ ased methods in large scaled problems of space and space-time.
 \begin_layout Standard
 In the spatiotemporal setting, separable models are almost always used for
  the sake of computational speed as this treats space and time independently,
- reducing the problems crudely from 
+ reducing the problems crudely from
 \begin_inset Formula $\mathcal{O}((KL)^{3})$
 \end_inset
 
- to 
+ to
 \begin_inset Formula $\mathcal{O}(K^{3})+\mathcal{O}(L^{3})$
 \end_inset
 
- operations; where 
+ operations; where
 \begin_inset Formula $K$
 \end_inset
 
- is the number of spatial locations and 
+ is the number of spatial locations and
 \begin_inset Formula $L$
 \end_inset
 
@@ -2055,7 +2055,7 @@ A central assumption of all spatial and spatiotemporal models is that the
  which cannot be easily modeled in a simple regression context.
  This is notoriously the case with biology where aggregation and behavior
  is highly clustered and context (location and time) dependent (nonlinear).
- 
+
 \end_layout
 
 \begin_layout Section
@@ -2063,15 +2063,15 @@ Spatiotemporal models of variability (stmv)
 \end_layout
 
 \begin_layout Standard
-In 
+In
 \series bold
 stmv
 \series default
-, this 
+, this
 \series bold
 nonstationarity
 \series default
- and 
+ and
 \series bold
 nonseparability
 \series default
@@ -2082,7 +2082,7 @@ nonseparability
  assumptions of stationary are valid and modeling of spatiotemporal processes
  and associated parameters become computationally feasible and supported
  by data in the subdomain.
- There is, therefore, some conceptual similarity of this approach to 
+ There is, therefore, some conceptual similarity of this approach to
 \begin_inset Quotes eld
 \end_inset
 
@@ -2091,25 +2091,25 @@ geographically weighted regression
 \end_inset
 
  (e.g., Fotheringham et al.
- 2002) in that each subdomain can have their own model parameters, 
+ 2002) in that each subdomain can have their own model parameters,
 \begin_inset Formula $\beta_{s,t}$
 \end_inset
 
 .
  However, geographically weighted regression permit only the model parameters
- 
+
 \begin_inset Formula $\beta_{s,t}$
 \end_inset
 
- to vary; in contrast, 
+ to vary; in contrast,
 \series bold
 stmv
 \series default
- permits both the model parameters 
+ permits both the model parameters
 \begin_inset Formula $\beta_{s,t}$
 \end_inset
 
- and the spatiotemporal errors 
+ and the spatiotemporal errors
 \begin_inset Formula $\varphi_{s,t}$
 \end_inset
 
@@ -2117,15 +2117,15 @@ stmv
 \end_layout
 
 \begin_layout Standard
-To be more precise, in the spatiotemporal domain 
+To be more precise, in the spatiotemporal domain
 \begin_inset Formula $D$
 \end_inset
 
-, where 
+, where
 \begin_inset Formula $\{(s,t)\in D\in\mathfrak{R}^{d}\mathfrak{\times R|}d=2\}$
 \end_inset
 
- defines the coordinate space, we define statistical nodes 
+ defines the coordinate space, we define statistical nodes
 \family roman
 \series medium
 \shape up
@@ -2157,34 +2157,34 @@ To be more precise, in the spatiotemporal domain
 \color inherit
  in a spatial lattice (or conceivably as centroids of a mesh, though this
  is not yet implemented; Figure 5.1).
- The norm (distance) of data from each node is 
+ The norm (distance) of data from each node is
 \begin_inset Formula $h_{m}=||s_{m},s_{Y}||$
 \end_inset
 
 .
- A local subdomain of a given node 
+ A local subdomain of a given node
 \begin_inset Formula $m$
 \end_inset
 
- is 
+ is
 \begin_inset Formula $\{S_{m=(1,\dots,M)}\in D|h_{m}<h_{u}\}$
 \end_inset
 
- or more briefly as 
+ or more briefly as
 \begin_inset Formula $S_{m}$
 \end_inset
 
  which represents all locations within some distance to the statistical
- node 
+ node
 \begin_inset Formula $\{h_{u}|C(h_{u})_{\text{Matérn}}=0.05\}$
 \end_inset
 
 ; that is, the distance at which the local spatial autocorrelation drops
- to a negligible value (arbitrarily taken as 
+ to a negligible value (arbitrarily taken as
 \begin_inset Formula $p<0.05$
 \end_inset
 
-) and associated parameter values are 
+) and associated parameter values are
 \begin_inset Quotes qld
 \end_inset
 
@@ -2193,7 +2193,7 @@ supported
 \end_inset
 
 .
- 
+
 \family roman
 \series medium
 \shape up
@@ -2206,20 +2206,20 @@ supported
 \uwave off
 \noun off
 \color none
-The data found within the subdomain 
+The data found within the subdomain
 \begin_inset Formula $m$
 \end_inset
 
- is 
+ is
 \begin_inset Formula $\{Y_{s,t}|(s,t)\in D|h_{m}<h_{u}\}$
 \end_inset
 
- is notationally abbreviated as 
+ is notationally abbreviated as
 \begin_inset Formula $Y_{s,t|m}$
 \end_inset
 
 .
- 
+
 \end_layout
 
 \begin_layout Standard
@@ -2235,24 +2235,24 @@ The data found within the subdomain
 
 \begin_layout Standard
 Figure 5.1 Spatial distribution of data (blue dots) overlaid by a statistical
- grid in 
+ grid in
 \series bold
 stmv
 \series default
 .
- The 
+ The
 \begin_inset Formula $m$
 \end_inset
 
- nodes represent the centers of each local subdomain 
+ nodes represent the centers of each local subdomain
 \begin_inset Formula $S_{m}$
 \end_inset
 
  which extends to a distance (right-facing arrows; solid squares) that varies
  depending upon the underlying spatial variability of the data and is defined
- in 
+ in
 \series bold
-stmv 
+stmv
 \series default
 as the distance at which the spatial autocorrelation drops to some small
  value (
@@ -2275,7 +2275,7 @@ erpolate to some fraction of the distance between statistical grid nodes
  number of data points and upper and lower bounds of spatial bounds must
  be balanced.
  This balancing has not been made automatic (yet).
- 
+
 \end_layout
 
 \begin_layout Standard
@@ -2286,11 +2286,11 @@ Operating upon all components of the regression model simultaneously is
  structure, the solutions take many days/weeks on fast machines (5 GHz CPU,
  64GB RAM in 2016), depending of course upon the amount of data and resolution
  and model complexity.
- As a compromise between model complexity and computational speed, 
+ As a compromise between model complexity and computational speed,
 \series bold
 stmv
 \series default
- uses a global covariate model 
+ uses a global covariate model
 \family roman
 \series medium
 \shape up
@@ -2314,18 +2314,18 @@ stmv
 \color inherit
  parameterized using a linear, generalized linear or generalized additive
  model.
- Here, 
+ Here,
 \begin_inset Formula $F(\cdot)$
 \end_inset
 
  represents some potential penalized basis splines of low order (3 knots
  or less seem biologically plausible when modality can be expected) of the
- covariate predictors and potentially some function 
+ covariate predictors and potentially some function
 \begin_inset Formula $g(\cdot)$
 \end_inset
 
  that represents a link function such that the residual error in the link-space
- can be assumed to be Normal with mean zero and standard deviation 
+ can be assumed to be Normal with mean zero and standard deviation
 \family roman
 \series medium
 \shape up
@@ -2338,7 +2338,7 @@ stmv
 \begin_inset Formula $\sigma_{\varphi}$
 \end_inset
 
-, the latter 
+, the latter
 \family default
 \series default
 \shape default
@@ -2347,7 +2347,7 @@ stmv
 \bar default
 \noun default
 \color inherit
-accounting for the residual error process 
+accounting for the residual error process
 \begin_inset Formula $\varphi_{s,t}$
 \end_inset
 
@@ -2364,11 +2364,11 @@ accounting for the residual error process
 \uwave off
 \noun off
 \color none
- 
+
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula 
+\begin_inset Formula
 \[
 \begin{matrix}g(Y_{s,t}) & = & F(\cdot)+\varphi_{s,t},\\
 \varphi_{s,t} & \sim & \text{Normal}(0,\sigma_{\varphi}^{2}).
@@ -2382,7 +2382,7 @@ accounting for the residual error process
 
 \begin_layout Standard
 The spatiotemporal structure is decomposed from this residual error process
- and so the approach is in fact quite similar to 
+ and so the approach is in fact quite similar to
 \begin_inset Quotes eld
 \end_inset
 
@@ -2390,7 +2390,7 @@ regression kriging
 \begin_inset Quotes erd
 \end_inset
 
- and (universal) 
+ and (universal)
 \begin_inset Quotes eld
 \end_inset
 
@@ -2400,12 +2400,12 @@ kriging with external drift
 
  (Hengl et al.
  2004).
- 
+
 \end_layout
 
 \begin_layout Standard
 The local spatial autocorrelation scale is derived from a rapid (coarse
- grained) fit of the local residuals 
+ grained) fit of the local residuals
 \begin_inset Formula $\varphi_{s,t|m}$
 \end_inset
 
@@ -2416,16 +2416,16 @@ The local spatial autocorrelation scale is derived from a rapid (coarse
  and so data from all time periods are used, essentially amounting to a
  temporally averaged spatial autocorrelation.
  Once the approximate bounds of the subdomain (support) are estimated, the
- 
+
 \begin_inset Formula $\varphi_{s,t|m}$
 \end_inset
 
- are modeled as some function 
+ are modeled as some function
 \begin_inset Formula $f_{m}(\cdot)\equiv\boldsymbol{\varphi}_{s,t|m}^{T}\boldsymbol{\beta}_{s,t|m}$
 \end_inset
 
  of a Fourier series with two harmonics, one interannual and one subannual
- (seasonal): 
+ (seasonal):
 \family roman
 \series medium
 \shape up
@@ -2454,7 +2454,7 @@ The local spatial autocorrelation scale is derived from a rapid (coarse
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula 
+\begin_inset Formula
 \[
 \begin{matrix}\varphi_{s,t|m} & = & f_{m}(\cdot)+\zeta_{s,t|m},\\
 \zeta_{s,t|m} & \sim & \text{Normal}(0,\sigma_{\zeta|m}^{2}).
@@ -2467,40 +2467,40 @@ The local spatial autocorrelation scale is derived from a rapid (coarse
 \end_layout
 
 \begin_layout Standard
-Data are (optionally) weighted by the inverse squared distance 
+Data are (optionally) weighted by the inverse squared distance
 \begin_inset Formula $h_{m}^{-2}$
 \end_inset
 
- from the coordinates of each statistical node 
+ from the coordinates of each statistical node
 \begin_inset Formula $m$
 \end_inset
 
  to make data closer to the area of interest and prediction more influential.
  The temporal autocorrelation is, therefore, carried by the individual temporal
- processes at each spatial datum and the temporally structured error 
+ processes at each spatial datum and the temporally structured error
 \begin_inset Formula $\sigma_{t|m}$
 \end_inset
 
- is the variance component of the model 
+ is the variance component of the model
 \begin_inset Formula $f_{m}(\cdot)$
 \end_inset
 
-, that is, 
+, that is,
 \begin_inset Formula $\sigma_{t|m}=\text{Var}[\varphi_{s,t|m}]-\sigma_{\zeta|m}^{2}$
 \end_inset
 
 .
- 
+
 \end_layout
 
 \begin_layout Standard
 The spatial autocorrelation function is parameterized as being derived from
  the subdomain mean Gaussian process with a Matérn covariance function with
- parameters 
+ parameters
 \begin_inset Formula $\theta_{m}=\{\phi_{m},\nu_{m}\}$
 \end_inset
 
- and a time-varying 
+ and a time-varying
 \family roman
 \series medium
 \shape up
@@ -2509,7 +2509,7 @@ The spatial autocorrelation function is parameterized as being derived from
 \bar no
 \noun off
 \color none
-spatially structured standard error 
+spatially structured standard error
 \begin_inset Formula $\sigma_{s|m}$
 \end_inset
 
@@ -2518,7 +2518,7 @@ spatially structured standard error
  often sparse, the data are augmented by temporal predictions of the residual
  error process at each spatial datum (and notationally designated by an
  asterisk).
- These temporally 
+ These temporally
 \begin_inset Quotes qld
 \end_inset
 
@@ -2526,7 +2526,7 @@ augmented
 \begin_inset Quotes qrd
 \end_inset
 
- residual processes are modeled spatially at each time slice 
+ residual processes are modeled spatially at each time slice
 \begin_inset Formula $\varphi_{s,t|m}^{*}$
 \end_inset
 
@@ -2534,15 +2534,15 @@ augmented
 \series bold
  Gaussian process
 \series default
- 
+
 \begin_inset Formula $\omega_{s,t|m}$
 \end_inset
 
- parameterized as a Matérn spatial covariance function 
+ parameterized as a Matérn spatial covariance function
 \begin_inset Formula $\sigma_{s,t|m}^{2}\frac{1}{2^{\nu_{t|m}-1}\Gamma(\nu_{t|m})}(\sqrt{2\nu_{t|m}}h/\phi_{t|m})^{\nu_{t|m}}\ K_{\nu_{t|m}}(\sqrt{2\nu_{t|m}}h/\phi_{t|m})$
 \end_inset
 
- with a local spatial error 
+ with a local spatial error
 \series medium
 
 \begin_inset Formula $\sigma_{s,t|m}$
@@ -2558,7 +2558,7 @@ augmented
 \noun default
 \color inherit
 ; and a spatially and temporally unstructured error process assumed to be
- derived from a Normal error process with mean zero and error 
+ derived from a Normal error process with mean zero and error
 \begin_inset Formula $\sigma_{\varepsilon|m}$
 \end_inset
 
@@ -2566,7 +2566,7 @@ augmented
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula 
+\begin_inset Formula
 \[
 \begin{matrix}\varphi_{s,t|m}^{*} & = & \omega_{s,t|m}+\varepsilon_{s,t|m},\\
 \omega_{s,t|m} & \sim & \text{GP}(0,C(\mathbf{s},\mathbf{s}';\mathbf{\theta}_{t|m}=\{\nu_{t|m},\phi_{t|m},\sigma_{t|m}\})),\\
@@ -2582,7 +2582,7 @@ augmented
 \begin_layout Standard
 The current approach represents a practical balance between computational
  time and model complexity/realism.
- 
+
 \family roman
 \series medium
 \shape up
@@ -2593,11 +2593,11 @@ The current approach represents a practical balance between computational
 \color none
 For additional speed, an FFT-based Matérn convolution implementation is
  used.
- 
+
 \end_layout
 
 \begin_layout Standard
-As 
+As
 \series bold
 stmv
 \series default
@@ -2607,7 +2607,7 @@ d or AIC evaluation is a challenge.
  eventually some form of Expectation-Maximization approaches might be fruitful,
  once computational speeds improve.
  A fully Bayesian approach is being considered that removes the need to
- work with 
+ work with
 \begin_inset Quotes qld
 \end_inset
 
@@ -2620,18 +2620,18 @@ external drift
  These and other more flexible and complex models can be defined in this
  modular framework and they will be expanded upon in future versions of
  this document.
- 
+
 \end_layout
 
 \begin_layout Standard
-To facilitate usage and mapping of 
+To facilitate usage and mapping of
 \series bold
 stmv
 \series default
  to other domains, the data handling methods and model parameterizations
  are encoded in a separate R-library,
 \series bold
- aegis 
+ aegis
 \series default
 which can be found at http://github.com/jae0/aegis.
 \end_layout
@@ -2654,9 +2654,9 @@ ldsUtils, truncnorm.
  In Linux, the use of parallel operations through MPI or socket communication
  is well established, in MacOS and MSWindows, it is not certain and so one
  may be forced to use local cores only.
- In using 
+ In using
 \series bold
-stmv 
+stmv
 \series default
 in clusters, one must be careful of the amount of communications overhead
  especially when large data volumes are involved.
@@ -2675,7 +2675,7 @@ stmv::stmv( p=p, runmode="interpolate" )
 \end_layout
 
 \begin_layout Standard
-Other 
+Other
 \begin_inset Quotes qld
 \end_inset
 
@@ -2685,7 +2685,7 @@ runmode
 
  values exist, but they are primarily for debugging and testing purposes.
  All functionally is really controlled through the options in the parameter
- list 
+ list
 \begin_inset Quotes qld
 \end_inset
 
@@ -2711,15 +2711,15 @@ As some oceanographic features change on geological time scales, we can
  Bathymetry (depth; m) is one such feature that is highly informative in
  that it determines ambient light levels, surface complexity/rugosity, hydrodyna
 mic stability and overall environmental stability.
- 
+
 \end_layout
 
 \begin_layout Standard
-In 
+In
 \series bold
 aegis
 \series default
-, it is modeled as a Lognormal process using 
+, it is modeled as a Lognormal process using
 \series bold
 stmv
 \series default
@@ -2727,7 +2727,7 @@ stmv
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula 
+\begin_inset Formula
 \[
 \begin{matrix}\text{log}(Y_{s}) & = & F(\text{constant offset})+\varphi_{s},\\
 \varphi_{s} & \sim & \text{Normal}(0,\sigma_{\varphi}^{2}),\\
@@ -2743,7 +2743,7 @@ stmv
 \end_layout
 
 \begin_layout Standard
-As it is a pure space model, there is no need to temporally 
+As it is a pure space model, there is no need to temporally
 \begin_inset Quotes eld
 \end_inset
 
@@ -2752,15 +2752,15 @@ augment
 \end_inset
 
  the data leaving a direct decomposition of the global residual error process
- 
+
 \begin_inset Formula $\varphi_{s|m}$
 \end_inset
 
- into a local spatial process 
+ into a local spatial process
 \begin_inset Formula $\omega_{s|m}$
 \end_inset
 
- and a local unstructured error 
+ and a local unstructured error
 \family roman
 \series medium
 \shape up
@@ -2776,7 +2776,7 @@ augment
 .
  An FFT-based Matérn convolution implementation is used to express the spatial
  process for computational speed improvements.
- 
+
 \end_layout
 
 \begin_layout Standard
@@ -2786,7 +2786,7 @@ The above model is formulated as follows:
 \begin_layout Quotation
 
 \size scriptsize
-p = list( 
+p = list(
 \end_layout
 
 \begin_deeper
@@ -2828,7 +2828,7 @@ invers = function(x) {x - 2000}
 
 \size scriptsize
 stmv_global_modelengine = "glm", # basic glm is used to operate on lognormal
- space 
+ space
 \end_layout
 
 \begin_layout Quotation
@@ -2853,7 +2853,7 @@ stmv_local_modelengine="fft",
 \begin_layout Quotation
 
 \size scriptsize
-stmv_fft_filter = "lowpass_spatial.process", # act as a low pass filter first
+stmv_fft_filter = "lowpass_matern", # act as a low pass filter first
  before matern ..
  depth has enough data for this
 \end_layout
@@ -2910,12 +2910,12 @@ n.max = 8000 # no real upper bound..
 The core model specification is as above.
  Other parameters are, however, required to operate with data inputs and
  locations for results output, etc.
- To facilitate this, 
+ To facilitate this,
 \series bold
 aegis
 \series default
  takes care of a lot of the details.
- 
+
 \end_layout
 
 \begin_layout Quotation
@@ -2928,32 +2928,32 @@ p = aegis::aegis_parameters(
 \begin_layout Quotation
 
 \size scriptsize
-DS = "bathymetry", 
+DS = "bathymetry",
 \end_layout
 
 \begin_layout Quotation
 
 \size scriptsize
-data_root = project.datadirectory( "aegis", "bathymetry" ), 
+data_root = project.datadirectory( "aegis", "bathymetry" ),
 \end_layout
 
 \begin_layout Quotation
 
 \size scriptsize
-DATA = 'bathymetry.db( p=p, DS="stmv.inputs" )', 
+DATA = 'bathymetry.db( p=p, DS="stmv.inputs" )',
 \end_layout
 
 \begin_layout Quotation
 
 \size scriptsize
-spatial.domain = c( "canada.east.superhighres" ), 
+spatial.domain = c( "canada.east.superhighres" ),
 \end_layout
 
 \begin_layout Quotation
 
 \size scriptsize
 spatial.domain.subareas = c( "canada.east.superhighres", "canada.east.highres",
- "canada.east", "SSE", "SSE.mpa" , "snowcrab"), 
+ "canada.east", "SSE", "SSE.mpa" , "snowcrab"),
 \end_layout
 
 \begin_layout Quotation
@@ -2961,14 +2961,14 @@ spatial.domain.subareas = c( "canada.east.superhighres", "canada.east.highres",
 \size scriptsize
 pres_discretization_bathymetry = 1 / 100, # 1==p$pres; controls resolution
  of data prior to modeling (km ..
- ie 100 linear units smaller than the final discretization pres) 
+ ie 100 linear units smaller than the final discretization pres)
 \end_layout
 
 \end_deeper
 \begin_layout Quotation
 
 \size scriptsize
-) 
+)
 \end_layout
 
 \begin_layout Quotation
@@ -2987,13 +2987,13 @@ pres_discretization_bathymetry = 1 / 100, # 1==p$pres; controls resolution
 
 \size scriptsize
 stmv( p=p, runmode=c( "globalmodel", "interpolate" ) ) # This will take
- from 40-70 hrs, depending upon system 
+ from 40-70 hrs, depending upon system
 \end_layout
 
 \begin_layout Standard
-Once complete, wrapping functions exist within 
+Once complete, wrapping functions exist within
 \series bold
-aegis 
+aegis
 \series default
 to assimilate the results and continue with analysis and figure generation:
 \end_layout
@@ -3001,7 +3001,7 @@ to assimilate the results and continue with analysis and figure generation:
 \begin_layout Quotation
 
 \size scriptsize
-aegis::bathymetry.db( p=p, DS="complete.redo" ) # finalise 
+aegis::bathymetry.db( p=p, DS="complete.redo" ) # finalise
 \end_layout
 
 \begin_layout Standard
@@ -3016,7 +3016,7 @@ tion of the Matérn covariance:
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula 
+\begin_inset Formula
 \[
 \begin{matrix}\text{log}(Y_{s}) & = & F(\text{depth, slope, curvature})+\varphi_{s},\\
 \varphi_{s} & \sim & \text{Normal}(0,\sigma_{\varphi}^{2}),\\
@@ -3117,7 +3117,7 @@ stmv_global_modelformula = formula( paste(
 
 \size scriptsize
 '+s(log(dZ), k=3, bs="ts") +s(log(ddZ), k=3, bs="ts") + s(log(b.range), k=3,
- bs="ts")') ), # a GAM model 
+ bs="ts")') ), # a GAM model
 \end_layout
 
 \end_deeper
@@ -3251,7 +3251,7 @@ Temperature is a fundamentally important to metabolism, growth, reproduction,
  predator and prey distribution and abundance, and disease incidence.
  Bottom temperatures, in particular, are the focus due to their relevance
  to benthic and demersal organisms and modeled as an hierarchical, spatiotempora
-l, 
+l,
 \begin_inset Quotes eld
 \end_inset
 
@@ -3262,13 +3262,13 @@ inseparable
  spatiotemporal process.
  As their variations have high frequency variations, some additional complexity
  is required in modeling their spatiotemporal variations.
- Here, the temporal effects are nested in spatial subdomains 
+ Here, the temporal effects are nested in spatial subdomains
 \begin_inset Formula $S_{m}$
 \end_inset
 
 .
  The global covariate model is simply an intercept model with an identity
- link such that 
+ link such that
 \begin_inset Formula $\varphi_{s,t}$
 \end_inset
 
@@ -3281,7 +3281,7 @@ inseparable
  a weighted timeseries with two Fourier harmonics in time (an interannual
  and a subannual/seasonal component).
  The weights are determined from the inverse squared distance from each
- statistical node 
+ statistical node
 \begin_inset Formula $h_{m}$
 \end_inset
 
@@ -3289,7 +3289,7 @@ inseparable
  Additional penalized thin-plate spline smooth terms for local depth and
  position are used to resolve local spatial trends and aliasing to third
  order or less (via shrinkage).
- Temporal predictions at each spatial datum are then used to 
+ Temporal predictions at each spatial datum are then used to
 \begin_inset Quotes eld
 \end_inset
 
@@ -3297,11 +3297,11 @@ augment
 \begin_inset Quotes erd
 \end_inset
 
- the modeling of the spatial processes 
+ the modeling of the spatial processes
 \begin_inset Formula $\varphi_{s,t|m}^{*}$
 \end_inset
 
- which are treated independently for each time slice as a 
+ which are treated independently for each time slice as a
 \series bold
 Gaussian process
 \series default
@@ -3310,11 +3310,11 @@ Gaussian process
  the individual temporal processes centered at each spatial datum.
  For faster computations, a Fast Fourier Transform (FFT) based convolution
  method is used to approximate the spatial Gaussian process.
- The model specification is, therefore: 
+ The model specification is, therefore:
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula 
+\begin_inset Formula
 \[
 \begin{matrix}Y_{s,t} & = & F(\text{identity})+\varphi_{s,t},\\
 \varphi_{s,t} & \sim & \text{Normal}(0,\sigma_{\varphi}^{2}),\\
@@ -3374,7 +3374,7 @@ p = aegis::aegis_parameters(
 \begin_layout Quotation
 
 \size scriptsize
-year.assessment=year.assessment, 
+year.assessment=year.assessment,
 \end_layout
 
 \begin_layout Quotation
@@ -3500,8 +3500,8 @@ stmv_twostep_space = "fft", # everything else is too slow ...
 \begin_layout Quotation
 
 \size scriptsize
-stmv_fft_filter="spatial.process", # fft==spatial.process, krige (very slow),
- lowpass, lowpass_spatial.process
+stmv_fft_filter="matern", # matern, krige (very slow),
+ lowpass, lowpass_matern
 \end_layout
 
 \begin_layout Quotation
@@ -3604,14 +3604,14 @@ temperature.db( p=p, DS="stmv.stats.redo" ) # warp to sub grids
 
 \begin_layout Subsection
 Example 3: inseparable spatiotemporal model of snow crab habitat and abundance
- 
+
 \end_layout
 
 \begin_layout Standard
 The snow crab estimation process uses the above and other covariates interpolate
 d to the same continuous spatial support of the snow crab assessment.
  This is required to refine predictions of snow crab abundance and habitat
- while avoiding issues of bias due to aliasing (also known as 
+ while avoiding issues of bias due to aliasing (also known as
 \begin_inset Quotes qld
 \end_inset
 
@@ -3619,7 +3619,7 @@ upscaling
 \begin_inset Quotes qrd
 \end_inset
 
- and 
+ and
 \begin_inset Quotes qld
 \end_inset
 
@@ -3630,7 +3630,7 @@ downscaling
  issues).
  Some of these covariates change on geological time scales relative to the
  timescale of the biological and ecological processes of interest and so
- can be considered functionally a 
+ can be considered functionally a
 \begin_inset Quotes eld
 \end_inset
 
@@ -3644,7 +3644,7 @@ pure
  Here we detail some of these core data sources and their model assumptions
  in the context of the temporal autocorrelation scale of snow crab abundance
  in the Maritimes Region of Canada.
- 
+
 \end_layout
 
 \begin_layout Standard
@@ -3666,7 +3666,7 @@ indicators
  predictions of depth and substrate grain size and the spatial derivatives
  of the former (slope and curvature).
  The spatiotemporal error process is modeled locally in each subdomain as
- a space-time 
+ a space-time
 \begin_inset Quotes eld
 \end_inset
 
@@ -3679,7 +3679,7 @@ inseparable
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula 
+\begin_inset Formula
 \[
 \begin{matrix}g(Y_{s,t}) & = & F(\text{depth, slope, curvature, substrate grainsize})+\varphi_{s,t}\\
 \varphi_{s,t} & \sim & \text{Normal}(0,\sigma_{\varphi}^{2}),\\
@@ -3699,20 +3699,20 @@ inseparable
 \begin_layout Standard
 For the estimation of habitat preferences and the creation of species distributi
 on maps that rely upon presence-absence data.
- The data 
+ The data
 \begin_inset Formula $Y$
 \end_inset
 
  are assumed to come from a Bernoulli binomial process with a logit link
- function 
+ function
 \begin_inset Formula $g(\cdot)$
 \end_inset
 
-: 
+:
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula 
+\begin_inset Formula
 \[
 \begin{matrix}\text{logit}(Y_{s,t}) & = & F(\text{depth, slope, curvature, substrate grainsize})+\varphi_{s,t}\\
 \varphi_{s,t} & \sim & \text{Normal}(0,\sigma_{\varphi}^{2}),\\
@@ -3908,8 +3908,7 @@ stmv_local_modelengine = "twostep",
 \begin_layout Quotation
 
 \size scriptsize
-stmv_twostep_space = "gam", # fft==spatial.process, krige (very slow), lowpass,
- lowpass_spatial.process
+stmv_twostep_space = "gam",
 \end_layout
 
 \begin_layout Quotation
@@ -4001,15 +4000,15 @@ snowcrab_stmv( p=p, DS="stmv.stats.redo" ) # warp stats to other grids
 \end_layout
 
 \begin_layout Standard
-For the estimation of abundance, the positive valued data 
+For the estimation of abundance, the positive valued data
 \begin_inset Formula $Y$
 \end_inset
 
- are assumed to come from a lognormal process: 
+ are assumed to come from a lognormal process:
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula 
+\begin_inset Formula
 \[
 \begin{matrix}\text{log}(Y_{s,t}) & = & F(\text{depth, slope, curvature, substrate grainsize})+\varphi_{s,t}\\
 \varphi_{s,t} & \sim & \text{Normal}(0,\sigma_{\varphi}^{2}),\\
@@ -4260,15 +4259,14 @@ stmv_local_modelformula_time = formula( paste(
 \begin_layout Quotation
 
 \size scriptsize
-stmv_twostep_space = "fft", # fft==spatial.process, krige (very slow), lowpass,
- lowpass_spatial.process
+stmv_twostep_space = "fft",
 \end_layout
 
 \begin_layout Quotation
 
 \size scriptsize
-stmv_fft_filter="spatial.process", # fft==spatial.process, krige (very slow),
- lowpass, lowpass_spatial.process
+stmv_fft_filter="matern", # matern, krige (very slow),
+ lowpass, lowpass_matern
 \end_layout
 
 \begin_layout Quotation
@@ -4407,7 +4405,7 @@ Kostylev, Vladimir and Hannah, Charles.
  Process-driven characterization and mapping of seabed habitats.
  Special Paper - Geological Association of Canada.
  47: 171-184.
- 
+
 \end_layout
 
 \begin_layout Standard
@@ -4417,7 +4415,7 @@ Lindgren, F., Rue, H., and Lindstrom, J.
  the stochastic partial differential equation approach.
  Journal of the Royal Statistical Society: Series B (Statistical Methodology)
  73: 423–498.
- 
+
 \end_layout
 
 \begin_layout Standard
@@ -4431,7 +4429,7 @@ Sigrist, F., Künsch, H.
  Appl.
  Statist.
  6: 1452–1477.
- 
+
 \end_layout
 
 \begin_layout Standard
