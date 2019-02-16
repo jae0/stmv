@@ -149,7 +149,7 @@ stmv_parameters = function( p=NULL, ... ) {
   p$nloccov = 0
   if (exists("local_cov", p$variables)) p$nloccov = length(p$variables$local_cov)
 
-  if ( !exists("stmv_distance_prediction_fraction", p)) p$stmv_distance_prediction_fraction = 0.75
+  if ( !exists("stmv_distance_prediction_fraction", p)) p$stmv_distance_prediction_fraction = 1  # fraction of statsgrid (below)
 
   if ( !exists("stmv_distance_prediction", p)) {
     # this is a half window km
