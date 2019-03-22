@@ -209,9 +209,6 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         preds = try( eval(parse(text=pp$stmv_global_model$predict )) )
         preds = p$stmv_global_model$predict( covmodel )  # needs to be tested. .. JC
         Ydata  = preds - Ydata # ie. i`nternal (link) scale
-        Yq = quantile( Ydata, probs=p$stmv_quantile_bounds )
-        Ydata[ Ydata < Yq[1] ] = Yq[1]
-        Ydata[ Ydata > Yq[2] ] = Yq[2]
         covmodel =NULL
 
       } else {
@@ -220,9 +217,6 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         # Ypreds = predict(covmodel, type="link", se.fit=FALSE )  ## TODO .. keep track of the SE
 
         Ydata  = residuals(covmodel, type="working") # ie. internal (link) scale
-        Yq = quantile( Ydata, probs=p$stmv_quantile_bounds )
-        Ydata[ Ydata < Yq[1] ] = Yq[1]
-        Ydata[ Ydata > Yq[2] ] = Yq[2]
         covmodel =NULL
 
       }
@@ -541,11 +535,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
           global_model = stmv_db( p=p, DS="global_model")
           if (is.null(global_model)) stop("Global model not found.")
 
-          YYY = predict( global_model, type="link", se.fit=TRUE )  # determine bounds from data
-          Yq = quantile( YYY$fit, probs=p$stmv_quantile_bounds )
-          YYY = NULL
-
-          parallel_run( FUNC=stmv_predict_globalmodel, p=pc, global_model=global_model, Yq=Yq, runindex=list( pnt=1:p$nt ) )
+          parallel_run( FUNC=stmv_predict_globalmodel, p=pc, global_model=global_model, runindex=list( pnt=1:p$nt ) )
 
           p$time_covariates = round(difftime( Sys.time(), p$time_covariates_0 , units="hours"), 3)
           message( paste( "||| Time taken to predict covariate surface (hours):", p$time_covariates ) )

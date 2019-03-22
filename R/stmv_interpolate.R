@@ -329,16 +329,6 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
       next()  # looks to be a faulty solution
     }
 
-    if (exists( "stmv_quantile_bounds", p)) {
-      tq = quantile( Y[W[["U"]]], probs=p$stmv_quantile_bounds, na.rm=TRUE  )
-      toolow  = which( res$predictions$mean < tq[1] )
-      toohigh = which( res$predictions$mean > tq[2] )
-      if (length( toolow) > 0)  res$predictions$mean[ toolow] = tq[1]
-      if (length( toohigh) > 0) res$predictions$mean[ toohigh] = tq[2]
-      toolow = toohigh = tq= NULL
-    }
-
-
     # extract stats and compute a few more things
     sf = try( stmv_statistics_update( p=p, res=res, W=W, Si=Si ) )
     if ( is.null(sf) ) {

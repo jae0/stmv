@@ -1,4 +1,4 @@
-stmv_predict_globalmodel = function( ip=NULL, p, global_model, Yq ) {
+stmv_predict_globalmodel = function( ip=NULL, p, global_model ) {
 
   if (0) {
     # for debugging  runs ..
@@ -97,8 +97,6 @@ stmv_predict_globalmodel = function( ip=NULL, p, global_model, Yq ) {
       pa = NULL
 
       if ( ! is.null(Pbaseline) ) {
-        Pbaseline$fit[ Pbaseline$fit < Yq[1] ] = Yq[1]  # do not permit extrapolation
-        Pbaseline$fit[ Pbaseline$fit > Yq[2] ] = Yq[2]
         P0[,it] = Pbaseline$fit
         P0sd[,it] = Pbaseline$se.fit
         Pbaseline = NULL
@@ -109,8 +107,6 @@ stmv_predict_globalmodel = function( ip=NULL, p, global_model, Yq ) {
       Pbaseline = try( predict( global_model, newdata=pa, type="link", se.fit=TRUE ) )  # must be on link scale
       pa = NULL
       if (!inherits(Pbaseline, "try-error")) {
-        Pbaseline$fit[ Pbaseline$fit < Yq[1] ] = Yq[1]  # do not permit extrapolation
-        Pbaseline$fit[ Pbaseline$fit > Yq[2] ] = Yq[2]
         P0[,it] = Pbaseline$fit
         P0sd[,it] = Pbaseline$se.fit
       }

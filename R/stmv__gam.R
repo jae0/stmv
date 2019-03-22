@@ -24,7 +24,7 @@ stmv__gam = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
   ss = summary(hmod)
 #  if (ss$r.sq < p$stmv_rsquared_threshold ) return(NULL)  # smooth/flat surfaces are ok ..
 
-  out = try( predict( hmod, newdata=pa, type="response", se.fit=T ) )
+  out = try( predict( hmod, newdata=pa, type="response", se.fit=TRUE ) )
 
   if ( "try-error" %in% class( out ) ) return( NULL )
 

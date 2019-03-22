@@ -45,7 +45,6 @@ stmv_parameters = function( p=NULL, ... ) {
   if( !exists( "stmv_variogram_method", p)) p$stmv_variogram_method="gstat"   # note GP methods are slow when there is too much data
   if (!exists( "stmv_global_family", p)) p$stmv_global_family = gaussian(link = "identity")
   if (!exists( "stmv_eps", p)) p$stmv_eps = 0.001  # distance units for eps noise to permit mesh gen for boundaries
-  if (!exists( "stmv_quantile_bounds", p)) p$stmv_quantile_bounds = c(0.01, 0.99) # remove these extremes in interpolations
   if (!exists( "eps", p)) p$eps = 1e-6 # floating point precision
   if (!exists( "boundary", p)) p$boundary = FALSE
   if (!exists( "depth.filter", p)) p$depth.filter = FALSE # if !FALSE .. depth is given as m so, choose andy stats locations with elevation > 1 m as being on land
