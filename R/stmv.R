@@ -1,7 +1,7 @@
 
 
 stmv = function( p, runmode="interpolate", DATA=NULL,
-  use_saved_state=NULL, save_completed_data=TRUE, force_complete_solution=TRUE, nlogs=200,
+  extrapolate_predictions=FALSE, use_saved_state=NULL, save_completed_data=TRUE, force_complete_solution=TRUE, nlogs=200,
   debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE ) {
 
   if (0) {
@@ -84,10 +84,22 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
   stmv_db( p=p, DS="cleanup" )
 
+  if (!extrapolate_predictions) {
+    # force output covars to be in the same range as input data .. no extrapolation
+    for ( vn in p$variables$COV ){
+      vnrange = range( DATA$input[,vn], na.rm=TRUE )
+      toolow = which( DATA$output$COV[[vn]] < vnrange[1] )
+      if (length(toolow) > 1) DATA$output$COV[[vn]][toolow] = vnrange[1]
+      toohigh = which( B[,vn] > vnrange[1] )
+      if (length(toohigh) > 1) DATA$output$COV[[vn]][toohigh] = vnrange[2]
+    } 
+  }
 
   if (exists("stmv_Y_transform", p)) {
     DATA$input[, p$variables$Y ] = p$stmv_Y_transform$transf(DATA$input[, p$variables$Y ] )
   }
+
+
 
   if ( any(grepl("globalmodel", runmode) ) ) {
     if ( exists("stmv_global_modelengine", p) ) {
