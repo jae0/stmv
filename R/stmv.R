@@ -2,7 +2,7 @@
 
 stmv = function( p, runmode="interpolate", DATA=NULL,
   extrapolate_predictions=FALSE, use_saved_state=NULL, save_completed_data=TRUE, force_complete_solution=TRUE, nlogs=200,
-  debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE ) {
+  debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE, robustify_quantiles=c(0.0005, 0.9995) ) {
 
   if (0) {
     nlogs = 25
@@ -12,6 +12,8 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     storage.backend="bigmemory.ram"
     save_completed_data=TRUE  # export out of stmv system for use outside (e.g., by aegis)
     debug_plot_variable_index=1
+    extrapolate_predictions=FALSE
+
     # runmode=c("interpolate", "globalmodel")
     # runmode=c("interpolate")
   }
@@ -90,7 +92,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       vnrange = range( DATA$input[,vn], na.rm=TRUE )
       toolow = which( DATA$output$COV[[vn]] < vnrange[1] )
       if (length(toolow) > 1) DATA$output$COV[[vn]][toolow] = vnrange[1]
-      toohigh = which( B[,vn] > vnrange[1] )
+      toohigh = which( DATA$output$COV[[vn]] > vnrange[1] )
       if (length(toohigh) > 1) DATA$output$COV[[vn]][toohigh] = vnrange[2]
     } 
   }
@@ -221,16 +223,19 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         preds = try( eval(parse(text=pp$stmv_global_model$predict )) )
         preds = p$stmv_global_model$predict( covmodel )  # needs to be tested. .. JC
         Ydata  = preds - Ydata # ie. i`nternal (link) scale
+        Yq = quantile( Ydata, probs=robustify_quantiles )
+        Ydata[ Ydata < Yq[1] ] = Yq[1]
+        Ydata[ Ydata > Yq[2] ] = Yq[2]
         covmodel =NULL
 
       } else {
         # at present only those that have a predict and residuals methods ...
         covmodel = stmv_db( p=p, DS="global_model")
-        # Ypreds = predict(covmodel, type="link", se.fit=FALSE )  ## TODO .. keep track of the SE
-
         Ydata  = residuals(covmodel, type="working") # ie. internal (link) scale
+        Yq = quantile( Ydata, probs=c(0.0005, 0.9995) )  # extreme data can make convergence slow and erratic 99.9%CI
+        Ydata[ Ydata < Yq[1] ] = Yq[1]
+        Ydata[ Ydata > Yq[2] ] = Yq[2]
         covmodel =NULL
-
       }
     }
   }
@@ -546,8 +551,12 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
           global_model = stmv_db( p=p, DS="global_model")
           if (is.null(global_model)) stop("Global model not found.")
+ 
+          YYY = predict( global_model, type="link", se.fit=TRUE )  # determine bounds from data
+          Yq = quantile( YYY$fit, probs=robustify_quantiles )  ## 99.9% CI
+          YYY = NULL
 
-          parallel_run( FUNC=stmv_predict_globalmodel, p=pc, global_model=global_model, runindex=list( pnt=1:p$nt ) )
+          parallel_run( FUNC=stmv_predict_globalmodel, p=pc, global_model=global_model, runindex=list( pnt=1:p$nt ), Yq=Yq )
 
           p$time_covariates = round(difftime( Sys.time(), p$time_covariates_0 , units="hours"), 3)
           message( paste( "||| Time taken to predict covariate surface (hours):", p$time_covariates ) )
