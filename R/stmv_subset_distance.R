@@ -29,7 +29,7 @@
 
       # NOTE: this range is a crude estimate that averages across years (if any) ...
       o = NULL
-      o = try( stmv_variogram( xy=Yloc[yiu,], z=Y[yiu,], methods=p$stmv_variogram_method, distance_cutoff=stmv_distance_cur, nbreaks=13 ) )
+      o = try( stmv_variogram( xy=Yloc[yiu,], z=Y[yiu,], methods=p$stmv_variogram_method, distance_cutoff=stmv_distance_cur, nbreaks=15 ) )
 
       if ( is.null(o)) out$flag = E[["variogram_failure"]]
       if ( inherits(o, "try-error")) out$flag = E[["variogram_failure"]]
@@ -62,7 +62,6 @@
 
 
       if (vario_ndata < p$n.min) {
-        # retain crude estimate and run with it
         out$flag =  E[["variogram_failure"]]
         return(out)
       }

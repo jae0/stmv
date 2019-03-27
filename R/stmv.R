@@ -94,7 +94,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
   #     if (length(toolow) > 1) DATA$output$COV[[vn]][toolow] = vnrange[1]
   #     toohigh = which( DATA$output$COV[[vn]] > vnrange[1] )
   #     if (length(toohigh) > 1) DATA$output$COV[[vn]][toohigh] = vnrange[2]
-  #   } 
+  #   }
   # }
 
   if (exists("stmv_Y_transform", p)) {
@@ -458,6 +458,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
     Ploc = NULL;
 
     DATA = NULL;
+    gc()
 
     if (exists("stmv_global_modelengine", p) ) {
       if (p$stmv_global_modelengine !="none" ) {
@@ -551,7 +552,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
 
           global_model = stmv_db( p=p, DS="global_model")
           if (is.null(global_model)) stop("Global model not found.")
- 
+
           YYY = predict( global_model, type="link", se.fit=TRUE )  # determine bounds from data
           Yq = quantile( YYY$fit, probs=robustify_quantiles )  ## 99.9% CI
           YYY = NULL
@@ -733,6 +734,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
       Sflag[locs_to_do] = stmv_error_codes()[["todo"]]
     }
+    locs_to_do = NULL
   }
 
   stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data
@@ -753,6 +755,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
         Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
         Sflag[locs_to_do] = E[["todo"]]
       }
+      locs_to_do = NULL
       currentstatus = stmv_db( p=p, DS="statistics.status" )
       Eflags_reset = E[ c(
         "prediction_area",
@@ -767,6 +770,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       )]
       toreset = which( Sflag[] %in% unlist(Eflags_reset) )
       if (length(toreset) > 0) Sflag[toreset] = E[["todo"]]
+      toreset = NULL
       currentstatus = stmv_db( p=p, DS="statistics.status" ) # update again
       p$time_start_interpolation = Sys.time()
       parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) )
@@ -818,6 +822,7 @@ stmv = function( p, runmode="interpolate", DATA=NULL,
       Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
       Sflag[locs_to_do] = stmv_error_codes()[["todo"]]
     }
+    locs_to_do = NULL
     currentstatus = stmv_db( p=p, DS="statistics.status" )
     p$stmv_local_modelengine = "fft"
     p$stmv_fft_filter="matern"  #  matern, krige (very slow), lowpass, lowpass_matern
