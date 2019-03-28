@@ -112,6 +112,11 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
         # $RandomFields$nu: 0.8732
         # $RandomFields$error: NA
 
+        gr = stmv_variogram( xy, z, methods="CompRandFld", plotdata=TRUE ) #
+        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="CompRandFld", plotdata=FALSE )}, times= 10 )
+
+
+
         gr = stmv_variogram( xy, z, methods="spBayes", plotdata=TRUE ) # mcmc
         # $spBayes$range: 66377
         # $spBayes$varSpatial: 0.4683
@@ -431,26 +436,35 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
   # ------------------------
   # ------------------------
 
-  if ("CompRandFld_binomial" %in% methods) {
+  if ("CompRandFld" %in% methods) {
     require( CompRandFld )
-    vario = EVariogram(data=z, coordx=as.matrix(xy/out$stmv_internal_scale),
-                       maxdist=out$distance_cutoff/out$stmv_internal_scale, numbins=nbreaks, type="lorelogram")
-    vg = vario@empiricals
-    vx = vario$centers
-    fit = stmv_variogram_optimization( vx=vx, vg=vg, plotvgm=plotdata, stmv_internal_scale=out$stmv_internal_scale  ) # nu=0.5 == exponential variogram
-    out$CompRandFld = fit$summary
+    fit = FitComposite( data=z, coordx=as.matrix(xy/out$stmv_internal_scale), corrmodel="matern",
+                       maxdist=out$distance_cutoff/out$stmv_internal_scale )
+    out$CompRandFld = list(
+      varObs=fit$param[["nugget"]],
+      varSpatial = fit$param[["sill"]],
+      nu = fit$param[["smooth"]]
+    )
+    out$CompRandFld$phi =  matern_phi2phi( mRange=fit$param[["scale"]], mSmooth=out$CompRandFld$nu, parameterization_input="CompRandFld", parameterization_output="stmv" ) * out$stmv_internal_scale
+    out$CompRandFld$range = matern_phi2distance(phi=out$CompRandFld$phi, nu=out$CompRandFld$nu)
+    out$CompRandFld$range_ok = ifelse( out$CompRandFld$range < out$distance_cutoff*0.99, TRUE, FALSE )
+
     if( 0) {
-      xlim= c(0, fit$summary$vgm_dist_max*1.1)
-      ylim= c(0, fit$summary$vgm_var_max*1.1)
-      plot( fit$summary$vx, fit$summary$vg, col="green", xlim=xlim, ylim=ylim )
-      ds = seq( 0, fit$summary$vgm_dist_max, length.out=100 )
-      ac = fit$summary$varObs + fit$summary$varSpatial*(1 - stmv_matern( ds, fit$summary$phi, fit$summary$nu ) )
+      vario = EVariogram(data=z, coordx=as.matrix(xy/out$stmv_internal_scale),
+                        maxdist=out$distance_cutoff/out$stmv_internal_scale, numbins=nbreaks)
+      vg = vario$variograms
+      vx = vario$centers
+      xlim= c(0, max(vario$centers)*1.1) * out$stmv_internal_scale
+      ylim= c(0, max(vario$variograms)*1.1)
+      plot( vario$centers* out$stmv_internal_scale, vario$variograms, col="green", xlim=xlim, ylim=ylim )
+      ds = seq( 0, max(vario$centers), length.out=100 ) * out$stmv_internal_scale
+      ac = out$CompRandFld$varObs + out$CompRandFld$varSpatial*(1 - stmv_matern( ds, out$CompRandFld$phi, out$CompRandFld$nu ) )
       lines( ds, ac, col="orange" )
       abline( h=0, lwd=1, col="lightgrey" )
       abline( v=0 ,lwd=1, col="lightgrey" )
-      abline( h=fit$summary$varObs, lty="dashed", col="grey" )
-      abline( h=fit$summary$varObs + fit$summary$varSpatial, lty="dashed", col="grey" )
-      abline( v=fit$summary$range, lty="dashed", col="grey")
+      abline( h=out$CompRandFld$varObs, lty="dashed", col="grey" )
+      abline( h=out$CompRandFld$varObs + out$CompRandFld$varSpatial, lty="dashed", col="grey" )
+      abline( v=out$CompRandFld$range, lty="dashed", col="grey")
     }
   }
 
