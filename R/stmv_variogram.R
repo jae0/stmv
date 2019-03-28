@@ -31,21 +31,22 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
         nbreaks = 15
         family="gaussian"
 
-        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="fast", plotdata=FALSE )}, times= 10 )
+        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="fast.recursive", plotdata=FALSE )}, times= 10 )  # 138.3 milli sec
         # tests
-        gr = stmv_variogram( xy, z, methods="fast", plotdata=TRUE ) # nls
-        # $fast$vgm_var_max: 0.6522
-        # $fast$vgm_dist_max: 135000
-        # $fast$autocorrelation_function: "matern"
-        # $fast$nu: 0.5
-        # $fast$phi: 25372
-        # $fast$varSpatial: 0.5414
-        # $fast$varObs: 0.02003
-        # $fast$range: 76007
-        # $fast$range_ok: TRUE
-        # $fast$objfn: 0.07454
+        gr = stmv_variogram( xy, z, methods="fast.recursive", plotdata=TRUE ) # nls
+# $ Ndata              : int 100
+# $ varZ               : num 0.578
+# $ range_crude        : num 88029
+# $ stmv_internal_scale: num 29385
+# $ distance_cutoff    : num 132043
+# ..$ range     : num 67830
+# ..$ nu        : num 1
+# ..$ phi       : num 23990
+# ..$ varSpatial: num 0.588
+# ..$ varObs    : num 0
+# ..$ range_ok  : logi TRUE
 
-        gr = stmv_variogram( xy, z, methods="fast", plotdata=TRUE ) # nls
+        gr = stmv_variogram( xy, z, methods="multipass", plotdata=TRUE ) # nls
         # $fast$vgm_var_max: 0.7987
         # $fast$vgm_dist_max: 171425
         # $fast$autocorrelation_function: "matern"
@@ -58,19 +59,27 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
         # $fast$objfn: 0.1278
 
         gr = stmv_variogram( xy, z, methods="fields", plotdata=TRUE ) # ml via profile likelihood
-        # $fields$range: 80595
-        # $fields$nu: 0.5
-        # $fields$phi: 26903
-        # $fields$varSpatial: 0.2943
-        # $fields$varObs: 1.32e-05
+        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="fields", plotdata=FALSE )}, times= 10 )  # 1.38 sec
+        # fields$range [1] 80510
+        # $fields$nu [1] 0.5
+        # $fields$phi 26875
+        # $fields$varSpatial [1] 0.294
+        # $fields$varObs [1] 1.333e-05
 
         gr = stmv_variogram( xy, z, methods="geoR", plotdata=TRUE ) # ml
-        # $geoR$range: 59565
-        # $geoR$varSpatial: 0.5664
-        # $geoR$varObs: 0
-        # $geoR$nu: 1.217
-        # $geoR$phi: 21403
-        # require(geoR)
+        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="geoR", plotdata=FALSE )}, times= 10 )  # 45 MILLI Sec
+       # $geoR$range
+        # [1] 60278
+        # $geoR$varSpatial
+        # [1] 0.572
+        # $geoR$varObs
+        # [1] 0
+        # $geoR$nu
+        # [1] 1.127
+        # $geoR$phi
+        # [1] 21528
+        # $geoR$range_ok
+        # [1] TRUE
 
         # plot( gr$geoR$vgm )
         # lines( gr$geoR$fit, lwd=2, col="slateblue" )
@@ -87,35 +96,53 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
         #   acov = gr$geoR$varObs +  gr$geoR$varSpatial * (1- acor)
         #   lines( acov ~ x , col="blue", lwd=2 )
 
-        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="geoR.ML", plotdata=FALSE )}, times= 10 )
+        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="geoR.ML", plotdata=FALSE )}, times= 10 )  # 119 mili sec
         gr = stmv_variogram( xy, z, methods="geoR.ML", plotdata=TRUE ) # ml
-        # $geoR.ML$range: 76096
-        # $geoR.ML$varSpatial: 0.714
-        # $geoR.ML$varObs: 0
-        # $geoR.ML$nu: 0.7882
-        # $geoR.ML$phi: 26385
+        #  unstable
 
-        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="gstat", plotdata=FALSE )}, times= 10 )
-
+        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="gstat", plotdata=FALSE )}, times= 10 )  # 86 milli sec
         gr = stmv_variogram( xy, z, methods="gstat", plotdata=TRUE ) # ml
-        # $gstat$range: 67543
-        # $gstat$nu: 1.1
-        # $gstat$phi: 24075
-        # $gstat$varSpatial: 0.5807
-        # $gstat$varObs: 0
+        # $gstat$range
+        # [1] 65461
+        # $gstat$nu
+        # [1] 1.1
+        # $gstat$phi
+        # [1] 23333
+        # $gstat$varSpatial
+        # [1] 0.5776
+        # $gstat$varObs
+        # [1] 0
+        # $gstat$range_ok
+        # [1] TRUE
 
+        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="RandomFields", plotdata=FALSE )}, times= 10 ) #  1.349 sec
         gr = stmv_variogram( xy, z, methods="RandomFields", plotdata=TRUE ) # ml via rf
-        # $RandomFields$range: 65328
-        # $RandomFields$varSpatial: 0.6568
-        # $RandomFields$varObs: 2.865e-05
-        # $RandomFields$phi: 22847
-        # $RandomFields$nu: 0.8732
-        # $RandomFields$error: NA
+        # $RandomFields$range
+        # [1] 65343
+
+        # $RandomFields$varSpatial
+        # [1] 0.6561
+
+        # $RandomFields$varObs
+        # [1] 2.862e-05
+
+        # $RandomFields$phi
+        # [1] 22851
+
+        # $RandomFields$nu
+        # [1] 0.8727
+
+        # $RandomFields$error
+        # [1] NA
+
+        # $RandomFields$range_ok
+        # [1] TRUE
 
         gr = stmv_variogram( xy, z, methods="CompRandFld", plotdata=TRUE ) #
-        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="CompRandFld", plotdata=FALSE )}, times= 10 )
+        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="CompRandFld", plotdata=FALSE )}, times= 10 )  # 2.2sec! .. slow!
 
 
+        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="spBayes", plotdata=FALSE )}, times= 10 )  # v. slow! ...
 
         gr = stmv_variogram( xy, z, methods="spBayes", plotdata=TRUE ) # mcmc
         # $spBayes$range: 66377
@@ -137,16 +164,31 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
         # hist( out$spBayes$recover$p.theta.samples[,3] ) # 1/phi
         # hist( out$spBayes$recover$p.theta.samples[,4] ) # nu
 
-        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="inla", plotdata=FALSE )}, times= 10 )
+        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="inla", plotdata=FALSE )}, times= 10 )  # 3.66 sec
         gr = stmv_variogram( xy, z, methods="inla", plotdata=TRUE )
-        # $inla$range.inla.practical: 53148
-        # $inla$varSpatial: 0.6556
-        # $inla$varObs: 0.0001488
-        # $inla$phi: 25604
-        # $inla$nu: 1
-        # $inla$error: NA
-        # $inla$range: 72391
+        # $inla$range.inla.practical
+        # [1] 52481
 
+        # $inla$varSpatial
+        # [1] 0.6499
+
+        # $inla$varObs
+        # [1] 0.0001482
+
+        # $inla$phi
+        # [1] 25407
+
+        # $inla$nu
+        # [1] 1
+
+        # $inla$error
+        # [1] NA
+
+        # $inla$range
+        # [1] 71835
+
+        # $inla$range_ok
+        # [1] TRUE
 
         # Laplace Approximation:
         #              Mean      SD     MCSE  ESS         LB     Median         UB
@@ -216,7 +258,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
 
     # try 1: simple RF variogram, then nlsquared fit
     require( RandomFields )
-    vario = RFempiricalvariogram( data=RFspatialPointsDataFrame( coords=XYZ[,c(1,2)], data=XYZ[,3], RFparams=list(vdim=1, n=1) ) )
+    vario = RFvariogram( data=RFspatialPointsDataFrame( coords=XYZ[,c(1,2)], data=XYZ[,3], RFparams=list(vdim=1, n=1) ) )
     # remove the (0,0) point -- force intercept
     todrop = which( !is.finite(vario@empirical )) # occasionally NaN's are created!
     todrop = unique( c(1, todrop) )
@@ -448,7 +490,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
     out$CompRandFld$phi =  matern_phi2phi( mRange=fit$param[["scale"]], mSmooth=out$CompRandFld$nu, parameterization_input="CompRandFld", parameterization_output="stmv" ) * out$stmv_internal_scale
     out$CompRandFld$range = matern_phi2distance(phi=out$CompRandFld$phi, nu=out$CompRandFld$nu)
     out$CompRandFld$range_ok = ifelse( out$CompRandFld$range < out$distance_cutoff*0.99, TRUE, FALSE )
-
+    return(out)
     if( 0) {
       vario = EVariogram(data=z, coordx=as.matrix(xy/out$stmv_internal_scale),
                         maxdist=out$distance_cutoff/out$stmv_internal_scale, numbins=nbreaks)
