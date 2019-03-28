@@ -42,7 +42,7 @@ stmv_parameters = function( p=NULL, ... ) {
   }
 
   if( !exists( "storage.backend", p))  p$storage.backend="bigmemory.ram"
-  if( !exists( "stmv_variogram_method", p)) p$stmv_variogram_method="bayesx"   # note GP methods are slow when there is too much data
+  if( !exists( "stmv_variogram_method", p)) p$stmv_variogram_method="geoR"   # note GP methods are slow when there is too much data
   if (!exists( "stmv_global_family", p)) p$stmv_global_family = gaussian(link = "identity")
   if (!exists( "stmv_eps", p)) p$stmv_eps = 0.001  # distance units for eps noise to permit mesh gen for boundaries
   if (!exists( "eps", p)) p$eps = 1e-6 # floating point precision

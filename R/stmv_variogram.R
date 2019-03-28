@@ -31,7 +31,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
         nbreaks = 15
         family="gaussian"
 
-        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="fast.recursive", plotdata=FALSE )}, times= 10 )  # 138.3 milli sec
+        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="fast.recursive", plotdata=FALSE )}, times= 10 )  # 138.3 milli sec  .. unstable
         # tests
         gr = stmv_variogram( xy, z, methods="fast.recursive", plotdata=TRUE ) # nls
 # $ Ndata              : int 100
@@ -46,7 +46,8 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
 # ..$ varObs    : num 0
 # ..$ range_ok  : logi TRUE
 
-        gr = stmv_variogram( xy, z, methods="multipass", plotdata=TRUE ) # nls
+      microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="multipass", plotdata=FALSE )}, times= 10 )  # 31 milli sec
+            gr = stmv_variogram( xy, z, methods="multipass", plotdata=TRUE ) # nls
         # $fast$vgm_var_max: 0.7987
         # $fast$vgm_dist_max: 171425
         # $fast$autocorrelation_function: "matern"
@@ -138,13 +139,45 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
         # $RandomFields$range_ok
         # [1] TRUE
 
-        gr = stmv_variogram( xy, z, methods="CompRandFld", plotdata=TRUE ) #
-        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="CompRandFld", plotdata=FALSE )}, times= 10 )  # 2.2sec! .. slow!
+        gr = stmv_variogram( xy, z, methods="CompRandFld", plotdata=TRUE ) # unstable results
+        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="CompRandFld", plotdata=FALSE )}, times= 10 )  # 2.34 sec! .. slow!
+        # Ndata
+        # [1] 100
 
+        # $varZ
+        # [1] 0.5782
 
-        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="spBayes", plotdata=FALSE )}, times= 10 )  # v. slow! ...
+        # $range_crude
+        # [1] 88029
+
+        # $stmv_internal_scale
+        # [1] 29385
+
+        # $distance_cutoff
+        # [1] 132043
+
+        # $CompRandFld
+        # $CompRandFld$varObs
+        # [1] 9.182e-12
+
+        # $CompRandFld$varSpatial
+        # [1] 0.5211
+
+        # $CompRandFld$nu
+        # [1] 0.4918
+
+        # $CompRandFld$phi
+        # [1] 44705
+
+        # $CompRandFld$range
+        # [1] 134102
+
+        # $CompRandFld$range_ok
+        # [1] FALSE
+
 
         gr = stmv_variogram( xy, z, methods="spBayes", plotdata=TRUE ) # mcmc
+        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="spBayes", plotdata=FALSE )}, times= 10 )  # v. slow! ... 29.3 sec
         # $spBayes$range: 66377
         # $spBayes$varSpatial: 0.4683
         # $spBayes$varObs: 0.1073
@@ -164,33 +197,29 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
         # hist( out$spBayes$recover$p.theta.samples[,3] ) # 1/phi
         # hist( out$spBayes$recover$p.theta.samples[,4] ) # nu
 
-        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="inla", plotdata=FALSE )}, times= 10 )  # 3.66 sec
+
         gr = stmv_variogram( xy, z, methods="inla", plotdata=TRUE )
+        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="inla", plotdata=FALSE )}, times= 10 )  # 4.4 sec
         # $inla$range.inla.practical
         # [1] 52481
-
         # $inla$varSpatial
         # [1] 0.6499
-
         # $inla$varObs
         # [1] 0.0001482
-
         # $inla$phi
         # [1] 25407
-
         # $inla$nu
         # [1] 1
-
         # $inla$error
         # [1] NA
-
         # $inla$range
         # [1] 71835
-
         # $inla$range_ok
         # [1] TRUE
 
-        # Laplace Approximation:
+
+        # Laplace Approximation:  too slow to use
+
         #              Mean      SD     MCSE  ESS         LB     Median         UB
         # tausq      4.585e+00 0.00000 0.000000 1000  4.585e+00  4.585e+00  4.585e+00
         # sigmasq   -8.461e-02 0.00000 0.000000 1000 -8.461e-02 -8.461e-02 -8.461e-02
