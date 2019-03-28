@@ -199,7 +199,33 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
 
 
        gr = stmv_variogram( xy, z, methods="bayesx", plotdata=TRUE )
-        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="bayesx", plotdata=FALSE )}, times= 10 )  # 4.4 sec
+        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="bayesx", plotdata=FALSE )}, times= 10 )  # 90 milli sec
+        # $bayesx$range
+        # [1] 103783
+
+        # $bayesx$model
+        # Call:
+        # bayesx(formula = z ~ sx(plon, plat, bs = "kr"), data = xys, family = family,
+        #     method = "REML")
+        # Summary:
+        # N = 100  df = 9.725  AIC = 0.547  BIC = 25.882
+        # logLik = 9.451  method = REML  family = gaussian
+
+        # $bayesx$varSpatial
+        # [1] 1.166
+
+        # $bayesx$varObs
+        # [1] 0.3066
+
+        # $bayesx$nu
+        # [1] 0.5
+
+        # $bayesx$phi
+        # [1] 34644
+
+        # $bayesx$range_ok
+        # [1] TRUE
+
 
 
         gr = stmv_variogram( xy, z, methods="inla", plotdata=TRUE )
@@ -1091,8 +1117,8 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
     xys = as.data.frame(xy/out$stmv_internal_scale)
     names(xys) =  c("plon", "plat" ) # arbitrary
 
-    fm <- bayesx( z ~ sx(plon, plat, nu=nu,  bs="kr" ), family=family, method="REML", data =xys )
-    # fm <- bayesx( z ~ sx(plon, plat, nu=nu,  bs="kr" ), family=family, method="HMCMC", data =xy )
+    fm <- bayesx( z ~ sx(plon, plat, bs="kr" ), family=family, method="REML", data =xys )
+    # fm <- bayesx( z ~ sx(plon, plat,  bs="kr" ), family=family, method="HMCMC", data =xy )
     # ?bayesx.control
     # warning( "BayesX documentation is not clear if rho is the scale parameter. This seems ok, but should do some more testing." )
 
