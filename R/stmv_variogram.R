@@ -198,6 +198,10 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
         # hist( out$spBayes$recover$p.theta.samples[,4] ) # nu
 
 
+       gr = stmv_variogram( xy, z, methods="bayesx", plotdata=TRUE )
+        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="bayesx", plotdata=FALSE )}, times= 10 )  # 4.4 sec
+
+
         gr = stmv_variogram( xy, z, methods="inla", plotdata=TRUE )
         microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="inla", plotdata=FALSE )}, times= 10 )  # 4.4 sec
         # $inla$range.inla.practical
