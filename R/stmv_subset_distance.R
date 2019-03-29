@@ -29,18 +29,27 @@
 
       # NOTE: this range is a crude estimate that averages across years (if any) ...
       o = NULL
-      o = try( stmv_variogram( xy=Yloc[yiu,], z=Y[yiu,], methods=p$stmv_variogram_method, distance_cutoff=stmv_distance_cur, nbreaks=15 ) )
+      o = try( stmv_variogram( xy=Yloc[yiu,], z=Y[yiu,], methods=p$stmv_variogram_method, distance_cutoff=stmv_distance_cur, nbreaks=15, range_correlation=p$stmv_range_correlation ) )
 
       if ( is.null(o)) out$flag = E[["variogram_failure"]]
       if ( inherits(o, "try-error")) out$flag = E[["variogram_failure"]]
       if ( !exists(p$stmv_variogram_method, o)) out$flag =  E[["variogram_failure"]]
 
       if ( out$flag ==  E[["variogram_failure"]] ) {
-        o = try( stmv_variogram( xy=Yloc[yiu,], z=Y[yiu,], methods="fast", distance_cutoff=stmv_distance_cur, nbreaks=13 ) )
+        alt_method = setdiff( c("RandomFields", "geoR", "fields", "gstat"), p$stmv_variogram_method )[1]
+        o = try( stmv_variogram( xy=Yloc[yiu,], z=Y[yiu,], methods=alt_method, distance_cutoff=stmv_distance_cur, nbreaks=13, range_correlation=p$stmv_range_correlation ) )
         if ( is.null(o)) out$flag = E[["variogram_failure"]]
         if ( inherits(o, "try-error")) out$flag = E[["variogram_failure"]]
         if ( !exists(p$stmv_variogram_method, o)) out$flag =  E[["variogram_failure"]]
       }
+      if ( out$flag ==  E[["variogram_failure"]] ) {
+        alt_method = "optim"
+        o = try( stmv_variogram( xy=Yloc[yiu,], z=Y[yiu,], methods=alt_method, distance_cutoff=stmv_distance_cur, nbreaks=13, range_correlation=p$stmv_range_correlation ) )
+        if ( is.null(o)) out$flag = E[["variogram_failure"]]
+        if ( inherits(o, "try-error")) out$flag = E[["variogram_failure"]]
+        if ( !exists(p$stmv_variogram_method, o)) out$flag =  E[["variogram_failure"]]
+      }
+
       if ( out$flag ==  E[["variogram_failure"]] ) return(out)
 
       # if (debugging) print( paste("... range=", round(ores[['range']],3), ", ", nu=", ores$nu, ", phi=", ores$phi, ndata=", ndata ) )

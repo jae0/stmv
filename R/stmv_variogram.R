@@ -1,5 +1,5 @@
 
-stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("fast"), distance_cutoff=NA, nbreaks = 15, family="gaussian", stanmodel=NULL ) {
+stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("RandomFields"), distance_cutoff=NA, nbreaks = 15, family="gaussian", stanmodel=NULL, range_correlation=0.9 ) {
 
   #\\ estimate empirical variograms (actually correlation functions)
   #\\ and then model them using a number of different approaches .. using a Matern basis
@@ -30,6 +30,44 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
         distance_cutoff=NA
         nbreaks = 15
         family="gaussian"
+        range_correlation=0.9
+
+
+
+        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="optim", plotdata=FALSE )}, times= 10 )  # 63 milli sec
+        gr = stmv_variogram( xy, z, methods="optim", plotdata=TRUE ) # nls
+
+        # $optim$vgm_var_max
+        # [1] 0.7927
+
+        # $optim$vgm_dist_max
+        # [1] 171907
+
+        # $optim$autocorrelation_function
+        # [1] "matern"
+
+        # $optim$nu
+        # [1] 3
+
+        # $optim$phi
+        # [1] 26532
+
+        # $optim$varSpatial
+        # [1] 0.4464
+
+        # $optim$varObs
+        # [1] 0.1385
+
+        # $optim$range
+        # [1] 69508
+
+        # $optim$range_ok
+        # [1] TRUE
+
+        # $optim$objfn
+        # [1] 0.1079
+
+
 
         microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="fast.recursive", plotdata=FALSE )}, times= 10 )  # 138.3 milli sec  .. unstable
         # tests
@@ -188,7 +226,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
         # nd = nrow(out$spBayes$recover$p.theta.samples)
         # rr = rep(NA, nd )
         # for (i in 1:nd) rr[i] = geoR::practicalRange("matern", phi=1/out$spBayes$recover$p.theta.samples[i,3], kappa=out$spBayes$recover$p.theta.samples[i,4] )
-        # #  range = matern_phi2distance(phi=phi, nu=nu)
+        # #  range = matern_phi2distance(phi=phi, nu=nu, cor=range_correlation)
 
         # hist(rr)  # range estimate
 
@@ -303,19 +341,15 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
 
 
   # ------------------------
-  # ------------------------
 
-  if ("multipass" %in% methods) {
-    # try to be through
-    # stop(" this method is not ready for prime time .. use gstat instead")
+
+  if ("optim" %in% methods) {
     # spatial discretization
     XYZ = stmv_discretize_coordinates(coo=xy, z=z, discretized_n=125, method="aggregate", FUNC=mean, na.rm=TRUE)
     maxdist = out$range_crude   # begin with this (diagonal)
     names(XYZ) =  c("plon", "plat", "z" ) # arbitrary
     rownames( XYZ) = 1:nrow(XYZ)  # RF seems to require rownames ...
 
-
-    # try 1: simple RF variogram, then nlsquared fit
     require( RandomFields )
     vario = RFvariogram( data=RFspatialPointsDataFrame( coords=XYZ[,c(1,2)], data=XYZ[,3], RFparams=list(vdim=1, n=1) ) )
     # remove the (0,0) point -- force intercept
@@ -325,88 +359,17 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
     vx = vario@centers[-todrop]
     fit = try( stmv_variogram_optimization( vx=vx, vg=vg, plotvgm=plotdata, stmv_internal_scale=out$stmv_internal_scale ))
     if ( !inherits(fit, "try-error") ) {
-      out$multipass = fit$summary
-      if (exists("range", out$multipass)) {
-        if (is.finite(out$multipass$range)) {
-          out$multipass$range_ok = ifelse( out$multipass$range < out$distance_cutoff*0.99, TRUE, FALSE )
-          if (exists("range_ok", out$multipass)) if( out$multipass$range_ok ) return(out)
+      out$optim = fit$summary
+      if (exists("range", out$optim)) {
+        if (is.finite(out$optim$range)) {
+          out$optim$range_ok = ifelse( out$optim$range < out$distance_cutoff*0.99, TRUE, FALSE )
+          if (exists("range_ok", out$optim)) if( out$optim$range_ok ) return(out)
         }
       }
     }
-
-    # try 2
-    require( geoR )
-    vEm = try( variog( coords=XYZ[,c(1,2)]/out$stmv_internal_scale, data=XYZ[,3], uvec=nbreaks, max.dist=out$distance_cutoff/out$stmv_internal_scale ) )
-    if (!inherits(vEm, "try-error") ) {
-      vEm$u0 = vEm$u * out$stmv_internal_scale
-      vMod = try( variofit( vEm, nugget=out$varZ/2, kappa=0.5, cov.model="matern",
-      ini.cov.pars=c(out$varZ/2, 1 ) ,
-      fix.kappa=FALSE, fix.nugget=FALSE, max.dist=out$distance_cutoff/out$stmv_internal_scale, weights="cressie" ) )
-      # kappa is the smoothness parameter , also called "nu" by others incl. RF
-      if  (inherits(vMod, "try-error") )  return(NULL)
-      scale = matern_phi2phi( mRange=vMod$cov.pars[2], mSmooth=vMod$kappa,
-      parameterization_input="geoR", parameterization_output="stmv" ) * out$stmv_internal_scale
-      out$multipass = list( fit=vMod, vgm=vEm, model=vMod, range=NA,
-      varSpatial= vMod$cov.pars[1], varObs=vMod$nugget, nu=vMod$kappa,  phi=scale )
-      out$multipass$range = matern_phi2distance( phi=out$multipass$phi, nu=out$multipass$nu  )
-      if (is.finite(out$multipass$range)) {
-        out$multipass$range_ok = ifelse( out$multipass$range < out$distance_cutoff*0.99, TRUE, FALSE )
-        if (exists("range_ok", out$multipass)) if( out$multipass$range_ok ) return(out)
-      }
-    }
-
-
-    require(gstat)
-    require(sp)
-    w = XYZ[,3]
-    uv = as.data.frame(XYZ[,c(1,2)]/out$stmv_internal_scale )
-    names(uv) =  c("plon", "plat" ) # arbitrary
-    co = out$distance_cutoff / out$stmv_internal_scale
-    vEm = try( variogram( w~1, locations=~plon+plat, data=uv, cutoff=co, width=co/nbreaks, cressie=TRUE ) ) # empirical variogram
-    if (!inherits(vEm, "try-error") ) {
-      vEm$dist0 = vEm$dist * out$stmv_internal_scale
-      vMod0 = vgm(psill=2/3*out$varZ, model="Mat", range=1, nugget=out$varZ/3, kappa=1/2 ) # starting model parameters
-      vFitgs =  try( fit.variogram( vEm, vMod0, fit.kappa =TRUE, fit.sills=TRUE, fit.ranges=TRUE ) )
-      ## gstat's kappa is the Bessel function's "nu" smoothness parameter
-      if (!inherits(vFitgs, "try-error") ) {
-        scale = matern_phi2phi( mRange=vFitgs$range[2], mSmooth=vFitgs$kappa[2], parameterization_input="gstat", parameterization_output="stmv" ) * out$stmv_internal_scale
-        out$multipass = list( fit=vFitgs, vgm=vEm, range=NA, nu=vFitgs$kappa[2], phi=scale,
-        varSpatial=vFitgs$psill[2], varObs=vFitgs$psill[1]  )  # gstat::"range" == range parameter == phi
-        out$multipass$range = matern_phi2distance( phi=out$multipass$phi, nu=out$multipass$nu  )
-        if (is.finite(out$multipass$range)) {
-          out$multipass$range_ok = ifelse( out$multipass$range < out$distance_cutoff*0.99, TRUE, FALSE )
-          if (exists("range_ok", out$multipass)) if( out$multipass$range_ok ) return(out)
-        }
-      }
-    }
-
-
-    # try 4
-    if (0) {
-      # occasionally really very slow ... test again at some future time
-      model = RMmatern( nu=NA, var=NA, scale=NA) + RMnugget(var=NA)
-      o = try( RFfit(model, x=XYZ[,c(1,2)]/out$stmv_internal_scale, data=XYZ[,3], allowdistanceZero=TRUE,  modus_operandi="normal", lowerbound_var_factor=2000, allowdistanceZero=TRUE) )
-      if (!inherits(o, "try-error") ) {
-        oo=summary(o)
-        scale = matern_phi2phi( mRange=oo$param["value", "matern.s"], mSmooth=oo$param["value", "matern.nu"],
-          parameterization_input="RandomFields", parameterization_output="stmv" ) * out$stmv_internal_scale
-        out$multipass = list ( fit=o, vgm=o[2], model=oo, range=NA,
-          varSpatial=oo$param["value", "matern.var"],
-          varObs=oo$param["value", "nugget.var"],
-          phi=scale,
-          nu=oo$param["value", "matern.nu"], # RF::nu == geoR:: kappa (bessel smoothness param)
-          error=NA )
-        out$multipass$range = matern_phi2distance( phi=out$multipass$phi, nu=out$multipass$nu  )
-        if (is.finite(out$multipass$range)) {
-          out$multipass$range_ok = ifelse( out$multipass$range < out$distance_cutoff*0.99, TRUE, FALSE )
-          if (exists("range_ok", out$multipass)) if( out$multipass$range_ok ) return(out)
-        }
-      }
-    }
-
-    return(out)
 
   }
+
 
 
   # -------------------------
@@ -475,7 +438,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
 
           phi = matern_phi2phi( mRange=vFitgs$range[2], mSmooth=vFitgs$kappa[2], parameterization_input="gstat", parameterization_output="stmv" ) * out$stmv_internal_scale
           nu=vFitgs$kappa[2]
-          distance_range = matern_phi2distance( phi=phi, nu=nu  )
+          distance_range = matern_phi2distance( phi=phi, nu=nu, cor=range_correlation )
 
           out$fast.recursive = list( fit=vFitgs, vgm=vEm, range=distance_range, nu=vFitgs$kappa[2], phi=phi,
             varSpatial=vFitgs$psill[2], varObs=vFitgs$psill[1]  )
@@ -547,7 +510,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
       nu = fit$param[["smooth"]]
     )
     out$CompRandFld$phi =  matern_phi2phi( mRange=fit$param[["scale"]], mSmooth=out$CompRandFld$nu, parameterization_input="CompRandFld", parameterization_output="stmv" ) * out$stmv_internal_scale
-    out$CompRandFld$range = matern_phi2distance(phi=out$CompRandFld$phi, nu=out$CompRandFld$nu)
+    out$CompRandFld$range = matern_phi2distance(phi=out$CompRandFld$phi, nu=out$CompRandFld$nu, cor=range_correlation)
     out$CompRandFld$range_ok = ifelse( out$CompRandFld$range < out$distance_cutoff*0.99, TRUE, FALSE )
     return(out)
     if( 0) {
@@ -595,7 +558,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
 
     out$fields$phi = matern_phi2phi( mRange=res["theta"], mSmooth=out$fields$nu,
       parameterization_input="fields", parameterization_output="stmv") * out$stmv_internal_scale
-    out$fields$range = matern_phi2distance(phi=out$fields$phi, nu=out$fields$nu)
+    out$fields$range = matern_phi2distance(phi=out$fields$phi, nu=out$fields$nu, cor=range_correlation)
     out$fields$range_ok = ifelse( out$fields$range < out$distance_cutoff*0.99, TRUE, FALSE )
 
     if( 0){
@@ -648,7 +611,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
 
     out$gstat = list( fit=vFitgs, vgm=vEm, range=NA, nu=vFitgs$kappa[2], phi=scale,
         varSpatial=vFitgs$psill[2], varObs=vFitgs$psill[1]  )  # gstat::"range" == range parameter == phi
-    out$gstat$range = matern_phi2distance( phi=out$gstat$phi, nu=out$gstat$nu  )
+    out$gstat$range = matern_phi2distance( phi=out$gstat$phi, nu=out$gstat$nu, cor=range_correlation  )
     out$gstat$range_ok = ifelse( out$gstat$range < out$distance_cutoff*0.99, TRUE, FALSE )
 
     if (plotdata) {
@@ -706,7 +669,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
     out$geoR = list( fit=vMod, vgm=vEm, model=vMod, range=NA,
             varSpatial= vMod$cov.pars[1], varObs=vMod$nugget,
             nu=vMod$kappa,  phi=scale )
-    out$geoR$range = matern_phi2distance( phi=out$geoR$phi, nu=out$geoR$nu  )
+    out$geoR$range = matern_phi2distance( phi=out$geoR$phi, nu=out$geoR$nu, cor=range_correlation  )
     out$geoR$range_ok = ifelse( out$geoR$range < out$distance_cutoff*0.99, TRUE, FALSE )
 
     if (plotdata) {
@@ -779,7 +742,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
               phi=scale,
               nu=oo$param["value", "matern.nu"], # RF::nu == geoR:: kappa (bessel smoothness param)
               error=NA )
-    out$RandomFields$range = matern_phi2distance( phi=out$RandomFields$phi, nu=out$RandomFields$nu  )
+    out$RandomFields$range = matern_phi2distance( phi=out$RandomFields$phi, nu=out$RandomFields$nu, cor=range_correlation  )
     out$RandomFields$range_ok = ifelse( out$RandomFields$range < out$distance_cutoff*0.99, TRUE, FALSE )
 
     if (plotdata) {
@@ -830,7 +793,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
     out$geoR.ML = list( fit=vMod, vgm=vEm, model=vMod, range=NA,
             varSpatial= vMod$cov.pars[1], varObs=vMod$nugget,
             nu=vMod$kappa,  phi=scale )
-    out$geoR.ML$range = matern_phi2distance( phi=out$geoR.ML$phi, nu=out$geoR.ML$nu  )
+    out$geoR.ML$range = matern_phi2distance( phi=out$geoR.ML$phi, nu=out$geoR.ML$nu, cor=range_correlation  )
     out$geoR.ML$range_ok = ifelse( out$geoR.ML$range < out$distance_cutoff*0.99, TRUE, FALSE )
 
     if (plotdata) {
@@ -901,7 +864,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
       parameterization_input="spBayes", parameterization_output="stmv" ) * out$stmv_internal_scale
 
     out$spBayes = list( model=model, recover=m.1,
-      range=matern_phi2distance( phi=scale, nu=u[["nu"]]  ), varSpatial=u[["sigma.sq"]], varObs=u[["tau.sq"]],
+      range=matern_phi2distance( phi=scale, nu=u[["nu"]], cor=range_correlation  ), varSpatial=u[["sigma.sq"]], varObs=u[["tau.sq"]],
       phi=scale, nu=u["nu"] )  # output using geoR nomenclature
     out$spBayes$range_ok = ifelse( out$spBayes$range < out$distance_cutoff*0.99, TRUE, FALSE )
 
@@ -1029,7 +992,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
       varObs=inla.summary[["observation error","mean"]] ,
       phi=scale, nu=alpha-1, error=NA )
 
-    out$inla$range = matern_phi2distance( phi=out$inla$phi, nu=out$inla$nu  )
+    out$inla$range = matern_phi2distance( phi=out$inla$phi, nu=out$inla$nu, cor=range_correlation  )
     out$inla$range_ok = ifelse( out$inla$range < out$distance_cutoff*0.99, TRUE, FALSE )
 
     if (plotdata) {
@@ -1088,7 +1051,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
       varObs=inla.summary[["observation error","mean"]] ,
       phi=scale, nu=alpha-1, error=NA )
 
-    out$geostatsp$range = matern_phi2distance( phi=out$geostatsp$phi, nu=out$geostatsp$nu  )
+    out$geostatsp$range = matern_phi2distance( phi=out$geostatsp$phi, nu=out$geostatsp$nu, cor=range_correlation  )
     out$geostatsp$range_ok = ifelse( out$geostatsp$range < out$distance_cutoff*0.99, TRUE, FALSE )
 
     if (plotdata) {
@@ -1136,7 +1099,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
         varObs = fm$fixed.effects[1,"Std. Error"] ,
         nu =nu, phi=scale )
 
-    out$bayesx$range = matern_phi2distance( phi=out$bayesx$phi, nu=out$bayesx$nu  )
+    out$bayesx$range = matern_phi2distance( phi=out$bayesx$phi, nu=out$bayesx$nu, cor=range_correlation  )
     out$bayesx$range_ok = ifelse( out$bayesx$range < out$distance_cutoff*0.99, TRUE, FALSE )
 
     if(0){
@@ -1228,7 +1191,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
       sigmasq = fit$summary["sigmasq", "mean"] ,
       tausq = fit$summary["tausq", "mean"]
     )
-    out$jags$range = matern_phi2distance( phi=out$jags$phi, nu=0.5  )
+    out$jags$range = matern_phi2distance( phi=out$jags$phi, nu=0.5, cor=range_correlation  )
     out$jags$range_ok = ifelse( out$jags$range < out$distance_cutoff*0.99, TRUE, FALSE )
 
     return(out)
@@ -1395,7 +1358,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
     # m2 = as.array(f)
     pred=rstan::extract(f)
     phii = mean(pred$phi) * out$stmv_internal_scale
-    rnge = matern_phi2distance( phi=phii, nu=0.5  )
+    rnge = matern_phi2distance( phi=phii, nu=0.5, cor=range_correlation  )
     out$stan$range_ok = ifelse( out$stan$range < out$distance_cutoff*0.99, TRUE, FALSE )
 
     # prob=apply(pred,2,function(x) I(length(x[x>0.10])/length(x) > 0.8)*1)
@@ -1503,7 +1466,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
     )   ## need to check parameterization...
 
     # out$LaplacesDemon$range = geoR::practicalRange("matern", phi=out$LaplacesDemon$phi, kappa=out$LaplacesDemon$nu)
-      out$LaplacesDemon$range = matern_phi2distance( phi=out$LaplacesDemon$phi, nu=out$LaplacesDemon$nu)
+      out$LaplacesDemon$range = matern_phi2distance( phi=out$LaplacesDemon$phi, nu=out$LaplacesDemon$nu , cor=range_correlation)
       out$LaplacesDemon$range_ok = ifelse( out$LaplacesDemon$range < out$distance_cutoff*0.99, TRUE, FALSE )
 
    # print( out$LaplacesDemon )
