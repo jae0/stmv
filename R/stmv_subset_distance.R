@@ -36,7 +36,7 @@
       if ( !exists(p$stmv_variogram_method, o)) out$flag =  E[["variogram_failure"]]
 
       if ( out$flag ==  E[["variogram_failure"]] ) {
-        alt_method = setdiff( c("RandomFields", "geoR", "fields", "gstat"), p$stmv_variogram_method )[1]
+        alt_method = setdiff( c("RandomFields", "fields", "gstat"), p$stmv_variogram_method )[1]  # geoR seems to crash a node ..
         o = try( stmv_variogram( xy=Yloc[yiu,], z=Y[yiu,], methods=alt_method, distance_cutoff=stmv_distance_cur, nbreaks=13, range_correlation=p$stmv_range_correlation ) )
         if ( is.null(o)) out$flag = E[["variogram_failure"]]
         if ( inherits(o, "try-error")) out$flag = E[["variogram_failure"]]

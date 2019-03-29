@@ -43,7 +43,7 @@ stmv_parameters = function( p=NULL, ... ) {
 
   if( !exists( "storage.backend", p))  p$storage.backend="bigmemory.ram"
 
-  if( !exists( "stmv_variogram_method", p)) p$stmv_variogram_method="geoR"   # note GP methods are slow when there is too much data
+  if( !exists( "stmv_variogram_method", p)) p$stmv_variogram_method="RandomFields"   # note GP methods are slow when there is too much data
   if( !exists( "stmv_range_correlation", p)) p$stmv_range_correlation = 0.9   # correlation value at which to compute a "range" distance
 
   if (!exists( "stmv_global_family", p)) p$stmv_global_family = gaussian(link = "identity")

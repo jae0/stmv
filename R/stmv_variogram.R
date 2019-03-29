@@ -106,7 +106,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
         # $fields$varObs [1] 1.333e-05
 
         gr = stmv_variogram( xy, z, methods="geoR", plotdata=TRUE ) # ml
-        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="geoR", plotdata=FALSE )}, times= 10 )  # 45 MILLI Sec
+        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="geoR", plotdata=FALSE )}, times= 10 )  # 45 MILLI Sec   # geoR seems to crash a node ..
        # $geoR$range
         # [1] 60278
         # $geoR$varSpatial
