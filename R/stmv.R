@@ -367,16 +367,11 @@ stmv = function( p, runmode=NULL, DATA=NULL,
     sSflag = NULL
   }
 
-  if (is.null(use_saved_state)) stmv_db( p=p, DS="statistics.Sflag" )
 
 
   ################
 
   if ( "scale" %in% runmode ) {
-
-  # -----------------------------------------------------
-
-  if ("interpolate" %in% runmode ) {
     E = stmv_error_codes()
     message ( "\n", "||| Sampling at the following distance mulitpliers: ", paste0(p$stmv_distance_scale, collapse=",") )
     nk = length(p$stmv_distance_scale)
@@ -409,12 +404,15 @@ stmv = function( p, runmode=NULL, DATA=NULL,
       p$time_start_interpolation = Sys.time()
       parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
     }
+    message( "||| Variogram surface Finished." )
+    message( "||| Results are found at:" )
   }
 
 
+  if ( !{"interpolate" %in% runmode} ) {
+    message( "||| Completed runmode." )
+    return()
   }
-
-
 
 
   nPlocs = nrow(DATA$output$LOCS)
@@ -563,6 +561,10 @@ stmv = function( p, runmode=NULL, DATA=NULL,
 
   DATA = NULL;
   gc()
+
+
+  if (is.null(use_saved_state)) stmv_db( p=p, DS="statistics.Sflag" )  # flags/filter stats locations base dupon prediction covariates.
+
 
   if (exists("stmv_global_modelengine", p) ) {
     if (p$stmv_global_modelengine !="none" ) {
