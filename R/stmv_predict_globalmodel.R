@@ -1,4 +1,4 @@
-stmv_predict_globalmodel = function( ip=NULL, p, global_model, Yq=NULL ) {
+stmv_predict_globalmodel = function( ip=NULL, p, Yq=NULL ) {
 
   if (0) {
     # for debugging  runs ..
@@ -22,6 +22,8 @@ stmv_predict_globalmodel = function( ip=NULL, p, global_model, Yq=NULL ) {
   P0 = stmv_attach( p$storage.backend, p$ptr$P0 )  # remember this is on link scale
   P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd ) # and this too
 
+  global_model = stmv_db( p=p, DS="global_model")
+  if (is.null(global_model)) stop("Global model not found.")
 
 # main loop over each output location in S (stats output locations)
   for ( it in ooo ) {

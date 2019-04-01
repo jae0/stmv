@@ -1,7 +1,7 @@
 
 
-stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
-  #\\ core function to interpolate (model and predict) in parallel
+stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
+  #\\ core function to interpolate (model variogram) in parallel
 
   if (0) {
     # for debugging  runs ..
@@ -31,14 +31,10 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
   E = stmv_error_codes()
 
   Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
-  Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
   Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
 
   Y = stmv_attach( p$storage.backend, p$ptr$Y )
-
-  P = stmv_attach( p$storage.backend, p$ptr$P )
-  Pn = stmv_attach( p$storage.backend, p$ptr$Pn )
-  Psd = stmv_attach( p$storage.backend, p$ptr$Psd )
+  Yi = stmv_attach( p$storage.backend, p$ptr$Yi )  # initial indices of good data
 
   if (p$nloccov > 0) Ycov = stmv_attach( p$storage.backend, p$ptr$Ycov )
   if ( exists("TIME", p$variables) ) Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )
@@ -52,29 +48,6 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
   dat_nc = length( dat_names )
   iY = which(dat_names== p$variables$Y)
   ilocs = which( dat_names %in% p$variable$LOCS )
-  # iwei = which( dat_names %in% "weights" )
-
-  if (p$nloccov > 0) {
-    icov = which( dat_names %in% p$variables$local_cov )
-    icov_local = which( p$variables$COV %in% p$variables$local_cov )
-  }
-  if (exists("TIME", p$variables)) {
-    ti_cov = setdiff(p$variables$local_all, c(p$variables$Y, p$variables$LOCS, p$variables$local_cov ) )
-    itime_cov = which(dat_names %in% ti_cov)
-  }
-
-  local_fn = switch( p$stmv_local_modelengine,
-    bayesx = stmv__bayesx,
-    gaussianprocess2Dt = stmv__gaussianprocess2Dt,
-    gam = stmv__gam,
-    glm = stmv__glm,
-    gstat = stmv__gstat,
-    krige = stmv__krige,
-    fft = stmv__fft,
-    tps = stmv__tps,
-    twostep = stmv__twostep,
-    userdefined = p$stmv_local_modelengine_userdefined
-  )
 
   nip = length(ip)
   if (nip < 100) {
@@ -92,7 +65,7 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
   distance_to_upsample = p$distance_scale_current * p$stmv_distance_upsampling_fraction
 
 # main loop over each output location in S (stats output locations)
-  for ( iip in ip ) {
+  for ( iip in ip ) { 
 
     if ( iip %in% logpoints )  currentstatus = stmv_logfile(p=p)
     Si = p$runs[ iip, "locs" ]
@@ -100,8 +73,76 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
     if (debugging) print( paste("index =", iip, ";  Si = ", Si ) )
 
     # obtain indices of data locations withing a given spatial range, optimally determined via variogram
+    
+    # find data nearest Sloc[Si,] and with sufficient data
 
-    W = try( stmv_subset_distance( Si=Si, p=p, distance_to_upsample=distance_to_upsample ) )
+    dlon = abs( Sloc[Si,1] - Yloc[Yi[],1] )
+    dlat = abs( Sloc[Si,2] - Yloc[Yi[],2] )
+    ndata = 0
+    for ( stmv_distance_cur in distance_to_upsample )  {
+      U = which( {dlon  <= stmv_distance_cur} & {dlat <= stmv_distance_cur} )  # faster to take a block
+      ndata = length(U)
+      if ( ndata >= p$n.min ) break()
+    }
+
+    out = NULL
+    out = list(
+      flag=E[["todo"]], 
+      ndata=ndata, 
+      stmv_distance_cur=stmv_distance_cur, 
+      ores=NA 
+    )  # basic threshold ... now tweak it
+
+    if (out$ndata < p$n.min) {
+      # retain crude estimate and run with it
+      out$flag = E[["insufficient_data"]]
+      return( out )   #not enough data
+    }
+
+    # NOTE: this range is a crude estimate that averages across years (if any) ...
+    o = NULL
+    o = try( stmv_variogram( 
+      xy=Yloc[Yi[U],], 
+      z=Y[Yi[U],], 
+      methods=p$stmv_variogram_method, 
+      distance_cutoff=stmv_distance_cur, 
+      nbreaks=15, 
+      range_correlation=p$stmv_range_correlation 
+    ) )
+
+    if ( is.null(o)) out$flag = E[["variogram_failure"]]
+    if ( inherits(o, "try-error")) out$flag = E[["variogram_failure"]]
+    if ( !exists(p$stmv_variogram_method, o)) out$flag =  E[["variogram_failure"]]
+    if ( out$flag ==  E[["variogram_failure"]] ) return(out)
+
+    if ( !exists("range_ok", o[[p$stmv_variogram_method]]) ) {
+      out$flag =  E[["variogram_range_limit"]]
+      return( out )     #
+    }
+
+    if ( !o[[p$stmv_variogram_method]][["range_ok"]] ) {
+      # retain crude estimate and run with it
+      out$flag =  E[["variogram_range_limit"]]
+      return(out)
+    }
+
+    vario_stmv_distance_cur = o[[p$stmv_variogram_method]][["range"]]
+    vario_U = which( {dlon  <= vario_stmv_distance_cur } & {dlat <= vario_stmv_distance_cur} )  # dlon dlat indexed on Yi
+    vario_ndata =length(vario_U)
+
+
+    if (vario_ndata <= p$n.max & vario_ndata >= p$n.min) {
+      # all good .. update and return
+      out$U  = Yi[vario_U]
+      out$ndata = vario_ndata
+      out$ores = o[[p$stmv_variogram_method]]
+      out$stmv_distance_cur = vario_stmv_distance_cur
+      return( out)
+    }
+
+    # last try, we are here because (vario_ndata > p$n.max)
+  
+    W=out
 
     if ( is.null(W) ) {
       Sflag[Si] = E[["insufficient_data"]]
@@ -179,37 +220,20 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
       points( Sloc[Si,2] ~ Sloc[Si,1], pch=20, cex=5, col="blue" )
     }
 
-    # construct data (including covariates) for prediction locations (pa)
-    pa = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=p$windowsize.half ) )
-    if (is.null(pa)) {
-      Sflag[Si] = E[["prediction_area"]]
-      if (debugging) message( Si )
-      if (debugging) message("Error: prediction grid ... null .. this should not happen")
-      pa = W = NULL
-      next()
-    }
-    if ( inherits(pa, "try-error") ) {
-      pa = W = NULL
-      Sflag[Si] = E[["prediction_area"]]
-      if (debugging) message("Error: prediction grid ... try-error .. this should not happen")
-      next()
-    }
-
     if (debugging) {
       # check that position indices are working properly
       Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
       Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
       plot( Yloc[W[["U"]],2] ~ Yloc[W[["U"]],1], col="red", pch=".",
-        ylim=range(c(Yloc[W[["U"]],2], Sloc[Si,2], Ploc[pa$i,2]) ),
-        xlim=range(c(Yloc[W[["U"]],1], Sloc[Si,1], Ploc[pa$i,1]) ) ) # all data
+        ylim=range(c(Yloc[W[["U"]],2], Sloc[Si,2]) ),
+        xlim=range(c(Yloc[W[["U"]],1], Sloc[Si,1]) ) ) # all data
       points( Yloc[W[["U"]],2] ~ Yloc[W[["U"]],1], col="green" )  # with covars and no other data issues
       points( Sloc[Si,2] ~ Sloc[Si,1], col="blue" ) # statistical locations
       # statistical output locations
       grids= aegis::spatial_grid(p, DS="planar.coords" )
       points( grids$plat[round( (Sloc[Si,2]-p$origin[2])/p$pres) + 1]
             ~ grids$plon[round( (Sloc[Si,1]-p$origin[1])/p$pres) + 1] , col="purple", pch=25, cex=5 )
-      points( grids$plat[pa$iplat] ~ grids$plon[ pa$iplon] , col="cyan", pch=20, cex=0.01 ) # check on Proc iplat indexing
-      points( Ploc[pa$i,2] ~ Ploc[ pa$i, 1] , col="black", pch=20, cex=0.7 ) # check on pa$i indexing -- prediction locations
+
     }
 
 
@@ -252,143 +276,116 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
     }
 
 
-    # model and prediction .. outputs are in scale of the link (and not response)
-    # the following permits user-defined models (might want to use compiler::cmpfun )
-    res =NULL
-    res = try(
-      local_fn(
-        p=p,
-        dat=dat,
-        pa=pa,
-        nu=nu,
+       nu=nu,
         phi=phi,
         varObs=varObs,
         varSpatial=varSpatial,
         sloc=Sloc[Si,],
         distance=W[["stmv_distance_cur"]]
-      )
-    )
-
-  #
-  # if (interp.method == "multilevel.b.splines") {
-  #   library(MBA)
-  #   out = mba.surf(data, no.X=nr, no.Y=nc, extend=TRUE)
-  #   if (0) {
-  #     image(out, xaxs = "r", yaxs = "r", main="Observed response")
-  #     locs= cbind(data$x, data$y)
-  #     points(locs)
-  #     contour(out, add=T)
-  #   }
-  #   return(out$xyz.est)
-  # }
 
 
     if (debugging) {
       print (str(W) )
-      print( str(res) )
-      if (0) {
-        lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==2012.05,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
-        lattice::levelplot( mean ~ plon + plat, data=res$predictions, col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
-        for( i in sort(unique(res$predictions[,p$variables$TIME])))  print(lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==i,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
+    }
+
+
+    # extract stats and compute a few more things
+  # compute and extract misc summary statistics from results
+  S = stmv_attach( p$storage.backend, p$ptr$S )
+  Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
+
+  sflag = "good"
+
+  out = list()
+
+  if (exists("stmv_stats",  res)) out = res$stmv_stats
+
+  if (!exists("sdSpatial", out)) {
+    # some methods can generate spatial stats simultaneously ..
+    # it is faster to keep them all together instead of repeating here
+    # field and RandomFields gaussian processes seem most promising ...
+    # default to fields for speed:
+    out["sdSpatial"] = NA
+    out["sdObs"] = NA
+    out["range"] = NA
+    out["phi"] = NA
+    out["nu"] = NA
+    if (!is.null(W)) {
+      if ( !is.na(W[["ores"]])) {
+        if ( exists("varSpatial", W[["ores"]]) ) out["sdSpatial"] = sqrt( W[["ores"]][["varSpatial"]] )
+        if ( exists("varObs", W[["ores"]]) )     out["sdObs"] = sqrt(W[["ores"]][["varObs"]])
+        if ( exists("range", W[["ores"]]) )      out["range"] = W[["ores"]][["range"]]
+        if ( exists("phi", W[["ores"]]) )        out["phi"] = W[["ores"]][["phi"]]
+        if ( exists("nu", W[["ores"]]) )         out["nu"] = W[["ores"]][["nu"]]
       }
     }
 
-    if ( is.null(res)) {
-      Sflag[Si] = E[["local_model_error"]]   # modelling / prediction did not complete properly
-      dat = pa = NULL
-      if (debugging) message("Error: local model error")
-      next()
-    }
+  }
 
-    if ( inherits(res, "try-error") ) {
-      Sflag[Si] =  E[["local_model_error"]]   # modelling / prediction did not complete properly
-      dat = pa = res = NULL
-      if (debugging) message("Error: local model error")
-      next()
-    }
+  if ( exists("TIME", p$variables) ){
+    # annual ts, seasonally centered and spatially
+    # pa_i = which( Sloc[Si,1]==Ploc[,1] & Sloc[Si,2]==Ploc[,2] )
+    pac_i = which(
+      (abs( res$predictions$plon - Sloc[Si,1] ) < p$pres) &
+      (abs( res$predictions$plat - Sloc[Si,2] ) < p$pres)
+    )
+    # plot( mean~tiyr, res$predictions[pac_i,])
+    # plot( mean~tiyr, res$predictions, pch="." )
+    out["ar_timerange"] = NA
+    out["ar_1"] = NA
 
-    if (!exists("predictions", res)) {
-      Sflag[Si] =  E[["prediction_error"]]   # modelling / prediction did not complete properly
-      dat = pa = res = NULL
-      if (debugging) message("Error: prediction error")
-      next()
-    }
+    if (length(pac_i) > 5) {
+      pac = res$predictions[ pac_i, ]
+      pac$dyr = pac[, p$variables$TIME] - trunc(pac[, p$variables$TIME] )
+      piid = which( zapsmall( pac$dyr - p$dyear_centre) == 0 )
+      pac = pac[ piid, c(p$variables$TIME, "mean")]
+      pac = pac[ order(pac[,p$variables$TIME]),]
+      if (length(piid) > 5 ) {
+        ts.stat = NULL
+        ts.stat = try( stmv_timeseries( pac$mean, method="fft" ) )
+        if (!is.null(ts.stat) && !inherits(ts.stat, "try-error") ) {
+          out["ar_timerange"] = ts.stat$quantilePeriod
+          if (all( is.finite(pac$mean))) {
+            afin = which (is.finite(pac$mean) )
+            if (length(afin) > 5 && var( pac$mean, na.rm=TRUE) > p$eps ) {
+              ar1 = NULL
+              ar1 = try( ar( pac$mean, order.max=1 ) )
+              if (!inherits(ar1, "try-error")) {
+                if ( length(ar1$ar) == 1 ) {
+                  out["ar_1"] = ar1$ar
+                }
+              }
+            }
+          }
+          if ( !is.finite(out[["ar_1"]]) ) {
+            ar1 = try( cor( pac$mean[1:(length(piid) - 1)], pac$mean[2:(length(piid))], use="pairwise.complete.obs" ) )
+            if (!inherits(ar1, "try-error")) out["ar_1"] = ar1
+          }
+        }
 
-    if (!exists("mean", res$predictions)) {
-      Sflag[Si] =  E[["prediction_error"]]   # modelling / prediction did not complete properly
-      dat = pa = res = NULL
-      if (debugging) message("Error: prediction error")
-      next()
-    }
+        ### Do the logistic model here ! -- if not already done ..
+        if (!exists("ts_K", out)) {
+          # model as a logistic with ts_r, ts_K, etc .. as stats outputs
 
-    if (length(which( is.finite(res$predictions$mean ))) < 5) {
-      Sflag[Si] =  E[["prediction_error"]]   # modelling / prediction did not complete properly
-      dat = pa = res = NULL
-      if (debugging) message("Error: prediction error")
-      next()  # looks to be a faulty solution
-    }
+        }
 
-    # extract stats and compute a few more things
-    sf = try( stmv_statistics_update( p=p, res=res, W=W, Si=Si ) )
-    if ( is.null(sf) ) {
-      Sflag[Si] = E[["statistics_update_error"]]
-      res = pa = sf = NULL
-      if (debugging) message("Error: statistics update error")
-      next()
+      }
+      pac=piid=NULL
     }
-    if ( inherits(sf, "try-error") ) {
-      Sflag[Si] = E[["statistics_update_error"]]
-      res = pa = sf = NULL
-      if (debugging) message("Error: statistics update error")
-      next()
-    }
-    if ( sf=="error" ) {
-      Sflag[Si] =  E[["statistics_update_error"]]
-      res = pa = sf = NULL
-      if (debugging) message("Error: statistics update try-error")
-      next()
-    }
+    pac_i=NULL
+  }
 
-    res$stmv_stats = NULL # reduce memory usage
-    sf = try( stmv_predictions_update(p=p, preds=res$predictions ) )
-    if ( is.null(sf) ) {
-      Sflag[Si] = E[["prediction_update_error"]]
-      res = pa = sf = NULL
-      if (debugging) message("Error: prediction update error .. is null")
-      next()
+  # save stats
+  for ( k in 1: length(p$statsvars) ) {
+    if (exists( p$statsvars[k], out )) {
+      S[Si,k] = out[[ p$statsvars[k] ]]
     }
-    if ( inherits(sf, "try-error") ) {
-      Sflag[Si] = E[["prediction_update_error"]]
-      res = pa = sf = NULL
-      if (debugging) message("Error: prediction update error .. try-error")
-      next()
-    }
-    if ( sf=="error" ) {
-      Sflag[Si] = E[["prediction_update_error"]]
-      res = pa = sf = NULL
-      if (debugging) message("Error: prediction update error .. general")
-      next()
-    }
-
-    res = pa = NULL
-
+  }
 
     # ----------------------
     # do last. it is an indicator of completion of all tasks
     # restarts would be broken otherwise
     Sflag[Si] = E[["complete"]]  # mark as complete without issues
-
-    if (0) {
-      # only for debugging data bigmemory structures
-      if ( iip %in% savepoints ) {
-        sP = P[]; save( sP, file=p$saved_state_fn$P, compress=TRUE ); sP=NULL
-        sPn = Pn[]; save( sPn, file=p$saved_state_fn$Pn, compress=TRUE ); sPn=NULL
-        sPsd = Psd[]; save( sPsd, file=p$saved_state_fn$Psd, compress=TRUE ); sPsd=NULL
-        sS = S[]; save( sS, file=p$saved_state_fn$stats, compress=TRUE ); sS=NULL
-        sSflag = Sflag[]; save( sSflag, file=p$saved_state_fn$sflag, compress=TRUE ); sSflag=NULL
-        currentstatus = stmv_logfile(p=p)
-      }
-    }
 
   }  # end for loop
 
