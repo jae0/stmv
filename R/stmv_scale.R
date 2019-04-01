@@ -65,7 +65,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
   distance_to_upsample = p$distance_scale_current * p$stmv_distance_upsampling_fraction
 
 # main loop over each output location in S (stats output locations)
-  for ( iip in ip ) { 
+  for ( iip in ip ) {
 
     if ( iip %in% logpoints )  currentstatus = stmv_logfile(p=p)
     Si = p$runs[ iip, "locs" ]
@@ -73,7 +73,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
     if (debugging) print( paste("index =", iip, ";  Si = ", Si ) )
 
     # obtain indices of data locations withing a given spatial range, optimally determined via variogram
-    
+
     # find data nearest Sloc[Si,] and with sufficient data
 
     dlon = abs( Sloc[Si,1] - Yloc[Yi[],1] )
@@ -87,10 +87,10 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
 
     out = NULL
     out = list(
-      flag=E[["todo"]], 
-      ndata=ndata, 
-      stmv_distance_cur=stmv_distance_cur, 
-      ores=NA 
+      flag=E[["todo"]],
+      ndata=ndata,
+      stmv_distance_cur=stmv_distance_cur,
+      ores=NA
     )  # basic threshold ... now tweak it
 
     if (out$ndata < p$n.min) {
@@ -101,13 +101,13 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
 
     # NOTE: this range is a crude estimate that averages across years (if any) ...
     o = NULL
-    o = try( stmv_variogram( 
-      xy=Yloc[Yi[U],], 
-      z=Y[Yi[U],], 
-      methods=p$stmv_variogram_method, 
-      distance_cutoff=stmv_distance_cur, 
-      nbreaks=15, 
-      range_correlation=p$stmv_range_correlation 
+    o = try( stmv_variogram(
+      xy=Yloc[Yi[U],],
+      z=Y[Yi[U],],
+      methods=p$stmv_variogram_method,
+      distance_cutoff=stmv_distance_cur,
+      nbreaks=15,
+      range_correlation=p$stmv_range_correlation
     ) )
 
     if ( is.null(o)) out$flag = E[["variogram_failure"]]
@@ -141,7 +141,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
     }
 
     # last try, we are here because (vario_ndata > p$n.max)
-  
+
     W=out
 
     if ( is.null(W) ) {
@@ -276,12 +276,12 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
     }
 
 
-       nu=nu,
-        phi=phi,
-        varObs=varObs,
-        varSpatial=varSpatial,
-        sloc=Sloc[Si,],
-        distance=W[["stmv_distance_cur"]]
+      #  nu=nu
+      #   phi=phi
+      #   varObs=varObs
+      #   varSpatial=varSpatial
+      #   sloc=Sloc[Si,]
+      #   distance=W[["stmv_distance_cur"]]
 
 
     if (debugging) {
