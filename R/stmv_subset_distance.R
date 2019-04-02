@@ -38,14 +38,14 @@ stmv_subset_distance = function( Si, p, distance_to_upsample ) {
   if ( !exists(svmethod, o)) out$flag =  E[["variogram_failure"]]
 
   if ( out$flag ==  E[["variogram_failure"]] ) {
-    svmethod = setdiff( c("RandomFields", "fields", "gstat"), p$stmv_variogram_method )[1]  # geoR seems to crash a node ..
+    svmethod = setdiff( c( "fields", "RandomFields",  "gstat"), p$stmv_variogram_method )[1]  # geoR seems to crash a node ..
     o = try( stmv_variogram( xy=Yloc[yiu,], z=Y[yiu,], methods=svmethod, distance_cutoff=stmv_distance_cur, nbreaks=13, range_correlation=p$stmv_range_correlation ) )
     if ( is.null(o)) out$flag = E[["variogram_failure"]]
     if ( inherits(o, "try-error")) out$flag = E[["variogram_failure"]]
     if ( !exists(svmethod, o)) out$flag =  E[["variogram_failure"]]
   }
   if ( out$flag ==  E[["variogram_failure"]] ) {
-    svmethod = "optim"
+    svmethod = "optim" # fast basic least squares estimation
     o = try( stmv_variogram( xy=Yloc[yiu,], z=Y[yiu,], methods=svmethod, distance_cutoff=stmv_distance_cur, nbreaks=13, range_correlation=p$stmv_range_correlation ) )
     if ( is.null(o)) out$flag = E[["variogram_failure"]]
     if ( inherits(o, "try-error")) out$flag = E[["variogram_failure"]]

@@ -376,15 +376,10 @@ stmv = function( p, runmode=NULL, DATA=NULL,
     message ( "\n", "||| Sampling at the following distance mulitpliers: ", paste0(p$stmv_distance_scale, collapse=",") )
     nk = length(p$stmv_distance_scale)
     for ( kk in 1:nk ) {
+      Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
       p$distance_scale_current = p$stmv_distance_scale[kk]
       message( "||| Entering scake estimation at distance scale ", p$distance_scale_current )
       p$clusters = p$stmv_clusters[[kk]] # as ram reqeuirements increase drop cpus
-      locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
-      if ( !is.null(locs_to_do) && length(locs_to_do) > 0) {
-        Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-        Sflag[locs_to_do] = E[["todo"]]
-      }
-      locs_to_do = NULL
       currentstatus = stmv_db( p=p, DS="statistics.status" )
       Eflags_reset = E[ c(
         "prediction_area",
@@ -794,12 +789,12 @@ stmv = function( p, runmode=NULL, DATA=NULL,
     message ( "\n", "||| Sampling at the following distance mulitpliers: ", paste0(p$stmv_distance_scale, collapse=",") )
     nk = length(p$stmv_distance_scale)
     for ( kk in 1:nk ) {
+      Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
       p$distance_scale_current = p$stmv_distance_scale[kk]
       message( "||| Entering interpolation at distance scale ", p$distance_scale_current )
       p$clusters = p$stmv_clusters[[kk]] # as ram reqeuirements increase drop cpus
       locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
       if ( !is.null(locs_to_do) && length(locs_to_do) > 0) {
-        Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
         Sflag[locs_to_do] = E[["todo"]]
       }
       locs_to_do = NULL

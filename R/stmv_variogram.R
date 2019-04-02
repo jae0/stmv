@@ -1,5 +1,5 @@
 
-stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("RandomFields"), distance_cutoff=NA, nbreaks = 15, family="gaussian", stanmodel=NULL, range_correlation=0.9 ) {
+stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("RandomFields"), distance_cutoff=NA, nbreaks = 15, family="gaussian", stanmodel=NULL, range_correlation=0.9, modus_operandi="easygoing" ) {
 
   #\\ estimate empirical variograms (actually correlation functions)
   #\\ and then model them using a number of different approaches .. using a Matern basis
@@ -346,7 +346,6 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
   if ("optim" %in% methods) {
     # spatial discretization
     XYZ = stmv_discretize_coordinates(coo=xy, z=z, discretized_n=125, method="aggregate", FUNC=mean, na.rm=TRUE)
-    maxdist = out$range_crude   # begin with this (diagonal)
     names(XYZ) =  c("plon", "plat", "z" ) # arbitrary
     rownames( XYZ) = 1:nrow(XYZ)  # RF seems to require rownames ...
 
@@ -357,7 +356,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
     todrop = unique( c(1, todrop) )
     vg = vario@empirical[-todrop]
     vx = vario@centers[-todrop]
-    fit = try( stmv_variogram_optimization( vx=vx, vg=vg, plotvgm=plotdata, stmv_internal_scale=out$stmv_internal_scale ))
+    fit = try( stmv_variogram_optimization( vx=vx, vg=vg, nu=0.5, plotvgm=plotdata, stmv_internal_scale=out$stmv_internal_scale ))
     if ( !inherits(fit, "try-error") ) {
       out$optim = fit$summary
       if (exists("range", out$optim)) {
@@ -367,7 +366,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
         }
       }
     }
-
+    return(out)
   }
 
 
@@ -502,8 +501,9 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
 
   if ("CompRandFld" %in% methods) {
     require( CompRandFld )
+    stop( "CompRandFld seems unstable .. force stop")
     fit = FitComposite( data=z, coordx=as.matrix(xy/out$stmv_internal_scale), corrmodel="matern",
-                       maxdist=out$distance_cutoff/out$stmv_internal_scale )
+                       maxdist=out$distance_cutoff/out$stmv_internal_scale, optimizer="BFGS" )
     out$CompRandFld = list(
       varObs=fit$param[["nugget"]],
       varSpatial = fit$param[["sill"]],
@@ -512,8 +512,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
     out$CompRandFld$phi =  matern_phi2phi( mRange=fit$param[["scale"]], mSmooth=out$CompRandFld$nu, parameterization_input="CompRandFld", parameterization_output="stmv" ) * out$stmv_internal_scale
     out$CompRandFld$range = matern_phi2distance(phi=out$CompRandFld$phi, nu=out$CompRandFld$nu, cor=range_correlation)
     out$CompRandFld$range_ok = ifelse( out$CompRandFld$range < out$distance_cutoff*0.99, TRUE, FALSE )
-    return(out)
-    if( 0) {
+    if( plotdata) {
       vario = EVariogram(data=z, coordx=as.matrix(xy/out$stmv_internal_scale),
                         maxdist=out$distance_cutoff/out$stmv_internal_scale, numbins=nbreaks)
       vg = vario$variograms
@@ -530,6 +529,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
       abline( h=out$CompRandFld$varObs + out$CompRandFld$varSpatial, lty="dashed", col="grey" )
       abline( v=out$CompRandFld$range, lty="dashed", col="grey")
     }
+    return(out)
   }
 
 
@@ -539,14 +539,18 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
 
   if ("fields" %in% methods){
     require(fields)
-    smoothness =nu = 0.5 # 0.5 == exponential
+    smoothness =nu = 0.5 # 0.5 == exponential .. ie. fixed
     res =NULL
+    # NOTE lambda = sill^2 / nugget = 0.5^2/0.5 =0.5
     fsp = MLESpatialProcess(xy/out$stmv_internal_scale, z, cov.function = "stationary.cov",
-      cov.args = list(Covariance = "Matern", smoothness = nu))
+      lambda.start=0.5, theta.start=1.0, theta.range=c(0.2, 4.0), gridN=25,
+      # optim.args=list(method = "BFGS", control = list(fnscale=-1, parscale=c(0.5, 0.5), ndeps=c(0.05,0.05))),
+      cov.args = list(Covariance = "Matern", smoothness = nu)
+    )
     if( is.finite(sum(fsp$summary))) res = fsp$summary
     if (is.null(res)) return(NULL)
 
-    warning ("vgram is really slow ...")
+    # warning ("vgram is really slow ...")
 
     vg = vgram( xy/out$stmv_internal_scale, z, N=nbreaks, dmax=out$distance_cutoff/out$stmv_internal_scale )
     vgm = Matern( d=vg$centers, range=res[["theta"]], smoothness=nu )
@@ -561,7 +565,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
     out$fields$range = matern_phi2distance(phi=out$fields$phi, nu=out$fields$nu, cor=range_correlation)
     out$fields$range_ok = ifelse( out$fields$range < out$distance_cutoff*0.99, TRUE, FALSE )
 
-    if( 0){
+    if( plotdata ){
 #      xub = max(out$distance_cutoff, max(out$geoR$vgm$u, out$distance_cutoff)) *1.25
       plot.new()
       plot( cvg, type="b", ylim=range( c(0, cvg$cvgm) ) )
@@ -600,7 +604,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
     names(xy) =  c("plon", "plat" ) # arbitrary
 
     co = out$distance_cutoff / out$stmv_internal_scale
-    vEm = try( variogram( z~1, locations=~plon+plat, data=xy, cutoff=co, width=co/nbreaks, cressie=FALSE ) ) # empirical variogram
+    vEm = try( variogram( z~1, locations=~plon+plat, data=xy, cutoff=co, width=co/nbreaks, cressie=TRUE ) ) # empirical variogram
     if (inherits(vEm, "try-error") ) return(NULL)
     vEm$dist0 = vEm$dist * out$stmv_internal_scale
     vMod0 = vgm(psill=2/3*out$varZ, model="Mat", range=1, nugget=out$varZ/3, kappa=1/2 ) # starting model parameters
@@ -731,7 +735,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
 
     model = RMmatern( nu=NA, var=NA, scale=NA) + RMnugget(var=NA)
 
-    o = RFfit(model, x=xy/out$stmv_internal_scale, data=z, allowdistanceZero=TRUE,  modus_operandi="normal")
+    o = RFfit(model, x=xy/out$stmv_internal_scale, data=z, allowdistanceZero=TRUE,  modus_operandi=modus_operandi )
     oo=summary(o)
 
     scale = matern_phi2phi( mRange=oo$param["value", "matern.s"], mSmooth=oo$param["value", "matern.nu"], parameterization_input="RandomFields", parameterization_output="stmv" ) * out$stmv_internal_scale
