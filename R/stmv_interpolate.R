@@ -177,10 +177,10 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
 
 
     # remember that these are crude mean/discretized estimates
-    nu = S[Si, match("nu", p$statsvars)]
-    phi = S[Si, match("phi", p$statsvars)]
+    nu   = S[Si, match("nu", p$statsvars)]
+    phi  = S[Si, match("phi", p$statsvars)]
     varSpatial = S[Si, match("sdSpatial", p$statsvars)]^2
-    varObs = S[Si, match("sdObs", p$statsvars)]^2
+    varObs     = S[Si, match("sdObs", p$statsvars)]^2
 
     if (!is.finite(nu)) nu = 0.5
     if (!is.finite(phi)) phi = stmv_distance_cur/sqrt(8*nu)
@@ -286,18 +286,18 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
       )
     )
 
-  #
-  # if (interp.method == "multilevel.b.splines") {
-  #   library(MBA)
-  #   out = mba.surf(data, no.X=nr, no.Y=nc, extend=TRUE)
-  #   if (0) {
-  #     image(out, xaxs = "r", yaxs = "r", main="Observed response")
-  #     locs= cbind(data$x, data$y)
-  #     points(locs)
-  #     contour(out, add=T)
-  #   }
-  #   return(out$xyz.est)
-  # }
+    dat =  NULL
+    pa  =  NULL
+
+    if (0) {
+      library(MBA)
+      out = mba.surf(data, no.X=nr, no.Y=nc, extend=TRUE)
+      image(out, xaxs = "r", yaxs = "r", main="Observed response")
+      locs= cbind(data$x, data$y)
+      points(locs)
+      contour(out, add=T)
+      str(out$xyz.est)
+    }
 
 
     if (debugging) {
@@ -311,145 +311,65 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
 
     if ( is.null(res)) {
       Sflag[Si] = E[["local_model_error"]]   # modelling / prediction did not complete properly
-      dat = pa = NULL
       if (debugging) message("Error: local model error")
       next()
     }
 
     if ( inherits(res, "try-error") ) {
       Sflag[Si] =  E[["local_model_error"]]   # modelling / prediction did not complete properly
-      dat = pa = res = NULL
+      res = NULL
       if (debugging) message("Error: local model error")
       next()
     }
 
     if (!exists("predictions", res)) {
       Sflag[Si] =  E[["prediction_error"]]   # modelling / prediction did not complete properly
-      dat = pa = res = NULL
+      res = NULL
       if (debugging) message("Error: prediction error")
       next()
     }
 
     if (!exists("mean", res$predictions)) {
       Sflag[Si] =  E[["prediction_error"]]   # modelling / prediction did not complete properly
-      dat = pa = res = NULL
+      res = NULL
       if (debugging) message("Error: prediction error")
       next()
     }
 
     if (length(which( is.finite(res$predictions$mean ))) < 5) {
       Sflag[Si] =  E[["prediction_error"]]   # modelling / prediction did not complete properly
-      dat = pa = res = NULL
+      res = NULL
       if (debugging) message("Error: prediction error")
       next()  # looks to be a faulty solution
     }
 
-    # extract stats and compute a few more things
-
-    if ( exists("TIME", p$variables) ){
-      # annual ts, seasonally centered and spatially
-      # pa_i = which( Sloc[Si,1]==Ploc[,1] & Sloc[Si,2]==Ploc[,2] )
-      pac_i = which(
-        (abs( res$predictions$plon - Sloc[Si,1] ) < p$pres) &
-        (abs( res$predictions$plat - Sloc[Si,2] ) < p$pres)
-      )
-      # plot( mean~tiyr, res$predictions[pac_i,])
-      # plot( mean~tiyr, res$predictions, pch="." )
-      ar_timerange = NA
-      ar_1 = NA
-
-      if (length(pac_i) > 5) {
-        pac = res$predictions[ pac_i, ]
-        pac$dyr = pac[, p$variables$TIME] - trunc(pac[, p$variables$TIME] )
-        piid = which( zapsmall( pac$dyr - p$dyear_centre) == 0 )
-        pac = pac[ piid, c(p$variables$TIME, "mean")]
-        pac = pac[ order(pac[,p$variables$TIME]),]
-        if (length(piid) > 5 ) {
-          ts.stat = NULL
-          ts.stat = try( stmv_timeseries( pac$mean, method="fft" ) )
-          if (!is.null(ts.stat) && !inherits(ts.stat, "try-error") ) {
-            ar_timerange = ts.stat$quantilePeriod
-            if (all( is.finite(pac$mean))) {
-              afin = which (is.finite(pac$mean) )
-              if (length(afin) > 5 && var( pac$mean, na.rm=TRUE) > p$eps ) {
-                ar1 = NULL
-                ar1 = try( ar( pac$mean, order.max=1 ) )
-                if (!inherits(ar1, "try-error")) {
-                  if ( length(ar1$ar) == 1 ) {
-                    ar_1 = ar1$ar
-                  }
-                }
-              }
-            }
-            if ( !is.finite(out[["ar_1"]]) ) {
-              ar1 = try( cor( pac$mean[1:(length(piid) - 1)], pac$mean[2:(length(piid))], use="pairwise.complete.obs" ) )
-              if (!inherits(ar1, "try-error")) ar_1 = ar1
-            }
-          }
-
-          ### Do the logistic model here ! -- if not already done ..
-          if (!exists("ts_K", out)) {
-            # model as a logistic with ts_r, ts_K, etc .. as stats outputs
-
-          }
-
-        }
-        pac=piid=NULL
-      }
-      pac_i=NULL
-    }
-
-    statsvars_time =c(
-      rsquared = res$stmv_stats$rsquared,
-      ar_timerange= ar_timerange,
-      ar_1 = ar_1
-    )
-
-    # save stats
-    S[Si, match( names(statsvars_time), p$statsvars )] = statsvars_time
-
-    sf = try( stmv_statistics_update( p=p, res=res, W=W, Si=Si ) )
-    if ( is.null(sf) ) {
-      Sflag[Si] = E[["statistics_update_error"]]
-      res = pa = sf = NULL
-      if (debugging) message("Error: statistics update error")
-      next()
-    }
-    if ( inherits(sf, "try-error") ) {
-      Sflag[Si] = E[["statistics_update_error"]]
-      res = pa = sf = NULL
-      if (debugging) message("Error: statistics update error")
-      next()
-    }
-    if ( sf=="error" ) {
-      Sflag[Si] =  E[["statistics_update_error"]]
-      res = pa = sf = NULL
-      if (debugging) message("Error: statistics update try-error")
-      next()
-    }
+  # update to rsquared in stats
+    S[Si, match( names("rsquared"), p$statsvars )] = res$stmv_stats$rsquared
 
     res$stmv_stats = NULL # reduce memory usage
+
+
     sf = try( stmv_predictions_update(p=p, preds=res$predictions ) )
+    res = NULL
+
     if ( is.null(sf) ) {
       Sflag[Si] = E[["prediction_update_error"]]
-      res = pa = sf = NULL
+      sf = NULL
       if (debugging) message("Error: prediction update error .. is null")
       next()
     }
     if ( inherits(sf, "try-error") ) {
       Sflag[Si] = E[["prediction_update_error"]]
-      res = pa = sf = NULL
+      sf = NULL
       if (debugging) message("Error: prediction update error .. try-error")
       next()
     }
     if ( sf=="error" ) {
       Sflag[Si] = E[["prediction_update_error"]]
-      res = pa = sf = NULL
+      sf = NULL
       if (debugging) message("Error: prediction update error .. general")
       next()
     }
-
-    res = pa = NULL
 
 
     # ----------------------

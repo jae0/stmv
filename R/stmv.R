@@ -381,14 +381,8 @@ stmv = function( p, runmode=NULL, DATA=NULL,
       p$clusters = p$stmv_clusters[[kk]] # as ram reqeuirements increase drop cpus
       currentstatus = stmv_db( p=p, DS="statistics.status" )
       Eflags_reset = E[ c(
-        "prediction_area",
-        "local_model_error",
         "insufficient_data",
         "variogram_failure",
-        "variogram_range_limit",
-        "prediction_error",
-        "prediction_update_error",
-        "statistics_update_error",
         "unknown"
       )]
       toreset = which( Sflag[] %in% unlist(Eflags_reset) )
@@ -564,7 +558,8 @@ stmv = function( p, runmode=NULL, DATA=NULL,
   DATA = NULL;
   gc()
 
-
+  Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
+  Sflag[] =  E[["todo"]]  # reset to todo status as variogram estimation uses this flag too
   if (is.null(use_saved_state)) stmv_db( p=p, DS="statistics.Sflag" )  # flags/filter stats locations base dupon prediction covariates.
 
 
