@@ -2,7 +2,7 @@
 
 stmv = function( p, runmode=NULL, DATA=NULL,
   use_saved_state=NULL, save_completed_data=TRUE, force_complete_solution=TRUE, nlogs=200,
-  debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE, robustify_quantiles=c(0.0005, 0.9995) ) {
+  debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE, robustify_quantiles=c(0.0005, 0.9995), ... ) {
 
   if (0) {
     nlogs = 25
@@ -24,8 +24,16 @@ stmv = function( p, runmode=NULL, DATA=NULL,
   # -----------------------------------------------------
 
   if (!exists("time_start", p) ) p$time_start = Sys.time()
-  if (!exists("stmvSaveDir", p)) p$stmvSaveDir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
-  if ( !file.exists(p$stmvSaveDir)) dir.create( p$stmvSaveDir, recursive=TRUE, showWarnings=FALSE )
+
+
+  p$nlogs = nlogs
+  p = stmv_parameters(p=p, ...) # fill in parameters with defaults where required
+  p = stmv_db( p=p, DS="filenames" )
+  p$ptr = list() # location for data pointers
+
+  # set up the data and problem using data objects
+  tmpfiles = unlist( p$cache)
+  for (tf in tmpfiles) if (file.exists( tf)) file.remove(tf)
 
   message( "||| Initializing data files ... " )
   message( "||| In case something should go wrong, intermediary outputs will be placed at:" )
@@ -35,16 +43,7 @@ stmv = function( p, runmode=NULL, DATA=NULL,
   message("||| in linux, you can issue the following command: \n" )
   message("||| watch -n 60 cat ",  p$stmv_current_status  )
 
-  p$nlogs = nlogs
-  p = stmv_parameters(p=p) # fill in parameters with defaults where required
-  p = stmv_db( p=p, DS="filenames" )
 
-
-  p$ptr = list() # location for data pointers
-
-  # set up the data and problem using data objects
-  tmpfiles = unlist( p$cache)
-  for (tf in tmpfiles) if (file.exists( tf)) file.remove(tf)
 
   # permit passing a function rather than data directly .. less RAM usage in parent call
   if (is.null(DATA) ) {
@@ -401,7 +400,15 @@ stmv = function( p, runmode=NULL, DATA=NULL,
     }
     message( "||| Variogram surface Finished." )
     message( "||| Results are found at:" )
+
+    # temp save to disk
+    sS = stmv_attach( p$storage.backend, p$ptr$S )[]
+    sSflag = stmv_attach( p$storage.backend, p$ptr$Sflag )[]
+    save( sS, file=p$saved_state_fn$stats, compress=TRUE ); sS = NULL
+    save( sSflag, file=p$saved_state_fn$sflag, compress=TRUE ); sSflag = NULL
+    message("||| stats saved to: ", p$saved_state_fn$stats )
   }
+
 
 
   if ( !{"interpolate" %in% runmode} ) {

@@ -35,6 +35,8 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
 
   Y = stmv_attach( p$storage.backend, p$ptr$Y )
   Yi = stmv_attach( p$storage.backend, p$ptr$Yi )  # initial indices of good data
+  YY1 = Yloc[Yi[],1]
+  YY2 = Yloc[Yi[],2]
 
   if (p$nloccov > 0) Ycov = stmv_attach( p$storage.backend, p$ptr$Ycov )
   if ( exists("TIME", p$variables) ) Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )
@@ -74,38 +76,46 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
 
     # obtain indices of data locations withing a given spatial range, optimally determined via variogram
     # find data nearest Sloc[Si,] and with sufficient data
-    dlon = abs( Sloc[Si,1] - Yloc[Yi[],1] )
-    dlat = abs( Sloc[Si,2] - Yloc[Yi[],2] )
+    dlon = abs( Sloc[Si,1] - YY1 )
+    dlat = abs( Sloc[Si,2] - YY2 )
     ndata = 0
     for ( stmv_distance_cur in distance_to_upsample )  {
       U = which( {dlon  <= stmv_distance_cur} & {dlat <= stmv_distance_cur} )  # faster to take a block
       ndata = length(U)
       if ( ndata >= p$n.min ) break()
     }
+    dlon = NULL
+    dlat = NULL
 
     Sflag[Si] = E[["todo"]]
 
     if (ndata < p$n.min) {
       Sflag[Si] = E[["insufficient_data"]]
+      if (debugging) print( paste("index =", iip, ";  insufficient data"  ) )
       next()   #not enough data
     }
 
     # NOTE: this range is a crude estimate that averages across years (if any) ...
     o = NULL
 
-    if (p$stmv_variogram_method =="inla_space") {
+    if (p$stmv_variogram_method =="inla") {
 
-      o = try( stmv_variogram(
-        xy=Yloc[Yi[U],],
-        z=Y[Yi[U],],
-        methods="inla",
-        distance_cutoff=stmv_distance_cur,
-        nbreaks=15,
-        range_correlation=p$stmv_range_correlation
-      ) )
+      if (p$stmv_variogram_method =="space") {
 
-    } else if (p$stmv_variogram_method =="inla_space_year") {
+        o = try( stmv_variogram(
+          xy=Yloc[Yi[U],],
+          z=Y[Yi[U],],
+          methods="inla",
+          distance_cutoff=stmv_distance_cur,
+          nbreaks=15,
+          range_correlation=p$stmv_range_correlation #,  plotdata=TRUE
+        ) )
 
+      } else if (p$stmv_variogram_method =="space-year") {
+
+      } else if (p$sp$stmv_dimensionality=="space-year-season")  {
+
+      }
 
     } else {
 
@@ -115,55 +125,52 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
         methods=p$stmv_variogram_method,
         distance_cutoff=stmv_distance_cur,
         nbreaks=15,
-        range_correlation=p$stmv_range_correlation
+        range_correlation=p$stmv_range_correlation # ,  plotdata=TRUE
       ) )
 
     }
 
+    U = NULL
 
     if ( is.null(o)) {
       Sflag[Si] = E[["variogram_failure"]]
+      if (debugging) print( paste("index =", iip, ";  o is null"  ) )
       next()
     }
 
     if ( inherits(o, "try-error")) {
       Sflag[Si] = E[["variogram_failure"]]
+      if (debugging) print( paste("index =", iip, ";  o has try error"  ) )
       next()
     }
 
     if ( !exists(p$stmv_variogram_method, o)) {
       Sflag[Si] =  E[["variogram_failure"]]
-      next()
-    }
-
-    if ( !exists("range_ok", o[[p$stmv_variogram_method]]) ) {
-      Sflag[Si] =  E[["variogram_range_limit"]]
-      next()     #
-    }
-
-    if ( !o[[p$stmv_variogram_method]][["range_ok"]] ) {
-      # retain crude estimate and run with it
-      Sflag[Si] =  E[["variogram_range_limit"]]
+      if (debugging) print( paste("index =", iip, ";  o does not have a solution"  ) )
       next()
     }
 
     # save stats
-    statvars_scale = c("sdTotal", "sdSpatial" ,"sdObs", "range", "phi", "nu" )
-    v = match( p$statsvars, statvars_scale )
-    u = which( is.finite(v) )
-    for ( ll in 1:length(u) ) {
-      k = u[ll]
-      if (exists( statvars_scale[ll], out )) {
-        S[Si,k] = out[[ statvars_scale[ll] ]]
-      }
+    om  = o[[p$stmv_variogram_method]]
+
+    statvars_scale = c(
+      sdTotal =sqrt( o$varZ),
+      sdSpatial = sqrt(om$varSpatial) ,
+      sdObs = sqrt(om$varObs),
+      range = om$range,
+      phi = om$phi,
+      nu = om$nu,
+      ndata=ndata
+    )
+
+    S[Si,match( names(statvars_scale), p$statsvars )] = statvars_scale
+
+    if (debugging) {
+      print( paste("index =", iip, ";  Sflag = ", names(E)[match(Sflag[Si], E)]  ) )
     }
 
-    # ----------------------
-    # do last. it is an indicator of completion of all tasks
-    # restarts would be broken otherwise
-    Sflag[Si] = E[["complete"]]  # mark as complete without issues
-
   }  # end for loop
+
 
   return(NULL)
 

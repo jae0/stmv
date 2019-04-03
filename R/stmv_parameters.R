@@ -1,13 +1,16 @@
 
-stmv_parameters = function( p=NULL, ... ) {
+stmv_parameters = function( p=list(), ... ) {
 
   # ---------------------
   # deal with additional passed parameters
-  if ( is.null(p) ) p=list()
+
   p_add = list(...)
   if (length(p_add) > 0 ) p = c(p, p_add)
   i = which(duplicated(names(p), fromLast=TRUE))
   if ( length(i) > 0 ) p = p[-i] # give any passed parameters a higher priority, overwriting pre-existing variable
+
+  if (!exists("stmvSaveDir", p)) p$stmvSaveDir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
+  if ( !file.exists(p$stmvSaveDir)) dir.create( p$stmvSaveDir, recursive=TRUE, showWarnings=FALSE )
 
   if (!exists("stmv_current_status", p))  p$stmv_current_status = file.path( p$stmvSaveDir, "stmv_current_status" )
 

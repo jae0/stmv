@@ -35,6 +35,9 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
   Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
 
   Y = stmv_attach( p$storage.backend, p$ptr$Y )
+  Yi = stmv_attach( p$storage.backend, p$ptr$Yi )  # initial indices of good data
+  YY1 = Yloc[Yi[],1]
+  YY2 = Yloc[Yi[],2]
 
   P = stmv_attach( p$storage.backend, p$ptr$P )
   Pn = stmv_attach( p$storage.backend, p$ptr$Pn )
@@ -96,86 +99,100 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
 
     if ( iip %in% logpoints )  currentstatus = stmv_logfile(p=p)
     Si = p$runs[ iip, "locs" ]
-    if ( Sflag[Si] != E[["todo"]] ) next()  # previously attempted .. skip
     if (debugging) print( paste("index =", iip, ";  Si = ", Si ) )
 
+    if ( Sflag[Si] != E[["complete"]] ) next()
+
+    # enough data with range estimates that make sense
+
     # obtain indices of data locations withing a given spatial range, optimally determined via variogram
+    stmv_distance_cur = S[Si, match("range", p$statsvars)]
+    dlon = abs( Sloc[Si,1] - YY1 )
+    dlat = abs( Sloc[Si,2] - YY2 )
 
-    W = try( stmv_subset_distance( Si=Si, p=p, distance_to_upsample=distance_to_upsample ) )
+    # faster to take a block
+    U = Yi[which( {dlon  <= stmv_distance_cur} & {dlat <= stmv_distance_cur} )]  # indices of good data
+    dlon = NULL
+    dlat = NULL
 
-    if ( is.null(W) ) {
-      Sflag[Si] = E[["insufficient_data"]]
-      W = WA = NULL
-      if (debugging) message("Error: insufficient data .. null")
+    range_ok = ifelse( stmv_distance_cur < max(p$stmv_distance_scale)*0.99, TRUE, FALSE ) & ifelse( stmv_distance_cur > p$stmv_distance_prediction, TRUE, FALSE )
+    if ( !range_ok ) {
+      Sflag[Si] = E[["variogram_range_limit"]]
       next()
     }
-    if ( inherits(W, "try-error") ) {
-      Sflag[Si] = E[["insufficient_data"]]
-      W = WA = NULL
-      if (debugging) message("Error: insufficient data .. try-error")
-      next()
-    }
 
-    Sflag[Si] = W[["flag"]]  # update flags
-    if ( Sflag[Si] == E[["insufficient_data"]] ) {
-      W = WA = NULL
-      if (debugging) message("Error: insufficient data")
+    ndata = S[Si, match("ndata", p$statsvars)]
+    if (ndata < p$n.min) {
+      Sflag[Si] =  E[["insufficient_data"]]
       next()
+    } else  if (ndata <= p$n.max & ndata >= p$n.min) {
+      # all good .. nothing to do
+    } else  {
+      # last try, we are here because (ndata > p$n.max)
+      # try to trim
+      if ( exists("TIME", p$variables)) {
+        Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )
+        iU = stmv_discretize_coordinates( coo=cbind(Yloc[U,], Ytime[U]), ntarget=p$n.max, minresolution=p$minresolution, method="thin" )
+      } else {
+        iU = stmv_discretize_coordinates( coo=Yloc[U,], ntarget=p$n.max, minresolution=p$minresolution, method="thin" )
+      }
+      U = U[iU]
+      ndata = length(U)
+      iU =NULL
+      if (ndata < p$n.min) {
+        # retain crude estimate and run with it
+        Sflag[Si] =  E[["insufficient_data"]]
+      } else if (ndata > p$n.max) {
+        # force via a random subsample
+        U = U[ .Internal( sample( length(U), p$n.max, replace=FALSE, prob=NULL)) ] # simple random
+        ndata = p$n.max
+      }
     }
 
     if ( Sflag[Si] != E[["todo"]] ) {
       if (exists("stmv_rangecheck", p)) {
         if (p$stmv_rangecheck=="paranoid") {
-          W = WA = NULL
+          U = NULL
           if (debugging) message("Error: stmv_rangecheck paranoid")
           next()
         }
       }
     }
 
-    # if here then W exists and there is something to do
-    # NOTE:: W[["U"]] are the indices of locally useful data
+    # if here then there is something to do
+    # NOTE:: U are the indices of locally useful data
     # p$stmv_distance_prediction determines the data entering into local model construction
 
     # prep dependent data
     # reconstruct data for modelling (dat)
-    dat = matrix( 1, nrow=W[["ndata"]], ncol=dat_nc )
-    dat[,iY] = Y[W[["U"]]] # these are residuals if there is a global model
+    dat = matrix( 1, nrow=ndata, ncol=dat_nc )
+    dat[,iY] = Y[U] # these are residuals if there is a global model
     # add a small error term to prevent some errors when duplicate locations exist; stmv_distance_cur offsets to positive values
-    dat[,ilocs] = Yloc[W[["U"]],] + W[["stmv_distance_cur"]] * runif(2*W[["ndata"]], -1e-6, 1e-6)
+    dat[,ilocs] = Yloc[U,] + stmv_distance_cur * runif(2*ndata, -1e-6, 1e-6)
 
-    if (p$nloccov > 0) dat[,icov] = Ycov[W[["U"]], icov_local] # no need for other dim checks as this is user provided
-    if (exists("TIME", p$variables)) dat[, itime_cov] = as.matrix(stmv_timecovars( vars=ti_cov, ti=Ytime[W[["U"]], ] ) )
+    if (p$nloccov > 0) dat[,icov] = Ycov[U, icov_local] # no need for other dim checks as this is user provided
+    if (exists("TIME", p$variables)) dat[, itime_cov] = as.matrix(stmv_timecovars( vars=ti_cov, ti=Ytime[U,] ) )
     dat = as.data.frame(dat)
     names(dat) = dat_names
 
 
     # remember that these are crude mean/discretized estimates
-    nu = phi = varSpatial = varObs = NULL
-    if ( !is.na(W[["ores"]])) {
-      if (exists("nu", W[["ores"]])) if (is.finite(W[["ores"]][["nu"]])) nu = W[["ores"]][["nu"]]
-      if (exists("phi", W[["ores"]])) if (is.finite(W[["ores"]][["phi"]])) if (W[["ores"]][["phi"]] > (p$pres/2)) phi = W[["ores"]][["phi"]]
-      if (exists("varSpatial", W[["ores"]])) if (is.finite(W[["ores"]][["varSpatial"]])) varSpatial = W[["ores"]][["varSpatial"]]
-      if (exists("varObs", W[["ores"]]))  if (is.finite(W[["ores"]][["varObs"]])) if (W[["ores"]][["varObs"]] > p$eps) varObs = W[["ores"]][["varObs"]]
-    }
+    nu = S[Si, match("nu", p$statsvars)]
+    phi = S[Si, match("phi", p$statsvars)]
+    varSpatial = S[Si, match("sdSpatial", p$statsvars)]^2
+    varObs = S[Si, match("sdObs", p$statsvars)]^2
 
-    if (is.null(nu)) nu = p$stmv_lowpass_nu
-    if (is.null(nu)) nu = 0.5
     if (!is.finite(nu)) nu = 0.5
-
-    if (is.null(phi)) phi = W[["stmv_distance_cur"]]/sqrt(8*nu) # crude estimate of phi based upon current scaling  distance approximates the range at 90% autocorrelation(e.g., see Lindgren et al. 2011)
-    if (!is.finite(phi)) phi = W[["stmv_distance_cur"]]/sqrt(8*nu)
-
-    if (is.null(varSpatial)) varSpatial =0.5 * var( dat[, p$variables$Y], na.rm=TRUE)
-    if (is.null(varObs)) varObs = varSpatial
-    if ( !is.na(W[["ores"]]) ) W[["ores"]][["vgm"]] = NULL
+    if (!is.finite(phi)) phi = stmv_distance_cur/sqrt(8*nu)
+    if (!is.finite(varSpatial)) varSpatial =0.5 * var( dat[, p$variables$Y], na.rm=TRUE)
+    if (!is.finite(varObs)) varObs = varSpatial
 
     if (debugging) {
       print( "starting interpolation" )
       # check data and statistical locations
       plot( Sloc[,], pch=20, cex=0.5, col="gray")
       points( Yloc[,], pch=20, cex=0.2, col="green")
-      points( Yloc[W[["U"]],], pch=20, cex=1, col="yellow" )
+      points( Yloc[U,], pch=20, cex=1, col="yellow" )
       points( Sloc[Si,2] ~ Sloc[Si,1], pch=20, cex=5, col="blue" )
     }
 
@@ -185,11 +202,11 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
       Sflag[Si] = E[["prediction_area"]]
       if (debugging) message( Si )
       if (debugging) message("Error: prediction grid ... null .. this should not happen")
-      pa = W = NULL
+      pa = NULL
       next()
     }
     if ( inherits(pa, "try-error") ) {
-      pa = W = NULL
+      pa = NULL
       Sflag[Si] = E[["prediction_area"]]
       if (debugging) message("Error: prediction grid ... try-error .. this should not happen")
       next()
@@ -199,10 +216,10 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
       # check that position indices are working properly
       Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
       Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
-      plot( Yloc[W[["U"]],2] ~ Yloc[W[["U"]],1], col="red", pch=".",
-        ylim=range(c(Yloc[W[["U"]],2], Sloc[Si,2], Ploc[pa$i,2]) ),
-        xlim=range(c(Yloc[W[["U"]],1], Sloc[Si,1], Ploc[pa$i,1]) ) ) # all data
-      points( Yloc[W[["U"]],2] ~ Yloc[W[["U"]],1], col="green" )  # with covars and no other data issues
+      plot( Yloc[U,2] ~ Yloc[U,1], col="red", pch=".",
+        ylim=range(c(Yloc[U,2], Sloc[Si,2], Ploc[pa$i,2]) ),
+        xlim=range(c(Yloc[U,1], Sloc[Si,1], Ploc[pa$i,1]) ) ) # all data
+      points( Yloc[U,2] ~ Yloc[U,1], col="green" )  # with covars and no other data issues
       points( Sloc[Si,2] ~ Sloc[Si,1], col="blue" ) # statistical locations
       # statistical output locations
       grids= aegis::spatial_grid(p, DS="planar.coords" )
@@ -216,17 +233,17 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
     if ( exists("force_complete_solution", p)) {
       if (p$force_complete_solution) {
         # augment data with prior estimates and predictions
-        dist_fc = floor(W[["stmv_distance_cur"]]/p$pres)
+        dist_fc = floor(stmv_distance_cur/p$pres)
         pa_fc = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=dist_fc ) )
         if (is.null(pa_fc)) {
           Sflag[Si] = E[["prediction_area"]]
           if (debugging) message( Si )
           if (debugging) message("Error with issue with prediction grid ... null .. this should not happen")
-          W = pa_fc = dist_fc = NULL
+          pa_fc = dist_fc = NULL
           next()
         }
         if ( inherits(pa_fc, "try-error") ) {
-          W = pa_fc = dist_fc = NULL
+          pa_fc = dist_fc = NULL
           Sflag[Si] = E[["prediction_area"]]
           if (debugging) message("Error: prediction grid ... try-error .. this should not happen")
           next()
@@ -238,8 +255,8 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
           if ( ngood > 1) {
             pa_fc = pa_fc[good,]
             pa_fc[, p$variable$Y] = augmented_data[good] # copy
-            if ( (ngood + W[["ndata"]] ) > p$n.max ) {
-              nmore = p$n.max - W[["ndata"]]
+            if ( (ngood + ndata ) > p$n.max ) {
+              nmore = p$n.max - ndata
               keep = .Internal( sample( ngood, nmore, replace=FALSE, prob=NULL) ) # thin
               pa_fc = pa_fc[keep,]
             }
@@ -265,7 +282,7 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
         varObs=varObs,
         varSpatial=varSpatial,
         sloc=Sloc[Si,],
-        distance=W[["stmv_distance_cur"]]
+        distance=stmv_distance_cur
       )
     )
 
@@ -284,7 +301,6 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
 
 
     if (debugging) {
-      print (str(W) )
       print( str(res) )
       if (0) {
         lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==2012.05,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
@@ -329,6 +345,69 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
     }
 
     # extract stats and compute a few more things
+
+    if ( exists("TIME", p$variables) ){
+      # annual ts, seasonally centered and spatially
+      # pa_i = which( Sloc[Si,1]==Ploc[,1] & Sloc[Si,2]==Ploc[,2] )
+      pac_i = which(
+        (abs( res$predictions$plon - Sloc[Si,1] ) < p$pres) &
+        (abs( res$predictions$plat - Sloc[Si,2] ) < p$pres)
+      )
+      # plot( mean~tiyr, res$predictions[pac_i,])
+      # plot( mean~tiyr, res$predictions, pch="." )
+      ar_timerange = NA
+      ar_1 = NA
+
+      if (length(pac_i) > 5) {
+        pac = res$predictions[ pac_i, ]
+        pac$dyr = pac[, p$variables$TIME] - trunc(pac[, p$variables$TIME] )
+        piid = which( zapsmall( pac$dyr - p$dyear_centre) == 0 )
+        pac = pac[ piid, c(p$variables$TIME, "mean")]
+        pac = pac[ order(pac[,p$variables$TIME]),]
+        if (length(piid) > 5 ) {
+          ts.stat = NULL
+          ts.stat = try( stmv_timeseries( pac$mean, method="fft" ) )
+          if (!is.null(ts.stat) && !inherits(ts.stat, "try-error") ) {
+            ar_timerange = ts.stat$quantilePeriod
+            if (all( is.finite(pac$mean))) {
+              afin = which (is.finite(pac$mean) )
+              if (length(afin) > 5 && var( pac$mean, na.rm=TRUE) > p$eps ) {
+                ar1 = NULL
+                ar1 = try( ar( pac$mean, order.max=1 ) )
+                if (!inherits(ar1, "try-error")) {
+                  if ( length(ar1$ar) == 1 ) {
+                    ar_1 = ar1$ar
+                  }
+                }
+              }
+            }
+            if ( !is.finite(out[["ar_1"]]) ) {
+              ar1 = try( cor( pac$mean[1:(length(piid) - 1)], pac$mean[2:(length(piid))], use="pairwise.complete.obs" ) )
+              if (!inherits(ar1, "try-error")) ar_1 = ar1
+            }
+          }
+
+          ### Do the logistic model here ! -- if not already done ..
+          if (!exists("ts_K", out)) {
+            # model as a logistic with ts_r, ts_K, etc .. as stats outputs
+
+          }
+
+        }
+        pac=piid=NULL
+      }
+      pac_i=NULL
+    }
+
+    statsvars_time =c(
+      rsquared = res$stmv_stats$rsquared,
+      ar_timerange= ar_timerange,
+      ar_1 = ar_1
+    )
+
+    # save stats
+    S[Si, match( names(statsvars_time), p$statsvars )] = statsvars_time
+
     sf = try( stmv_statistics_update( p=p, res=res, W=W, Si=Si ) )
     if ( is.null(sf) ) {
       Sflag[Si] = E[["statistics_update_error"]]

@@ -345,7 +345,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
 
   if ("optim" %in% methods) {
     # spatial discretization
-    XYZ = stmv_discretize_coordinates(coo=xy, z=z, discretized_n=125, method="aggregate", FUNC=mean, na.rm=TRUE)
+    XYZ = stmv_discretize_coordinates(coo=xy, z=z, discretized_n=200, method="aggregate", FUNC=mean, na.rm=TRUE)
     names(XYZ) =  c("plon", "plat", "z" ) # arbitrary
     rownames( XYZ) = 1:nrow(XYZ)  # RF seems to require rownames ...
 
@@ -366,6 +366,21 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
         }
       }
     }
+
+      if (plotdata) {
+        xlim= c(0, fit$summary$vgm_dist_max*1.1)
+        ylim= c(0, vgm_var_max*1.1)
+        plot( fit$summary$vx, fit$summary$vg, col="green", xlim=xlim, ylim=ylim )
+        ds = seq( 0, fit$summary$vgm_dist_max, length.out=100 )
+        ac = fit$summary$varObs + fit$summary$varSpatial*(1 - stmv_matern( ds, fit$summary$phi, fit$summary$nu ) )
+        lines( ds, ac, col="orange" )
+        abline( h=0, lwd=1, col="lightgrey" )
+        abline( v=0 ,lwd=1, col="lightgrey" )
+        abline( h=fit$summary$varObs, lty="dashed", col="grey" )
+        abline( h=fit$summary$varObs + fit$summary$varSpatial, lty="dashed", col="grey" )
+        abline( v=fit$summary$range, lty="dashed", col="grey")
+      }
+
     return(out)
   }
 
@@ -391,7 +406,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
       # -------------------------
 
       # spatial discretization only
-      XYZ = stmv_discretize_coordinates(coo=xy, z=z, discretized_n=125, method="aggregate", FUNC=mean, na.rm=TRUE)
+      XYZ = stmv_discretize_coordinates(coo=xy, z=z, discretized_n=200, method="aggregate", FUNC=mean, na.rm=TRUE)
 
       maxdist = out$range_crude   # begin with this (diagonal)
 
@@ -537,13 +552,23 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
   # ------------------------
 
 
-  if ("fields" %in% methods){
+  if ("fields" %in% methods) {
+
     require(fields)
+
+    XYZ = stmv_discretize_coordinates(coo=xy, z=z, discretized_n=200, method="aggregate", FUNC=mean, na.rm=TRUE)
+    names(XYZ) =  c("plon", "plat", "z" ) # arbitrary
+    xy = XYZ[,c("plon", "plat")]
+    z = XYZ$z
+    XYZ = NULL
     smoothness =nu = 0.5 # 0.5 == exponential .. ie. fixed
     res =NULL
-    # NOTE lambda = sill^2 / nugget = 0.5^2/0.5 =0.5
+    ## NOTE: process variance (rho); range (theta); nugget (sigma**2)
+    ## lambda= sigma**2/ rho and rho. Thinking about h as the spatial signal and e as the noise lambda can be interpreted
+    ##  as the noise to signal variance ratio in this spatial context
+    # MLESpatialProcess is a ML method for Gaussian spatial process
     fsp = MLESpatialProcess(xy/out$stmv_internal_scale, z, cov.function = "stationary.cov",
-      lambda.start=0.5, theta.start=1.0, theta.range=c(0.2, 4.0), gridN=25,
+      # lambda.start=0.5, theta.start=1.0, theta.range=c(0.2, 4.0), gridN=25,
       # optim.args=list(method = "BFGS", control = list(fnscale=-1, parscale=c(0.5, 0.5), ndeps=c(0.05,0.05))),
       cov.args = list(Covariance = "Matern", smoothness = nu)
     )
@@ -554,13 +579,11 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
 
     vg = vgram( xy/out$stmv_internal_scale, z, N=nbreaks, dmax=out$distance_cutoff/out$stmv_internal_scale )
     vgm = Matern( d=vg$centers, range=res[["theta"]], smoothness=nu )
-    nugget = res[["sigmaMLE"]]^2
-    sill = res[["rhoMLE"]] ^2
-    cvg = data.frame( cbind( x=vg$centers*out$stmv_internal_scale, cvgm= (nugget + sill * (1-vgm)) ))
+    cvg = data.frame( cbind( x=vg$centers*out$stmv_internal_scale, cvgm= (res[["sigmaMLE"]]^2 + res[["rhoMLE"]] * (1-vgm)) ))
     out$fields = list( fit=fsp, vgm=cvg, range=NA, nu=nu, phi=NA,
-      varSpatial=sill, varObs=nugget  )  # fields::"range" == range parameter == phi
+      varSpatial=res[["rhoMLE"]], varObs=res[["sigmaMLE"]]^2  )  # fields::"range" == range parameter == phi
 
-    out$fields$phi = matern_phi2phi( mRange=res["theta"], mSmooth=out$fields$nu,
+    out$fields$phi = matern_phi2phi( mRange=res[["theta"]], mSmooth=out$fields$nu,
       parameterization_input="fields", parameterization_output="stmv") * out$stmv_internal_scale
     out$fields$range = matern_phi2distance(phi=out$fields$phi, nu=out$fields$nu, cor=range_correlation)
     out$fields$range_ok = ifelse( out$fields$range < out$distance_cutoff*0.99, TRUE, FALSE )
@@ -568,10 +591,17 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
     if( plotdata ){
 #      xub = max(out$distance_cutoff, max(out$geoR$vgm$u, out$distance_cutoff)) *1.25
       plot.new()
-      plot( cvg, type="b", ylim=range( c(0, cvg$cvgm) ) )
+
+      vEm = try( variog( coords=xy/out$stmv_internal_scale, data=z, uvec=nbreaks, max.dist=out$distance_cutoff/out$stmv_internal_scale ) )
+      vEm$u0 = vEm$u * out$stmv_internal_scale
+      plot( vEm$v ~ vEm$u0, pch=20 ,
+            xlim=c(0, max( c(cvg$x, vEm$u0) )), ylim=c(0, max( c(out$fields$varSpatial + out$fields$varObs, out$varZ, cvg$cvgm, vEm$v) ) ) )
+
+      points( cvg, type="b", ylim=range( c(0, cvg$cvgm) ) )
       abline( h=out$fields$varSpatial + out$fields$varObs)
       abline( h=out$fields$varObs )
       abline( v=out$fields$range )
+
 
     #   plot.new()
     #   lambda.MLE<- out$fields$varObs / out$fields$varSpatial  # ratio nugget / sill variance

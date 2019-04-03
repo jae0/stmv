@@ -1,5 +1,5 @@
 
-stmv_subset_distance = function( Si, p, distance_to_upsample ) {
+stmv_subset_distance = function( Si, p ) {
 
   E = stmv_error_codes()
   Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )

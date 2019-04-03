@@ -9,28 +9,6 @@ stmv_statistics_update =  function(p, res, W, Si ) {
 
   if (exists("stmv_stats",  res)) out = res$stmv_stats
 
-  if (!exists("sdSpatial", out)) {
-    # some methods can generate spatial stats simultaneously ..
-    # it is faster to keep them all together instead of repeating here
-    # field and RandomFields gaussian processes seem most promising ...
-    # default to fields for speed:
-    out["sdSpatial"] = NA
-    out["sdObs"] = NA
-    out["range"] = NA
-    out["phi"] = NA
-    out["nu"] = NA
-    if (!is.null(W)) {
-      if ( !is.na(W[["ores"]])) {
-        if ( exists("varSpatial", W[["ores"]]) ) out["sdSpatial"] = sqrt( W[["ores"]][["varSpatial"]] )
-        if ( exists("varObs", W[["ores"]]) )     out["sdObs"] = sqrt(W[["ores"]][["varObs"]])
-        if ( exists("range", W[["ores"]]) )      out["range"] = W[["ores"]][["range"]]
-        if ( exists("phi", W[["ores"]]) )        out["phi"] = W[["ores"]][["phi"]]
-        if ( exists("nu", W[["ores"]]) )         out["nu"] = W[["ores"]][["nu"]]
-      }
-    }
-
-  }
-
   if ( exists("TIME", p$variables) ){
     # annual ts, seasonally centered and spatially
     # pa_i = which( Sloc[Si,1]==Ploc[,1] & Sloc[Si,2]==Ploc[,2] )
@@ -84,12 +62,14 @@ stmv_statistics_update =  function(p, res, W, Si ) {
     pac_i=NULL
   }
 
+  statsvars_time =c(
+    rsquared=,
+    ar_timerange= ,
+    ar_1 =
+  )
+
   # save stats
-  for ( k in 1: length(p$statsvars) ) {
-    if (exists( p$statsvars[k], out )) {
-      S[Si,k] = out[[ p$statsvars[k] ]]
-    }
-  }
+  S[Si, match( names(statsvars_time), p$statsvars )] = statsvars_time
 
   return(sflag)
 }
