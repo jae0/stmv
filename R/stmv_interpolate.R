@@ -22,7 +22,6 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
 
   if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
 
-  if (!exists("distance_scale_current", p)) p$distance_scale_current = p$stmv_distance_scale[1]
 
   #---------------------
   # data for modelling
@@ -91,8 +90,6 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
     nsavepoints = 3
     savepoints = sample(logpoints, nsavepoints)
   }
-
-  distance_to_upsample = p$distance_scale_current * p$stmv_distance_upsampling_fraction
 
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {

@@ -218,17 +218,16 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
                 # model as a logistic with ts_r, ts_K, etc .. as stats outputs
 
               }
-
             }
             pac=piid=NULL
             pac_i=NULL
+            statsvars_time =c(
+              ar_timerange= ar_timerange,
+              ar_1 = ar_1
+            )
+            # save stats
+            S[Si, match( names(statsvars_time), p$statsvars )] = statsvars_time
         }
-        statsvars_time =c(
-          ar_timerange= ar_timerange,
-          ar_1 = ar_1
-        )
-        # save stats
-        S[Si, match( names(statsvars_time), p$statsvars )] = statsvars_time
       }
     }
 
@@ -319,17 +318,17 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
             }
             pac=piid=NULL
             pac_i=NULL
-        }
+          }
 
+          statsvars_time =c(
+            ar_timerange= ar_timerange,
+            ar_1 = ar_1
+          )
+          # save stats
+          S[Si, match( names(statsvars_time), p$statsvars )] = statsvars_time
+
+          }
       }
-
-      statsvars_time =c(
-        ar_timerange= ar_timerange,
-        ar_1 = ar_1
-      )
-      # save stats
-      S[Si, match( names(statsvars_time), p$statsvars )] = statsvars_time
-
     }
 
     YiU = NULL

@@ -27,7 +27,10 @@ stmv = function( p, runmode=NULL, DATA=NULL,
 
 
   p$nlogs = nlogs
-  p = stmv_parameters(p=p, ...) # fill in parameters with defaults where required
+
+  p_add = list(...)
+  if (length(p_add) > 0 ) p = c(p, p_add )
+  p = stmv_parameters(p=p ) # fill in parameters with defaults where required
   p = stmv_db( p=p, DS="filenames" )
   p$ptr = list() # location for data pointers
 
@@ -52,6 +55,7 @@ stmv = function( p, runmode=NULL, DATA=NULL,
         assign("DATA", eval(parse(text=p$DATA) ) )
       } else {
         DATA = p$DATA
+        p$DATA = NULL  # to reduce RAM requirements
       }
     }
   } else {
@@ -371,6 +375,9 @@ stmv = function( p, runmode=NULL, DATA=NULL,
   ################
 
   if ( "scale" %in% runmode ) {
+    tmdpDATA = file.path( p$stmvSaveDir, "tmp_DATA.rdata" )
+    save( DATA, file=tmdpDATA)
+    DATA = NULL
     E = stmv_error_codes()
     message ( "\n", "||| Sampling at the following distance mulitpliers: ", paste0(p$stmv_distance_scale, collapse=",") )
     nk = length(p$stmv_distance_scale)
@@ -401,6 +408,7 @@ stmv = function( p, runmode=NULL, DATA=NULL,
     save( sS, file=p$saved_state_fn$stats, compress=TRUE ); sS = NULL
     save( sSflag, file=p$saved_state_fn$sflag, compress=TRUE ); sSflag = NULL
     message("||| stats saved to: ", p$saved_state_fn$stats )
+    load(tmdpDATA )
   }
 
 
@@ -790,35 +798,33 @@ stmv = function( p, runmode=NULL, DATA=NULL,
     E = stmv_error_codes()
     message ( "\n", "||| Sampling at the following distance mulitpliers: ", paste0(p$stmv_distance_scale, collapse=",") )
     nk = length(p$stmv_distance_scale)
-    for ( kk in 1:nk ) {
-      Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-      p$distance_scale_current = p$stmv_distance_scale[kk]
-      message( "||| Entering interpolation at distance scale ", p$distance_scale_current )
-      p$clusters = p$stmv_clusters[[kk]] # as ram reqeuirements increase drop cpus
-      locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
-      if ( !is.null(locs_to_do) && length(locs_to_do) > 0) {
-        Sflag[locs_to_do] = E[["todo"]]
-      }
-      locs_to_do = NULL
-      currentstatus = stmv_db( p=p, DS="statistics.status" )
-      Eflags_reset = E[ c(
-        "prediction_area",
-        "local_model_error",
-        "insufficient_data",
-        "variogram_failure",
-        "variogram_range_limit",
-        "prediction_error",
-        "prediction_update_error",
-        "statistics_update_error",
-        "unknown"
-      )]
-      toreset = which( Sflag[] %in% unlist(Eflags_reset) )
-      if (length(toreset) > 0) Sflag[toreset] = E[["todo"]]
-      toreset = NULL
-      currentstatus = stmv_db( p=p, DS="statistics.status" ) # update again
-      p$time_start_interpolation = Sys.time()
-      parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) )
+    Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
+
+    message( "||| Entering interpolation at distance scale ", p$distance_scale_current )
+    p$clusters = p$stmv_clusters[[1]] # as ram reqeuirements increase drop cpus
+    locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
+    if ( !is.null(locs_to_do) && length(locs_to_do) > 0) {
+      Sflag[locs_to_do] = E[["todo"]]
     }
+    locs_to_do = NULL
+    currentstatus = stmv_db( p=p, DS="statistics.status" )
+    Eflags_reset = E[ c(
+      "prediction_area",
+      "local_model_error",
+      "insufficient_data",
+      "variogram_failure",
+      "variogram_range_limit",
+      "prediction_error",
+      "prediction_update_error",
+      "statistics_update_error",
+      "unknown"
+    )]
+    toreset = which( Sflag[] %in% unlist(Eflags_reset) )
+    if (length(toreset) > 0) Sflag[toreset] = E[["todo"]]
+    toreset = NULL
+    currentstatus = stmv_db( p=p, DS="statistics.status" ) # update again
+    p$time_start_interpolation = Sys.time()
+    parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) )
   }
 
   # --------------------
@@ -859,7 +865,6 @@ stmv = function( p, runmode=NULL, DATA=NULL,
     # interpolation based on data and augmented by previous predictions
     # NOTE:: no covariates are used
     p$force_complete_solution = TRUE
-    p$distance_scale_current = p$stmv_distance_scale[1]
     p$clusters = p$stmv_clusters[[1]]  # in case interpolation above altered p$clusters
     locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
     if ( !is.null(locs_to_do) && length(locs_to_do) > 0) {
