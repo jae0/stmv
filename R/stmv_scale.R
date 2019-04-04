@@ -22,7 +22,6 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
 
   if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
 
-  if (!exists("distance_scale_current", p)) p$distance_scale_current = p$stmv_distance_scale[1]
 
   #---------------------
   # data for modelling
@@ -64,8 +63,6 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
     savepoints = sample(logpoints, nsavepoints)
   }
 
-  distance_to_upsample = p$distance_scale_current * p$stmv_distance_upsampling_fraction
-
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
 
@@ -79,7 +76,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
     dlon = abs( Sloc[Si,1] - YY1 )
     dlat = abs( Sloc[Si,2] - YY2 )
     ndata = 0
-    for ( stmv_distance_cur in distance_to_upsample )  {
+    for ( stmv_distance_cur in p$stmv_distance_scale )  {
       U = which( {dlon  <= stmv_distance_cur} & {dlat <= stmv_distance_cur} )  # faster to take a block
       ndata = length(U)
       if ( ndata >= p$n.min ) break()
@@ -100,234 +97,159 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
     # NOTE: this range is a crude estimate that averages across years (if any) ...
     o = NULL
 
-    if (p$stmv_dimensionality =="space") {
+    if (p$stmv_variogram_method=="inla_nonseparable") {
 
-      o = try( stmv_variogram(
-        xy=Yloc[YiU,],
-        z=Y[YiU,],
-        methods=p$stmv_variogram_method,
-        distance_cutoff=stmv_distance_cur,
-        nbreaks=15,
-        range_correlation=p$stmv_range_correlation # ,  plotdata=TRUE
-      ) )
-      if ( is.null(o)) {
-        Sflag[Si] = E[["variogram_failure"]]
-        if (debugging) print( paste("index =", iip, ";  o is null"  ) )
-        next()
-      }
-      if ( inherits(o, "try-error")) {
-        Sflag[Si] = E[["variogram_failure"]]
-        if (debugging) print( paste("index =", iip, ";  o has try error"  ) )
-        next()
-      }
-      if ( !exists(p$stmv_variogram_method, o)) {
-        Sflag[Si] =  E[["variogram_failure"]]
-        if (debugging) print( paste("index =", iip, ";  o does not have a solution"  ) )
-        next()
-      }
-      om  = o[[p$stmv_variogram_method]] # save stats
-      statvars_scale = c(
-        sdTotal =sqrt( o$varZ),
-        sdSpatial = sqrt(om$varSpatial) ,
-        sdObs = sqrt(om$varObs),
-        range = om$range,
-        phi = om$phi,
-        nu = om$nu,
-        ndata=ndata
-      )
-      S[Si,match( names(statvars_scale), p$statsvars )] = statvars_scale
+      return()
+    }
+
+    # generic ... crude separable approximations
+    # spatial first
+    o = try( stmv_variogram(
+      xy=Yloc[YiU,],
+      z=Y[YiU,],
+      methods=p$stmv_variogram_method,
+      distance_cutoff=stmv_distance_cur,
+      nbreaks=15,
+      range_correlation=p$stmv_range_correlation # ,  plotdata=TRUE
+    ) )
+    if ( is.null(o)) {
+      Sflag[Si] = E[["variogram_failure"]]
+      if (debugging) print( paste("index =", iip, ";  o is null"  ) )
+      next()
+    }
+    if ( inherits(o, "try-error")) {
+      Sflag[Si] = E[["variogram_failure"]]
+      if (debugging) print( paste("index =", iip, ";  o has try error"  ) )
+      next()
+    }
+    if ( !exists(p$stmv_variogram_method, o)) {
+      Sflag[Si] =  E[["variogram_failure"]]
+      if (debugging) print( paste("index =", iip, ";  o does not have a solution"  ) )
+      next()
+    }
+    om  = o[[p$stmv_variogram_method]] # save stats
+    statvars_scale = c(
+      sdTotal =sqrt( o$varZ),
+      sdSpatial = sqrt(om$varSpatial) ,
+      sdObs = sqrt(om$varObs),
+      range = om$range,
+      phi = om$phi,
+      nu = om$nu,
+      ndata=ndata
+    )
+    S[Si,match( names(statvars_scale), p$statsvars )] = statvars_scale
+
+
+    # temporal
+    if (p$stmv_dimensionality =="space") {
+       # nothing to do
     }
 
     if (p$stmv_dimensionality =="space-year") {
 
-      if (p$stmv_variogram_method=="inla") {
+      if (0) {
 
-      } else {
+        # annual ts, seasonally centered and spatially
+        ar_timerange = NA
+        ar_1 = NA
 
-        o = try( stmv_variogram(
-          xy=Yloc[YiU,],
-          z=Y[YiU,],
-          methods=p$stmv_variogram_method,
-          distance_cutoff=stmv_distance_cur,
-          nbreaks=15,
-          range_correlation=p$stmv_range_correlation # ,  plotdata=TRUE
-        ) )
-        if ( is.null(o)) {
-          Sflag[Si] = E[["variogram_failure"]]
-          if (debugging) print( paste("index =", iip, ";  o is null"  ) )
-          next()
-        }
-        if ( inherits(o, "try-error")) {
-          Sflag[Si] = E[["variogram_failure"]]
-          if (debugging) print( paste("index =", iip, ";  o has try error"  ) )
-          next()
-        }
-        if ( !exists(p$stmv_variogram_method, o)) {
-          Sflag[Si] =  E[["variogram_failure"]]
-          if (debugging) print( paste("index =", iip, ";  o does not have a solution"  ) )
-          next()
-        }
-        om  = o[[p$stmv_variogram_method]] # save stats
-        statvars_scale = c(
-          sdTotal =sqrt( o$varZ),
-          sdSpatial = sqrt(om$varSpatial) ,
-          sdObs = sqrt(om$varObs),
-          range = om$range,
-          phi = om$phi,
-          nu = om$nu,
-          ndata=ndata
-        )
-        S[Si,match( names(statvars_scale), p$statsvars )] = statvars_scale
-
-        if (0) {
-
-            # annual ts, seasonally centered and spatially
-            ar_timerange = NA
-            ar_1 = NA
-
-            pac = res$predictions[ pac_i, ]
-            pac$dyr = pac[, p$variables$TIME] - trunc(pac[, p$variables$TIME] )
-            piid = which( zapsmall( pac$dyr - p$dyear_centre) == 0 )
-            pac = pac[ piid, c(p$variables$TIME, "mean")]
-            pac = pac[ order(pac[,p$variables$TIME]),]
-            if (length(piid) > 5 ) {
-              ts.stat = NULL
-              ts.stat = try( stmv_timeseries( pac$mean, method="fft" ) )
-              if (!is.null(ts.stat) && !inherits(ts.stat, "try-error") ) {
-                ar_timerange = ts.stat$quantilePeriod
-                if (all( is.finite(pac$mean))) {
-                  afin = which (is.finite(pac$mean) )
-                  if (length(afin) > 5 && var( pac$mean, na.rm=TRUE) > p$eps ) {
-                    ar1 = NULL
-                    ar1 = try( ar( pac$mean, order.max=1 ) )
-                    if (!inherits(ar1, "try-error")) {
-                      if ( length(ar1$ar) == 1 ) {
-                        ar_1 = ar1$ar
-                      }
-                    }
+        pac = res$predictions[ pac_i, ]
+        pac$dyr = pac[, p$variables$TIME] - trunc(pac[, p$variables$TIME] )
+        piid = which( zapsmall( pac$dyr - p$dyear_centre) == 0 )
+        pac = pac[ piid, c(p$variables$TIME, "mean")]
+        pac = pac[ order(pac[,p$variables$TIME]),]
+        if (length(piid) > 5 ) {
+          ts.stat = NULL
+          ts.stat = try( stmv_timeseries( pac$mean, method="fft" ) )
+          if (!is.null(ts.stat) && !inherits(ts.stat, "try-error") ) {
+            ar_timerange = ts.stat$quantilePeriod
+            if (all( is.finite(pac$mean))) {
+              afin = which (is.finite(pac$mean) )
+              if (length(afin) > 5 && var( pac$mean, na.rm=TRUE) > p$eps ) {
+                ar1 = NULL
+                ar1 = try( ar( pac$mean, order.max=1 ) )
+                if (!inherits(ar1, "try-error")) {
+                  if ( length(ar1$ar) == 1 ) {
+                    ar_1 = ar1$ar
                   }
                 }
-                if ( !is.finite(out[["ar_1"]]) ) {
-                  ar1 = try( cor( pac$mean[1:(length(piid) - 1)], pac$mean[2:(length(piid))], use="pairwise.complete.obs" ) )
-                  if (!inherits(ar1, "try-error")) ar_1 = ar1
-                }
-              }
-
-              ### Do the logistic model here ! -- if not already done ..
-              if (!exists("ts_K", out)) {
-                # model as a logistic with ts_r, ts_K, etc .. as stats outputs
-
               }
             }
-            pac=piid=NULL
-            pac_i=NULL
-            statsvars_time =c(
-              ar_timerange= ar_timerange,
-              ar_1 = ar_1
-            )
-            # save stats
-            S[Si, match( names(statsvars_time), p$statsvars )] = statsvars_time
+            if ( !is.finite(out[["ar_1"]]) ) {
+              ar1 = try( cor( pac$mean[1:(length(piid) - 1)], pac$mean[2:(length(piid))], use="pairwise.complete.obs" ) )
+              if (!inherits(ar1, "try-error")) ar_1 = ar1
+            }
+          }
+
+          ### Do the logistic model here ! -- if not already done ..
+          if (!exists("ts_K", out)) {
+            # model as a logistic with ts_r, ts_K, etc .. as stats outputs
+
+          }
         }
+        pac=piid=NULL
+        pac_i=NULL
+        statsvars_time =c(
+          ar_timerange= ar_timerange,
+          ar_1 = ar_1
+        )
+         # save stats
+        S[Si, match( names(statsvars_time), p$statsvars )] = statsvars_time
       }
     }
 
     if (p$stmv_dimensionality=="space-year-season")  {
 
-      if (p$stmv_variogram_method=="inla") {
+      if (0) {
 
-        } else {
+        # annual ts, seasonally centered and spatially
+        ar_timerange = NA
+        ar_1 = NA
 
-          ## to do
-          o = try( stmv_variogram(
-            xy=Yloc[YiU,],
-            z=Y[YiU,],
-            methods=p$stmv_variogram_method,
-            distance_cutoff=stmv_distance_cur,
-            nbreaks=15,
-            range_correlation=p$stmv_range_correlation # ,  plotdata=TRUE
-          ) )
-          if ( is.null(o)) {
-            Sflag[Si] = E[["variogram_failure"]]
-            if (debugging) print( paste("index =", iip, ";  o is null"  ) )
-            next()
-          }
-          if ( inherits(o, "try-error")) {
-            Sflag[Si] = E[["variogram_failure"]]
-            if (debugging) print( paste("index =", iip, ";  o has try error"  ) )
-            next()
-          }
-          if ( !exists(p$stmv_variogram_method, o)) {
-            Sflag[Si] =  E[["variogram_failure"]]
-            if (debugging) print( paste("index =", iip, ";  o does not have a solution"  ) )
-            next()
-          }
-          om  = o[[p$stmv_variogram_method]] # save stats
-          statvars_scale = c(
-            sdTotal =sqrt( o$varZ),
-            sdSpatial = sqrt(om$varSpatial) ,
-            sdObs = sqrt(om$varObs),
-            range = om$range,
-            phi = om$phi,
-            nu = om$nu,
-            ndata=ndata
-          )
-          S[Si,match( names(statvars_scale), p$statsvars )] = statvars_scale
-
-          # .. add time methods here
-
-        if (0) {
-
-            # annual ts, seasonally centered and spatially
-            ar_timerange = NA
-            ar_1 = NA
-
-            pac = res$predictions[ pac_i, ]
-            pac$dyr = pac[, p$variables$TIME] - trunc(pac[, p$variables$TIME] )
-            piid = which( zapsmall( pac$dyr - p$dyear_centre) == 0 )
-            pac = pac[ piid, c(p$variables$TIME, "mean")]
-            pac = pac[ order(pac[,p$variables$TIME]),]
-            if (length(piid) > 5 ) {
-              ts.stat = NULL
-              ts.stat = try( stmv_timeseries( pac$mean, method="fft" ) )
-              if (!is.null(ts.stat) && !inherits(ts.stat, "try-error") ) {
-                ar_timerange = ts.stat$quantilePeriod
-                if (all( is.finite(pac$mean))) {
-                  afin = which (is.finite(pac$mean) )
-                  if (length(afin) > 5 && var( pac$mean, na.rm=TRUE) > p$eps ) {
-                    ar1 = NULL
-                    ar1 = try( ar( pac$mean, order.max=1 ) )
-                    if (!inherits(ar1, "try-error")) {
-                      if ( length(ar1$ar) == 1 ) {
-                        ar_1 = ar1$ar
-                      }
-                    }
+        pac = res$predictions[ pac_i, ]
+        pac$dyr = pac[, p$variables$TIME] - trunc(pac[, p$variables$TIME] )
+        piid = which( zapsmall( pac$dyr - p$dyear_centre) == 0 )
+        pac = pac[ piid, c(p$variables$TIME, "mean")]
+        pac = pac[ order(pac[,p$variables$TIME]),]
+        if (length(piid) > 5 ) {
+          ts.stat = NULL
+          ts.stat = try( stmv_timeseries( pac$mean, method="fft" ) )
+          if (!is.null(ts.stat) && !inherits(ts.stat, "try-error") ) {
+            ar_timerange = ts.stat$quantilePeriod
+            if (all( is.finite(pac$mean))) {
+              afin = which (is.finite(pac$mean) )
+              if (length(afin) > 5 && var( pac$mean, na.rm=TRUE) > p$eps ) {
+                ar1 = NULL
+                ar1 = try( ar( pac$mean, order.max=1 ) )
+                if (!inherits(ar1, "try-error")) {
+                  if ( length(ar1$ar) == 1 ) {
+                    ar_1 = ar1$ar
                   }
                 }
-                if ( !is.finite(out[["ar_1"]]) ) {
-                  ar1 = try( cor( pac$mean[1:(length(piid) - 1)], pac$mean[2:(length(piid))], use="pairwise.complete.obs" ) )
-                  if (!inherits(ar1, "try-error")) ar_1 = ar1
-                }
               }
-
-              ### Do the logistic model here ! -- if not already done ..
-              if (!exists("ts_K", out)) {
-                # model as a logistic with ts_r, ts_K, etc .. as stats outputs
-
-              }
-
             }
-            pac=piid=NULL
-            pac_i=NULL
+            if ( !is.finite(out[["ar_1"]]) ) {
+              ar1 = try( cor( pac$mean[1:(length(piid) - 1)], pac$mean[2:(length(piid))], use="pairwise.complete.obs" ) )
+              if (!inherits(ar1, "try-error")) ar_1 = ar1
+            }
           }
 
-          statsvars_time =c(
-            ar_timerange= ar_timerange,
-            ar_1 = ar_1
-          )
-          # save stats
-          S[Si, match( names(statsvars_time), p$statsvars )] = statsvars_time
+          ### Do the logistic model here ! -- if not already done ..
+          if (!exists("ts_K", out)) {
+            # model as a logistic with ts_r, ts_K, etc .. as stats outputs
 
           }
+
+        }
+        pac=piid=NULL
+        pac_i=NULL
+
+        statsvars_time =c(
+          ar_timerange= ar_timerange,
+          ar_1 = ar_1
+        )
+        # save stats
+        S[Si, match( names(statsvars_time), p$statsvars )] = statsvars_time
       }
     }
 

@@ -160,8 +160,5 @@ stmv_parameters = function( p=list(), ... ) {
   # construct prediction/output grid area ('pa')
   if ( !exists("windowsize.half", p)) p$windowsize.half = floor(p$stmv_distance_prediction/p$pres) # convert distance to discretized increments of row/col indices; stmv_distance_prediction = 0.75* stmv_distance_statsgrid (unless overridden)
 
-  if ( !exists("stmv_distance_upsampling_fraction", p)) p$stmv_distance_upsampling_fraction = c(1.0, 1.25)
-
-
   return(p)
 }
