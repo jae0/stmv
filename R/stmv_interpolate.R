@@ -185,7 +185,7 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
     if (!is.finite(varObs)) varObs = varSpatial
 
     if (debugging) {
-      print( "starting interpolation" )
+      dev.new()
       # check data and statistical locations
       plot( Sloc[,], pch=20, cex=0.5, col="gray")
       points( Yloc[,], pch=20, cex=0.2, col="green")
@@ -210,6 +210,7 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
     }
 
     if (debugging) {
+      dev.new()
       # check that position indices are working properly
       Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
       Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
@@ -285,17 +286,6 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
 
     dat =  NULL
     pa  =  NULL
-
-    if (0) {
-      library(MBA)
-      out = mba.surf(data, no.X=nr, no.Y=nc, extend=TRUE)
-      image(out, xaxs = "r", yaxs = "r", main="Observed response")
-      locs= cbind(data$x, data$y)
-      points(locs)
-      contour(out, add=T)
-      str(out$xyz.est)
-    }
-
 
     if (debugging) {
       print( str(res) )
