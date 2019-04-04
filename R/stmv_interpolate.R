@@ -323,11 +323,6 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
       )
     )
 
-<<<<<<< HEAD
-    dat =  NULL
-    pa  =  NULL
-=======
->>>>>>> develop
 
     if (debugging) {
       print( str(res) )
