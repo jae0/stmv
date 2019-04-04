@@ -24,7 +24,6 @@ stmv_parameters = function( p=list(), ... ) {
     stop()
   }
 
-  nk = length(p$stmv_distance_scale)
   if (!exists("stmv_clusters", p)) {
     if (exists( "clusters", p)) {
       p$stmv_clusters = p$clusters
@@ -34,15 +33,6 @@ stmv_parameters = function( p=list(), ... ) {
     }
   }
 
-  if (length(p$stmv_clusters) != nk) {
-    if (length(p$stmv_clusters) == 1) {
-      oo = p$stmv_clusters
-      p$stmv_clusters = list() # alter original by copy first vector to appropriate length
-      for (nn in 1:nk) p$stmv_clusters[[nn]] = oo
-    } else {
-      stop( "length of the list p$stmv_clusters must match the length of p$stmv_distance_scale" )
-    }
-  }
 
   if( !exists( "storage.backend", p))  p$storage.backend="bigmemory.ram"
 

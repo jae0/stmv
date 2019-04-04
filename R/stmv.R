@@ -9,6 +9,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
     force_complete_solution=FALSE
     use_saved_state=NULL # or "disk"
     DATA=NULL
+    variogram_source ="inline"
     storage.backend="bigmemory.ram"
     save_completed_data=TRUE  # export out of stmv system for use outside (e.g., by aegis)
     debug_plot_variable_index=1
@@ -382,7 +383,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
     message ( "\n", "||| Entering variogram based scale determination")
 
     Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-    p$clusters = p$stmv_clusters[[1]] # as ram reqeuirements increase drop cpus
+    p$clusters = p$stmv_clusters[["scale"]] # as ram reqeuirements increase drop cpus
     currentstatus = stmv_db( p=p, DS="statistics.status" )
     Eflags_reset = E[ c(
       "insufficient_data",
@@ -560,10 +561,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
   gc()
 
 
-  Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-  Sflag[] =  E[["todo"]]  # reset to todo status as variogram estimation uses this flag too
-
-  if (is.null(use_saved_state))   stmv_db( p=p, DS="statistics.Sflag" )  # flags/filter stats locations base dupon prediction covariates.
 
 
   # reload previously generated stats (in "scale" runmode)
@@ -588,8 +585,8 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
     Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
     nx = length(seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ))
     ny = length(seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ) )
+    if (nx*ny != nrow(S) ) stop( "stmv.statistics has the wrong dimensionality/size" )
     for ( i in 1:length( p$statsvars ) ) {
-      print(i)
       # linear interpolation
       u = as.image( stats[,i], x=Ploc[,], na.rm=TRUE, nx=nx, ny=ny )
       S[,i] = as.vector( fields::interp.surface( u, loc=Sloc[] ) ) # linear interpolation
@@ -803,7 +800,14 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
 
   }
 
+
   # -----------------------------------------------------
+
+  E = stmv_error_codes()
+  Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
+  Sflag[] =  E[["todo"]]  # reset to todo status as variogram estimation uses this flag too
+
+  if (is.null(use_saved_state))   stmv_db( p=p, DS="statistics.Sflag" )  # flags/filter stats locations base dupon prediction covariates.
 
   if ( "reset_incomplete_locations" %in% runmode ) {
     # this resets errors flags and areas without viable predictions
@@ -826,28 +830,28 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
     nk = length(p$stmv_distance_scale)
     Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
 
-    p$clusters = p$stmv_clusters[[1]] # as ram reqeuirements increase drop cpus
+    p$clusters = p$stmv_clusters[["interpolate"]] # as ram reqeuirements increase drop cpus
     locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
     if ( !is.null(locs_to_do) && length(locs_to_do) > 0) {
       Sflag[locs_to_do] = E[["todo"]]
     }
     locs_to_do = NULL
     currentstatus = stmv_db( p=p, DS="statistics.status" )
-    Eflags_reset = E[ c(
-      "prediction_area",
-      "local_model_error",
-      "insufficient_data",
-      "variogram_failure",
-      "variogram_range_limit",
-      "prediction_error",
-      "prediction_update_error",
-      "statistics_update_error",
-      "unknown"
-    )]
-    toreset = which( Sflag[] %in% unlist(Eflags_reset) )
-    if (length(toreset) > 0) Sflag[toreset] = E[["todo"]]
-    toreset = NULL
-    currentstatus = stmv_db( p=p, DS="statistics.status" ) # update again
+    # Eflags_reset = E[ c(
+    #   "prediction_area",
+    #   "local_model_error",
+    #   "insufficient_data",
+    #   "variogram_failure",
+    #   "variogram_range_limit",
+    #   "prediction_error",
+    #   "prediction_update_error",
+    #   "statistics_update_error",
+    #   "unknown"
+    # )]
+    # toreset = which( Sflag[] %in% unlist(Eflags_reset) )
+    # if (length(toreset) > 0) Sflag[toreset] = E[["todo"]]
+    # toreset = NULL
+    # currentstatus = stmv_db( p=p, DS="statistics.status" ) # update again
     p$time_start_interpolation = Sys.time()
     parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) )
   }
@@ -890,7 +894,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
     # interpolation based on data and augmented by previous predictions
     # NOTE:: no covariates are used
     p$force_complete_solution = TRUE
-    p$clusters = p$stmv_clusters[[1]]  # in case interpolation above altered p$clusters
+    p$clusters = p$stmv_clusters[["interpolate"]]  # in case interpolation above altered p$clusters
     locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
     if ( !is.null(locs_to_do) && length(locs_to_do) > 0) {
       Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
