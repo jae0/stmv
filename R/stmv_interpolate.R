@@ -91,6 +91,8 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
     savepoints = sample(logpoints, nsavepoints)
   }
 
+  distance_limits = c( p$stmv_distance_prediction, max(p$stmv_distance_scale))  # for range estimate
+
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
 
@@ -98,12 +100,24 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
     Si = p$runs[ iip, "locs" ]
     if (debugging) print( paste("index =", iip, ";  Si = ", Si ) )
 
-    if ( Sflag[Si] != E[["complete"]] ) next()
+    if ( Sflag[Si] == E[["complete"]] ) next()
 
     # enough data with range estimates that make sense
 
     # obtain indices of data locations withing a given spatial range, optimally determined via variogram
     stmv_distance_cur = S[Si, match("range", p$statsvars)]
+    if (!is.finite(stmv_distance_cur)) {
+      Sflag[Si] = E[["variogram_range_limit"]]
+      if (exists("stmv_rangecheck", p)) if (p$stmv_rangecheck=="paranoid") next()
+      stmv_distance_cur =  min(p$stmv_distance_scale)
+    }
+
+    if (stmv_distance_cur < distance_limits[1] | stmv_distance_cur > distance_limits[2])  {
+      Sflag[Si] = E[["variogram_range_limit"]]
+      if (exists("stmv_rangecheck", p)) if (p$stmv_rangecheck=="paranoid") next()
+      stmv_distance_cur = min(p$stmv_distance_scale)
+    }
+
     dlon = abs( Sloc[Si,1] - YY1 )
     dlat = abs( Sloc[Si,2] - YY2 )
 
@@ -112,13 +126,18 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
     dlon = NULL
     dlat = NULL
 
-    range_ok = ifelse( stmv_distance_cur < max(p$stmv_distance_scale)*0.99, TRUE, FALSE ) & ifelse( stmv_distance_cur > p$stmv_distance_prediction, TRUE, FALSE )
-    if ( !range_ok ) {
-      Sflag[Si] = E[["variogram_range_limit"]]
-      next()
+    ndata = length( U )
+    if (!is.finite(S[Si, match("ndata", p$statsvars)] ) ) {
+      Sflag[Si] =  E[["variogram_range_limit"]]
+      if (exists("stmv_rangecheck", p)) if (p$stmv_rangecheck=="paranoid") next()
+      S[Si, match("ndata", p$statsvars)] = ndata  # update and continue
+    }
+    if (ndata !=  S[Si, match("ndata", p$statsvars)] ) {
+      Sflag[Si] =  E[["variogram_range_limit"]]
+      if (exists("stmv_rangecheck", p)) if (p$stmv_rangecheck=="paranoid") next()
+      S[Si, match("ndata", p$statsvars)] = ndata  # update and continue
     }
 
-    ndata = S[Si, match("ndata", p$statsvars)]
     if (ndata < p$n.min) {
       Sflag[Si] =  E[["insufficient_data"]]
       next()
@@ -178,11 +197,31 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
     phi  = S[Si, match("phi", p$statsvars)]
     varSpatial = S[Si, match("sdSpatial", p$statsvars)]^2
     varObs     = S[Si, match("sdObs", p$statsvars)]^2
+    varData = var( dat[, p$variables$Y], na.rm=TRUE)
 
     if (!is.finite(nu)) nu = 0.5
     if (!is.finite(phi)) phi = stmv_distance_cur/sqrt(8*nu)
-    if (!is.finite(varSpatial)) varSpatial =0.5 * var( dat[, p$variables$Y], na.rm=TRUE)
-    if (!is.finite(varObs)) varObs = varSpatial
+    if (!is.finite(varSpatial)) varSpatial = 0.5 * varData
+    if (!is.finite(varObs)) varObs = 0.5 * varData
+
+    # range limits
+    if (nu < 0.25) {
+      nu = 0.5
+    } else if (nu > 5) {
+      nu = 5
+    }
+
+    if (phi < distance_limits[1]/sqrt(8*nu) ) {
+      phi = distance_limits[1]/sqrt(8*nu)
+    } else if (phi > distance_limits[2]/sqrt(8*nu) ) {
+      phi = distance_limits[2]/sqrt(8*nu)
+    }
+
+    if ({varSpatial + varObs} < 0.01 * varData) {
+      varObs = 5
+      varSpatial = 0.5
+    }
+
 
     if (debugging) {
       dev.new()
@@ -284,8 +323,11 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
       )
     )
 
+<<<<<<< HEAD
     dat =  NULL
     pa  =  NULL
+=======
+>>>>>>> develop
 
     if (debugging) {
       print( str(res) )
@@ -294,7 +336,14 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
         lattice::levelplot( mean ~ plon + plat, data=res$predictions, col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
         for( i in sort(unique(res$predictions[,p$variables$TIME])))  print(lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==i,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
       }
+      dev.new()
+      plot(  dat[,iY] ~ dat$yr, col="red"  )
+      points( mean~tiyr, res$predictions, pch=20, col="gray", cex=0.5 )
+
     }
+
+    dat =  NULL
+    pa  =  NULL
 
     if ( is.null(res)) {
       Sflag[Si] = E[["local_model_error"]]   # modelling / prediction did not complete properly
