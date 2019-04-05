@@ -99,7 +99,7 @@ stmv_parameters = function( p=list(), ... ) {
   }
 
   # determine storage format
-  p$libs = unique( c( p$libs, "sp", "rgdal", "parallel", "RandomFields", "geoR" ) )
+  p$libs = unique( c( p$libs, "sp", "rgdal", "parallel" ) )
   if (!exists("storage.backend", p)) p$storage.backend = storage.backend
   if (any( grepl ("ff", p$storage.backend)))         p$libs = c( p$libs, "ff", "ffbase" )
   if (any( grepl ("bigmemory", p$storage.backend)))  p$libs = c( p$libs, "bigmemory" )

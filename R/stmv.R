@@ -312,7 +312,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
         p$ptr$Sloc = ff( Sloc, dim=dim(Sloc), file=p$cache$Sloc, overwrite=TRUE )
       }
       Sloc = NULL
-
+  sbox = NULL
 
   sS = NULL
   if (!is.null(use_saved_state)) {

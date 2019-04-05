@@ -34,8 +34,6 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
 
   Y = stmv_attach( p$storage.backend, p$ptr$Y )
   Yi = stmv_attach( p$storage.backend, p$ptr$Yi )  # initial indices of good data
-  YY1 = Yloc[Yi[],1]
-  YY2 = Yloc[Yi[],2]
 
   if (p$nloccov > 0) Ycov = stmv_attach( p$storage.backend, p$ptr$Ycov )
   if ( exists("TIME", p$variables) ) Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )
@@ -73,18 +71,16 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
 
     # obtain indices of data locations withing a given spatial range, optimally determined via variogram
     # find data nearest Sloc[Si,] and with sufficient data
-    dlon = abs( Sloc[Si,1] - YY1 )
-    dlat = abs( Sloc[Si,2] - YY2 )
     ndata = 0
     for ( stmv_distance_cur in p$stmv_distance_scale )  {
-      U = which( {dlon  <= stmv_distance_cur} & {dlat <= stmv_distance_cur} )  # faster to take a block
+      U = which(
+        {abs( Sloc[Si,1] - Yloc[Yi[],1] ) <= stmv_distance_cur} &
+        {abs( Sloc[Si,2] - Yloc[Yi[],2] ) <= stmv_distance_cur} )  # faster to take a block
       ndata = length(U)
       if ( ndata >= p$n.min ) break()
     }
     YiU = Yi[U]
     U = NULL
-    dlon = NULL
-    dlat = NULL
 
     Sflag[Si] = E[["todo"]]
 

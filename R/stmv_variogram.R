@@ -1,5 +1,8 @@
 
-stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("RandomFields"), distance_cutoff=NA, nbreaks = 15, family="gaussian", stanmodel=NULL, range_correlation=0.9, modus_operandi="easygoing" ) {
+stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
+  plotdata=FALSE, methods=c("fields"), discretized_n=100,
+  distance_cutoff=NA, nbreaks = 15, family="gaussian", stanmodel=NULL, range_correlation=0.9,
+  modus_operandi="easygoing" ) {
 
   #\\ estimate empirical variograms (actually correlation functions)
   #\\ and then model them using a number of different approaches .. using a Matern basis
@@ -345,7 +348,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
 
   if ("optim" %in% methods) {
     # spatial discretization
-    XYZ = stmv_discretize_coordinates(coo=xy, z=z, discretized_n=200, method="aggregate", FUNC=mean, na.rm=TRUE)
+    XYZ = stmv_discretize_coordinates(coo=xy, z=z, discretized_n=discretized_n, method="aggregate", FUNC=mean, na.rm=TRUE)
     names(XYZ) =  c("plon", "plat", "z" ) # arbitrary
     rownames( XYZ) = 1:nrow(XYZ)  # RF seems to require rownames ...
 
@@ -556,18 +559,19 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, plotdata=FALSE, methods=c("
 
     require(fields)
 
-    XYZ = stmv_discretize_coordinates(coo=xy, z=z, discretized_n=200, method="aggregate", FUNC=mean, na.rm=TRUE)
+    XYZ = stmv_discretize_coordinates(coo=xy, z=z, discretized_n=discretized_n, method="aggregate", FUNC=mean, na.rm=TRUE)
     names(XYZ) =  c("plon", "plat", "z" ) # arbitrary
     xy = XYZ[,c("plon", "plat")]
     z = XYZ$z
     XYZ = NULL
-    smoothness =nu = 0.5 # 0.5 == exponential .. ie. fixed
+    nu = 0.5 # 0.5 == exponential .. ie. fixed
     res =NULL
     ## NOTE: process variance (rho); range (theta); nugget (sigma**2)
     ## lambda= sigma**2/ rho and rho. Thinking about h as the spatial signal and e as the noise lambda can be interpreted
     ##  as the noise to signal variance ratio in this spatial context
     # MLESpatialProcess is a ML method for Gaussian spatial process
     fsp = MLESpatialProcess(xy/out$stmv_internal_scale, z, cov.function = "stationary.cov",
+      # abstol=1e-3,
       # lambda.start=0.5, theta.start=1.0, theta.range=c(0.2, 4.0), gridN=25,
       # optim.args=list(method = "BFGS", control = list(fnscale=-1, parscale=c(0.5, 0.5), ndeps=c(0.05,0.05))),
       cov.args = list(Covariance = "Matern", smoothness = nu)
