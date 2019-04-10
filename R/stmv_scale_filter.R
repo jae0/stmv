@@ -1,8 +1,7 @@
 stmv_scale_filter = function( p, Si ) {
 
   S = stmv_attach( p$storage.backend, p$ptr$S )
-  Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-  E = stmv_error_codes()
+  Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
 
   distance_limits = c( p$stmv_distance_prediction, max(p$stmv_distance_scale))  # for range estimate
 
@@ -17,75 +16,105 @@ stmv_scale_filter = function( p, Si ) {
   )
 
   #range checks
+  range_redo = FALSE
   if (!is.finite(vg$range)) {
-    ii = which(
-      {abs( Sloc[Si,1] - Sloc[,1] ) <= min(p$stmv_distance_scale)} &
-      {abs( Sloc[Si,2] - Sloc[,2] ) <= min(p$stmv_distance_scale)}
-    )
-    vg$range =  median( S[ii, match("range", p$statsvars)], na.rm=TRUE )
-    vg$flag = "variogram_range_limit"
+    range_redo = TRUE
   } else {
     if (vg$range < distance_limits[1] | vg$range > distance_limits[2])  {
-      ii = which(
-        {abs( Sloc[Si,1] - Sloc[,1] ) <= min(p$stmv_distance_scale)} &
-        {abs( Sloc[Si,2] - Sloc[,2] ) <= min(p$stmv_distance_scale)}
-      )
-      vg$range =  median( S[ii, match("range", p$statsvars)], na.rm=TRUE )
-      vg$flag = "variogram_range_limit"
+      range_redo = TRUE
     }
   }
+
+  ii = NULL
+  if (range_redo) {
+    vg$flag = "variogram_failure"
+    min_dist = min(p$stmv_distance_scale)
+    ii = which(
+      {abs( Sloc[Si,1] - Sloc[,1] ) <= min_dist} &
+      {abs( Sloc[Si,2] - Sloc[,2] ) <= min_dist}
+    )
+    if (length(ii) > 0) {
+      range_median = median( S[ii, match("range", p$statsvars)], na.rm=TRUE )
+      if (is.finite( range_median)) {
+        vg$range =  range_median
+      } else {
+        vg$range =  min_dist
+      }
+    } else {
+      vg$range =  min_dist
+    }
+  }
+
 
   # as range is now set, the following becomes fixed
-  ii = which(
-    {abs( Sloc[Si,1] - Sloc[,1] ) <= vg$range} &
-    {abs( Sloc[Si,2] - Sloc[,2] ) <= vg$range}
-  )
+  if (is.null(ii)) {
+    ii = which(
+      {abs( Sloc[Si,1] - Sloc[,1] ) <= vg$range} &
+      {abs( Sloc[Si,2] - Sloc[,2] ) <= vg$range}
+    )
+  }
 
   # obtain indices of data locations withing a given spatial range, optimally determined via variogram
-  # faster to take a block .. but easy enough to take circles ...
-
-
+  # faster to take a block .. but easy enough to take circles ... trim off corners ..
+  nu_redo = FALSE
   if (!is.finite(vg$nu)) {
-    vg$nu = median( S[ii, match("nu", p$statsvars)], na.rm=TRUE )
-    vg$flag = "variogram_failure"
+    nu_redo = TRUE
   } else {
-    if (vg$nu < 0.25) {
-      vg$nu = median( S[ii, match("nu", p$statsvars)], na.rm=TRUE )
-      vg$flag = "variogram_failure"
-    } else if (vg$nu > 5) {
-      vg$nu = median( S[ii, match("nu", p$statsvars)], na.rm=TRUE )
-      vg$flag = "variogram_failure"
+    if (vg$nu < 0.25 | vg$nu > 4 )  {
+      nu_redo = TRUE
     }
   }
 
-  if (!is.finite(vg$phi)) {
-    vg$phi  = median( S[ii, match("phi", p$statsvars)], na.rm=TRUE )
+  if (nu_redo) {
     vg$flag = "variogram_failure"
-  } else {
-    dl = distance_limits/sqrt(8*vg$nu)
-    if (vg$phi < dl[1] ) {
-      vg$phi = median( S[ii, match("phi", p$statsvars)], na.rm=TRUE )
-      vg$flag = "variogram_failure"
-    } else if (vg$phi > dl[2] ) {
-      vg$phi = median( S[ii, match("phi", p$statsvars)], na.rm=TRUE )
-      vg$flag = "variogram_failure"
+    nu_median =  median( S[ii, match("nu", p$statsvars)], na.rm=TRUE )
+    if (is.finite(nu_median)) {
+      vg$nu = nu_median
+    } else {
+      vg$nu = 0.5
     }
   }
+
+
+  phi_redo = FALSE
+  dl = distance_limits/sqrt(8*vg$nu)
+  if (!is.finite(vg$phi)) {
+    phi_redo = TRUE
+  } else {
+    if (vg$phi < dl[1] | vg$phi > dl[2] )  {
+      phi_redo = TRUE
+    }
+  }
+
+  if (phi_redo) {
+    vg$flag = "variogram_failure"
+    phi_median =  median( S[ii, match("phi", p$statsvars)], na.rm=TRUE )
+    if (is.finite(phi_median)) {
+      vg$phi = phi_median
+    } else {
+      vg$phi = vg$range/sqrt(8*vg$nu)
+    }
+  }
+
 
   if (!is.finite(vg$varSpatial)) {
-    vg$varSpatial = median( S[ii, match("varSpatial", p$statsvars)], na.rm=TRUE )
     vg$flag = "variogram_failure"
+    varSP_median = median( S[ii, match("sdSpatial", p$statsvars)], na.rm=TRUE )^2
+    if (is.finite(varSP_median)) vg$varSpatial = varSP_median
   }
+
 
   if (!is.finite(vg$varObs)) {
-    vg$varObs = median( S[ii, match("varObs", p$statsvars)], na.rm=TRUE )
     vg$flag = "variogram_failure"
+    varObs_median = median( S[ii, match("sdObs", p$statsvars)], na.rm=TRUE )^2
+    if (is.finite(varObs_median)) vg$varObs = varObs_median
   }
 
-  if ({vg$varSpatial + vg$varObs} < 0.01 * vg$varTotal) {
-    vg$varObs = median( S[ii, match("varSpatial", p$statsvars)], na.rm=TRUE )
-    vg$varSpatial = median( S[ii, match("varObs", p$statsvars)], na.rm=TRUE )
+
+  if (!is.finite(vg$varTotal)) {
     vg$flag = "variogram_failure"
+    varTot_median = median( S[ii, match("sdTotal", p$statsvars)], na.rm=TRUE )^2
+    if (is.finite(varTot_median)) vg$varTotal = varTot_median
   }
 
   return(vg)

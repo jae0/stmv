@@ -124,9 +124,9 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
       Sflag[Si] = E[["variogram_failure"]]
       next()
     } else {
-      if (ndata < p$nmin) {
+      if (ndata < p$n.min) {
         Sflag[Si] = E[["insufficient_data"]]
-      } else if (ndata > p$nmax) {
+      } else if (ndata > p$n.max) {
         # try to trim
         if ( exists("TIME", p$variables)) {
           Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )

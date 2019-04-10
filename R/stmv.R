@@ -314,6 +314,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
       Sloc = NULL
   sbox = NULL
 
+
   sS = NULL
   if (!is.null(use_saved_state)) {
     if (use_saved_state=="ram") {
@@ -403,7 +404,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
     # temp save to disk
     sS = stmv_attach( p$storage.backend, p$ptr$S )[]
     save( sS, file=p$saved_state_fn$stats, compress=TRUE ); sS = NULL
-    message("||| stats saved to: ", p$saved_state_fn$stats )
+    message("||| stats temporarily saved to: ", p$saved_state_fn$stats )
     load( tmpDATA )
   }
 
