@@ -401,21 +401,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
     toreset = NULL
     currentstatus = stmv_db( p=p, DS="statistics.status" ) # update again
     p$time_start_interpolation = Sys.time()
-    p$stmv_rangecheck="paranoid"
     parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
 
-    message( "||| Completed first pass of scale estimation." )
-
-    currentstatus = stmv_db( p=p, DS="statistics.status" )
-    toreset = which( Sflag[] %in% unlist(Eflags_reset) )
-    if (length(toreset) > 0) Sflag[toreset] = E[["todo"]]
-    toreset = NULL
-    currentstatus = stmv_db( p=p, DS="statistics.status" ) # update again
-    p$time_start_interpolation = Sys.time()
-    p$stmv_rangecheck= NULL
-    parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
-
-    message( "||| Variogram surface Finished." )
+    message( "||| Scale estimation surface complete." )
     message( "||| Results are found at:" )
 
     # temp save to disk
