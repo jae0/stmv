@@ -765,8 +765,10 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
       }
 
       if (exists("stmv_global_family", p)) {
-        if (exists("linkinv", p$stmv_global_family)) {
-          sP = p$stmv_global_family$linkinv( sP[] )
+        if (p$stmv_global_family != "none") {
+          if (exists("linkinv", p$stmv_global_family)) {
+            sP = p$stmv_global_family$linkinv( sP[] )
+          }
         }
       }
 

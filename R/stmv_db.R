@@ -576,10 +576,12 @@
 
               # return to user scale (that of Y)
               if ( exists( "stmv_global_family", p)) {
-                if (exists("linkinv", p$stmv_global_family)) {
-                  Pl = p$stmv_global_family$linkinv( Pl[] )
-                  Pu = p$stmv_global_family$linkinv( Pu[] )
-                  P = p$stmv_global_family$linkinv( P[] )
+                if (p$stmv_global_family != "none") {
+                  if (exists("linkinv", p$stmv_global_family)) {
+                    Pl = p$stmv_global_family$linkinv( Pl[] )
+                    Pu = p$stmv_global_family$linkinv( Pu[] )
+                    P = p$stmv_global_family$linkinv( P[] )
+                  }
                 }
               }
 
@@ -633,10 +635,12 @@
 
         # return to user scale (that of Y)
         if ( exists( "stmv_global_family", p)) {
-          if (exists("linkinv", p$stmv_global_family)) {
-            Pl = p$stmv_global_family$linkinv( Pl[] )
-            Pu = p$stmv_global_family$linkinv( Pu[] )
-            P = p$stmv_global_family$linkinv( P[] )
+          if (p$stmv_global_family != "none") {
+            if (exists("linkinv", p$stmv_global_family)) {
+              Pl = p$stmv_global_family$linkinv( Pl[] )
+              Pu = p$stmv_global_family$linkinv( Pu[] )
+              P = p$stmv_global_family$linkinv( P[] )
+            }
           }
         }
 
