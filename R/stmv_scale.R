@@ -124,6 +124,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
       next()
     }
     om  = o[[p$stmv_variogram_method]] # save stats
+
     statvars_scale = c(
       sdTotal =sqrt( o$varZ),
       sdSpatial = sqrt(om$varSpatial) ,

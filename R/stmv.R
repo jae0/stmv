@@ -377,6 +377,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
   ################
 
   if ( "scale" %in% runmode ) {
+    # must be done in 2-passes .. the first in paranoid mode to fill with estimates that are reliable,
+    # then a second pass to borrow from neighbouring estimate where possible
+
     tmpDATA = file.path( p$stmvSaveDir, "tmp_DATA.rdata" )
     save( DATA, file=tmpDATA)
     DATA = NULL
@@ -385,17 +388,31 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
 
     Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
     p$clusters = p$stmv_clusters[["scale"]] # as ram reqeuirements increase drop cpus
-    currentstatus = stmv_db( p=p, DS="statistics.status" )
     Eflags_reset = E[ c(
       "insufficient_data",
       "variogram_failure",
+      "variogram_range_limit",
       "unknown"
     )]
+
+    currentstatus = stmv_db( p=p, DS="statistics.status" )
     toreset = which( Sflag[] %in% unlist(Eflags_reset) )
     if (length(toreset) > 0) Sflag[toreset] = E[["todo"]]
     toreset = NULL
     currentstatus = stmv_db( p=p, DS="statistics.status" ) # update again
     p$time_start_interpolation = Sys.time()
+    p$stmv_rangecheck="paranoid"
+    parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
+
+    message( "||| Completed first pass of scale estimation." )
+
+    currentstatus = stmv_db( p=p, DS="statistics.status" )
+    toreset = which( Sflag[] %in% unlist(Eflags_reset) )
+    if (length(toreset) > 0) Sflag[toreset] = E[["todo"]]
+    toreset = NULL
+    currentstatus = stmv_db( p=p, DS="statistics.status" ) # update again
+    p$time_start_interpolation = Sys.time()
+    p$stmv_rangecheck= NULL
     parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
 
     message( "||| Variogram surface Finished." )
@@ -406,6 +423,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
     save( sS, file=p$saved_state_fn$stats, compress=TRUE ); sS = NULL
     message("||| stats temporarily saved to: ", p$saved_state_fn$stats )
     load( tmpDATA )
+
   }
 
 

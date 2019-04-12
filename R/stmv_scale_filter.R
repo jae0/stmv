@@ -28,20 +28,20 @@ stmv_scale_filter = function( p, Si ) {
   ii = NULL
   if (range_redo) {
     vg$flag = "variogram_failure"
-    min_dist = min(p$stmv_distance_scale)
+    max_dist = max(p$stmv_distance_scale)
     ii = which(
-      {abs( Sloc[Si,1] - Sloc[,1] ) <= min_dist} &
-      {abs( Sloc[Si,2] - Sloc[,2] ) <= min_dist}
+      {abs( Sloc[Si,1] - Sloc[,1] ) <= max_dist} &
+      {abs( Sloc[Si,2] - Sloc[,2] ) <= max_dist}
     )
     if (length(ii) > 0) {
       range_median = median( S[ii, match("range", p$statsvars)], na.rm=TRUE )
       if (is.finite( range_median)) {
         vg$range =  range_median
       } else {
-        vg$range =  min_dist
+        vg$range =  max_dist
       }
     } else {
-      vg$range =  min_dist
+      vg$range =  max_dist
     }
   }
 
