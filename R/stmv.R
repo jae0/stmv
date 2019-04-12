@@ -829,8 +829,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
 
   if ("interpolate" %in% runmode ) {
     E = stmv_error_codes()
-    message ( "\n", "||| Sampling at the following distance mulitpliers: ", paste0(p$stmv_distance_scale, collapse=",") )
-    nk = length(p$stmv_distance_scale)
     Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
 
     p$clusters = p$stmv_clusters[["interpolate"]] # as ram reqeuirements increase drop cpus
