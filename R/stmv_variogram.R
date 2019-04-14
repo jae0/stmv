@@ -1,6 +1,6 @@
 
 stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
-  plotdata=FALSE, methods=c("fields"), discretized_n=100,
+  plotdata=FALSE, methods=c("geoR"), discretized_n=100,
   distance_cutoff=NA, nbreaks = 15, family="gaussian", stanmodel=NULL, range_correlation=0.9,
   modus_operandi="easygoing" ) {
 
@@ -690,11 +690,12 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
 
 
   if ("geoR" %in% methods) {
-
+    gc() ## crashes often ...
     require( geoR )
     vEm = try( variog( coords=xy/out$stmv_internal_scale, data=z, uvec=nbreaks, max.dist=out$distance_cutoff/out$stmv_internal_scale ) )
     if  (inherits(vEm, "try-error") )  return(NULL)
     vEm$u0 = vEm$u * out$stmv_internal_scale
+    gc()
 
     vMod = try( variofit( vEm, nugget=0.5*out$varZ, kappa=0.5, cov.model="matern",
       ini.cov.pars=c(0.5*out$varZ, 1 ) ,
@@ -737,6 +738,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
       abline( v=out$geoR$range, col="orange" )
 
     }
+    gc()
 
     return(out)
 
