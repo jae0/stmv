@@ -687,6 +687,9 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
 
   # -------------------------
   # ------------------------
+  par = c(tau.sq=vgm_var_max*0.2, sigma.sq=vgm_var_max*0.8, phi=1, nu=0.5)
+    lower =c(0, 0, 0.75, 0.3 )
+    upper =c(vgm_var_max*2, vgm_var_max*2, 3, 3)
 
 
   if ("geoR" %in% methods) {
@@ -698,7 +701,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
     gc()
 
     vMod = try( variofit( vEm, nugget=0.5*out$varZ, kappa=0.5, cov.model="matern",
-      ini.cov.pars=c(0.5*out$varZ, 1 ),  limits = pars.limits( phi=c(0.1, 3), kappa=c(0.1, 5),  kappa2=c(0.1, 5), sigmasq=c(0, out$varZ) ),
+      ini.cov.pars=c(0.5*out$varZ, 1 ),  limits = pars.limits( phi=c(0.1, 3), kappa=c(0.1, 5), sigmasq=c(0, out$varZ*1.25) ),
       fix.kappa=FALSE, fix.nugget=FALSE, max.dist=out$distance_cutoff/out$stmv_internal_scale, weights="cressie" ) )
       # kappa is the smoothness parameter , also called "nu" by others incl. RF
     if  (inherits(vMod, "try-error") )  return(NULL)
