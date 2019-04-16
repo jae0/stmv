@@ -900,7 +900,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
     # finalize all interpolations where there are missing data/predictions using
     # interpolation based on data and augmented by previous predictions
     # NOTE:: no covariates are used
-    p$force_complete_solution = TRUE
     p$clusters = p$stmv_clusters[["interpolate"]]  # in case interpolation above altered p$clusters
     locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
     if ( !is.null(locs_to_do) && length(locs_to_do) > 0) {
@@ -912,11 +911,11 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
     p$stmv_local_modelengine = "fft"
     p$stmv_fft_filter="matern"  #  matern, krige (very slow), lowpass, lowpass_matern
     if (p$stmv_fft_filter %in% c("lowpass", "lowpass_matern") ) {
-      if (!exists("stmv_lowpass_phi", p))  p$stmv_lowpass_phi = p$pres / 5 # FFT-baed methods cov range parameter .. not required for "matern" ..
+      if (!exists("stmv_lowpass_phi", p))  p$stmv_lowpass_phi = p$pres / 5 # FFT-based methods cov range parameter .. not required for "matern" ..
       if (!exists("stmv_lowpass_nu", p))  p$stmv_lowpass_nu = 0.5  #exponential
     }
     p$time_start_interpolation_force_complete = Sys.time()
-    parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )))
+    parallel_run( stmv_interpolate_complete, p=p, runindex=list( locs=sample( currentstatus$todo )))
   }
 
 
