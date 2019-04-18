@@ -1,6 +1,6 @@
 
 
-stmv_scale = function( ip=NULL, p, sample_locally=FALSE, debugging=FALSE, ... ) {
+stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
   #\\ core function to interpolate (model variogram) in parallel
 
   if (0) {
@@ -21,6 +21,8 @@ stmv_scale = function( ip=NULL, p, sample_locally=FALSE, debugging=FALSE, ... ) 
   if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
 
   if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
+
+  if (!exists("stmv_interpolate_nmin", p )) p$stmv_interpolate_nmin = p$stmv_nmin
 
 
   #---------------------
@@ -77,14 +79,14 @@ stmv_scale = function( ip=NULL, p, sample_locally=FALSE, debugging=FALSE, ... ) 
         {abs( Sloc[Si,1] - Yloc[Yi[],1] ) <= stmv_distance_cur} &
         {abs( Sloc[Si,2] - Yloc[Yi[],2] ) <= stmv_distance_cur} )  # faster to take a block
       ndata = length(U)
-      if ( ndata >= p$n.min ) break()
+      if ( ndata >= p$stmv_interpolate_nmin ) break()
     }
     YiU = Yi[U]
     U = NULL
 
     Sflag[Si] = E[["todo"]]
 
-    if (ndata < p$n.min) {
+    if (ndata < p$stmv_interpolate_nmin) {
       Sflag[Si] = E[["insufficient_data"]]
       if (debugging) print( paste("index =", iip, ";  insufficient data"  ) )
       next()   #not enough data

@@ -47,7 +47,8 @@ stmv_parameters = function( p=list(), ... ) {
   if (!exists( "stmv_kernelmethods_use_all_data", p)) p$stmv_kernelmethods_use_all_data =TRUE ## speed and RAM usage improvement is minimal (if any) when off, leave on or remove option and fix as on
 
   # downsampling (thinning) of data via a simple discretization and uniform weight of data counts in each block .. 1== use current discretization (pres, pres, tres)
-  if ( !exists("downsampling_multiplier", p))  p$downsampling_multiplier = 1
+  if (!exists("stmv_downsampling_multiplier", p))  p$stmv_downsampling_multiplier = 1
+  if (!exists("stmv_nmin_forcecomplete_factor", p)) p$stmv_nmin_forcecomplete_factor = c(0.75, 0.5)
 
   if (!exists("stmv_lowpass_phi", p)) p$stmv_lowpass_phi = p$pres*2 # FFT based method when operating gloablly
   if (!exists("stmv_lowpass_nu", p)) p$stmv_lowpass_nu = 0.5 # this is exponential covar
@@ -131,9 +132,9 @@ stmv_parameters = function( p=list(), ... ) {
 
   if ( !exists("minresolution", p)) {
     if ( exists("TIME", p$variables)) {
-      p$minresolution = p$downsampling_multiplier*c(p$pres, p$pres, p$tres)
+      p$minresolution = p$stmv_downsampling_multiplier*c(p$pres, p$pres, p$tres)
     } else {
-      p$minresolution = p$downsampling_multiplier*c(p$pres, p$pres )
+      p$minresolution = p$stmv_downsampling_multiplier*c(p$pres, p$pres )
     }
   }
 

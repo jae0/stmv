@@ -395,20 +395,22 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
       "unknown"
     )]
 
-    currentstatus = stmv_db( p=p, DS="statistics.status" )
-    toreset = which( Sflag[] %in% unlist(Eflags_reset) )
-    if (length(toreset) > 0) Sflag[toreset] = E[["todo"]]
-    toreset = NULL
-    currentstatus = stmv_db( p=p, DS="statistics.status" ) # update again
-    p$time_start_interpolation = Sys.time()
-    parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
+    for ( nnn in p$stmv_nmin_forcecomplete_factor ) {
+      nmin_to_use = floor(p$stmv_nmin*nnn )
+      currentstatus = stmv_db( p=p, DS="statistics.status" )
+      toreset = which( Sflag[] %in% unlist(Eflags_reset) )
+      if (length(toreset) > 0) Sflag[toreset] = E[["todo"]]
+      toreset = NULL
+      currentstatus = stmv_db( p=p, DS="statistics.status" ) # update again
+      p$time_start_interpolation = Sys.time()
+      parallel_run( stmv_scale, p=p, stmv_interpolate_nmin=nmin_to_use, runindex=list( locs=sample( currentstatus$todo )) )
+      # temp save to disk
+      sS = stmv_attach( p$storage.backend, p$ptr$S )[]
+      save( sS, file=p$saved_state_fn$stats, compress=TRUE ); sS = NULL
+
+    }
 
     message( "||| Scale estimation surface complete." )
-    message( "||| Results are found at:" )
-
-    # temp save to disk
-    sS = stmv_attach( p$storage.backend, p$ptr$S )[]
-    save( sS, file=p$saved_state_fn$stats, compress=TRUE ); sS = NULL
     message("||| stats temporarily saved to: ", p$saved_state_fn$stats )
     load( tmpDATA )
 
@@ -839,28 +841,12 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
 
     p$clusters = p$stmv_clusters[["interpolate"]] # as ram reqeuirements increase drop cpus
     locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
-    if ( !is.null(locs_to_do) && length(locs_to_do) > 0) {
-      Sflag[locs_to_do] = E[["todo"]]
-    }
+    if ( !is.null(locs_to_do) && length(locs_to_do) > 0) Sflag[locs_to_do] = E[["todo"]]
     locs_to_do = NULL
     currentstatus = stmv_db( p=p, DS="statistics.status" )
-    # Eflags_reset = E[ c(
-    #   "prediction_area",
-    #   "local_model_error",
-    #   "insufficient_data",
-    #   "variogram_failure",
-    #   "variogram_range_limit",
-    #   "prediction_error",
-    #   "prediction_update_error",
-    #   "statistics_update_error",
-    #   "unknown"
-    # )]
-    # toreset = which( Sflag[] %in% unlist(Eflags_reset) )
-    # if (length(toreset) > 0) Sflag[toreset] = E[["todo"]]
-    # toreset = NULL
-    # currentstatus = stmv_db( p=p, DS="statistics.status" ) # update again
     p$time_start_interpolation = Sys.time()
     parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) )
+
   }
 
   # --------------------
@@ -900,12 +886,25 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
     # finalize all interpolations where there are missing data/predictions using
     # interpolation based on data and augmented by previous predictions
     # NOTE:: no covariates are used
-    p$clusters = p$stmv_clusters[["interpolate"]]  # in case interpolation above altered p$clusters
-    locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
-    if ( !is.null(locs_to_do) && length(locs_to_do) > 0) {
-      Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-      Sflag[locs_to_do] = stmv_error_codes()[["todo"]]
+
+    E = stmv_error_codes()
+    Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
+    p$clusters = p$stmv_clusters[["interpolate"]] # as ram reqeuirements increase drop cpus
+
+    # basic  interpolation with feweree data points
+    for ( nnn in p$stmv_nmin_forcecomplete_factor ) {
+      nmin_to_use = floor(p$stmv_nmin*nnn )
+      locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
+      if ( !is.null(locs_to_do) && length(locs_to_do) > 0) Sflag[locs_to_do] = E[["todo"]]
+      locs_to_do = NULL
+      currentstatus = stmv_db( p=p, DS="statistics.status" )
+      p$time_start_interpolation = Sys.time()
+      parallel_run( stmv_interpolate, p=p, stmv_interpolate_nmin=nmin_to_use, runindex=list( locs=sample( currentstatus$todo )) )  # take low number data
     }
+
+    # now force all
+    locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
+    if ( !is.null(locs_to_do) && length(locs_to_do) > 0) Sflag[locs_to_do] = E[["todo"]]
     locs_to_do = NULL
     currentstatus = stmv_db( p=p, DS="statistics.status" )
     p$stmv_local_modelengine = "fft"

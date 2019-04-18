@@ -1,6 +1,6 @@
 
 
-stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
+stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
   #\\ core function to interpolate (model and predict) in parallel
 
   if (0) {
@@ -21,6 +21,8 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
   if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
 
   if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
+
+  if (!exists("stmv_interpolate_nmin", p )) p$stmv_interpolate_nmin = p$stmv_nmin
 
 
   #---------------------
@@ -124,36 +126,36 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
       Sflag[Si] = E[["variogram_failure"]]
       next()
     } else {
-      if (ndata < p$n.min) {
+      if (ndata < p$stmv_interpolate_nmin) {
         Sflag[Si] = E[["insufficient_data"]]
-      } else if (ndata > p$n.max) {
+      } else if (ndata > p$stmv_interpolate_nmax) {
         # try to trim
         if ( exists("TIME", p$variables)) {
           Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )
-          iU = stmv_discretize_coordinates( coo=cbind(Yloc[U,], Ytime[U]), ntarget=p$n.max, minresolution=p$minresolution, method="thin" )
+          iU = stmv_discretize_coordinates( coo=cbind(Yloc[U,], Ytime[U]), ntarget=p$stmv_interpolate_nmax, minresolution=p$minresolution, method="thin" )
         } else {
-          iU = stmv_discretize_coordinates( coo=Yloc[U,], ntarget=p$n.max, minresolution=p$minresolution, method="thin" )
+          iU = stmv_discretize_coordinates( coo=Yloc[U,], ntarget=p$stmv_interpolate_nmax, minresolution=p$minresolution, method="thin" )
         }
         U = U[iU]
         ndata = length(U)
         iU = NULL
-        if (ndata < p$n.min) {
+        if (ndata < p$stmv_interpolate_nmin) {
           # retain crude estimate and run with it
           Sflag[Si] =  E[["insufficient_data"]]
           next()
-        } else if (ndata > p$n.max) {
+        } else if (ndata > p$stmv_interpolate_nmax) {
           # force via a random subsample
-          U = U[ .Internal( sample( length(U), p$n.max, replace=FALSE, prob=NULL)) ] # simple random
-          ndata = p$n.max
+          U = U[ .Internal( sample( length(U), p$stmv_interpolate_nmax, replace=FALSE, prob=NULL)) ] # simple random
+          ndata = p$stmv_interpolate_nmax
         }
-      } else  if (ndata <= p$n.max & ndata >= p$n.min) {
+      } else  if (ndata <= p$stmv_interpolate_nmax & ndata >= p$stmv_interpolate_nmin) {
         # all good .. nothing to do
       }
     }
 
     S[Si, match("ndata", p$statsvars)] = ndata  # update in case it has changed
 
-    if (ndata < p$n.min) next()  # last check
+    if (ndata < p$stmv_interpolate_nmin) next()  # last check
 
     if ( Sflag[Si] != E[["todo"]] ) {
       if (exists("stmv_rangecheck", p)) {
@@ -181,6 +183,13 @@ stmv_interpolate = function( ip=NULL, p,  debugging=FALSE, ... ) {
     if (exists("TIME", p$variables)) dat[, itime_cov] = as.matrix(stmv_timecovars( vars=ti_cov, ti=Ytime[U,] ) )
     dat = as.data.frame(dat)
     names(dat) = dat_names
+
+    if (p$stmv_local_modelengine =="fft") {
+      if ( exists("TIME", p$variables)) {
+        dat[, p$variables$TIME] = Ytime[U,] )
+        dat_names = c(dat_names, p$variables$TIME)
+      }
+    }
 
 
     # remember that these are crude mean/discretized estimates
