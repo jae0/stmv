@@ -184,13 +184,13 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     dat = as.data.frame(dat)
     names(dat) = dat_names
 
-    if (p$stmv_local_modelengine =="fft") {
+    # not sure if this is needed ?...
+    if (p$stmv_local_modelengine %in% c("fft", "tps") ) {
       if ( exists("TIME", p$variables)) {
-        dat[, p$variables$TIME] = Ytime[U,] )
+        dat[, p$variables$TIME] = Ytime[U,]
         dat_names = c(dat_names, p$variables$TIME)
       }
     }
-
 
     # remember that these are crude mean/discretized estimates
     if (debugging) {
