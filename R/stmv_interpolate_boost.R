@@ -63,18 +63,7 @@ stmv_interpolate_boost = function( ip=NULL, p,  debugging=FALSE, ... ) {
     itime_cov = which(dat_names %in% ti_cov)
   }
 
-  local_fn = switch( p$stmv_local_modelengine,
-    bayesx = stmv__bayesx,
-    gaussianprocess2Dt = stmv__gaussianprocess2Dt,
-    gam = stmv__gam,
-    glm = stmv__glm,
-    gstat = stmv__gstat,
-    krige = stmv__krige,
-    fft = stmv__fft,
-    tps = stmv__tps,
-    twostep = stmv__twostep,
-    userdefined = p$stmv_local_modelengine_userdefined
-  )
+  local_fn = ifelse (p$stmv_local_modelengine=="userdefined", p$stmv_local_modelengine_userdefined, stmv_interpolation_function( p$stmv_local_modelengine ) )
 
   nip = length(ip)
   if (nip < 100) {
@@ -348,17 +337,6 @@ stmv_interpolate_boost = function( ip=NULL, p,  debugging=FALSE, ... ) {
     # restarts would be broken otherwise
     Sflag[Si] = E[["complete"]]  # mark as complete without issues
 
-    if (0) {
-      # only for debugging data bigmemory structures
-      if ( iip %in% savepoints ) {
-        sP = P[]; save( sP, file=p$saved_state_fn$P, compress=TRUE ); sP=NULL
-        sPn = Pn[]; save( sPn, file=p$saved_state_fn$Pn, compress=TRUE ); sPn=NULL
-        sPsd = Psd[]; save( sPsd, file=p$saved_state_fn$Psd, compress=TRUE ); sPsd=NULL
-        sS = S[]; save( sS, file=p$saved_state_fn$stats, compress=TRUE ); sS=NULL
-        sSflag = Sflag[]; save( sSflag, file=p$saved_state_fn$sflag, compress=TRUE ); sSflag=NULL
-        currentstatus = stmv_logfile(p=p)
-      }
-    }
 
   }  # end for loop
 

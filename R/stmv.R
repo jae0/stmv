@@ -403,7 +403,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
       toreset = NULL
       currentstatus = stmv_db( p=p, DS="statistics.status" ) # update again
       p$time_start_interpolation = Sys.time()
-      parallel_run( stmv_scale, p=p, stmv_interpolate_nmin=nmin_to_use, runindex=list( locs=sample( currentstatus$todo )) )
+      p$stmv_interpolate_nmin = nmin_to_use
+      p$stmv_interpolate_nmax = p$stmv_nmax
+      parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
       # temp save to disk
       sS = stmv_attach( p$storage.backend, p$ptr$S )[]
       save( sS, file=p$saved_state_fn$stats, compress=TRUE ); sS = NULL
@@ -891,7 +893,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
     Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
     p$clusters = p$stmv_clusters[["interpolate"]] # as ram reqeuirements increase drop cpus
 
-    # basic  interpolation with feweree data points
+    # basic  interpolation with fewer data points
     for ( nnn in p$stmv_nmin_forcecomplete_factor ) {
       nmin_to_use = floor(p$stmv_nmin*nnn )
       locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
@@ -899,10 +901,12 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
       locs_to_do = NULL
       currentstatus = stmv_db( p=p, DS="statistics.status" )
       p$time_start_interpolation = Sys.time()
-      parallel_run( stmv_interpolate, p=p, stmv_interpolate_nmin=nmin_to_use, runindex=list( locs=sample( currentstatus$todo )) )  # take low number data
+      p$stmv_interpolate_nmin = nmin_to_use
+      p$stmv_interpolate_nmax = p$stmv_nmax
+      parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) )  # take low number data
     }
 
-    # now force all
+    # now force all using a
     locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
     if ( !is.null(locs_to_do) && length(locs_to_do) > 0) Sflag[locs_to_do] = E[["todo"]]
     locs_to_do = NULL
@@ -914,7 +918,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
       if (!exists("stmv_lowpass_nu", p))  p$stmv_lowpass_nu = 0.5  #exponential
     }
     p$time_start_interpolation_force_complete = Sys.time()
-    parallel_run( stmv_interpolate_complete, p=p, runindex=list( locs=sample( currentstatus$todo )))
+    p$stmv_interpolate_nmin = p$stmv_nmin  # revert
+    p$stmv_interpolate_nmax = p$stmv_nmax  # revert
+    parallel_run( stmv_interpolate_boost, p=p, runindex=list( locs=sample( currentstatus$todo )))
   }
 
 

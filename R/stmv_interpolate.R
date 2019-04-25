@@ -65,18 +65,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     itime_cov = which(dat_names %in% ti_cov)
   }
 
-  local_fn = switch( p$stmv_local_modelengine,
-    bayesx = stmv__bayesx,
-    gaussianprocess2Dt = stmv__gaussianprocess2Dt,
-    gam = stmv__gam,
-    glm = stmv__glm,
-    gstat = stmv__gstat,
-    krige = stmv__krige,
-    fft = stmv__fft,
-    tps = stmv__tps,
-    twostep = stmv__twostep,
-    userdefined = p$stmv_local_modelengine_userdefined
-  )
+  local_fn = ifelse (p$stmv_local_modelengine=="userdefined", p$stmv_local_modelengine_userdefined, stmv_interpolation_function( p$stmv_local_modelengine ) )
 
   nip = length(ip)
   if (nip < 100) {
@@ -90,8 +79,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     nsavepoints = 3
     savepoints = sample(logpoints, nsavepoints)
   }
-
-
 
 
 # main loop over each output location in S (stats output locations)
