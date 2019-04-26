@@ -24,8 +24,6 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
 
   if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
 
-  if (!exists("stmv_interpolate_nmin", p )) p$stmv_interpolate_nmin = p$stmv_nmin
-
 
   #---------------------
   # data for modelling
@@ -65,6 +63,12 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
     savepoints = sample(logpoints, nsavepoints)
   }
 
+
+
+  stmv_nmins = sort( unique( c(1, p$stmv_nmin_downsize_factor * p$stmv_nmin ) ), decreasing=TRUE )
+
+
+
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
 
@@ -76,24 +80,26 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
     # obtain indices of data locations withing a given spatial range, optimally determined via variogram
     # find data nearest Sloc[Si,] and with sufficient data
     ndata = 0
-    for ( stmv_distance_cur in p$stmv_distance_scale )  {
-      U = which(
-        {abs( Sloc[Si,1] - Yloc[Yi[],1] ) <= stmv_distance_cur} &
-        {abs( Sloc[Si,2] - Yloc[Yi[],2] ) <= stmv_distance_cur} )  # faster to take a block
-      ndata = length(U)
-      if ( ndata >= p$stmv_interpolate_nmin ) break()
+    for ( nmin_data in stmv_nmins ) {
+      for ( stmv_distance_cur in p$stmv_distance_scale )  {
+        U = which(
+          {abs( Sloc[Si,1] - Yloc[Yi[],1] ) <= stmv_distance_cur} &
+          {abs( Sloc[Si,2] - Yloc[Yi[],2] ) <= stmv_distance_cur} )  # faster to take a block
+        ndata = length(U)
+        if ( ndata >= nmin_data ) break()
+      }
     }
+
     YiU = Yi[U]
     U = NULL
 
     Sflag[Si] = E[["todo"]]
 
-    if (ndata < p$stmv_interpolate_nmin) {
+    if (ndata < nmin_data) {
       Sflag[Si] = E[["insufficient_data"]]
       if (debugging) print( paste("index =", iip, ";  insufficient data"  ) )
       next()   #not enough data
     }
-
     # NOTE: this range is a crude estimate that averages across years (if any) ...
     o = NULL
 

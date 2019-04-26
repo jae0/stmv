@@ -379,6 +379,12 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
   if ( "scale" %in% runmode ) {
     # must be done in 2-passes .. the first in paranoid mode to fill with estimates that are reliable,
     # then a second pass to borrow from neighbouring estimate where possible
+    if ("scale.reload" %in% runmode ) {
+      S = stmv_attach( p$storage.backend, p$ptr$S )
+      load( p$saved_state_fn$stats
+      S[] = sS[]
+      sS = = NULL
+    }
 
     tmpDATA = file.path( p$stmvSaveDir, "tmp_DATA.rdata" )
     save( DATA, file=tmpDATA)
@@ -395,25 +401,20 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
       "unknown"
     )]
 
-    for ( nnn in p$stmv_nmin_downsize_factor ) {
-      nmin_to_use = floor(p$stmv_nmin*nnn )
-      currentstatus = stmv_db( p=p, DS="statistics.status" )
-      toreset = which( Sflag[] %in% unlist(Eflags_reset) )
-      if (length(toreset) > 0) Sflag[toreset] = E[["todo"]]
-      toreset = NULL
-      currentstatus = stmv_db( p=p, DS="statistics.status" ) # update again
-      p$time_start_interpolation = Sys.time()
-      p$stmv_interpolate_nmin = nmin_to_use
-      p$stmv_interpolate_nmax = p$stmv_nmax
-      parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
-      # temp save to disk
-      sS = stmv_attach( p$storage.backend, p$ptr$S )[]
-      save( sS, file=p$saved_state_fn$stats, compress=TRUE ); sS = NULL
+    currentstatus = stmv_db( p=p, DS="statistics.status" )
+    toreset = which( Sflag[] %in% unlist(Eflags_reset) )
+    if (length(toreset) > 0) Sflag[toreset] = E[["todo"]]
+    toreset = NULL
+    currentstatus = stmv_db( p=p, DS="statistics.status" ) # update again
+    p$time_start_interpolation = Sys.time()
+    parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
 
-    }
+    # temp save to disk
+    sS = stmv_attach( p$storage.backend, p$ptr$S )[]
+    save( sS, file=p$saved_state_fn$stats, compress=TRUE ); sS = NULL
 
     message( "||| Scale estimation surface complete." )
-    message("||| stats temporarily saved to: ", p$saved_state_fn$stats )
+    message( "||| stats temporarily saved to (for restarts): ", p$saved_state_fn$stats )
     load( tmpDATA )
 
   }
@@ -902,8 +903,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
       if (!exists("stmv_lowpass_nu", p))  p$stmv_lowpass_nu = 0.5  #exponential
     }
     p$time_start_interpolation_force_complete = Sys.time()
-    p$stmv_interpolate_nmin = p$stmv_nmin  # revert
-    p$stmv_interpolate_nmax = p$stmv_nmax  # revert
     parallel_run( stmv_interpolate, p=p, runmode="boostdata", runindex=list( locs=sample( currentstatus$todo )))
   }
 

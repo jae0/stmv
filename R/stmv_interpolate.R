@@ -23,8 +23,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runmode="default", ...
   if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
 
 
-
-
   #---------------------
   # data for modelling
   S = stmv_attach( p$storage.backend, p$ptr$S )
