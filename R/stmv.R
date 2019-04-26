@@ -383,7 +383,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
       S = stmv_attach( p$storage.backend, p$ptr$S )
       load( p$saved_state_fn$stats )
       S[] = sS[]
-      sS = = NULL
+      sS = NULL
     }
 
     tmpDATA = file.path( p$stmvSaveDir, "tmp_DATA.rdata" )
