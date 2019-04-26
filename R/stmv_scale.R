@@ -109,6 +109,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
 
     # generic ... crude separable approximations
     # spatial first
+    gc()  # for geoR ....
     o = try( stmv_variogram(
       xy=Yloc[YiU,],
       z=Y[YiU,],
@@ -117,6 +118,8 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
       nbreaks=15,
       range_correlation=p$stmv_range_correlation # ,  plotdata=TRUE
     ) )
+    gc()  # for geoR ....
+
     if ( is.null(o)) {
       Sflag[Si] = E[["variogram_failure"]]
       if (debugging) print( paste("index =", iip, ";  o is null"  ) )

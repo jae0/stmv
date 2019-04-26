@@ -43,9 +43,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
   message( "||| In case something should go wrong, intermediary outputs will be placed at:" )
   message( "||| ",  p$stmvSaveDir  )
 
-  message("||| Monitor the status of modelling by looking at the output of the following file:")
-  message("||| in linux, you can issue the following command: \n" )
-  message("||| watch -n 60 cat ",  p$stmv_current_status  )
+  message( "||| Monitor status by looking at the output of the following file:")
+  message( "||| in linux, you can issue the following command: \n" )
+  message( "||| watch -n 60 cat ",  p$stmv_current_status  )
 
 
 
@@ -85,7 +85,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
 
   # prediction times for space.annual methods, treat time as independent timeslices
   if ( !exists("prediction.ts", p)) p$prediction.ts = 1
-
 
   message( "\n")
   message( "||| Initializing temporary storage of data and output files... ")
@@ -390,7 +389,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
     save( DATA, file=tmpDATA)
     DATA = NULL
     E = stmv_error_codes()
-    message ( "\n", "||| Entering variogram based scale determination")
+    message ( "\n", "||| Entering spatial scale (variogram) determination")
 
     Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
     p$clusters = p$stmv_clusters[["scale"]] # as ram reqeuirements increase drop cpus
