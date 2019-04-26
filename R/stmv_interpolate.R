@@ -97,9 +97,9 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runmode="default", ...
     if (debugging) print( paste("index =", iip, ";  Si = ", Si ) )
     if ( Sflag[Si] == E[["complete"]] ) next()
 
-    if (runmode %in% c( "default" ) ) {
+    vg = stmv_scale_filter(p=p, Si=Si )
 
-      vg = stmv_scale_filter(p=p, Si=Si )
+    if (runmode %in% c( "default" ) ) {
 
       if (exists("stmv_rangecheck", p)) {
         if (p$stmv_rangecheck=="paranoid") {
@@ -160,10 +160,14 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runmode="default", ...
 
     } else if (runmode=="boostdata") {
 
-      ndata = S[Si, match("ndata", p$statsvars)]
-      # vg = vg_global
-      samplerange = vg$range
 
+      ndata = S[Si, match("ndata", p$statsvars)]
+
+      useglobal = FALSE
+      if (!is.finite(ndata) ) useglobal=TRUE
+      if (!is.finite(vg$range) ) useglobal=TRUE
+
+      if (useglobal) vg = vg_global
 
       if (!is.finite(ndata) ) {
         U = Yi[ which(

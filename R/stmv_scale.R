@@ -64,8 +64,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
   }
 
 
-
-  stmv_nmins = sort( unique( c(1, p$stmv_nmin_downsize_factor * p$stmv_nmin ) ), decreasing=TRUE )
+  stmv_nmins = sort( unique( c(1, p$stmv_nmin_downsize_factor) * p$stmv_nmin ) , decreasing=TRUE )
 
 
 

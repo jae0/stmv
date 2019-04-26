@@ -15,7 +15,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
     debug_plot_variable_index=1
     extrapolate_predictions=FALSE
     robustify_quantiles=c(0.0005, 0.9995)
-    # runmode=c("interpolate", "globalmodel")
+    # runmode=c("interpolate", "scale", "globalmodel")
     # runmode=c("interpolate")
   }
 
@@ -381,7 +381,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
     # then a second pass to borrow from neighbouring estimate where possible
     if ("scale.reload" %in% runmode ) {
       S = stmv_attach( p$storage.backend, p$ptr$S )
-      load( p$saved_state_fn$stats
+      load( p$saved_state_fn$stats )
       S[] = sS[]
       sS = = NULL
     }
