@@ -1,5 +1,5 @@
 
-stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, eps=1e-9, stmv_internal_scale=NA ) {
+stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, eps=1e-6, stmv_internal_scale=NA ) {
   #\\ simple nonlinear least squares fit
 
   if (is.na(stmv_internal_scale)) stmv_internal_scale= max(vx)/2

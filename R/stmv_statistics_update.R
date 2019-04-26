@@ -1,4 +1,4 @@
-stmv_statistics_update =  function(p, res, W, Si ) {
+stmv_statistics_update =  function(p, res, W, Si, eps=1e-6 ) {
   # compute and extract misc summary statistics from results
   S = stmv_attach( p$storage.backend, p$ptr$S )
   Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
@@ -34,7 +34,7 @@ stmv_statistics_update =  function(p, res, W, Si ) {
           out["ar_timerange"] = ts.stat$quantilePeriod
           if (all( is.finite(pac$mean))) {
             afin = which (is.finite(pac$mean) )
-            if (length(afin) > 5 && var( pac$mean, na.rm=TRUE) > p$eps ) {
+            if (length(afin) > 5 && var( pac$mean, na.rm=TRUE) > eps ) {
               ar1 = NULL
               ar1 = try( ar( pac$mean, order.max=1 ) )
               if (!inherits(ar1, "try-error")) {

@@ -1,6 +1,6 @@
 
 
-stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
+stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runmode="default", ... ) {
   #\\ core function to interpolate (model and predict) in parallel
 
   if (0) {
@@ -22,7 +22,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
   if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
 
-  if (!exists("stmv_interpolate_nmin", p )) p$stmv_interpolate_nmin = p$stmv_nmin
+
 
 
   #---------------------
@@ -81,79 +81,139 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
   }
 
 
+  # global estimates
+  vg_global = list(
+    range = quantile( S[, match("range", p$statsvars)], probs=0.975, na.rm=TRUE ),
+    nu = median( S[, match("nu", p$statsvars)], na.rm=TRUE ),
+    varObs = median( S[, match("varObs", p$statsvars)], na.rm=TRUE ),
+    varSpatial = median( S[, match("varSpatial", p$statsvars)], na.rm=TRUE ),
+    phi = median( S[, match("phi", p$statsvars)], na.rm=TRUE )
+  )
+
+
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
 
     if ( iip %in% logpoints )  currentstatus = stmv_logfile(p=p)
     Si = p$runs[ iip, "locs" ]
     if (debugging) print( paste("index =", iip, ";  Si = ", Si ) )
-
     if ( Sflag[Si] == E[["complete"]] ) next()
 
-    vg = stmv_scale_filter(p=p, Si=Si )
+    if (runmode %in% c( "default" ) ) {
 
-    if (exists("stmv_rangecheck", p)) {
-      if (p$stmv_rangecheck=="paranoid") {
-        if ( vg$flag %in% c("variogram_range_limit", "variogram_failure") ) {
-          Sflag[Si] = E[[vg$flag]]
-          next()
+      vg = stmv_scale_filter(p=p, Si=Si )
+
+      if (exists("stmv_rangecheck", p)) {
+        if (p$stmv_rangecheck=="paranoid") {
+          if ( vg$flag %in% c("variogram_range_limit", "variogram_failure") ) {
+            Sflag[Si] = E[[vg$flag]]
+            next()
+          }
         }
       }
-    }
+      # obtain indices of data locations withing a given spatial range, optimally determined via variogram
+      # faster to take a block .. but easy enough to take circles ...
+      U = Yi[ which(
+        {abs( Sloc[Si,1] - Yloc[Yi[],1] ) <= vg$range} &
+        {abs( Sloc[Si,2] - Yloc[Yi[],2] ) <= vg$range}
+      )]  # indices of good data
+      ndata = length(U)
 
-    # obtain indices of data locations withing a given spatial range, optimally determined via variogram
-    # faster to take a block .. but easy enough to take circles ...
-    U = Yi[ which(
-      {abs( Sloc[Si,1] - Yloc[Yi[],1] ) <= vg$range} &
-      {abs( Sloc[Si,2] - Yloc[Yi[],2] ) <= vg$range}
-    )]  # indices of good data
-    ndata = length(U)
+      if (!is.finite(ndata) ) {
+        Sflag[Si] = E[["variogram_failure"]]
+        next()
+      } else {
+        if (ndata < p$stmv_nmin) {
+          Sflag[Si] = E[["insufficient_data"]]
+        } else if (ndata > p$stmv_nmax) {
+          # try to trim
+          if ( exists("TIME", p$variables)) {
+            Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )
+            iU = stmv_discretize_coordinates( coo=cbind(Yloc[U,], Ytime[U]), ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )
+          } else {
+            iU = stmv_discretize_coordinates( coo=Yloc[U,], ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )
+          }
+          U = U[iU]
+          ndata = length(U)
+          iU = NULL
+          if (ndata < p$stmv_nmin) {
+            # retain crude estimate and run with it
+            Sflag[Si] =  E[["insufficient_data"]]
+            next()
+          } else if (ndata > p$stmv_nmax) {
+            # force via a random subsample
+            U = U[ .Internal( sample( length(U), p$stmv_nmax, replace=FALSE, prob=NULL)) ] # simple random
+            ndata = p$stmv_nmax
+          }
+        } else  if (ndata <= p$stmv_nmax & ndata >= p$stmv_nmin) {
+          # all good .. nothing to do
+        }
+      }
 
-    if (!is.finite(ndata) ) {
-      Sflag[Si] = E[["variogram_failure"]]
-      next()
-    } else {
-      if (ndata < p$stmv_interpolate_nmin) {
+      if ( Sflag[Si] != E[["todo"]] ) {
+        if (exists("stmv_rangecheck", p)) {
+          if (p$stmv_rangecheck=="paranoid") {
+            U = NULL
+            if (debugging) message("Error: stmv_rangecheck paranoid")
+            next()
+          }
+        }
+      }
+
+    } else if (runmode=="boostdata") {
+
+      ndata = S[Si, match("ndata", p$statsvars)]
+      # vg = vg_global
+      samplerange = vg$range
+
+
+      if (!is.finite(ndata) ) {
+        U = Yi[ which(
+          {abs( Sloc[Si,1] - Yloc[Yi[],1] ) <= vg$range*2 } &
+          {abs( Sloc[Si,2] - Yloc[Yi[],2] ) <= vg$range*2 }
+        )]
+        ndata = length(U)
+
+      } else {
+
+        U = Yi[ which(
+          {abs( Sloc[Si,1] - Yloc[Yi[],1] ) <= vg$range} &
+          {abs( Sloc[Si,2] - Yloc[Yi[],2] ) <= vg$range}
+        )]  # indices of good data
+
+      }
+
+      if (ndata < p$stmv_nmin) {
         Sflag[Si] = E[["insufficient_data"]]
-      } else if (ndata > p$stmv_interpolate_nmax) {
+      } else if (ndata > p$stmv_nmax) {
         # try to trim
         if ( exists("TIME", p$variables)) {
           Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )
-          iU = stmv_discretize_coordinates( coo=cbind(Yloc[U,], Ytime[U]), ntarget=p$stmv_interpolate_nmax, minresolution=p$minresolution, method="thin" )
+          iU = stmv_discretize_coordinates( coo=cbind(Yloc[U,], Ytime[U]), ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )
         } else {
-          iU = stmv_discretize_coordinates( coo=Yloc[U,], ntarget=p$stmv_interpolate_nmax, minresolution=p$minresolution, method="thin" )
+          iU = stmv_discretize_coordinates( coo=Yloc[U,], ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )
         }
         U = U[iU]
         ndata = length(U)
         iU = NULL
-        if (ndata < p$stmv_interpolate_nmin) {
+        if (ndata < p$stmv_nmin) {
           # retain crude estimate and run with it
           Sflag[Si] =  E[["insufficient_data"]]
           next()
-        } else if (ndata > p$stmv_interpolate_nmax) {
+        } else if (ndata > p$stmv_nmax) {
           # force via a random subsample
-          U = U[ .Internal( sample( length(U), p$stmv_interpolate_nmax, replace=FALSE, prob=NULL)) ] # simple random
-          ndata = p$stmv_interpolate_nmax
+          U = U[ .Internal( sample( length(U), p$stmv_nmax, replace=FALSE, prob=NULL)) ] # simple random
+          ndata = p$stmv_nmax
         }
-      } else  if (ndata <= p$stmv_interpolate_nmax & ndata >= p$stmv_interpolate_nmin) {
+      } else  if (ndata <= p$stmv_nmax & ndata >= p$stmv_nmin) {
         # all good .. nothing to do
       }
+
     }
 
+    # last check
     S[Si, match("ndata", p$statsvars)] = ndata  # update in case it has changed
-
-    if (ndata < p$stmv_interpolate_nmin) next()  # last check
-
-    if ( Sflag[Si] != E[["todo"]] ) {
-      if (exists("stmv_rangecheck", p)) {
-        if (p$stmv_rangecheck=="paranoid") {
-          U = NULL
-          if (debugging) message("Error: stmv_rangecheck paranoid")
-          next()
-        }
-      }
-    }
-
+    if (ndata < p$stmv_nmin) next()
 
     # if here then there is something to do
     # NOTE:: U are the indices of locally useful data
@@ -223,6 +283,41 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       points( Ploc[pa$i,2] ~ Ploc[ pa$i, 1] , col="black", pch=20, cex=0.7 ) # check on pa$i indexing -- prediction locations
     }
 
+    if (runmode=="boostdata") {
+      # augment data with prior estimates and predictions
+      dist_fc = floor(vg$range/p$pres)
+      pa_fc = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=dist_fc ) )
+      if (is.null(pa_fc)) {
+        Sflag[Si] = E[["prediction_area"]]
+        if (debugging) message( Si )
+        if (debugging) message("Error with issue with prediction grid ... null .. this should not happen")
+        pa_fc = dist_fc = NULL
+        next()
+      }
+      if ( inherits(pa_fc, "try-error") ) {
+        pa_fc = dist_fc = NULL
+        Sflag[Si] = E[["prediction_area"]]
+        if (debugging) message("Error: prediction grid ... try-error .. this should not happen")
+        next()
+      }
+      if (nrow(pa_fc) > 1) {
+        augmented_data = P[pa_fc$i]
+        good = which( is.finite(augmented_data))
+        ngood = length(good)
+        if ( ngood > 1) {
+          pa_fc = pa_fc[good,]
+          pa_fc[, p$variable$Y] = augmented_data[good] # copy
+          if ( (ngood + ndata ) > p$stmv_nmax ) {
+            nmore = p$stmv_nmax - ndata
+            keep = .Internal( sample( ngood, nmore, replace=FALSE, prob=NULL) ) # thin
+            pa_fc = pa_fc[keep,]
+          }
+          pa_fc$weights = 1
+          dat = rbind(dat, pa_fc[, dat_names])
+        }
+      }
+      pa_fc = keep = augmented_data = nmore = ngood = NULL
+    }
 
     # model and prediction .. outputs are in scale of the link (and not response)
     # the following permits user-defined models (might want to use compiler::cmpfun )
@@ -292,8 +387,9 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       next()  # looks to be a faulty solution
     }
 
-  # update to rsquared in stats
-    S[Si, match( names("rsquared"), p$statsvars )] = res$stmv_stats$rsquared
+
+    # update to rsquared in stats
+    if (runmode=="default") S[Si, match( names("rsquared"), p$statsvars )] = res$stmv_stats$rsquared
 
     res$stmv_stats = NULL # reduce memory usage
 

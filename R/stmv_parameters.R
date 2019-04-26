@@ -40,18 +40,14 @@ stmv_parameters = function( p=list(), ... ) {
   if( !exists( "stmv_range_correlation", p)) p$stmv_range_correlation = 0.9   # correlation value at which to compute a "range" distance
 
   if (!exists( "stmv_global_family", p)) p$stmv_global_family = gaussian(link = "identity")
-  if (!exists( "stmv_eps", p)) p$stmv_eps = 0.001  # distance units for eps noise to permit mesh gen for boundaries
-  if (!exists( "eps", p)) p$eps = 1e-6 # floating point precision
+
   if (!exists( "boundary", p)) p$boundary = FALSE
   if (!exists( "depth.filter", p)) p$depth.filter = FALSE # if !FALSE .. depth is given as m so, choose andy stats locations with elevation > 1 m as being on land
-  if (!exists( "stmv_kernelmethods_use_all_data", p)) p$stmv_kernelmethods_use_all_data =TRUE ## speed and RAM usage improvement is minimal (if any) when off, leave on or remove option and fix as on
 
-  # downsampling (thinning) of data via a simple discretization and uniform weight of data counts in each block .. 1== use current discretization (pres, pres, tres)
-  if (!exists("stmv_downsampling_multiplier", p))  p$stmv_downsampling_multiplier = 1
-  if (!exists("stmv_nmin_forcecomplete_factor", p)) p$stmv_nmin_forcecomplete_factor = c(0.75, 0.5)
+  if (!exists( "stmv_nmin_downsize_factor", p)) p$stmv_nmin_downsize_factor = c(0.75, 0.5)
 
-  if (!exists("stmv_lowpass_phi", p)) p$stmv_lowpass_phi = p$pres*2 # FFT based method when operating gloablly
-  if (!exists("stmv_lowpass_nu", p)) p$stmv_lowpass_nu = 0.5 # this is exponential covar
+  if (!exists( "stmv_lowpass_phi", p)) p$stmv_lowpass_phi = p$pres*2 # FFT based method when operating gloablly
+  if (!exists( "stmv_lowpass_nu", p)) p$stmv_lowpass_nu = 0.5 # this is exponential covar
 
   # used by "fields" GRMF functions
   if ( p$stmv_local_modelengine %in% c("gaussianprocess2Dt")) {
@@ -132,9 +128,9 @@ stmv_parameters = function( p=list(), ... ) {
 
   if ( !exists("minresolution", p)) {
     if ( exists("TIME", p$variables)) {
-      p$minresolution = p$stmv_downsampling_multiplier*c(p$pres, p$pres, p$tres)
+      p$minresolution = c(p$pres, p$pres, p$tres)
     } else {
-      p$minresolution = p$stmv_downsampling_multiplier*c(p$pres, p$pres )
+      p$minresolution = c(p$pres, p$pres )
     }
   }
 

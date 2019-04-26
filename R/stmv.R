@@ -395,7 +395,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
       "unknown"
     )]
 
-    for ( nnn in p$stmv_nmin_forcecomplete_factor ) {
+    for ( nnn in p$stmv_nmin_downsize_factor ) {
       nmin_to_use = floor(p$stmv_nmin*nnn )
       currentstatus = stmv_db( p=p, DS="statistics.status" )
       toreset = which( Sflag[] %in% unlist(Eflags_reset) )
@@ -884,29 +884,13 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
   # --------------------
 
   if (force_complete_solution) {
-    message( "\n||| Entering -force complete solution- interpolation stage \n" )
+    message( "\n||| Entering -force complete solution- stage \n" )
     # finalize all interpolations where there are missing data/predictions using
     # interpolation based on data and augmented by previous predictions
-    # NOTE:: no covariates are used
-
+    # NOTE:: no covariates are used .. only fft
     E = stmv_error_codes()
     Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
     p$clusters = p$stmv_clusters[["interpolate"]] # as ram reqeuirements increase drop cpus
-
-    # basic  interpolation with fewer data points
-    for ( nnn in p$stmv_nmin_forcecomplete_factor ) {
-      nmin_to_use = floor(p$stmv_nmin*nnn )
-      locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
-      if ( !is.null(locs_to_do) && length(locs_to_do) > 0) Sflag[locs_to_do] = E[["todo"]]
-      locs_to_do = NULL
-      currentstatus = stmv_db( p=p, DS="statistics.status" )
-      p$time_start_interpolation = Sys.time()
-      p$stmv_interpolate_nmin = nmin_to_use
-      p$stmv_interpolate_nmax = p$stmv_nmax
-      parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) )  # take low number data
-    }
-
-    # now force all using a
     locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
     if ( !is.null(locs_to_do) && length(locs_to_do) > 0) Sflag[locs_to_do] = E[["todo"]]
     locs_to_do = NULL
@@ -920,7 +904,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
     p$time_start_interpolation_force_complete = Sys.time()
     p$stmv_interpolate_nmin = p$stmv_nmin  # revert
     p$stmv_interpolate_nmax = p$stmv_nmax  # revert
-    parallel_run( stmv_interpolate_boost, p=p, runindex=list( locs=sample( currentstatus$todo )))
+    parallel_run( stmv_interpolate, p=p, runmode="boostdata", runindex=list( locs=sample( currentstatus$todo )))
   }
 
 

@@ -1,11 +1,11 @@
 
-matern_phi2distance = function( phi, nu=0.5, cor=0.95, dmax=phi*13, nX=5000, eps=1e-3 ) {   
+matern_phi2distance = function( phi, nu=0.5, cor=0.95, dmax=phi*13, nX=5000, eps=1e-6 ) {
 
   #\\ estimate distance at which spatial (matern) correlations drops to a given threshold cor
   #\\ NOTE:: the default parameterization is Wikipedia's paramterization:
   #\\ == Rasmussen, Carl Edward (2006) Gaussian Processes for Machine Learning
   #\\  sigma^2 * (2^{1-nu} / Gamma(nu) ) * (sqrt(2*nu) * ||x|| / phi)^{nu} * K_{nu}( sqrt(2*nu) * ||x|| / phi)
-  #\\   where K_{nu} is the Bessel function with smooth nu and phi is known as the range parameter  
+  #\\   where K_{nu} is the Bessel function with smooth nu and phi is known as the range parameter
   # -------------------------
 
     phi = max( eps, phi, na.rm=TRUE )
