@@ -88,6 +88,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runmode="default", ...
     phi = median( S[, match("phi", p$statsvars)], na.rm=TRUE )
   )
 
+  if( vg_global$nu < 0.25 | vg_global$nu > 4) vg_global$nu = 0.5
 
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
@@ -310,7 +311,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runmode="default", ...
           pa_fc = pa_fc[good,]
           pa_fc[, p$variable$Y] = augmented_data[good] # copy
           if ( (ngood + ndata ) > p$stmv_nmax ) {
-            nmore = p$stmv_nmax - ndata
+            nmore = max(1, p$stmv_nmax - ndata)
             keep = .Internal( sample( ngood, nmore, replace=FALSE, prob=NULL) ) # thin
             pa_fc = pa_fc[keep,]
           }
@@ -383,6 +384,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runmode="default", ...
     }
 
     if (length(which( is.finite(res$predictions$mean ))) < 5) {
+      browser()
       Sflag[Si] =  E[["prediction_error"]]   # modelling / prediction did not complete properly
       res = NULL
       if (debugging) message("Error: prediction error")

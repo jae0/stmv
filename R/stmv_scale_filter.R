@@ -68,6 +68,9 @@ stmv_scale_filter = function( p, Si ) {
   if (nu_redo) {
     vg$flag = "variogram_failure"
     nu_median =  median( S[ii, match("nu", p$statsvars)], na.rm=TRUE )
+    if (nu_median < 0.25 | nu_median > 4 )  {
+      nu_median = 0.5
+    }
     if (is.finite(nu_median)) {
       vg$nu = nu_median
     } else {
