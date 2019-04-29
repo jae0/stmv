@@ -3,7 +3,7 @@ stmv_scale_filter = function( p, Si ) {
   S = stmv_attach( p$storage.backend, p$ptr$S )
   Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
 
-  distance_limits = c( p$stmv_distance_prediction, max(p$stmv_distance_scale))  # for range estimate
+  distance_limits = range( c(p$pres*3,  p$stmv_distance_scale ) )   # for range estimate
 
   vg = list(
     range = S[Si, match("range", p$statsvars)] ,
@@ -30,19 +30,19 @@ stmv_scale_filter = function( p, Si ) {
     vg$flag = "variogram_failure"
     max_dist = max(p$stmv_distance_scale)
     ii = which(
-      {abs( Sloc[Si,1] - Sloc[,1] ) <= max_dist} &
-      {abs( Sloc[Si,2] - Sloc[,2] ) <= max_dist}
+      {abs( Sloc[Si,1] - Sloc[,1] ) <= distance_limits[2]} &
+      {abs( Sloc[Si,2] - Sloc[,2] ) <= distance_limits[2]}
     )
     if (length(ii) > 0) {
       range_median = median( S[ii, match("range", p$statsvars)], na.rm=TRUE )
       if (is.finite( range_median)) {
         vg$range =  range_median
-      } else {
-        vg$range =  max_dist
       }
-    } else {
-      vg$range =  max_dist
     }
+
+    if ( vg$range < distance_limits[1] )  vg$range = distance_limits[1]
+    if ( vg$range > distance_limits[2] )  vg$range = distance_limits[2]
+
   }
 
 
@@ -96,7 +96,7 @@ stmv_scale_filter = function( p, Si ) {
     if (is.finite(phi_median)) {
       vg$phi = phi_median
     } else {
-      vg$phi = vg$range/sqrt(8*vg$nu)
+      vg$phi = vg$range/sqrt(8*vg$nu)  # approx rule rule in inla for nu=1 (alpha=2)
     }
   }
 

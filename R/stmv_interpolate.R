@@ -98,7 +98,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runmode="default", ...
     if (debugging) print( paste("index =", iip, ";  Si = ", Si ) )
     if ( Sflag[Si] == E[["complete"]] ) next()
 
-    vg = stmv_scale_filter(p=p, Si=Si )
+    vg = stmv_scale_filter( p=p, Si=Si )
 
     if (runmode %in% c( "default" ) ) {
 
@@ -161,7 +161,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runmode="default", ...
 
     } else if (runmode=="boostdata") {
 
-
       ndata = S[Si, match("ndata", p$statsvars)]
 
       useglobal = FALSE
@@ -175,7 +174,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runmode="default", ...
           {abs( Sloc[Si,1] - Yloc[Yi[],1] ) <= vg$range*2 } &
           {abs( Sloc[Si,2] - Yloc[Yi[],2] ) <= vg$range*2 }
         )]
-        ndata = length(U)
 
       } else {
 
@@ -185,6 +183,8 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runmode="default", ...
         )]  # indices of good data
 
       }
+
+      ndata = length(U)
 
       if (ndata < p$stmv_nmin) {
         Sflag[Si] = E[["insufficient_data"]]
