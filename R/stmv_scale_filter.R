@@ -39,12 +39,11 @@ stmv_scale_filter = function( p, Si ) {
         vg$range =  range_median
       }
     }
-
-    if ( vg$range < distance_limits[1] )  vg$range = distance_limits[1]
-    if ( vg$range > distance_limits[2] )  vg$range = distance_limits[2]
-
   }
 
+  if (!is.finite(vg$range)) vg$range = distance_limits[2]
+  if ( vg$range < distance_limits[1] )  vg$range = distance_limits[1]
+  if ( vg$range > distance_limits[2] )  vg$range = distance_limits[2]
 
   # as range is now set, the following becomes fixed
   if (is.null(ii)) {
