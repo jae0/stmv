@@ -81,7 +81,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runmode="default", ...
 
   # global estimates
   vg_global = list(
-    range = max( min( median( S[, match("range", p$statsvars)], na.rm=TRUE ), max(p$stmv_distance_scale )),  min(p$stmv_distance_scale )),
+    range = max( min( median( S[, match("range", p$statsvars)], na.rm=TRUE ), max(p$stmv_distance_scale )),  min(p$pres*3, p$stmv_distance_scale )),
     nu = median( S[, match("nu", p$statsvars)], na.rm=TRUE ),
     varObs = median( S[, match("varObs", p$statsvars)], na.rm=TRUE ),
     varSpatial = median( S[, match("varSpatial", p$statsvars)], na.rm=TRUE ),
