@@ -65,8 +65,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
 
 
   stmv_nmins = sort( unique( c(1, p$stmv_nmin_downsize_factor) * p$stmv_nmin ) , decreasing=TRUE )
-
-
+  stmv_nmax = p$stmv_nmax
 
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
@@ -85,7 +84,20 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
           {abs( Sloc[Si,1] - Yloc[Yi[],1] ) <= stmv_distance_cur} &
           {abs( Sloc[Si,2] - Yloc[Yi[],2] ) <= stmv_distance_cur} )  # faster to take a block
         ndata = length(U)
-        if ( ndata >= nmin_data ) break()
+        if ( ndata >= nmin_data ) {
+          if (ndata > stmv_nmax ) {
+            # try to trim
+            if ( exists("TIME", p$variables)) {
+              Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )
+              iU = stmv_discretize_coordinates( coo=cbind(Yloc[U,], Ytime[U]), ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )
+            } else {
+              iU = stmv_discretize_coordinates( coo=Yloc[U,], ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )
+            }
+            ndata = length(iU)
+            U=U[iU]
+            if ( ndata >= nmin_data ) break()
+          }
+        }
       }
     }
 
