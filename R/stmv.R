@@ -375,6 +375,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
 
   ################
 
+
   if ( "scale" %in% runmode ) {
     # must be done in 2-passes .. the first in paranoid mode to fill with estimates that are reliable,
     # then a second pass to borrow from neighbouring estimate where possible
@@ -384,21 +385,8 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
     DATA = NULL
     E = stmv_error_codes()
     message ( "\n", "||| Entering spatial scale (variogram) determination")
-
-    Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
+    currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
     p$clusters = p$stmv_clusters[["scale"]] # as ram reqeuirements increase drop cpus
-    Eflags_reset = E[ c(
-      "insufficient_data",
-      "variogram_failure",
-      "variogram_range_limit",
-      "unknown"
-    )]
-
-    currentstatus = stmv_db( p=p, DS="statistics.status" )
-    toreset = which( Sflag[] %in% unlist(Eflags_reset) )
-    if (length(toreset) > 0) Sflag[toreset] = E[["todo"]]
-    toreset = NULL
-    currentstatus = stmv_db( p=p, DS="statistics.status" ) # update again
     p$time_start_interpolation = Sys.time()
     parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
 
@@ -413,6 +401,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
     load( tmpDATA )
 
   } else {
+
 
     # reload previously generated stats (in "scale" runmode)
     if (variogram_source =="inline") {
@@ -444,7 +433,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
       }
       nx = ny = u = stats = NULL
     }
+
   }
+
 
 
   if ( !{"interpolate" %in% runmode} ) {
@@ -726,16 +717,18 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
   file.create( p$stmv_current_status, showWarnings=FALSE )
   currentstatus = stmv_logfile(p = p)  # init log file
 
+  if (is.null(use_saved_state)) stmv_statistics_status( p=p, reset="features" )  # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
+
+
   if ( any(grepl("debug", runmode)) ) {
 
     message( "\n" )
     message( "||| Debugging from man stmv call." )
     message( "||| To load from the saved state try: stmv_db( p=p, DS='load_saved_state' ) " )
-    message( "||| To reset stats: currentstatus = stmv_db( p=p, DS='statistics.status.reset' ) " )
 
     # -----------------------------------------------------
     if ( "debug" %in% runmode ) {
-      currentstatus = stmv_db( p=p, DS="statistics.status" )
+      currentstatus = stmv_statistics_status( p=p )
       pdeb = parallel_run ( p=p, runindex=list( locs=sample( currentstatus$todo )) ) # reconstruct reauired params
       print( c( unlist( currentstatus[ c("n.total", "n.too_shallow", "n.todo", "n.skipped", "n.outside_bounds", "n.complete" ) ] ) ))
       message( "||| Entering browser mode ...")
@@ -809,23 +802,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
   }
 
 
-  # -----------------------------------------------------
-
-  E = stmv_error_codes()
-  Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-  Sflag[] =  E[["todo"]]  # reset to todo status as variogram estimation uses this flag too
-
-  if (is.null(use_saved_state))   stmv_db( p=p, DS="statistics.Sflag" )  # flags/filter stats locations base dupon prediction covariates.
-
-  if ( "reset_incomplete_locations" %in% runmode ) {
-    # this resets errors flags and areas without viable predictions
-    locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
-    if ( !is.null(locs_to_do) && length(locs_to_do) > 0) {
-      Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-      Sflag[locs_to_do] = stmv_error_codes()[["todo"]]
-    }
-    locs_to_do = NULL
-  }
 
   stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data
 
@@ -833,15 +809,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
   # -----------------------------------------------------
 
   if ("interpolate" %in% runmode ) {
-    E = stmv_error_codes()
-    Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-
     p$clusters = p$stmv_clusters[["interpolate"]] # as ram reqeuirements increase drop cpus
-    locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
-    if ( !is.null(locs_to_do) && length(locs_to_do) > 0) Sflag[locs_to_do] = E[["todo"]]
-    locs_to_do = NULL
-    currentstatus = stmv_db( p=p, DS="statistics.status" )
     p$time_start_interpolation = Sys.time()
+    currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
     parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) )
 
   }
@@ -883,13 +853,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
     # finalize all interpolations where there are missing data/predictions using
     # interpolation based on data and augmented by previous predictions
     # NOTE:: no covariates are used .. only fft
-    E = stmv_error_codes()
-    Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
     p$clusters = p$stmv_clusters[["interpolate"]] # as ram reqeuirements increase drop cpus
-    locs_to_do = stmv_db( p=p, DS="flag.incomplete.predictions" )
-    if ( !is.null(locs_to_do) && length(locs_to_do) > 0) Sflag[locs_to_do] = E[["todo"]]
-    locs_to_do = NULL
-    currentstatus = stmv_db( p=p, DS="statistics.status" )
     p$stmv_local_modelengine = "fft"
     p$stmv_fft_filter="matern"  #  matern, krige (very slow), lowpass, lowpass_matern
     if (p$stmv_fft_filter %in% c("lowpass", "lowpass_matern") ) {
@@ -897,6 +861,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
       if (!exists("stmv_lowpass_nu", p))  p$stmv_lowpass_nu = 0.5  #exponential
     }
     p$time_start_interpolation_force_complete = Sys.time()
+    currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
     parallel_run( stmv_interpolate, p=p, runoption="boostdata", runindex=list( locs=sample( currentstatus$todo )))
   }
 

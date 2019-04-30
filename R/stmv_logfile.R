@@ -39,7 +39,7 @@ stmv_logfile = function(p, flag="default"){
     "n.complete",
     "prop_incomp" )
   header = paste( c( varstoout) )
-  currentstatus = stmv_db( p=p, DS="statistics.status" )
+  currentstatus = stmv_statistics_status( p=p )
   currentstatus = c( unlist( currentstatus[ varstoout ] ) )
 
   nrate = currentstatus["n.complete"]/ as.numeric(dtimehr)
