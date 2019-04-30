@@ -140,16 +140,17 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runmode="default", ...
             iMore = uu[ .Internal( sample( nuu, {p$stmv_nmin - ndata}, replace=FALSE, prob=NULL)) ]
             U = U[c(iU, iMore)]
             ndata = p$stmv_nmin
+            iMore = nuu = uu = NULL
           } else if (ndata > p$stmv_nmax) {
             # force via a random subsample
             U = U[iU]
             U = U[ .Internal( sample( length(U), p$stmv_nmax, replace=FALSE, prob=NULL)) ] # simple random
             ndata = p$stmv_nmax
           }
-          iU = NULL
         } else  if (ndata <= p$stmv_nmax & ndata >= p$stmv_nmin) {
           # all good .. nothing to do
         }
+        iU = NULL
       }
 
       if ( Sflag[Si] != E[["todo"]] ) {
@@ -207,16 +208,17 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runmode="default", ...
           iMore = uu[ .Internal( sample( nuu, {p$stmv_nmin - ndata}, replace=FALSE, prob=NULL)) ]
           U = U[c(iU, iMore)]
           ndata = p$stmv_nmin
+          iMore = nuu = uu = NULL
         } else if (ndata > p$stmv_nmax) {
           # force via a random subsample
           U = U[iU]
           U = U[ .Internal( sample( length(U), p$stmv_nmax, replace=FALSE, prob=NULL)) ] # simple random
           ndata = p$stmv_nmax
         }
-        iU = NULL
       } else  if (ndata <= p$stmv_nmax & ndata >= p$stmv_nmin) {
         # all good .. nothing to do
       }
+      iU = NULL
 
     }
 
