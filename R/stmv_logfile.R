@@ -1,4 +1,4 @@
-stmv_logfile = function(p){
+stmv_logfile = function(p, flag="default"){
 
   time_current = Sys.time()
 
@@ -53,7 +53,8 @@ stmv_logfile = function(p){
 
   cat( paste( "---", p$data_root, p$variables$Y, p$spatial.domain, "--- \n\n"), file=fn, append=FALSE )
   cat( paste( "stmv start time :", p$time_start, "\n"), file=fn, append=TRUE )
-  cat( paste( paste("Interpolation start time (", t_suffix, "):", sep=""), time_interpolation, "\n"), file=fn, append=TRUE )
+  cat( paste( flag, "\n"), file=fn, append=FALSE )
+  cat( paste( paste("Runmode start time (", t_suffix, "):", sep=""), time_interpolation, "\n"), file=fn, append=TRUE )
   cat( paste( "Current time :", time_current, "\n"), file=fn, append=TRUE )
   cat( paste( "Total elapsed time :", format(dtime_totalelapsed), "\n" ), file=fn, append=TRUE)
   cat( paste( paste("Time spent interpolating (", t_suffix, "):", sep=""), format(dtime), "\n" ), file=fn, append=TRUE)

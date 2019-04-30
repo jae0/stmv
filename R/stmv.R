@@ -897,7 +897,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
       if (!exists("stmv_lowpass_nu", p))  p$stmv_lowpass_nu = 0.5  #exponential
     }
     p$time_start_interpolation_force_complete = Sys.time()
-    parallel_run( stmv_interpolate, p=p, runmode="boostdata", runindex=list( locs=sample( currentstatus$todo )))
+    parallel_run( stmv_interpolate, p=p, runoption="boostdata", runindex=list( locs=sample( currentstatus$todo )))
   }
 
 

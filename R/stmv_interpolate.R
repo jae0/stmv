@@ -1,6 +1,6 @@
 
 
-stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runmode="default", ... ) {
+stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", ... ) {
   #\\ core function to interpolate (model and predict) in parallel
 
   if (0) {
@@ -9,7 +9,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runmode="default", ...
     p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) )
     ip = 1:p$nruns
     debugging=TRUE
-    runmode="default"
+    runoption="default"
   }
 
   # ---------------------
@@ -94,7 +94,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runmode="default", ...
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
 
-    if ( iip %in% logpoints )  currentstatus = stmv_logfile(p=p, flag=runmode)
+    if ( iip %in% logpoints )  currentstatus = stmv_logfile(p=p, flag=runoption)
     Si = p$runs[ iip, "locs" ]
 
     # print( paste("index =", iip, ";  Si = ", Si ) )
@@ -103,7 +103,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runmode="default", ...
 
     vg = stmv_scale_filter( p=p, Si=Si )
 
-    if (runmode %in% c( "default" ) ) {
+    if (runoption %in% c( "default" ) ) {
 
       if (exists("stmv_rangecheck", p)) {
         if (p$stmv_rangecheck=="paranoid") {
@@ -169,7 +169,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runmode="default", ...
         }
       }
 
-    } else if (runmode=="boostdata") {
+    } else if (runoption=="boostdata") {
 
       ndata = S[Si, match("ndata", p$statsvars)]
 
@@ -303,7 +303,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runmode="default", ...
       points( Ploc[pa$i,2] ~ Ploc[ pa$i, 1] , col="black", pch=20, cex=0.7 ) # check on pa$i indexing -- prediction locations
     }
 
-    if (runmode=="boostdata") {
+    if (runoption=="boostdata") {
       # augment data with prior estimates and predictions
       dist_fc = floor(vg$range/p$pres)
       pa_fc = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=dist_fc ) )
@@ -410,7 +410,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runmode="default", ...
 
 
     # update to rsquared in stats
-    if (runmode=="default") S[Si, match( names("rsquared"), p$statsvars )] = res$stmv_stats$rsquared
+    if (runoption=="default") S[Si, match( names("rsquared"), p$statsvars )] = res$stmv_stats$rsquared
 
     res$stmv_stats = NULL # reduce memory usage
 
