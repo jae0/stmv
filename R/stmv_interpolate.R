@@ -9,6 +9,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runmode="default", ...
     p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) )
     ip = 1:p$nruns
     debugging=TRUE
+    runmode="default"
   }
 
   # ---------------------
@@ -93,8 +94,10 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runmode="default", ...
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
 
-    if ( iip %in% logpoints )  currentstatus = stmv_logfile(p=p)
+    if ( iip %in% logpoints )  currentstatus = stmv_logfile(p=p, flag=runmode)
     Si = p$runs[ iip, "locs" ]
+
+    # print( paste("index =", iip, ";  Si = ", Si ) )
     if (debugging) print( paste("index =", iip, ";  Si = ", Si ) )
     if ( Sflag[Si] == E[["complete"]] ) next()
 
@@ -146,7 +149,10 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runmode="default", ...
             U = U[iU]
             U = U[ .Internal( sample( length(U), p$stmv_nmax, replace=FALSE, prob=NULL)) ] # simple random
             ndata = p$stmv_nmax
+          } else {
+            U = U[iU]
           }
+
         } else  if (ndata <= p$stmv_nmax & ndata >= p$stmv_nmin) {
           # all good .. nothing to do
         }
@@ -214,7 +220,10 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runmode="default", ...
           U = U[iU]
           U = U[ .Internal( sample( length(U), p$stmv_nmax, replace=FALSE, prob=NULL)) ] # simple random
           ndata = p$stmv_nmax
+        } else {
+          U = U[iU]
         }
+
       } else  if (ndata <= p$stmv_nmax & ndata >= p$stmv_nmin) {
         # all good .. nothing to do
       }
