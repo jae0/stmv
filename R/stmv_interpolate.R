@@ -132,18 +132,21 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runmode="default", ...
           } else {
             iU = stmv_discretize_coordinates( coo=Yloc[U,], ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )
           }
-          U = U[iU]
-          ndata = length(U)
-          iU = NULL
+          ndata = length(iU)
           if (ndata < p$stmv_nmin) {
             # retain crude estimate and run with it
-            Sflag[Si] =  E[["insufficient_data"]]
-            next()
+            uu = setdiff( 1:length(U), iU)
+            nuu = length(uu)
+            iMore = uu[ .Internal( sample( nuu, {p$stmv_nmin - ndata}, replace=FALSE, prob=NULL)) ]
+            U = U[c(iU, iMore)]
+            ndata = p$stmv_nmin
           } else if (ndata > p$stmv_nmax) {
             # force via a random subsample
+            U = U[iU]
             U = U[ .Internal( sample( length(U), p$stmv_nmax, replace=FALSE, prob=NULL)) ] # simple random
             ndata = p$stmv_nmax
           }
+          iU = NULL
         } else  if (ndata <= p$stmv_nmax & ndata >= p$stmv_nmin) {
           # all good .. nothing to do
         }
@@ -196,18 +199,21 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runmode="default", ...
         } else {
           iU = stmv_discretize_coordinates( coo=Yloc[U,], ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )
         }
-        U = U[iU]
-        ndata = length(U)
-        iU = NULL
+        ndata = length(iU)
         if (ndata < p$stmv_nmin) {
           # retain crude estimate and run with it
-          Sflag[Si] =  E[["insufficient_data"]]
-          next()
+          uu = setdiff( 1:length(U), iU)
+          nuu = length(uu)
+          iMore = uu[ .Internal( sample( nuu, {p$stmv_nmin - ndata}, replace=FALSE, prob=NULL)) ]
+          U = U[c(iU, iMore)]
+          ndata = p$stmv_nmin
         } else if (ndata > p$stmv_nmax) {
           # force via a random subsample
+          U = U[iU]
           U = U[ .Internal( sample( length(U), p$stmv_nmax, replace=FALSE, prob=NULL)) ] # simple random
           ndata = p$stmv_nmax
         }
+        iU = NULL
       } else  if (ndata <= p$stmv_nmax & ndata >= p$stmv_nmin) {
         # all good .. nothing to do
       }
