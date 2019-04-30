@@ -378,12 +378,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
   if ( "scale" %in% runmode ) {
     # must be done in 2-passes .. the first in paranoid mode to fill with estimates that are reliable,
     # then a second pass to borrow from neighbouring estimate where possible
-    if ("scale.reload" %in% runmode ) {
-      S = stmv_attach( p$storage.backend, p$ptr$S )
-      load( p$saved_state_fn$stats )
-      S[] = sS[]
-      sS = NULL
-    }
 
     tmpDATA = file.path( p$stmvSaveDir, "tmp_DATA.rdata" )
     save( DATA, file=tmpDATA)
@@ -414,8 +408,42 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
 
     message( "||| Scale estimation surface complete." )
     message( "||| stats temporarily saved to (for restarts): ", p$saved_state_fn$stats )
+
+    # reload main data to continue
     load( tmpDATA )
 
+  } else {
+
+    # reload previously generated stats (in "scale" runmode)
+    if (variogram_source =="inline") {
+      if (!file.exists(p$saved_state_fn$stats)) stop( "Variogram stats not found.")
+      sS = NULL
+      load(p$saved_state_fn$stats)
+      if (is.null(sS)) stop( "Variogram stats empty.")
+      S = stmv_attach( p$storage.backend, p$ptr$S )
+      S[] = sS[]
+      sS = NULL
+    }
+
+    if (variogram_source =="stmv.statistics") {
+      fn = file.path( p$stmvSaveDir, paste( "stmv.statistics", "rdata", sep=".") )
+      if (!file.exists(fn)) stop( "stmv.stats not found")
+      stats = NULL
+      load(fn)
+      if (is.null(stats)) stop ("stmv.stats empty")
+      S = stmv_attach( p$storage.backend, p$ptr$S )
+      Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
+      Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+      nx = length(seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ))
+      ny = length(seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ) )
+      if (nx*ny != nrow(S) ) stop( "stmv.statistics has the wrong dimensionality/size" )
+      for ( i in 1:length( p$statsvars ) ) {
+        # linear interpolation
+        u = as.image( stats[,i], x=Ploc[,], na.rm=TRUE, nx=nx, ny=ny )
+        S[,i] = as.vector( fields::interp.surface( u, loc=Sloc[] ) ) # linear interpolation
+      }
+      nx = ny = u = stats = NULL
+    }
   }
 
 
@@ -571,39 +599,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
   Ploc = NULL;
   gc()
 
-
-
-
-  # reload previously generated stats (in "scale" runmode)
-  if (variogram_source =="inline") {
-    if (!file.exists(p$saved_state_fn$stats)) stop( "Variogram stats not found.")
-    sS = NULL
-    load(p$saved_state_fn$stats)
-    if (is.null(sS)) stop( "Variogram stats empty.")
-    S = stmv_attach( p$storage.backend, p$ptr$S )
-    S[] = sS[]
-    sS = NULL
-  }
-
-  if (variogram_source =="stmv.statistics") {
-    fn = file.path( p$stmvSaveDir, paste( "stmv.statistics", "rdata", sep=".") )
-    if (!file.exists(fn)) stop( "stmv.stats not found")
-    stats = NULL
-    load(fn)
-    if (is.null(stats)) stop ("stmv.stats empty")
-    S = stmv_attach( p$storage.backend, p$ptr$S )
-    Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
-    Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
-    nx = length(seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ))
-    ny = length(seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ) )
-    if (nx*ny != nrow(S) ) stop( "stmv.statistics has the wrong dimensionality/size" )
-    for ( i in 1:length( p$statsvars ) ) {
-      # linear interpolation
-      u = as.image( stats[,i], x=Ploc[,], na.rm=TRUE, nx=nx, ny=ny )
-      S[,i] = as.vector( fields::interp.surface( u, loc=Sloc[] ) ) # linear interpolation
-    }
-    nx = ny = u = stats = NULL
-  }
 
 
   if (exists("stmv_global_modelengine", p) ) {
