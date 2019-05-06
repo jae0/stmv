@@ -48,8 +48,14 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
 
   # pre-calculate indices and dim for data to use inside the loop
   dat_names = unique( c(  p$variables$Y, p$variable$LOCS, p$variables$local_all,  "weights") )  # excludes p$variables$TIME
+  if (p$stmv_local_modelengine %in% c("fft", "tps") ) {
+    if ( exists("TIME", p$variables)) {
+      dat_names = c(dat_names, p$variables$TIME)
+    }
+  }
   # unless it is an explicit covariate and not a seasonal component there is no need for it
   # .. prediction grids create these from a time grid on the fly
+
   dat_nc = length( dat_names )
   iY = which(dat_names== p$variables$Y)
   ilocs = which( dat_names %in% p$variable$LOCS )
@@ -255,9 +261,9 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
     if (p$stmv_local_modelengine %in% c("fft", "tps") ) {
       if ( exists("TIME", p$variables)) {
         dat[, p$variables$TIME] = Ytime[U,]
-        dat_names = c(dat_names, p$variables$TIME)
       }
     }
+
 
     # remember that these are crude mean/discretized estimates
     if (debugging) {
@@ -303,6 +309,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
       points( Ploc[pa$i,2] ~ Ploc[ pa$i, 1] , col="black", pch=20, cex=0.7 ) # check on pa$i indexing -- prediction locations
     }
 
+
     if (runoption=="boostdata") {
       # augment data with prior estimates and predictions
       dist_fc = floor(vg$range/p$pres)
@@ -327,16 +334,17 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
         if ( ngood > 1) {
           pa_fc = pa_fc[good,]
           pa_fc[, p$variable$Y] = augmented_data[good] # copy
-          if ( (ngood + ndata ) > p$stmv_nmax ) {
-            nmore = max(1, p$stmv_nmax - ndata)
-            keep = .Internal( sample( ngood, nmore, replace=FALSE, prob=NULL) ) # thin
-            pa_fc = pa_fc[keep,]
-          }
+          # if ( (ngood + ndata ) > p$stmv_nmax ) {
+          #   nmore = max(1, p$stmv_nmax - ndata)
+          #   keep = .Internal( sample( ngood, nmore, replace=FALSE, prob=NULL) ) # thin
+          #   pa_fc = pa_fc[keep,]
+          # }
           pa_fc$weights = 1
-          dat = rbind(dat, pa_fc[, dat_names])
+          dat = rbind(dat[, dat_names], pa_fc[, dat_names])
+          ndata = nrow(dat)
         }
       }
-      pa_fc = keep = augmented_data = nmore = ngood = NULL
+      pa_fc = augmented_data  = ngood = NULL
     }
 
     # model and prediction .. outputs are in scale of the link (and not response)

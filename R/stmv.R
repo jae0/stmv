@@ -392,7 +392,8 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
 
     # temp save to disk
     sS = stmv_attach( p$storage.backend, p$ptr$S )[]
-    save( sS, file=p$saved_state_fn$stats, compress=TRUE ); sS = NULL
+    save( sS, file=p$saved_state_fn$stats, compress=TRUE );
+    sS = NULL
 
     message( "||| Scale estimation surface complete." )
     message( "||| stats temporarily saved to (for restarts): ", p$saved_state_fn$stats )
@@ -405,6 +406,10 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="inline",
 
     # reload previously generated stats (in "scale" runmode)
     if (variogram_source =="inline") {
+      # nothing to do
+    }
+
+    if (variogram_source =="saved_state") {
       if (!file.exists(p$saved_state_fn$stats)) stop( "Variogram stats not found.")
       sS = NULL
       load(p$saved_state_fn$stats)

@@ -67,23 +67,26 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
 
   sp.covar = sp.covar2 = sp.covar.surf = sp.covar.surf2 = dgrid = center = mC = NULL
 
-  xi =1:nrow(dat)
+  xi =1:nrow(dat)  # all data as p$nt==1
   pa_i = 1:nrow(pa)
   origin=c(x_r[1], x_c[1])
   res=c(p$pres, p$pres)
+
+  zz = matrix(1:(nr*nc), nrow = nr, ncol = nc)
+
 
   for ( ti in 1:p$nt ) {
 
     if ( exists("TIME", p$variables) ) {
       xi = which( dat[ , p$variables$TIME] == p$prediction.ts[ti] )
       pa_i = which( pa[, p$variables$TIME] == p$prediction.ts[ti])
-    } else {
-      xi = 1:nrow(dat) # all data as p$nt==1
-      pa_i = 1:nrow(pa)
     }
 
-
     # map of row, col indices of input data in the new (output) coordinate system
+    if (length(xi) < 5 ) {
+      # print( ti)
+      next()
+    }
 
     x_id = array_map( "xy->2", coords=dat[xi,p$variables$LOCS], origin=origin, res=res )
 
@@ -112,9 +115,11 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
 
     # bounds check: make sure predictions exist
     Z_i_test = NULL
-    Z_i_test = which( Z_i<1 | Z_i[,1] > nr | Z_i[,2] > nc )
+    Z_i_test = which( Z_i[,1]<1 | Z_i[,2]<1  | Z_i[,1] > nr | Z_i[,2] > nc )
+
     if (length(Z_i_test) > 0) {
-      pa$mean[pa_i[-Z_i_test]] = Z[Z_i[-Z_i_test]]
+      keep = zz[ Z_i[-Z_i_test,] ]
+      pa$mean[pa_i[keep]] = Z[keep]
     } else {
       pa$mean[pa_i] = Z[Z_i]
     }
