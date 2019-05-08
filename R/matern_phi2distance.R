@@ -1,5 +1,5 @@
 
-matern_phi2distance = function( phi, nu=0.5, cor=0.95, dmax=phi*13, nX=5000, eps=1e-6 ) {
+matern_phi2distance = function( phi, nu=0.5, cor=0.1, dmax=phi*13, nX=5000, eps=1e-6 ) {
 
   #\\ estimate distance at which spatial (matern) correlations drops to a given threshold cor
   #\\ NOTE:: the default parameterization is Wikipedia's paramterization:
@@ -13,7 +13,7 @@ matern_phi2distance = function( phi, nu=0.5, cor=0.95, dmax=phi*13, nX=5000, eps
     dmax = max( eps, dmax, na.rm=TRUE )
     u = matrix(0, ncol=2, nrow=nX )
     u[,2] = seq(0, dmax, length.out=nX )
-    u[,1] = 1 - stmv_matern( u[,2], mRange=phi, mSmooth=nu ) # covariance
+    u[,1] = stmv_matern( u[,2], mRange=phi, mSmooth=nu ) # autocorrelation
     distance = approx( u, xout=cor )$y
     return(distance)
 }

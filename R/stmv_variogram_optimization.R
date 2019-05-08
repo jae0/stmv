@@ -1,5 +1,5 @@
 
-stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, eps=1e-6, stmv_internal_scale=NA ) {
+stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, eps=1e-6, stmv_internal_scale=NA, cor=0.1 ) {
   #\\ simple nonlinear least squares fit
 
   if (is.na(stmv_internal_scale)) stmv_internal_scale= max(vx)/2
@@ -61,7 +61,7 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, eps=1e-6
       fit$summary$phi=fit$par[["phi"]]
       fit$summary$varSpatial=fit$par[["sigma.sq"]]
       fit$summary$varObs=fit$par[["tau.sq"]]
-      fit$summary$range=matern_phi2distance( phi=fit$summary$phi, nu=fit$summary$nu )
+      fit$summary$range=matern_phi2distance( phi=fit$summary$phi, nu=fit$summary$nu, cor=p$stmv_range_correlation )
       fit$summary$range_ok = ifelse( fit$summary$range < fit$summary$vgm_dist_max*0.99, TRUE, FALSE )
       fit$summary$objfn=fit$value
     }

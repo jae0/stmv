@@ -1,7 +1,7 @@
 
 stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
   plotdata=FALSE, methods=c("geoR"), discretized_n=100,
-  distance_cutoff=NA, nbreaks = 15, family="gaussian", stanmodel=NULL, range_correlation=0.9,
+  distance_cutoff=NA, nbreaks = 15, family="gaussian", stanmodel=NULL, range_correlation=0.1,
   modus_operandi="easygoing" ) {
 
   #\\ estimate empirical variograms (actually correlation functions)
@@ -359,7 +359,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
     todrop = unique( c(1, todrop) )
     vg = vario@empirical[-todrop]
     vx = vario@centers[-todrop]
-    fit = try( stmv_variogram_optimization( vx=vx, vg=vg, nu=0.5, plotvgm=plotdata, stmv_internal_scale=out$stmv_internal_scale ))
+    fit = try( stmv_variogram_optimization( vx=vx, vg=vg, nu=0.5, plotvgm=plotdata, stmv_internal_scale=out$stmv_internal_scale, cor=range_correlation ))
     if ( !inherits(fit, "try-error") ) {
       out$optim = fit$summary
       if (exists("range", out$optim)) {
@@ -424,7 +424,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
 
       vEm$dist0 = vEm$dist * out$stmv_internal_scale
 
-      fit = stmv_variogram_optimization( vx=vEm$dist0, vg=vEm$gamma, plotvgm=FALSE, stmv_internal_scale=out$stmv_internal_scale ) # nu=0.5 == exponential variogram
+      fit = stmv_variogram_optimization( vx=vEm$dist0, vg=vEm$gamma, plotvgm=FALSE, stmv_internal_scale=out$stmv_internal_scale, cor=range_correlation ) # nu=0.5 == exponential variogram
 
       if ( fit$summary$range_ok ) {
 

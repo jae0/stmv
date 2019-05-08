@@ -27,7 +27,7 @@ stmv__gstat = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varObs=NUL
     xy = dat[xi, c( p$variables$LOCS, p$variables$Y) ]
 
     vMod0 = vgm(psill=varSpatial, model="Mat", range=phi, nugget=varObs, kappa=nu ) # starting model parameters
-    gs = gstat(id = "hmk", formula=p$stmv_gstat_formula, locations=~plon+plat, data=xy[xi,], maxdist=approx_range, nmin=p$stmv_interpolate_nmin, nmax=p$stmv_interpolate_nmax, force=TRUE, model=vMod0 )
+    gs = gstat(id = "hmk", formula=p$stmv_gstat_formula, locations=~plon+plat, data=xy[xi,], maxdist=approx_range, nmin=p$stmv_nmin, nmax=p$stmv_nmax, force=TRUE, model=vMod0 )
     # this step adds a lot of time ..
     preds = predict(gs, newdata=xy[xi,] )
     dat$mean[xi] = as.vector( preds[,1] )

@@ -1,12 +1,16 @@
 
-stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist=FALSE, ... ) {
+stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist=FALSE, tol=1e-6, ... ) {
 
   #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
   #\\ note: time is not being modelled and treated independently
   #\\      .. you had better have enough data in each time slice
-  #\\ first a low-pass filter as defined by p$stmv_lowpass_nu, p$stmv_lowpass_phi, then a simple covariance filter determined by nu,phi ;; fft (no lowpass)
+  #\\ first a low-pass filter as defined by p$stmv_lowpass_nu, p$stmv_lowpass_phi,
+  #\\ then a simple covariance filter determined by nu,phi ;; fft (no lowpass)
+  #\\ based upon fields::image.smooth
 
   if (variablelist)  return( c() )
+
+  params = list(...)
 
   sdTotal=sd(dat[,p$variable$Y], na.rm=T)
 
@@ -36,7 +40,11 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   nc2 = 2 * nc
 
   # constainer for spatial filters
-  dgrid = make.surface.grid(list((1:nr2) * dx, (1:nc2) * dy))
+  grid.list = list((1:nr2) * dx, (1:nc2) * dy)
+  dgrid = as.matrix(expand.grid(grid.list))
+  dimnames(dgrid) = list(NULL, names(grid.list))
+  attr(dgrid, "grid.list") = grid.list
+
   center = matrix(c((dx * nr2)/2, (dy * nc2)/2), nrow = 1, ncol = 2)
 
   mC = matrix(0, nrow = nr2, ncol = nc2)
@@ -45,29 +53,82 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   if (!exists("stmv_fft_filter",p) ) p$stmv_fft_filter="lowpass" # default in case of no specification
 
   if ( p$stmv_fft_filter == "lowpass") {
-    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", range=p$stmv_lowpass_phi, nu=p$stmv_lowpass_nu )
+    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=p$stmv_lowpass_phi, smoothness=p$stmv_lowpass_nu )
     sp.covar.surf = as.surface(dgrid, c(sp.covar))$z
     sp.covar.kernel = fft(sp.covar.surf) / ( fft(mC) * nr2 * nc2 )
   }
 
   if (p$stmv_fft_filter %in% c("matern") ) {
-    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", range=phi, nu=nu )
+    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=phi, smoothness=nu )
     sp.covar.surf = as.surface(dgrid, c(sp.covar))$z
     sp.covar.kernel = fft(sp.covar.surf) / ( fft(mC) * nr2 * nc2 )
   }
 
   if (p$stmv_fft_filter == "lowpass_matern") {
     # both ..
-    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", range=p$stmv_lowpass_phi, nu=p$stmv_lowpass_nu )
+    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=p$stmv_lowpass_phi, smoothness=p$stmv_lowpass_nu )
     sp.covar.surf = as.surface(dgrid, c(sp.covar))$z
-    sp.covar2 = stationary.cov( dgrid, center, Covariance="Matern", range=phi, nu=nu )
+    sp.covar2 = stationary.cov( dgrid, center, Covariance="Matern", theta=phi, smoothness=nu )
     sp.covar.surf2 = as.surface(dgrid, c(sp.covar2))$z
-    sp.covar.kernel = {fft(sp.covar.surf)/ ( fft(mC) * nr2 * nc2 )} * {fft(sp.covar.surf2)/ ( fft(mC) * nr2 * nc2 )
-  } }
+    sp.covar.kernel = {fft(sp.covar.surf)/ ( fft(mC) * nr2 * nc2 )} * {fft(sp.covar.surf2)/ ( fft(mC) * nr2 * nc2 )}
+  }
+
+
+  if (p$stmv_fft_filter %in% c("matern_constant") ) {
+    # both ..
+    if (!exists("stmv_constant_nu", p)) {
+      stmv_constant_nu = 0.5
+    } else {
+      stmv_constant_nu = p$stmv_constant_nu
+    }
+
+    if (!exists("stmv_constant_phi", p)) {
+      stmv_constant_phi = p$pres
+    } else {
+      stmv_constant_phi = p$stmv_constant_phi
+    }
+
+    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=stmv_constant_phi, smoothness=stmv_constant_nu )
+    sp.covar.surf = as.surface(dgrid, c(sp.covar))$z
+    sp.covar.kernel = fft(sp.covar.surf) / ( fft(mC) * nr2 * nc2 )
+  }
+
+  if (p$stmv_fft_filter == "lowpass_matern_constant") {
+    # both ..
+    if (!exists("stmv_constant_nu", p)) {
+      stmv_constant_nu = 0.5
+    } else {
+      stmv_constant_nu = p$stmv_constant_nu
+    }
+
+    if (!exists("stmv_constant_phi", p)) {
+      stmv_constant_phi = p$pres
+    } else {
+      stmv_constant_phi = p$stmv_constant_phi
+    }
+
+    if (!exists("stmv_lowpass_nu", p)) {
+      stmv_lowpass_nu = 0.5
+    } else {
+      stmv_lowpass_nu = p$stmv_lowpass_nu
+    }
+
+    if (!exists("stmv_lowpass_phi", p)) {
+      stmv_lowpass_phi = p$pres / 2
+    } else {
+      stmv_lowpass_phi = p$stmv_lowpass_phi
+    }
+
+    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=stmv_lowpass_phi, smoothness=stmv_lowpass_nu )
+    sp.covar.surf = as.surface(dgrid, c(sp.covar))$z
+    sp.covar2 = stationary.cov( dgrid, center, Covariance="Matern", theta=stmv_constant_phi, smoothness=stmv_constant_nu )
+    sp.covar.surf2 = as.surface(dgrid, c(sp.covar2))$z
+    sp.covar.kernel = {fft(sp.covar.surf)/ ( fft(mC) * nr2 * nc2 )} * {fft(sp.covar.surf2)/ ( fft(mC) * nr2 * nc2 ) }
+  }
 
   sp.covar = sp.covar2 = sp.covar.surf = sp.covar.surf2 = dgrid = center = mC = NULL
 
-  xi =1:nrow(dat)  # all data as p$nt==1
+  dat_i =1:nrow(dat)  # all data as p$nt==1
   pa_i = 1:nrow(pa)
   origin=c(x_r[1], x_c[1])
   res=c(p$pres, p$pres)
@@ -78,37 +139,38 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   for ( ti in 1:p$nt ) {
 
     if ( exists("TIME", p$variables) ) {
-      xi = which( dat[ , p$variables$TIME] == p$prediction.ts[ti] )
+      dat_ = which( dat[ , p$variables$TIME] == p$prediction.ts[ti] )
       pa_i = which( pa[, p$variables$TIME] == p$prediction.ts[ti])
+      # map of row, col indices of input data in the new (output) coordinate system
+      if (length(dat_i) < 5 ) {
+        # print( ti)
+        next()
+      }
     }
 
-    # map of row, col indices of input data in the new (output) coordinate system
-    if (length(xi) < 5 ) {
-      # print( ti)
-      next()
-    }
+    x_id = array_map( "xy->2", coords=dat[dat_i,p$variables$LOCS], origin=origin, res=res )
 
-    x_id = array_map( "xy->2", coords=dat[xi,p$variables$LOCS], origin=origin, res=res )
-
-    u = as.image( dat[xi,p$variables$Y], ind=as.matrix( x_id), na.rm=TRUE, nx=nr, ny=nc )
-
-    mN = matrix(0, nrow = nr2, ncol = nc2)
-    mN[1:nr,1:nc] = u$weights
-    mN[!is.finite(mN)] = 0
+    u = as.image( dat[dat_i,p$variables$Y], ind=as.matrix( x_id), na.rm=TRUE, nx=nr, ny=nc )
 
     mY = matrix(0, nrow = nr2, ncol = nc2)
     mY[1:nr,1:nc] = u$z
     mY[!is.finite(mY)] = 0
 
+    mN = matrix(0, nrow = nr2, ncol = nc2)
+    mN[1:nr,1:nc] = u$weights
+    mN[!is.finite(mN)] = 0
+    # mN[1:nr, 1:nc] = ifelse(!is.na(Y), weights, 0)
+
     u = NULL
 
     # low pass filter based upon a global nu,phi .. remove high freq variation
-    fN = Re(fft(fft(mN) * sp.covar.kernel, inverse = TRUE))[1:nr,1:nc]
     fY = Re(fft(fft(mY) * sp.covar.kernel, inverse = TRUE))[1:nr,1:nc]
+    fN = Re(fft(fft(mN) * sp.covar.kernel, inverse = TRUE))[1:nr,1:nc]
 
     mY = mN = NULL
 
     Z = fY/fN
+    Z[ fN < tol ] = NA
     fY = fN = NULL
 
     Z_i = array_map( "xy->2", coords=pa[pa_i,p$variables$LOCS], origin=origin, res=res )
@@ -134,4 +196,9 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   # lattice::levelplot( mean ~ plon + plat, data=pa, col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
 
   return( list( predictions=pa, stmv_stats=stmv_stats ) )
+
+
+    if (0) {
+
+
 }

@@ -7,6 +7,8 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
     # for debugging  runs ..
     currentstatus = stmv_statistics_status( p=p )
     p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) )
+    # parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
+
     ip = 1:p$nruns
     debugging=TRUE
   }
