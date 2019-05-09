@@ -350,18 +350,18 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
     # model and prediction .. outputs are in scale of the link (and not response)
     # the following permits user-defined models (might want to use compiler::cmpfun )
     if (0) {
-      p$stmv_fft_filter = "lowpass_matern"
-      # p$stmv_fft_filter = "matern_constant"
+      # p$stmv_fft_filter = "normal_kernel"
+      # p$stmv_fft_filter = "lowpass_matern_constant"
       p$stmv_constant_nu = 0.5
-      p$stmv_constant_phi = p$pres * 20
+      p$stmv_constant_phi = p$pres *2
 
       p$stmv_lowpass_nu = 0.5
-      p$stmv_lowpass_phi = p$pres
+      p$stmv_lowpass_phi = p$pres/2
     }
 
     res =NULL
     res = try(
-      local_fn(
+      local_fn (
         p=p,
         dat=dat,
         pa=pa,
@@ -392,8 +392,8 @@ if (0) {
   # kriged
   fit = Krig( dat[, c("plon", "plat")], dat$z, Covariance="Matern", theta=p$stmv_constant_phi, smoothness=p$stmv_constant_nu)
   x11()
-  op = predict(fit)
-  tst = cbind( dat[, c("plon", "plat")], op )
+  op = predict(fit, x=pa[,c("plon", "plat")])
+  tst = cbind( pa[, c("plon", "plat")], op )
   mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
   image(mba.int, xaxs="r", yaxs="r")
 
@@ -420,14 +420,6 @@ if (0) {
   # kernel-based
   tst = as.image( Z=dat$z, x=dat[, c("plon", "plat")], nx=300, ny=300, na.rm=TRUE)
   out = fields::image.smooth( tst, theta=phi, xwidth=p$pres, ywidth=p$pres )
-  image(out)
-
-  isurf = fields::interp.surface( out, loc= pa[, c("plon", "plat")] )  # linear interp
-  # lattice::levelplot( isurf ~ pa[,"plon"] + pa[,"plat"], aspect="iso",  col=topo.colors(256) )
-  zout = as.image( Z=isurf, x=pa[, c("plon", "plat")], nx=100, ny=100, na.rm=TRUE )
-  image(zout)
-
-  out = fields::image.smooth( zout, theta=phi, xwidth=p$pres, ywidth=p$pres )
   image(out)
 
 }

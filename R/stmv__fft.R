@@ -1,5 +1,5 @@
 
-stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist=FALSE, tol=1e-6, ... ) {
+stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist=FALSE, tol=1e-6, weights = 1, ... ) {
 
   #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
   #\\ note: time is not being modelled and treated independently
@@ -13,6 +13,9 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   params = list(...)
 
   sdTotal=sd(dat[,p$variable$Y], na.rm=T)
+
+      # nr .. x/plon
+      # nc .. y/plat
 
   x_r = range(dat[,p$variables$LOCS[1]])
   x_c = range(dat[,p$variables$LOCS[2]])
@@ -45,7 +48,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   dimnames(dgrid) = list(NULL, names(grid.list))
   attr(dgrid, "grid.list") = grid.list
 
-  center = matrix(c((dx * nr2)/2, (dy * nc2)/2), nrow = 1, ncol = 2)
+  center = matrix(c((dx * nr), (dy * nc)), nrow = 1, ncol = 2)
 
   mC = matrix(0, nrow = nr2, ncol = nc2)
   mC[nr, nc] = 1
@@ -70,7 +73,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     sp.covar.surf = as.surface(dgrid, c(sp.covar))$z
     sp.covar2 = stationary.cov( dgrid, center, Covariance="Matern", theta=phi, smoothness=nu )
     sp.covar.surf2 = as.surface(dgrid, c(sp.covar2))$z
-    sp.covar.kernel = {fft(sp.covar.surf)/ ( fft(mC) * nr2 * nc2 )} * {fft(sp.covar.surf2)/ ( fft(mC) * nr2 * nc2 )}
+    fft_mC = fft(mC) * nr2 * nc2
+    sp.covar.kernel = {fft(sp.covar.surf) / fft_mC } * {fft(sp.covar.surf2)/ fft_mC }
   }
 
 
@@ -126,6 +130,22 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     sp.covar.kernel = {fft(sp.covar.surf)/ ( fft(mC) * nr2 * nc2 )} * {fft(sp.covar.surf2)/ ( fft(mC) * nr2 * nc2 ) }
   }
 
+
+  if (p$stmv_fft_filter == "normal_kernel") {
+      xi = seq(-(nr - 1), nr, 1) * dx / phi
+      yi = seq(-(nc - 1), nc, 1) * dy / phi
+      dd = ((matrix(xi, nr2, nc2)^2 + matrix(yi, nr2, nc2, byrow = TRUE)^2))  # squared distances
+      # double.exp: An R function that takes as its argument the _squared_
+      # distance between two points divided by the bandwidth. The
+      # default is exp( -abs(x)) yielding a normal kernel
+      kk = double.exp(dd)
+      mK = matrix(kk, nrow = nr2, ncol = nc2)
+      mC = matrix(0, nr2, nc2)
+      mC[nr, nc] = 1
+      W = fft(mK)/fft(mC)
+      sp.covar.kernel = W/(nr2 * nc2)  # kernal weights
+  }
+
   sp.covar = sp.covar2 = sp.covar.surf = sp.covar.surf2 = dgrid = center = mC = NULL
 
   dat_i =1:nrow(dat)  # all data as p$nt==1
@@ -140,7 +160,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
 
     if ( exists("TIME", p$variables) ) {
       dat_ = which( dat[ , p$variables$TIME] == p$prediction.ts[ti] )
-      pa_i = which( pa[, p$variables$TIME] == p$prediction.ts[ti])
+      pa_i = which( pa [ , p$variables$TIME] == p$prediction.ts[ti] )
       # map of row, col indices of input data in the new (output) coordinate system
       if (length(dat_i) < 5 ) {
         # print( ti)
@@ -148,30 +168,23 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
       }
     }
 
+    mY = mN = matrix(0, nrow = nr2, ncol = nc2)
     x_id = array_map( "xy->2", coords=dat[dat_i,p$variables$LOCS], origin=origin, res=res )
-
     u = as.image( dat[dat_i,p$variables$Y], ind=as.matrix( x_id), na.rm=TRUE, nx=nr, ny=nc )
 
-    mY = matrix(0, nrow = nr2, ncol = nc2)
-    mY[1:nr,1:nc] = u$z
+
+    mY[1:nr,1:nc] = u$z * weights
+    mN[1:nr,1:nc] = ifelse(!is.na(u$z), weights, 0)
+
     mY[!is.finite(mY)] = 0
 
-    mN = matrix(0, nrow = nr2, ncol = nc2)
-    mN[1:nr,1:nc] = u$weights
-    mN[!is.finite(mN)] = 0
-    # mN[1:nr, 1:nc] = ifelse(!is.na(Y), weights, 0)
+    fY = Re(fft(fft(mY) * sp.covar.kernel, inverse = TRUE))[1:nr, 1:nc]
+    fN = Re(fft(fft(mN) * sp.covar.kernel, inverse = TRUE))[1:nr, 1:nc]
+    Z = ifelse((fN > tol), (fY/fN), NA)
 
-    u = NULL
+    u = mY = mN = fY = fN = NULL
 
     # low pass filter based upon a global nu,phi .. remove high freq variation
-    fY = Re(fft(fft(mY) * sp.covar.kernel, inverse = TRUE))[1:nr,1:nc]
-    fN = Re(fft(fft(mN) * sp.covar.kernel, inverse = TRUE))[1:nr,1:nc]
-
-    mY = mN = NULL
-
-    Z = fY/fN
-    Z[ fN < tol ] = NA
-    fY = fN = NULL
 
     Z_i = array_map( "xy->2", coords=pa[pa_i,p$variables$LOCS], origin=origin, res=res )
 
@@ -187,18 +200,14 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     }
 
     # pa$sd[pa_i] = NA  ## fix as NA
-    Z = NULL
+    Z = Z_i = Z_i_test = NULL
   }
-
 
   stmv_stats = list( sdTotal=sdTotal, rsquared=NA, ndata=nrow(dat) ) # must be same order as p$statsvars
 
   # lattice::levelplot( mean ~ plon + plat, data=pa, col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
 
   return( list( predictions=pa, stmv_stats=stmv_stats ) )
-
-
-    if (0) {
 
 
 }

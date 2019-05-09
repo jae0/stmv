@@ -41,7 +41,7 @@ stmv_scale_filter = function( p, Si ) {
     }
   }
 
-  if (!is.finite(vg$range)) vg$range = distance_limits[2]
+  if (!is.finite(vg$range)) vg$range = median(distance_limits)
   if ( vg$range < distance_limits[1] )  vg$range = distance_limits[1]
   if ( vg$range > distance_limits[2] )  vg$range = distance_limits[2]
 
