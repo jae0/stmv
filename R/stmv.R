@@ -15,7 +15,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="saved_state",
     debug_plot_variable_index=1
     extrapolate_predictions=FALSE
     robustify_quantiles=c(0.0005, 0.9995)
-    # runmode=c("interpolate", "scale", "globalmodel")
+    # runmode=c("interpolate", "globalmodel")
     # runmode=c("interpolate")
   }
 
@@ -435,8 +435,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="saved_state",
         nx = ny = u = stats = NULL
       }
     }
-
-    currentstatus = stmv_statistics_status( p=p, reset="incomplete" )  # reset sflags
 
   }
 

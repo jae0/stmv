@@ -1,5 +1,5 @@
 
-stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist=FALSE, tol=1e-6, weights = 1, ... ) {
+stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist=FALSE, tol=1e-9, weights = 1, ... ) {
 
   #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
   #\\ note: time is not being modelled and treated independently

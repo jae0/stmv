@@ -111,10 +111,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
 
     ndata = S[Si, match("ndata", p$statsvars)]
 
-    useglobal = FALSE
-    if (!is.finite(ndata) ) useglobal=TRUE
-    if (!is.finite(localrange) ) useglobal=TRUE
-    if (useglobal) vg = vg_global
+    if (!is.finite(ndata) ) vg = vg_global
 
     localrange = matern_phi2distance( phi=vg$phi, nu=vg$nu, cor=p$stmv_range_correlation_interpolation )
 
@@ -392,7 +389,7 @@ if (0) {
   mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
   image(mba.int, xaxs="r", yaxs="r")
 
-  # inla
+  # mba - pa
   x11()
   tst = cbind( pa$plon, pa$plat, pa$mean )
   mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
@@ -414,7 +411,7 @@ if (0) {
 }
 
 
-    if (debugging) {
+    if (0) {
       print( str(res) )
       if (0) {
         lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==2012.05,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
@@ -466,8 +463,13 @@ if (0) {
     }
 
 
-    # update to rsquared in stats
-    if (runoption=="default") S[Si, match( names("rsquared"), p$statsvars )] = res$stmv_stats$rsquared
+    if (runoption=="default") {
+      # update to rsquared and "range" in stats
+      S[Si, match( names("rsquared"), p$statsvars )] = res$stmv_stats$rsquared
+      S[Si, match( names("range"), p$statsvars )] = localrange
+      S[Si, match( names("ndata"), p$statsvars )] = ndata
+    }
+
 
     res$stmv_stats = NULL # reduce memory usage
 
