@@ -6,14 +6,14 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL  ) {
   out = list()
 
   if (!is.null(reset)) {
-    if (reset=="incomplete") {
+    if ("incomplete" %in% reset) {
       locs_to_do = stmv_predictions_incomplete( p=p )
       if ( !is.null(locs_to_do) && length(locs_to_do) > 0) {
         Sflag[locs_to_do] = stmv_error_codes()[["todo"]]
       }
       locs_to_do = NULL
 
-    } else if (reset=="features") {
+    } else if ("features"  %in% reset) {
 
       # create location specific flags for analysis, etc..
 
