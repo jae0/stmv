@@ -109,6 +109,23 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
 
     vg = stmv_scale_filter( p=p, Si=Si )
 
+    ndata = S[Si, match("ndata", p$statsvars)]
+
+    useglobal = FALSE
+    if (!is.finite(ndata) ) useglobal=TRUE
+    if (!is.finite(localrange) ) useglobal=TRUE
+    if (useglobal) vg = vg_global
+
+    localrange = matern_phi2distance( phi=vg$phi, nu=vg$nu, cor=p$stmv_range_correlation_interpolation )
+
+    # obtain indices of data locations withing a given spatial range, optimally determined via variogram
+    # faster to take a block .. but easy enough to take circles ...
+    U = Yi[ which(
+      {abs( Sloc[Si,1] - Yloc[Yi[],1] ) <= localrange } &
+      {abs( Sloc[Si,2] - Yloc[Yi[],2] ) <= localrange }
+    )]
+    ndata = length(U)
+
     if (runoption %in% c( "default" ) ) {
 
       if (exists("stmv_rangecheck", p)) {
@@ -119,18 +136,14 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
           }
         }
       }
-      # obtain indices of data locations withing a given spatial range, optimally determined via variogram
-      # faster to take a block .. but easy enough to take circles ...
-      U = Yi[ which(
-        {abs( Sloc[Si,1] - Yloc[Yi[],1] ) <= vg$range} &
-        {abs( Sloc[Si,2] - Yloc[Yi[],2] ) <= vg$range}
-      )]  # indices of good data
-      ndata = length(U)
 
       if (!is.finite(ndata) ) {
+
         Sflag[Si] = E[["variogram_failure"]]
         next()
+
       } else {
+
         if (ndata < p$stmv_nmin) {
           Sflag[Si] = E[["insufficient_data"]]
         } else if (ndata > p$stmv_nmax) {
@@ -163,6 +176,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
           # all good .. nothing to do
         }
         iU = NULL
+
       }
 
       if ( Sflag[Si] != E[["todo"]] ) {
@@ -176,31 +190,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
       }
 
     } else if (runoption=="boostdata") {
-
-      ndata = S[Si, match("ndata", p$statsvars)]
-
-      useglobal = FALSE
-      if (!is.finite(ndata) ) useglobal=TRUE
-      if (!is.finite(vg$range) ) useglobal=TRUE
-
-      if (useglobal) vg = vg_global
-
-      if (!is.finite(ndata) ) {
-        U = Yi[ which(
-          {abs( Sloc[Si,1] - Yloc[Yi[],1] ) <= vg$range*2 } &
-          {abs( Sloc[Si,2] - Yloc[Yi[],2] ) <= vg$range*2 }
-        )]
-
-      } else {
-
-        U = Yi[ which(
-          {abs( Sloc[Si,1] - Yloc[Yi[],1] ) <= vg$range} &
-          {abs( Sloc[Si,2] - Yloc[Yi[],2] ) <= vg$range}
-        )]  # indices of good data
-
-      }
-
-      ndata = length(U)
 
       if (ndata < p$stmv_nmin) {
         Sflag[Si] = E[["insufficient_data"]]
@@ -249,8 +238,8 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
     # reconstruct data for modelling (dat)
     dat = matrix( 1, nrow=ndata, ncol=dat_nc )
     dat[,iY] = Y[U] # these are residuals if there is a global model
-    # add a small error term to prevent some errors when duplicate locations exist; vg$range offsets to positive values
-    dat[,ilocs] = Yloc[U,] + vg$range * runif(2*ndata, -1e-6, 1e-6)
+    # add a small error term to prevent some errors when duplicate locations exist; localrange offsets to positive values
+    dat[,ilocs] = Yloc[U,] + localrange * runif(2*ndata, -1e-6, 1e-6)
 
     if (p$nloccov > 0) dat[,icov] = Ycov[U, icov_local] # no need for other dim checks as this is user provided
     if (exists("TIME", p$variables)) dat[, itime_cov] = as.matrix(stmv_timecovars( vars=ti_cov, ti=Ytime[U,] ) )
@@ -263,7 +252,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
         dat[, p$variables$TIME] = Ytime[U,]
       }
     }
-
 
     # remember that these are crude mean/discretized estimates
     if (debugging) {
@@ -312,7 +300,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
 
     if (runoption=="boostdata") {
       # augment data with prior estimates and predictions
-      dist_fc = floor(vg$range/p$pres)
+      dist_fc = floor(localrange/p$pres)
       pa_fc = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=dist_fc ) )
       if (is.null(pa_fc)) {
         Sflag[Si] = E[["prediction_area"]]
@@ -370,7 +358,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
         varObs=vg$varObs,
         varSpatial=vg$varSpatial,
         sloc=Sloc[Si,],
-        distance=vg$range
+        distance=localrange
       )
     )
 
