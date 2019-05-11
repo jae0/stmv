@@ -72,7 +72,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
 
-    if ( iip %in% logpoints )  currentstatus = stmv_logfile(p=p)
+    if ( iip %in% logpoints )  currentstatus = stmv_logfile(p=p, flag= paste("Scale determination", runoption) )
     Si = p$runs[ iip, "locs" ]
     if ( Sflag[Si] != E[["todo"]] ) next()  # previously attempted .. skip
     if (debugging) print( paste("index =", iip, ";  Si = ", Si ) )

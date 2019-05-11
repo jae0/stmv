@@ -2,7 +2,7 @@
 stmv_interpolation_function = function( modelengine ) {
 
   # wrapper to copy interpolating function as a generic script
-
+  local_fn = NULL
   local_fn = switch( modelengine,
     bayesx = stmv__bayesx,
     gaussianprocess2Dt = stmv__gaussianprocess2Dt,
@@ -12,8 +12,7 @@ stmv_interpolation_function = function( modelengine ) {
     krige = stmv__krige,
     fft = stmv__fft,
     tps = stmv__tps,
-    twostep = stmv__twostep,
-    userdefined = modelengine
+    twostep = stmv__twostep
   )
   return( local_fn )
 }

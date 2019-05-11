@@ -37,15 +37,14 @@ stmv_parameters = function( p=list(), ... ) {
   if( !exists( "storage.backend", p))  p$storage.backend="bigmemory.ram"
 
   if( !exists( "stmv_variogram_method", p)) p$stmv_variogram_method="geoR"   # note GP methods are slow when there is too much data
-  if( !exists( "stmv_range_correlation", p)) p$stmv_range_correlation = 0.9   # auto-correlation value at which to compute a "range" distance for estimation
-  if( !exists( "stmv_range_correlation_interpolation", p)) p$stmv_range_correlation_interpolation = 0.1   # auto-correlation value at which to compute a "range" distance for interpolation
+  if( !exists( "stmv_range_correlation", p)) p$stmv_range_correlation = 0.1   # auto-correlation value at which to compute a "range" distance for estimation
 
   if (!exists( "stmv_global_family", p)) p$stmv_global_family = gaussian(link = "identity")
 
   if (!exists( "boundary", p)) p$boundary = FALSE
   if (!exists( "depth.filter", p)) p$depth.filter = FALSE # if !FALSE .. depth is given as m so, choose andy stats locations with elevation > 1 m as being on land
 
-  if (!exists( "stmv_nmin_downsize_factor", p)) p$stmv_nmin_downsize_factor = c(1.0, 0.75, 0.5)
+  if (!exists( "stmv_nmin_downsize_factor", p)) p$stmv_nmin_downsize_factor = c(1.0, 0.9, 0.8, 0.7, 0.6, 0.5)
 
   if (!exists( "stmv_lowpass_phi", p)) p$stmv_lowpass_phi = p$pres*2 # FFT based method when operating gloablly
   if (!exists( "stmv_lowpass_nu", p)) p$stmv_lowpass_nu = 0.5 # this is exponential covar

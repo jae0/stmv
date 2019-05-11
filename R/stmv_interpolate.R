@@ -100,7 +100,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
 
-    if ( iip %in% logpoints )  currentstatus = stmv_logfile(p=p, flag=runoption)
+    if ( iip %in% logpoints )  currentstatus = stmv_logfile(p=p, flag= paste("Interpolation", runoption) )
     Si = p$runs[ iip, "locs" ]
 
     # print( paste("index =", iip, ";  Si = ", Si ) )
@@ -109,11 +109,13 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
 
     vg = stmv_scale_filter( p=p, Si=Si )
 
-    ndata = S[Si, match("ndata", p$statsvars)]
+    useglobal =FALSE
+    if (!is.finite( S[Si, match("ndata", p$statsvars)] ) ) useglobal =TRUE
+    if (!is.finite( S[Si, match("range", p$statsvars)] ) ) useglobal =TRUE
+    if (useglobal) vg = vg_global
 
-    if (!is.finite(ndata) ) vg = vg_global
-
-    localrange = matern_phi2distance( phi=vg$phi, nu=vg$nu, cor=p$stmv_range_correlation_interpolation )
+    localrange = vg$range
+    if (runoption=="boostdata") localrange = matern_phi2distance( phi=vg$phi, nu=vg$nu, cor=0.95 ) # larger range
 
     # obtain indices of data locations withing a given spatial range, optimally determined via variogram
     # faster to take a block .. but easy enough to take circles ...
@@ -142,7 +144,9 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
       } else {
 
         if (ndata < p$stmv_nmin) {
+
           Sflag[Si] = E[["insufficient_data"]]
+
         } else if (ndata > p$stmv_nmax) {
           # try to trim
           if ( exists("TIME", p$variables)) {
@@ -224,7 +228,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
     }
 
     # last check
-    S[Si, match("ndata", p$statsvars)] = ndata  # update in case it has changed
     if (ndata < p$stmv_nmin) next()
 
     # if here then there is something to do
@@ -470,7 +473,6 @@ if (0) {
       S[Si, match( names("ndata"), p$statsvars )] = ndata
     }
 
-
     res$stmv_stats = NULL # reduce memory usage
 
 
@@ -519,3 +521,4 @@ if (0) {
   return(NULL)
 
 }
+s

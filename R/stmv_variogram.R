@@ -339,7 +339,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
   out$distance_cutoff = ifelse( is.na(distance_cutoff), out$range_crude * 1.5, distance_cutoff )
   zmin = min( z, na.rm=TRUE )
 
-  xy = xy + out$stmv_internal_scale * runif(2*out$Ndata, -1e-4, 1e-4) # add a small error term to prevent some errors in GRMF methods
+  xy = xy + out$stmv_internal_scale * runif(2*out$Ndata, -1e-6, 1e-6) # add a small error term to prevent some errors in GRMF methods
 
 
 
