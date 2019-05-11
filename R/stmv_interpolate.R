@@ -115,7 +115,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
     if (useglobal) vg = vg_global
 
     localrange = vg$range
-    if (runoption=="boostdata") localrange = matern_phi2distance( phi=vg$phi, nu=vg$nu, cor=0.95 ) # larger range
+    if (runoption=="boostdata") localrange = matern_phi2distance( phi=vg$phi, nu=vg$nu, cor=0.95 ) # slightly larger range
 
     # obtain indices of data locations withing a given spatial range, optimally determined via variogram
     # faster to take a block .. but easy enough to take circles ...
@@ -363,64 +363,61 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
     )
 
 
-if (0) {
-
-  require(MBA)
-  require(fields)
-
-  # kriged
-  fit = Krig( dat[, c("plon", "plat")], dat$z, Covariance="Matern", theta=vg$phi, smoothness=0.5)
-  x11()
-  op = predict(fit)
-  tst = cbind( dat[, c("plon", "plat")], op )
-  mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
-  image(mba.int, xaxs="r", yaxs="r")
-
-
-  # kriged
-  fit = Krig( dat[, c("plon", "plat")], dat$z, Covariance="Matern", theta=p$stmv_constant_phi, smoothness=p$stmv_constant_nu)
-  x11()
-  op = predict(fit, x=pa[,c("plon", "plat")])
-  tst = cbind( pa[, c("plon", "plat")], op )
-  mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
-  image(mba.int, xaxs="r", yaxs="r")
-
-
-  # raw data + mba
-  x11()
-  tst = cbind(  dat[, c("plon", "plat")], dat$z )
-  mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
-  image(mba.int, xaxs="r", yaxs="r")
-
-  # mba - pa
-  x11()
-  tst = cbind( pa$plon, pa$plat, pa$mean )
-  mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
-  image(mba.int, xaxs="r", yaxs="r")
-
-
-  # default
-  x11()
-  tst = cbind( res$predictions$plon,  res$predictions$plat,  res$predictions$mean )
-  mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
-  image(mba.int, xaxs="r", yaxs="r")
-
-
-  # kernel-based
-  tst = as.image( Z=dat$z, x=dat[, c("plon", "plat")], nx=300, ny=300, na.rm=TRUE)
-  out = fields::image.smooth( tst, theta=phi, xwidth=p$pres, ywidth=p$pres )
-  image(out)
-
-}
-
-
     if (0) {
+
+      require(MBA)
+      require(fields)
+
+      # kriged
+      fit = Krig( dat[, c("plon", "plat")], dat$z, Covariance="Matern", theta=vg$phi, smoothness=0.5)
+      x11()
+      op = predict(fit)
+      tst = cbind( dat[, c("plon", "plat")], op )
+      mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
+      image(mba.int, xaxs="r", yaxs="r")
+
+
+      # kriged
+      fit = Krig( dat[, c("plon", "plat")], dat$z, Covariance="Matern", theta=p$stmv_constant_phi, smoothness=p$stmv_constant_nu)
+      x11()
+      op = predict(fit, x=pa[,c("plon", "plat")])
+      tst = cbind( pa[, c("plon", "plat")], op )
+      mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
+      image(mba.int, xaxs="r", yaxs="r")
+
+
+      # raw data + mba
+      x11()
+      tst = cbind(  dat[, c("plon", "plat")], dat$z )
+      mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
+      image(mba.int, xaxs="r", yaxs="r")
+
+      # mba - pa
+      x11()
+      tst = cbind( pa$plon, pa$plat, pa$mean )
+      mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
+      image(mba.int, xaxs="r", yaxs="r")
+
+
+      # default
+      x11()
+      tst = cbind( res$predictions$plon,  res$predictions$plat,  res$predictions$mean )
+      mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
+      image(mba.int, xaxs="r", yaxs="r")
+
+
+      # kernel-based
+      tst = as.image( Z=dat$z, x=dat[, c("plon", "plat")], nx=300, ny=300, na.rm=TRUE)
+      out = fields::image.smooth( tst, theta=phi, xwidth=p$pres, ywidth=p$pres )
+      image(out)
+
       print( str(res) )
-      if (0) {
-        lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==2012.05,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
-        lattice::levelplot( mean ~ plon + plat, data=res$predictions, col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
-        for( i in sort(unique(res$predictions[,p$variables$TIME])))  print(lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==i,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
-      }
+
+      lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==2012.05,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
+
+      lattice::levelplot( mean ~ plon + plat, data=res$predictions, col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
+      for( i in sort(unique(res$predictions[,p$variables$TIME])))  print(lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==i,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
+
       dev.new()
       plot(  dat[,iY] ~ dat$yr, col="red"  )
       points( mean~tiyr, res$predictions, pch=20, col="gray", cex=0.5 )

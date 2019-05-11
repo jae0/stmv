@@ -7,7 +7,7 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL  ) {
 
   if (!is.null(reset)) {
     if ("incomplete" %in% reset) {
-      locs_to_do = stmv_predictions_incomplete( p=p )
+      locs_to_do = stmv_predictions_incomplete_flag( p=p )
       if ( !is.null(locs_to_do) && length(locs_to_do) > 0) {
         Sflag[locs_to_do] = stmv_error_codes()[["todo"]]
       }
