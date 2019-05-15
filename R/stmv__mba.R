@@ -64,7 +64,7 @@ stmv__mba = function( p=NULL, dat=NULL, pa=NULL, lambda=NULL, variablelist=FALSE
 
     if (length(Z_i_test) > 0) {
       keep = zz[ Z_i[-Z_i_test,] ]
-      pa$mean[pa_i[keep]] = Z[keep]
+      if (length(keep) > 0 ) pa$mean[pa_i[keep]] = Z[keep]
       keep = NULL
     } else {
       pa$mean[pa_i] = Z[Z_i]
