@@ -1,7 +1,7 @@
 
 
 stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="saved_state",
-  use_saved_state=NULL, save_completed_data=TRUE, force_complete_solution=TRUE, nlogs=200,
+  use_saved_state=NULL, save_completed_data=TRUE, force_complete_solution=TRUE, force_complete_method="fft", nlogs=200,
   debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE, robustify_quantiles=c(0.0005, 0.9995), ... ) {
 
   if (0) {
@@ -886,7 +886,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="saved_state",
 
     #parallel_run( stmv_interpolate_force_complete, p=p, nu=nu, phi=phi, runindex=list( locs=sample( currentstatus$todo )))
 
-    parallel_run( stmv_interpolate_force_complete, p=p, nu=nu, phi=phi, runindex=list( time_index=1:p$nt )))
+    parallel_run( stmv_interpolate_force_complete, p=p, nu=nu, phi=phi, force_complete_method=force_complete_method, runindex=list( time_index=1:p$nt ))
     message( "||| Time used for <interpolate_force_complete>:", format(difftime(  Sys.time(), p$time_start_interpolate_force_complete )), "\n" )
   }
 
