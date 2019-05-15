@@ -31,15 +31,10 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
   E = stmv_error_codes()
 
   Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
-  Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
   Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
 
   Y = stmv_attach( p$storage.backend, p$ptr$Y )
   Yi = stmv_attach( p$storage.backend, p$ptr$Yi )  # initial indices of good data
-
-  P = stmv_attach( p$storage.backend, p$ptr$P )
-  Pn = stmv_attach( p$storage.backend, p$ptr$Pn )
-  Psd = stmv_attach( p$storage.backend, p$ptr$Psd )
 
   if (p$nloccov > 0) Ycov = stmv_attach( p$storage.backend, p$ptr$Ycov )
   if ( exists("TIME", p$variables) ) Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )
@@ -85,10 +80,9 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
     savepoints = sample(logpoints, nsavepoints)
   }
 
-
   # global estimates
   vg_global = list(
-    range = max( min( median( S[, match("range", p$statsvars)], na.rm=TRUE ), max(p$stmv_distance_scale )),  min(p$pres, p$stmv_distance_scale )),
+    range = max( min( median( S[, match( "range", p$statsvars )], na.rm=TRUE ), max(p$stmv_distance_scale )),  min(p$pres, p$stmv_distance_scale )),
     nu = median( S[, match("nu", p$statsvars)], na.rm=TRUE ),
     varObs = median( S[, match("varObs", p$statsvars)], na.rm=TRUE ),
     varSpatial = median( S[, match("varSpatial", p$statsvars)], na.rm=TRUE ),
@@ -96,6 +90,11 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
   )
 
   if( vg_global$nu < 0.25 | vg_global$nu > 4) vg_global$nu = 0.5
+
+  range_index = match( "range", p$statsvars )
+  ndata_index = match( "ndata", p$statsvars )
+  rsquared_index = match("rsquared", p$statsvars )
+
 
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
@@ -109,13 +108,17 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
 
     vg = stmv_scale_filter( p=p, Si=Si )
 
+    ndata = vg$ndata
+    localrange = vg$range
+
     useglobal =FALSE
-    if (!is.finite( S[Si, match("ndata", p$statsvars)] ) ) useglobal =TRUE
-    if (!is.finite( S[Si, match("range", p$statsvars)] ) ) useglobal =TRUE
+    if (!is.finite( ndata ) ) useglobal =TRUE
+    if (!is.finite( localrange ) ) useglobal =TRUE
     if (useglobal) vg = vg_global
 
-    localrange = vg$range
-    if (runoption=="boostdata") localrange = matern_phi2distance( phi=vg$phi, nu=vg$nu, cor=0.95 ) # slightly larger range
+    if (runoption=="boostdata") {
+      localrange = matern_phi2distance( phi=vg$phi, nu=vg$nu, cor=p$stmv_range_correlation_boostdata )
+    }
 
     # obtain indices of data locations withing a given spatial range, optimally determined via variogram
     # faster to take a block .. but easy enough to take circles ...
@@ -125,73 +128,19 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
     )]
     ndata = length(U)
 
-    if (runoption %in% c( "default" ) ) {
-
-      if (exists("stmv_rangecheck", p)) {
-        if (p$stmv_rangecheck=="paranoid") {
-          if ( vg$flag %in% c("variogram_range_limit", "variogram_failure") ) {
-            Sflag[Si] = E[[vg$flag]]
-            next()
-          }
+    if (exists("stmv_rangecheck", p)) {
+      if (p$stmv_rangecheck=="paranoid") {
+        if ( vg$flag %in% c("variogram_range_limit", "variogram_failure") ) {
+          Sflag[Si] = E[[vg$flag]]
+          if (runoption == "default" ) next()
         }
       }
+    }
 
-      if (!is.finite(ndata) ) {
-
-        Sflag[Si] = E[["variogram_failure"]]
-        next()
-
-      } else {
-
-        if (ndata < p$stmv_nmin) {
-
-          Sflag[Si] = E[["insufficient_data"]]
-
-        } else if (ndata > p$stmv_nmax) {
-          # try to trim
-          if ( exists("TIME", p$variables)) {
-            Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )
-            iU = stmv_discretize_coordinates( coo=cbind(Yloc[U,], Ytime[U]), ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )
-          } else {
-            iU = stmv_discretize_coordinates( coo=Yloc[U,], ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )
-          }
-          ndata = length(iU)
-          if (ndata < p$stmv_nmin) {
-            # retain crude estimate and run with it
-            uu = setdiff( 1:length(U), iU)
-            nuu = length(uu)
-            iMore = uu[ .Internal( sample( nuu, {p$stmv_nmin - ndata}, replace=FALSE, prob=NULL)) ]
-            U = U[c(iU, iMore)]
-            ndata = p$stmv_nmin
-            iMore = nuu = uu = NULL
-          } else if (ndata > p$stmv_nmax) {
-            # force via a random subsample
-            U = U[iU]
-            U = U[ .Internal( sample( length(U), p$stmv_nmax, replace=FALSE, prob=NULL)) ] # simple random
-            ndata = p$stmv_nmax
-          } else {
-            U = U[iU]
-          }
-
-        } else  if (ndata <= p$stmv_nmax & ndata >= p$stmv_nmin) {
-          # all good .. nothing to do
-        }
-        iU = NULL
-
-      }
-
-      if ( Sflag[Si] != E[["todo"]] ) {
-        if (exists("stmv_rangecheck", p)) {
-          if (p$stmv_rangecheck=="paranoid") {
-            U = NULL
-            if (debugging) message("Error: stmv_rangecheck paranoid")
-            next()
-          }
-        }
-      }
-
-    } else if (runoption=="boostdata") {
-
+    if (!is.finite(ndata) ) {
+      Sflag[Si] = E[["variogram_failure"]]
+      if (runoption == "default" )  next()
+    } else {
       if (ndata < p$stmv_nmin) {
         Sflag[Si] = E[["insufficient_data"]]
       } else if (ndata > p$stmv_nmax) {
@@ -219,12 +168,20 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
         } else {
           U = U[iU]
         }
-
       } else  if (ndata <= p$stmv_nmax & ndata >= p$stmv_nmin) {
         # all good .. nothing to do
       }
       iU = NULL
+    }
 
+    if ( Sflag[Si] != E[["todo"]] ) {
+      if (exists("stmv_rangecheck", p)) {
+        if (p$stmv_rangecheck=="paranoid") {
+          U = NULL
+          if (debugging) message("Error: stmv_rangecheck paranoid")
+          if (runoption=="default")  next()
+        }
+      }
     }
 
     # last check
@@ -280,8 +237,10 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
     }
 
     if (debugging) {
+
       dev.new()
       # check that position indices are working properly
+      Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
       Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
       Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
       plot( Yloc[U,2] ~ Yloc[U,1], col="red", pch=".",
@@ -298,42 +257,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
     }
 
 
-    if (runoption=="boostdata") {
-      # augment data with prior estimates and predictions
-      dist_fc = floor(localrange/p$pres)
-      pa_fc = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=dist_fc ) )
-      if (is.null(pa_fc)) {
-        Sflag[Si] = E[["prediction_area"]]
-        if (debugging) message( Si )
-        if (debugging) message("Error with issue with prediction grid ... null .. this should not happen")
-        pa_fc = dist_fc = NULL
-        next()
-      }
-      if ( inherits(pa_fc, "try-error") ) {
-        pa_fc = dist_fc = NULL
-        Sflag[Si] = E[["prediction_area"]]
-        if (debugging) message("Error: prediction grid ... try-error .. this should not happen")
-        next()
-      }
-      if (nrow(pa_fc) > 1) {
-        augmented_data = P[pa_fc$i]
-        good = which( is.finite(augmented_data))
-        ngood = length(good)
-        if ( ngood > 1) {
-          pa_fc = pa_fc[good,]
-          pa_fc[, p$variable$Y] = augmented_data[good] # copy
-          # if ( (ngood + ndata ) > p$stmv_nmax ) {
-          #   nmore = max(1, p$stmv_nmax - ndata)
-          #   keep = .Internal( sample( ngood, nmore, replace=FALSE, prob=NULL) ) # thin
-          #   pa_fc = pa_fc[keep,]
-          # }
-          pa_fc$weights = 1
-          dat = rbind(dat[, dat_names], pa_fc[, dat_names])
-          ndata = nrow(dat)
-        }
-      }
-      pa_fc = augmented_data  = ngood = NULL
-    }
 
     # model and prediction .. outputs are in scale of the link (and not response)
     # the following permits user-defined models (might want to use compiler::cmpfun )
@@ -361,68 +284,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
         distance=localrange
       )
     )
-
-
-    if (0) {
-
-      require(MBA)
-      require(fields)
-
-      # kriged
-      fit = Krig( dat[, c("plon", "plat")], dat$z, Covariance="Matern", theta=vg$phi, smoothness=0.5)
-      x11()
-      op = predict(fit)
-      tst = cbind( dat[, c("plon", "plat")], op )
-      mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
-      image(mba.int, xaxs="r", yaxs="r")
-
-
-      # kriged
-      fit = Krig( dat[, c("plon", "plat")], dat$z, Covariance="Matern", theta=p$stmv_constant_phi, smoothness=p$stmv_constant_nu)
-      x11()
-      op = predict(fit, x=pa[,c("plon", "plat")])
-      tst = cbind( pa[, c("plon", "plat")], op )
-      mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
-      image(mba.int, xaxs="r", yaxs="r")
-
-
-      # raw data + mba
-      x11()
-      tst = cbind(  dat[, c("plon", "plat")], dat$z )
-      mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
-      image(mba.int, xaxs="r", yaxs="r")
-
-      # mba - pa
-      x11()
-      tst = cbind( pa$plon, pa$plat, pa$mean )
-      mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
-      image(mba.int, xaxs="r", yaxs="r")
-
-
-      # default
-      x11()
-      tst = cbind( res$predictions$plon,  res$predictions$plat,  res$predictions$mean )
-      mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
-      image(mba.int, xaxs="r", yaxs="r")
-
-
-      # kernel-based
-      tst = as.image( Z=dat$z, x=dat[, c("plon", "plat")], nx=300, ny=300, na.rm=TRUE)
-      out = fields::image.smooth( tst, theta=phi, xwidth=p$pres, ywidth=p$pres )
-      image(out)
-
-      print( str(res) )
-
-      lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==2012.05,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
-
-      lattice::levelplot( mean ~ plon + plat, data=res$predictions, col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
-      for( i in sort(unique(res$predictions[,p$variables$TIME])))  print(lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==i,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
-
-      dev.new()
-      plot(  dat[,iY] ~ dat$yr, col="red"  )
-      points( mean~tiyr, res$predictions, pch=20, col="gray", cex=0.5 )
-
-    }
 
     dat =  NULL
     pa  =  NULL
@@ -465,9 +326,8 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
 
     if (runoption=="default") {
       # update to rsquared and "range" in stats
-      S[Si, match( names("rsquared"), p$statsvars )] = res$stmv_stats$rsquared
-      S[Si, match( names("range"), p$statsvars )] = localrange
-      S[Si, match( names("ndata"), p$statsvars )] = ndata
+      S[Si, rsquared_index] = res$stmv_stats$rsquared
+      S[Si, ndata_index] = ndata
     }
 
     res$stmv_stats = NULL # reduce memory usage
@@ -501,21 +361,62 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
     # restarts would be broken otherwise
     Sflag[Si] = E[["complete"]]  # mark as complete without issues
 
-    if (0) {
-      # only for debugging data bigmemory structures
-      if ( iip %in% savepoints ) {
-        sP = P[]; save( sP, file=p$saved_state_fn$P, compress=TRUE ); sP=NULL
-        sPn = Pn[]; save( sPn, file=p$saved_state_fn$Pn, compress=TRUE ); sPn=NULL
-        sPsd = Psd[]; save( sPsd, file=p$saved_state_fn$Psd, compress=TRUE ); sPsd=NULL
-        sS = S[]; save( sS, file=p$saved_state_fn$stats, compress=TRUE ); sS=NULL
-        sSflag = Sflag[]; save( sSflag, file=p$saved_state_fn$sflag, compress=TRUE ); sSflag=NULL
-        currentstatus = stmv_logfile(p=p)
-      }
-    }
-
   }  # end for loop
+
 
   return(NULL)
 
+
+
+
+
+    if (0) {
+
+      require(MBA)
+      require(fields)
+
+      # kriged
+      fit = Krig( dat[, c("plon", "plat")], dat$z, Covariance="Matern", theta=vg$phi, smoothness=0.5)
+      x11()
+      op = predict(fit)
+      tst = cbind( dat[, c("plon", "plat")], op )
+      mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
+      image(mba.int, xaxs="r", yaxs="r")
+
+      # raw data + mba
+      x11()
+      tst = cbind(  dat[, c("plon", "plat")], dat$z )
+      mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
+      image(mba.int, xaxs="r", yaxs="r")
+
+      # mba - pa
+      x11()
+      tst = cbind( pa$plon, pa$plat, pa$mean )
+      mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
+      image(mba.int, xaxs="r", yaxs="r")
+
+      # default
+      x11()
+      tst = cbind( res$predictions$plon,  res$predictions$plat,  res$predictions$mean )
+      mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
+      image(mba.int, xaxs="r", yaxs="r")
+
+      # kernel-based
+      tst = as.image( Z=dat$z, x=dat[, c("plon", "plat")], nx=300, ny=300, na.rm=TRUE)
+      out = fields::image.smooth( tst, theta=phi, xwidth=p$pres, ywidth=p$pres )
+      image(out)
+
+      print( str(res) )
+
+      lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==2012.05,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
+      lattice::levelplot( mean ~ plon + plat, data=res$predictions, col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
+      for( i in sort(unique(res$predictions[,p$variables$TIME])))  print(lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==i,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
+
+      dev.new()
+      plot(  dat[,iY] ~ dat$yr, col="red"  )
+      points( mean~tiyr, res$predictions, pch=20, col="gray", cex=0.5 )
+
+    }
+
+
 }
-s

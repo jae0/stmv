@@ -379,12 +379,12 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="saved_state",
   if ( "scale" %in% runmode ) {
     # must be done in 2-passes .. the first in paranoid mode to fill with estimates that are reliable,
     # then a second pass to borrow from neighbouring estimate where possible
-
+    message ( "\n", "||| Entering spatial scale (variogram) determination")
+    p$time_start_scale = Sys.time()
     tmpDATA = file.path( p$stmvSaveDir, "tmp_DATA.rdata" )
     save( DATA, file=tmpDATA)
     DATA = NULL
     E = stmv_error_codes()
-    message ( "\n", "||| Entering spatial scale (variogram) determination")
     currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
     p$clusters = p$stmv_clusters[["scale"]] # as ram reqeuirements increase drop cpus
     p$time_start_interpolation = Sys.time()
@@ -394,12 +394,12 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="saved_state",
     sS = stmv_attach( p$storage.backend, p$ptr$S )[]
     save( sS, file=p$saved_state_fn$stats, compress=TRUE );
     sS = NULL
-
-    message( "||| Scale estimation surface complete." )
-    message( "||| stats temporarily saved to (for restarts): ", p$saved_state_fn$stats )
-
     # reload main data to continue
     load( tmpDATA )
+
+    message( "||| Scale estimation surface complete." )
+    message( "||| Time used for <interpolate_boost>:", format(difftime(  Sys.time(), p$time_start_scale )), "\n"  )
+    message( "||| Stats temporarily saved to (for restarts): ", p$saved_state_fn$stats )
 
   } else {
 
@@ -811,12 +811,15 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="saved_state",
   # -----------------------------------------------------
 
   if ("interpolate" %in% runmode ) {
+    message( "\n||| Entering <interpolate> stage \n" )
+    message( format(Sys.time()) )
     p$clusters = p$stmv_clusters[["interpolate"]] # as ram reqeuirements increase drop cpus
     p$time_start_interpolation = Sys.time()
     currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
     parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) )
-
+    message( paste( "Time used for <interpolate>:", format(difftime(  Sys.time(), p$time_start_interpolation )), "\n" ) )
   }
+
 
   # --------------------
   if (!is.null(use_saved_state)) {
@@ -850,21 +853,41 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="saved_state",
 
   # --------------------
 
-  if (force_complete_solution) {
-    message( "\n||| Entering -force complete solution- stage \n" )
-    # finalize all interpolations where there are missing data/predictions using
-    # interpolation based on data and augmented by previous predictions
+  if ("interpolate_boost" %in% runmode) {
+    message( "\n||| Entering <interpolate-boost> stage", format(Sys.time()),  "\n" )
     # NOTE:: no covariates are used .. only fft
     p$clusters = p$stmv_clusters[["interpolate"]] # as ram reqeuirements increase drop cpus
     p$stmv_local_modelengine = "fft"
     p$stmv_fft_filter="matern"  #  matern, krige (very slow), lowpass, lowpass_matern
-    if (p$stmv_fft_filter %in% c("lowpass", "lowpass_matern") ) {
-      if (!exists("stmv_lowpass_phi", p))  p$stmv_lowpass_phi = p$pres / 5 # FFT-based methods cov range parameter .. not required for "matern" ..
-      if (!exists("stmv_lowpass_nu", p))  p$stmv_lowpass_nu = 0.5  #exponential
-    }
-    p$time_start_interpolation_force_complete = Sys.time()
+    p$time_start_interpolate_boost = Sys.time()
     currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
     parallel_run( stmv_interpolate, p=p, runoption="boostdata", runindex=list( locs=sample( currentstatus$todo )))
+    message( "||| Time used for <interpolate_boost>:", format(difftime(  Sys.time(), p$time_start_interpolate_boost )), "\n" )
+  }
+
+  # --------------------
+
+
+  if ("interpolate_force_complete" %in% runmode) {
+    message( "\n||| Entering interpolate force complete stage", format(Sys.time()),  "\n" )
+    # finalize all interpolations where there are missing data/predictions using
+    # interpolation based on data and augmented by previous predictions
+    # NOTE:: no covariates are used .. only mba
+    p$clusters = p$stmv_clusters[["interpolate"]] # as ram reqeuirements increase drop cpus
+    p$stmv_local_modelengine = "mba"
+    p$time_start_interpolate_force_complete = Sys.time()
+    currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
+
+    S = stmv_attach( p$storage.backend, p$ptr$S )
+
+    # do this here as the Stats are from the most reliable estimates
+    nu  = median( S[,which( p$statsvars=="nu"  )], na.rm=TRUE )
+    phi = median( S[,which( p$statsvars=="phi" )], na.rm=TRUE )
+
+    #parallel_run( stmv_interpolate_force_complete, p=p, nu=nu, phi=phi, runindex=list( locs=sample( currentstatus$todo )))
+
+    parallel_run( stmv_interpolate_force_complete, p=p, nu=nu, phi=phi, runindex=list( time_index=1:p$nt )))
+    message( "||| Time used for <interpolate_force_complete>:", format(difftime(  Sys.time(), p$time_start_interpolate_force_complete )), "\n" )
   }
 
 
@@ -887,7 +910,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="saved_state",
   }
 
   p$time_total = round( difftime( Sys.time(), p$time_start, units="hours" ), 3)
-  message( paste( "||| Total time taken (hours):", p$time_total ) )
-  message( paste( "||| NOTE:: parameter 'p' has been updated in case you need to re-run something" ) )
+  message( "||| Total time taken (hours):", p$time_total  )
+  message( "||| NOTE:: parameter 'p' has been updated in case you need to re-run something" )
 
 }

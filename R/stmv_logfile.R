@@ -13,10 +13,6 @@ stmv_logfile = function(p, flag="default"){
     time_interpolation = p$time_start_interpolation_debug
     t_suffix = "debug"
   }
-  if (exists("time_start_interpolation_force_complete", p)) {
-    time_interpolation = p$time_start_interpolation_force_complete
-    t_suffix = "force-complete"
-  }
 
   dtime_totalelapsed = difftime( time_current, p$time_start )
   dtime = difftime( time_current, time_interpolation )

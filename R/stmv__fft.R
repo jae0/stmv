@@ -1,5 +1,5 @@
 
-stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist=FALSE, tol=1e-12, weights = 1, ... ) {
+stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist=FALSE, tol=1e-9, weights = 1, ... ) {
 
   #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
   #\\ note: time is not being modelled and treated independently
@@ -147,8 +147,6 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
 
   sp.covar = sp.covar2 = dgrid = center =  NULL
 
-  dat_i =1:nrow(dat)  # all data as p$nt==1
-  pa_i = 1:nrow(pa)
   origin=c(x_r[1], x_c[1])
   res=c(p$pres, p$pres)
 
@@ -159,22 +157,25 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   for ( ti in 1:p$nt ) {
 
     if ( exists("TIME", p$variables) ) {
-      dat_ = which( dat[ , p$variables$TIME] == p$prediction.ts[ti] )
-      pa_i = which( pa [ , p$variables$TIME] == p$prediction.ts[ti] )
-      # map of row, col indices of input data in the new (output) coordinate system
-      if (length(dat_i) < 5 ) {
+      xi   = which( dat[ , p$variables$TIME] == p$prediction.ts[ti] )
+      pa_i = which( pa[, p$variables$TIME] == p$prediction.ts[ti] )
+      if (length(xi) < 5 ) {
         # print( ti)
         next()
       }
+    } else {
+      xi   = 1:nrow(dat) # all data as p$nt==1
+      pa_i = 1:nrow(pa)
     }
 
     u = as.image(
-      dat[dat_i,p$variables$Y],
-      ind=as.matrix(array_map( "xy->2", coords=dat[dat_i,p$variables$LOCS], origin=origin, res=res )),
+      dat[xi, p$variables$Y],
+      ind=as.matrix(array_map( "xy->2", coords=dat[xi, p$variables$LOCS], origin=origin, res=res )),
       na.rm=TRUE,
       nx=nr,
       ny=nc
     )
+
     mY[1:nr,1:nc] = u$z * weights
     mY[!is.finite(mY)] = 0
     mN[1:nr,1:nc] = ifelse(!is.na(u$z), weights, 0)
@@ -189,7 +190,6 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     Z_i = array_map( "xy->2", coords=pa[pa_i,p$variables$LOCS], origin=origin, res=res )
 
     # bounds check: make sure predictions exist
-    Z_i_test = NULL
     Z_i_test = which( Z_i[,1]<1 | Z_i[,2]<1  | Z_i[,1] > nr | Z_i[,2] > nc )
 
     if (length(Z_i_test) > 0) {

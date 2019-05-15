@@ -1,5 +1,4 @@
 
-
 stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
   #\\ core function to interpolate (model variogram) in parallel
 
@@ -82,6 +81,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
     ndata = 0
     for ( nmin_data in stmv_nmins ) {
       for ( stmv_distance_cur in p$stmv_distance_scale )  {
+        dd
         U = which(
           {abs( Sloc[Si,1] - Yloc[Yi[],1] ) <= stmv_distance_cur} &
           {abs( Sloc[Si,2] - Yloc[Yi[],2] ) <= stmv_distance_cur} )  # faster to take a block

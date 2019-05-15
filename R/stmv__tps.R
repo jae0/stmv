@@ -3,7 +3,7 @@ stmv__tps = function( p=NULL, dat=NULL, pa=NULL, lambda=NULL, variablelist=FALSE
   #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
   # \ as a 2D gaussian process (basically, simple krigimg or TPS -- time is treated as being independent)
   #\\ note: time is not being modelled and treated independently
-  #\\      .. you had better have enough data in each time slice ..  essentially this is kriging
+  #\\      .. you had better have enough data in each time slice ..
   if (variablelist)  return( c() )
 
   sdTotal = sd(dat[,p$variable$Y], na.rm=T)
@@ -15,10 +15,14 @@ stmv__tps = function( p=NULL, dat=NULL, pa=NULL, lambda=NULL, variablelist=FALSE
   for ( ti in 1:p$nt ) {
 
     if ( exists("TIME", p$variables) ) {
-      xi = which( dat[ , p$variables$TIME ] == p$prediction.ts[ti] )
-      pa_i = which( pa[, p$variables$TIME] == p$prediction.ts[ti])
+      xi   = which( dat[ , p$variables$TIME] == p$prediction.ts[ti] )
+      pa_i = which( pa[, p$variables$TIME] == p$prediction.ts[ti] )
+      if (length(xi) < 5 ) {
+        # print( ti)
+        next()
+      }
     } else {
-      xi = 1:nrow(dat) # all data as p$nt==1
+      xi   = 1:nrow(dat) # all data as p$nt==1
       pa_i = 1:nrow(pa)
     }
 
