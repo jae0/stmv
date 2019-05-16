@@ -1,5 +1,5 @@
 
-stmv_interpolate_force_complete = function( ip=NULL, p, nu, phi, qn = c(0.005, 0.995), force_complete_method="fft" ) {
+stmv_interpolate_force_complete = function( ip=NULL, p, qn = c(0.005, 0.995), force_complete_method="linear" ) {
 
   #// designed to be called from stmv
   #// for the sake of speed and parallelization, the kernel density method via fft is written out again .. it is taken from fields::smooth.2d
@@ -7,6 +7,12 @@ stmv_interpolate_force_complete = function( ip=NULL, p, nu, phi, qn = c(0.005, 0
 
   if (exists( "libs", p)) RLibrary( p$libs )
   if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
+
+  S = stmv_attach( p$storage.backend, p$ptr$S )
+
+  # do this here as the Stats are from the most reliable estimates
+  nu  = median( S[,which( p$statsvars=="nu"  )], na.rm=TRUE )
+  phi = median( S[,which( p$statsvars=="phi" )], na.rm=TRUE )
 
   P = stmv_attach( p$storage.backend, p$ptr$P )
   Psd = stmv_attach( p$storage.backend, p$ptr$Psd )
@@ -21,6 +27,7 @@ stmv_interpolate_force_complete = function( ip=NULL, p, nu, phi, qn = c(0.005, 0
 
   zp = array_map( "xy->1", Ploc[], gridparams=list( dims=c(nr, nc), origin=p$origin, res=c(p$pres, p$pres) ) )
 
+
   if (force_complete_method=="fft") {
 
     nr2 = 2 * nr
@@ -30,6 +37,16 @@ stmv_interpolate_force_complete = function( ip=NULL, p, nu, phi, qn = c(0.005, 0
     center = matrix(c((dx * nr2)/2, (dy * nc2)/2), nrow = 1, ncol = 2)
 
     # spatial autocorrelation filter
+    x_r = range(Ploc[,1])
+    x_c = range(Ploc[,2])
+
+    nr = round( diff(x_r)/p$pres ) + 1
+    nc = round( diff(x_c)/p$pres ) + 1
+
+    dr = ( diff(x_r) + diff(x_c) ) / 2  # system size in user units
+
+    theta = matern_phi2distance( phi=phi / dr, nu=nu, cor=p$stmv_range_correlation )
+
     AC = stationary.cov( dgrid, center, Covariance="Matern", range=phi, nu=nu )
     mAC = as.surface(dgrid, c(AC))$z
 
@@ -50,8 +67,9 @@ stmv_interpolate_force_complete = function( ip=NULL, p, nu, phi, qn = c(0.005, 0
         rY = range( P[,ww], na.rm=TRUE )
 
         mN = matrix(0, nrow = nr2, ncol = nc2)
-        mN[zp] = tapply( rep(1, length(zp)), INDEX=zp, FUN=sum, na.rm=TRUE )
-        mN[!is.finite(mN)] = 0
+        # mN[zp] = tapply( rep(1, length(zp)), INDEX=zp, FUN=sum, na.rm=TRUE )
+        # mN[!is.finite(mN)] = 0
+        mN[zp] = 1
 
         # density
         mY = matrix(0, nrow = nr2, ncol = nc2)
@@ -117,14 +135,12 @@ stmv_interpolate_force_complete = function( ip=NULL, p, nu, phi, qn = c(0.005, 0
 
   # ------------------------
 
-  if (force_complete_method=="mba") {
+  if (force_complete_method=="mba") {  # cubic basis splines
 
-    origin=c(x_r[1], x_c[1])
+    origin=c(p$plons[1], p$plats[1])
     res=c(p$pres, p$pres)
 
     zp = array_map( "xy->1", Ploc[], gridparams=list( dims=c(nr, nc), origin=p$origin, res=c(p$pres, p$pres) ) )
-
-    zz = matrix(1:(nr*nc), nrow = nr, ncol = nc)
 
     for ( iip in ip ) {
 
@@ -136,7 +152,7 @@ stmv_interpolate_force_complete = function( ip=NULL, p, nu, phi, qn = c(0.005, 0
         # counts
         rY = range( P[,ww], na.rm=TRUE )
 
-        Z = mba.surf(cbind(Ploc[], P[,ww]) , no.X=nr, no.Y=nc, extend=TRUE)$z
+        Z = mba.surf(cbind(Ploc[,], P[,ww]) , no.X=nr, no.Y=nc, extend=TRUE)$xyz.est$z
 
         lb = which( Z < rY[1] )
         if (length(lb) > 0) Z[lb] = NA
@@ -176,6 +192,68 @@ stmv_interpolate_force_complete = function( ip=NULL, p, nu, phi, qn = c(0.005, 0
 
 
     return( "complete" )
+  }
+
+  # ----------------
+
+  if (force_complete_method=="linear") {
+
+
+    origin=c( p$plons[1], p$plats[1] )
+    res=c(p$pres, p$pres)
+
+    zp = array_map( "xy->1", Ploc[], gridparams=list( dims=c(nr, nc), origin=p$origin, res=c(p$pres, p$pres) ) )
+
+    for ( iip in ip ) {
+
+      ww = p$runs[ iip, "time_index" ]
+
+      # means
+      tofill = which( ! is.finite( P[,ww] ) )
+      if (length( tofill) > 0 ) {
+        # counts
+        rY = range( P[,ww], na.rm=TRUE )
+
+        u = as.image( P[,ww], x=Ploc[,], na.rm=TRUE, nx=nr, ny=nc )
+        Z = as.vector( fields::interp.surface( u, loc=Ploc[,] ) ) # linear interpolation
+        u = NULL
+
+        lb = which( Z < rY[1] )
+        if (length(lb) > 0) Z[lb] = NA
+        ub = which( Z > rY[2] )
+        if (length(ub) > 0) Z[ub] = NA
+
+        # image(Z)
+        Z[ Z > P_qn[2] ]=NA
+        Z[ Z < P_qn[1] ]=NA
+        P[,ww][tofill] = Z[zp][ tofill]
+      }
+
+      ## SD estimates
+      tofill = which( ! is.finite( Psd[,ww] ) )
+      if (length( tofill) > 0 ) {
+
+        rY = range( Psd[,ww], na.rm=TRUE )
+
+        u = as.image( Psd[,ww], x=Ploc[,], na.rm=TRUE, nx=nr, ny=nc )
+        Z = as.vector( fields::interp.surface( u, loc=Ploc[,] ) ) # linear interpolation
+        u = NULL
+
+        iZ = which( !is.finite( Z))
+        if (length(iZ) > 0) Z[iZ] = NA
+        lb = which( Z < 0 )
+        if (length(lb) > 0) Z[lb] = NA
+        ub = which( Z > rY[2] )
+        if (length(ub) > 0) Z[ub] = NA
+        # image(Z)
+
+        Z[ Z > Psd_qn[2] ]=NA
+        Z[ Z < 0 ]=NA
+        Psd[,ww][tofill] = Z[zp][ tofill]
+
+      }
+
+
   }
 
 }

@@ -717,7 +717,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="saved_state",
   p <<- p  # copy to parent (calling) environment
 
   file.create( p$stmv_current_status, showWarnings=FALSE )
-  currentstatus = stmv_logfile(p = p)  # init log file
 
   if (is.null(use_saved_state)) stmv_statistics_status( p=p, reset="features" )  # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
 
@@ -878,15 +877,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="saved_state",
     p$time_start_interpolate_force_complete = Sys.time()
     currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
 
-    S = stmv_attach( p$storage.backend, p$ptr$S )
-
-    # do this here as the Stats are from the most reliable estimates
-    nu  = median( S[,which( p$statsvars=="nu"  )], na.rm=TRUE )
-    phi = median( S[,which( p$statsvars=="phi" )], na.rm=TRUE )
-
     #parallel_run( stmv_interpolate_force_complete, p=p, nu=nu, phi=phi, runindex=list( locs=sample( currentstatus$todo )))
 
-    parallel_run( stmv_interpolate_force_complete, p=p, nu=nu, phi=phi, force_complete_method=force_complete_method, runindex=list( time_index=1:p$nt ))
+    parallel_run( stmv_interpolate_force_complete, p=p, force_complete_method=p$force_complete_method, runindex=list( time_index=1:p$nt ))
     message( "||| Time used for <interpolate_force_complete>:", format(difftime(  Sys.time(), p$time_start_interpolate_force_complete )), "\n" )
   }
 

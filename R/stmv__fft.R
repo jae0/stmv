@@ -1,5 +1,5 @@
 
-stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist=FALSE, tol=1e-9, weights = 1, ... ) {
+stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, distance=NULL, variablelist=FALSE, tol=1e-12, weights = 1, ... ) {
 
   #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
   #\\ note: time is not being modelled and treated independently
@@ -24,6 +24,9 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
 
   nr = round( diff(x_r)/p$pres ) + 1
   nc = round( diff(x_c)/p$pres ) + 1
+
+  # dr = ( diff(x_r) + diff(x_c) ) /2  # system size in user units
+  dr = diff(x_r) # square so only 1 needed
 
   # final output grid
   x_locs = expand.grid(
@@ -58,22 +61,26 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   if (!exists("stmv_fft_filter",p) ) p$stmv_fft_filter="lowpass" # default in case of no specification
 
   if ( p$stmv_fft_filter == "lowpass") {
-    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=p$stmv_lowpass_phi, smoothness=p$stmv_lowpass_nu )
+    theta = matern_phi2distance( phi=p$stmv_lowpass_phi/dr, nu=p$stmv_lowpass_nu, cor=p$stmv_range_correlation )
+    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=theta, smoothness=p$stmv_lowpass_nu )
     sp.covar = as.surface(dgrid, c(sp.covar))$z
     sp.covar.kernel = fft(sp.covar) / fft_mC
   }
 
   if (p$stmv_fft_filter %in% c("matern") ) {
-    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=phi, smoothness=nu )
+    theta = matern_phi2distance( phi=phi/dr, nu=nu, cor=p$stmv_range_correlation )
+    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=theta, smoothness=nu )
     sp.covar = as.surface(dgrid, c(sp.covar))$z
     sp.covar.kernel = fft(sp.covar) / fft_mC
   }
 
   if (p$stmv_fft_filter == "lowpass_matern") {
     # both ..
-    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=p$stmv_lowpass_phi, smoothness=p$stmv_lowpass_nu )
+    theta = matern_phi2distance( phi=p$stmv_lowpass_phi/dr, nu=p$stmv_lowpass_nu, cor=p$stmv_range_correlation )
+    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=theta, smoothness=p$stmv_lowpass_nu )
     sp.covar = as.surface(dgrid, c(sp.covar))$z
-    sp.covar2 = stationary.cov( dgrid, center, Covariance="Matern", theta=phi, smoothness=nu )
+    theta2 = matern_phi2distance( phi=phi/dr, nu=nu, cor=p$stmv_range_correlation )
+    sp.covar2 = stationary.cov( dgrid, center, Covariance="Matern", theta=theta2, smoothness=nu )
     sp.covar2 = as.surface(dgrid, c(sp.covar2))$z
     sp.covar.kernel = {fft(sp.covar) / fft_mC } * {fft(sp.covar2)/ fft_mC }
   }
@@ -92,8 +99,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     } else {
       stmv_constant_phi = p$stmv_constant_phi
     }
-
-    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=stmv_constant_phi, smoothness=stmv_constant_nu )
+    theta = matern_phi2distance( phi=stmv_constant_phi / dr, nu=stmv_constant_nu, cor=p$stmv_range_correlation )
+    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=theta, smoothness=stmv_constant_nu )
     sp.covar = as.surface(dgrid, c(sp.covar))$z
     sp.covar.kernel = fft(sp.covar) / fft_mC
   }
@@ -124,17 +131,21 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
       stmv_lowpass_phi = p$stmv_lowpass_phi
     }
 
-    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=stmv_lowpass_phi, smoothness=stmv_lowpass_nu )
+    theta = matern_phi2distance( phi=p$stmv_lowpass_phi/dr, nu=p$stmv_lowpass_nu, cor=p$stmv_range_correlation )
+    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=theta, smoothness=stmv_lowpass_nu )
     sp.covar = as.surface(dgrid, c(sp.covar))$z
-    sp.covar2 = stationary.cov( dgrid, center, Covariance="Matern", theta=stmv_constant_phi, smoothness=stmv_constant_nu )
+
+    theta2 = matern_phi2distance( phi=stmv_constant_phi / dr, nu=stmv_constant_nu, cor=p$stmv_range_correlation )
+    sp.covar2 = stationary.cov( dgrid, center, Covariance="Matern", theta=theta2, smoothness=stmv_constant_nu )
     sp.covar2 = as.surface(dgrid, c(sp.covar2))$z
     sp.covar.kernel = {fft(sp.covar) / fft_mC } * {fft(sp.covar2)/ fft_mC }
   }
 
 
   if (p$stmv_fft_filter == "normal_kernel") {
-      xi = seq(-(nr - 1), nr, 1) * dx / phi
-      yi = seq(-(nc - 1), nc, 1) * dy / phi
+      theta = matern_phi2distance( phi=phi/dr, nu=nu, cor=p$stmv_range_correlation )
+      xi = seq(-(nr - 1), nr, 1) * dx / theta
+      yi = seq(-(nc - 1), nc, 1) * dy / theta
       dd = ((matrix(xi, nr2, nc2)^2 + matrix(yi, nr2, nc2, byrow = TRUE)^2))  # squared distances
       # double.exp: An R function that takes as its argument the _squared_
       # distance between two points divided by the bandwidth. The

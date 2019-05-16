@@ -257,15 +257,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
 
     # model and prediction .. outputs are in scale of the link (and not response)
     # the following permits user-defined models (might want to use compiler::cmpfun )
-    if (0) {
-      # p$stmv_fft_filter = "normal_kernel"
-      # p$stmv_fft_filter = "lowpass_matern_constant"
-      p$stmv_constant_nu = 0.5
-      p$stmv_constant_phi = p$pres *2
-
-      p$stmv_lowpass_nu = 0.5
-      p$stmv_lowpass_phi = p$pres/2
-    }
 
     res =NULL
     res = try(
@@ -400,7 +391,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
 
       # kernel-based
       tst = as.image( Z=dat$z, x=dat[, c("plon", "plat")], nx=300, ny=300, na.rm=TRUE)
-      out = fields::image.smooth( tst, theta=phi, xwidth=p$pres, ywidth=p$pres )
+      out = fields::image.smooth( tst, theta=vg$phi/300, xwidth=p$pres, ywidth=p$pres )
       image(out)
 
       print( str(res) )

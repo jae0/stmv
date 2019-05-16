@@ -1,5 +1,5 @@
 
-stmv__mba = function( p=NULL, dat=NULL, pa=NULL, lambda=NULL, variablelist=FALSE, ...  ) {
+stmv__mba = function( p=NULL, dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) {
   #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
   # \ as a 2D gaussian process (basically, simple krigimg or TPS -- time is treated as being independent)
   #\\ note: time is not being modelled and treated independently
@@ -56,7 +56,7 @@ stmv__mba = function( p=NULL, dat=NULL, pa=NULL, lambda=NULL, variablelist=FALSE
     #   ny=nc
     # )
 
-    Z = mba.surf(dat[xi, c(p$variables$LOCS, p$variables$Y)], no.X=nr, no.Y=nc, extend=TRUE)$z
+    Z = mba.surf(dat[xi, c(p$variables$LOCS, p$variables$Y)], no.X=nr, no.Y=nc, extend=TRUE)$xyz.est$z
 
     # bounds check: make sure predictions exist
     Z_i = array_map( "xy->2", coords=pa[pa_i,p$variables$LOCS], origin=origin, res=res )
