@@ -186,18 +186,13 @@ stmv_interpolate_force_complete = function( ip=NULL, p, qn = c(0.005, 0.995), fo
         Psd[,ww][tofill] = Z[zp][ tofill]
 
       }
-
-
     }
-
-
     return( "complete" )
   }
 
   # ----------------
 
   if (force_complete_method=="linear") {
-
 
     origin=c( p$plons[1], p$plats[1] )
     res=c(p$pres, p$pres)
@@ -252,8 +247,8 @@ stmv_interpolate_force_complete = function( ip=NULL, p, qn = c(0.005, 0.995), fo
         Psd[,ww][tofill] = Z[zp][ tofill]
 
       }
-
-
+    }
+    return( "complete" )
   }
 
 }
