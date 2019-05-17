@@ -38,6 +38,8 @@ stmv_parameters = function( p=list(), ... ) {
 
   if( !exists( "stmv_variogram_method", p)) p$stmv_variogram_method="geoR"   # note GP methods are slow when there is too much data
   if( !exists( "stmv_range_correlation", p)) p$stmv_range_correlation = 0.1   # auto-correlation value at which to compute a "range" distance for estimation
+  if( !exists( "stmv_range_correlation", p)) p$stmv_range_correlation_fft_smooth = 0.85   # auto-correlation value at which to compute a "range" distance for estimation
+
   if( !exists( "stmv_range_correlation_boostdata", p)) p$stmv_range_correlation_boostdata = 0.05   # auto-correlation value at which to compute a "range" distance for estimation
 
   if (!exists( "stmv_global_family", p)) p$stmv_global_family = gaussian(link = "identity")
