@@ -109,8 +109,11 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
     vg = stmv_scale_filter( p=p, Si=Si )
 
     localrange = vg$range
-    useglobal =FALSE
+    ndata = vg$range
+
+    useglobal = FALSE
     if (!is.finite( localrange ) ) useglobal =TRUE
+    if (!is.finite( ndata ) ) useglobal =TRUE
     if (useglobal) vg = vg_global
 
     if (runoption=="boostdata") {

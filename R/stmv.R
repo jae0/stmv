@@ -658,8 +658,8 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="saved_state",
 
       # test to see if all covars are static as this can speed up the initial predictions
       message(" ")
-      message( "||| Predicting global effect of covariates at each prediction location ... ")
-      message( "||| depending upon the size of the prediction grid and number of cpus (~1hr?).. ")
+      message( "||| Predicting global effect of covariates at each prediction location. This can take a while ")
+      message( "||| depending upon the size of the prediction grid, complexity and number of cpus ... ")
 
       p$time_covariates_0 =  Sys.time()
       if (exists("COV", p$variables)) {

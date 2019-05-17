@@ -12,6 +12,7 @@ stmv_scale_filter = function( p, Si ) {
     varSpatial = S[Si, match("sdSpatial", p$statsvars)]^2 ,
     varObs     = S[Si, match("sdObs",   p$statsvars)]^2 ,
     varTotal   = S[Si, match("sdTotal", p$statsvars)]^2 ,
+    ndata = S[Si, match("ndata", p$statsvars)],
     flag = "todo"
   )
 

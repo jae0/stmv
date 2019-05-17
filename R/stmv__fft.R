@@ -8,7 +8,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, distance=NUL
   #\\ then a simple covariance filter determined by nu,phi ;; fft (no lowpass)
   #\\ based upon fields::image.smooth
   #\\ now that the local area of interest is stationary, we use local convolutions of highly autocorrelated (short-range)
-  #\\ determined by p$stmv_range_correlation_fft_smooth_fft_smooth
+  #\\ determined by p
 
   if (variablelist)  return( c() )
 
@@ -226,7 +226,7 @@ gr = stmv_variogram( xy, z, methods="fields", plotdata=TRUE ) # ml via profile l
 
   center = matrix(c((dx * nr), (dy * nc)), nrow = 1, ncol = 2)
 
-  theta = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_range_correlation_fft_smooth_fft_smooth )
+  theta = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_range_correlation_fft_smooth  )
   # theta = phi / 5
   sp.covar = stationary.cov( x1=dgrid, x2=center, Covariance="Matern", theta=theta, smoothness=nu )
   sp.covar = as.surface(dgrid, c(sp.covar))$z
