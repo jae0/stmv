@@ -107,27 +107,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
     if ( Sflag[Si] == E[["complete"]] ) next()
 
     vg = stmv_scale_filter( p=p, Si=Si )
-
-    localrange = vg$range
-    ndata = vg$range
-
-    useglobal = FALSE
-    if (!is.finite( localrange ) ) useglobal =TRUE
-    if (!is.finite( ndata ) ) useglobal =TRUE
-    if (useglobal) vg = vg_global
-
-    if (runoption=="boostdata") {
-      localrange = matern_phi2distance( phi=vg$phi, nu=vg$nu, cor=p$stmv_range_correlation_boostdata )
-    }
-
-    # obtain indices of data locations withing a given spatial range, optimally determined via variogram
-    # faster to take a block .. but easy enough to take circles ...
-    U = Yi[ which(
-      {abs( Sloc[Si,1] - Yloc[Yi[],1] ) <= localrange } &
-      {abs( Sloc[Si,2] - Yloc[Yi[],2] ) <= localrange }
-    )]
-    ndata = length(U)
-
     if (exists("stmv_rangecheck", p)) {
       if (p$stmv_rangecheck=="paranoid") {
         if ( vg$flag %in% c("variogram_range_limit", "variogram_failure") ) {
@@ -137,54 +116,31 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
       }
     }
 
-    if (!is.finite(ndata) ) {
-      Sflag[Si] = E[["variogram_failure"]]
-      if (runoption == "default" )  next()
-    } else {
-      if (ndata < p$stmv_nmin) {
-        Sflag[Si] = E[["insufficient_data"]]
-      } else if (ndata > p$stmv_nmax) {
-        # try to trim
-        if ( exists("TIME", p$variables)) {
-          Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )
-          iU = stmv_discretize_coordinates( coo=cbind(Yloc[U,], Ytime[U]), ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )
-        } else {
-          iU = stmv_discretize_coordinates( coo=Yloc[U,], ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )
-        }
-        ndata = length(iU)
-        if (ndata < p$stmv_nmin) {
-          # retain crude estimate and run with it
-          uu = setdiff( 1:length(U), iU)
-          nuu = length(uu)
-          iMore = uu[ .Internal( sample( nuu, {p$stmv_nmin - ndata}, replace=FALSE, prob=NULL)) ]
-          U = U[c(iU, iMore)]
-          ndata = p$stmv_nmin
-          iMore = nuu = uu = NULL
-        } else if (ndata > p$stmv_nmax) {
-          # force via a random subsample
-          U = U[iU]
-          U = U[ .Internal( sample( length(U), p$stmv_nmax, replace=FALSE, prob=NULL)) ] # simple random
-          ndata = p$stmv_nmax
-        } else {
-          U = U[iU]
-        }
-      } else  if (ndata <= p$stmv_nmax & ndata >= p$stmv_nmin) {
-        # all good .. nothing to do
-      }
-      iU = NULL
-    }
+    localrange = vg$range
+    ndata = vg$range
+    useglobal = FALSE
+    if (!is.finite( localrange ) ) useglobal =TRUE
+    if (!is.finite( ndata ) ) useglobal =TRUE
+    if (useglobal) vg = vg_global
+
+    if (runoption=="boostdata") localrange = matern_phi2distance( phi=vg$phi, nu=vg$nu, cor=p$stmv_range_correlation_boostdata )
+
+    U = stmv_select_data( p=p, Si=Si, localrange=localrange )
 
     if ( Sflag[Si] != E[["todo"]] ) {
       if (exists("stmv_rangecheck", p)) {
         if (p$stmv_rangecheck=="paranoid") {
-          U = NULL
-          if (debugging) message("Error: stmv_rangecheck paranoid")
-          if (runoption=="default")  next()
+          if ( Sflag[Si] %in% c( E[["variogram_range_limit"]], E[["variogram_failure"]]) ) {
+            U = NULL
+            if (debugging) message("Error: stmv_rangecheck paranoid")
+            if (runoption == "default" ) next()
+          }
         }
       }
     }
 
     # last check
+    ndata = length(U)
     if (ndata < p$stmv_nmin) next()
 
     # if here then there is something to do
