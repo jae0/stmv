@@ -527,7 +527,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="saved_state",
   if ( "scale" %in% runmode ) {
     # must be done in 2-passes .. the first in paranoid mode to fill with estimates that are reliable,
     # then a second pass to borrow from neighbouring estimate where possible
-    message ( "\n", "||| Entering spatial scale (variogram) determination")
+    message ( "\n", "||| Entering spatial scale (variogram) determination:", format(Sys.time()) , "\n" )
     p$time_start_scale = Sys.time()
     tmpDATA = file.path( p$stmvSaveDir, "tmp_DATA.rdata" )
     save( DATA, file=tmpDATA)
@@ -700,8 +700,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="saved_state",
   }
 
 
-  message("\n||| Finished preparing data structures for interpolations ... \n")
-
   #  Once analyses begin, you can view maps from an external R session (e.g. for temperature):
   #  p = stmv_db( p=list(data_root=project.datadirectory('aegis', 'temperature'), variables=list(Y='t'), spatial.domain='canada.east'  DS='load.parameters' )" )
   #  see stmv(p=p, runmode='debug_predictions_map', debug_plot_variable_index=1) # for static maps
@@ -810,8 +808,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="saved_state",
   # -----------------------------------------------------
 
   if ("interpolate" %in% runmode ) {
-    message( "\n||| Entering <interpolate> stage \n" )
-    message( format(Sys.time()) )
+    message( "\n||| Entering <interpolate> stage: ", format(Sys.time()) , "\n" )
     p$clusters = p$stmv_clusters[["interpolate"]] # as ram reqeuirements increase drop cpus
     p$time_start_interpolation = Sys.time()
     currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
@@ -853,7 +850,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="saved_state",
   # --------------------
 
   if ("interpolate_boost" %in% runmode) {
-    message( "\n||| Entering <interpolate-boost> stage", format(Sys.time()),  "\n" )
+    message( "\n||| Entering <interpolate-boost> stage: ", format(Sys.time()),  "\n" )
     # NOTE:: no covariates are used .. only fft
     p$clusters = p$stmv_clusters[["interpolate"]] # as ram reqeuirements increase drop cpus
     p$stmv_local_modelengine = "fft"
@@ -868,7 +865,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="saved_state",
 
 
   if ("interpolate_force_complete" %in% runmode) {
-    message( "\n||| Entering interpolate force complete stage", format(Sys.time()),  "\n" )
+    message( "\n||| Entering <interpolate force complete> stage: ", format(Sys.time()),  "\n" )
     # finalize all interpolations where there are missing data/predictions using
     # interpolation based on data and augmented by previous predictions
     # NOTE:: no covariates are used .. only mba

@@ -1,12 +1,12 @@
 
-stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, distance=NULL, variablelist=FALSE, tol=1e-12, weights = 1, ... ) {
+stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, distance=NULL, variablelist=FALSE, tol=1e-9, ... ) {
 
   #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
   #\\ note: time is not being modelled and treated independently
   #\\      .. you had better have enough data in each time slice
   #\\ first a low-pass filter as defined by p$stmv_lowpass_nu, p$stmv_lowpass_phi,
   #\\ then a simple covariance filter determined by nu,phi ;; fft (no lowpass)
-  #\\ based upon fields::image.smooth
+  #\\ based upon fields::image.smooth and setup.image.smooth
   #\\ now that the local area of interest is stationary, we use local convolutions of highly autocorrelated (short-range)
   #\\ determined by p
 
@@ -67,27 +67,46 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, distance=NUL
   }
 
   if (p$stmv_fft_filter %in% c("matern") ) {
-    theta = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_range_correlation_fft_smooth )
-    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=theta, smoothness=nu )
+    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=phi, smoothness=nu )
     sp.covar = as.surface(dgrid, c(sp.covar))$z
     sp.covar.kernel = fft(sp.covar) / fft_mC
   }
 
   if (p$stmv_fft_filter == "lowpass_matern") {
     # both ..
-    theta = p$stmv_lowpass_phi
-    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=theta, smoothness=p$stmv_lowpass_nu )
-    sp.covar = as.surface(dgrid, c(sp.covar))$z
+    sp.covar.lowpass = stationary.cov( dgrid, center, Covariance="Matern", theta=p$stmv_lowpass_phi, smoothness=p$stmv_lowpass_nu )
+    sp.covar.lowpass = as.surface(dgrid, c(sp.covar.lowpass))$z
 
-    theta2 = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_range_correlation_fft_smooth )
-    sp.covar2 = stationary.cov( dgrid, center, Covariance="Matern", theta=theta2, smoothness=nu )
-    sp.covar2 = as.surface(dgrid, c(sp.covar2))$z
-    sp.covar.kernel = {fft(sp.covar) / fft_mC } * {fft(sp.covar2)/ fft_mC }
+    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=phi, smoothness=nu )
+    sp.covar = as.surface(dgrid, c(sp.covar))$z
+    sp.covar.kernel = {fft(sp.covar.lowpass) / fft_mC } * {fft(sp.covar)/ fft_mC }
+    sp.covar = sp.covar.lowpass = NULL
+  }
+
+  if (p$stmv_fft_filter == "matern_tapered") {
+    theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_range_correlation_fft_taper )
+    sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
+      Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
+    sp.covar = as.surface(dgrid, c(sp.covar))$z
+    sp.covar.kernel = fft(sp.covar) / fft_mC
+    sp.covar = theta.Taper = NULL
+  }
+
+  if (p$stmv_fft_filter == "lowpass_matern_tapered") {
+    sp.covar.lowpass = stationary.cov( dgrid, center, Covariance="Matern", theta=p$stmv_lowpass_phi, smoothness=p$stmv_lowpass_nu )
+    sp.covar.lowpass = as.surface(dgrid, c(sp.covar.lowpass))$z
+
+    theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_range_correlation_fft_taper )
+    sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
+      Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
+    sp.covar = as.surface(dgrid, c(sp.covar))$z
+    sp.covar.kernel = {fft(sp.covar.lowpass) / fft_mC } * {fft(sp.covar)/ fft_mC }
+    sp.covar = sp.covar.lowpass = theta.Taper = NULL
   }
 
 
   if (p$stmv_fft_filter == "normal_kernel") {
-      theta = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_range_correlation_fft_smooth )
+      theta = matern_phi2distance( phi=phi, nu=nu, cor=0.5 )
       xi = seq(-(nr - 1), nr, 1) * dx / theta
       yi = seq(-(nc - 1), nc, 1) * dy / theta
       dd = ((matrix(xi, nr2, nc2)^2 + matrix(yi, nr2, nc2, byrow = TRUE)^2))  # squared distances
@@ -100,7 +119,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, distance=NUL
       sp.covar.kernel = W/(nr2 * nc2)  # kernal weights
   }
 
-  sp.covar = sp.covar2 = dgrid = center =  NULL
+  sp.covar = sp.covar.lowpass = dgrid = center =  NULL
 
   origin=c(x_r[1], x_c[1])
   res=c(p$pres, p$pres)
@@ -131,9 +150,13 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, distance=NUL
       ny=nc
     )
 
-    mY[1:nr,1:nc] = u$z * weights
+    mY[1:nr,1:nc] = u$z
     mY[!is.finite(mY)] = 0
-    mN[1:nr,1:nc] = ifelse(!is.na(u$z), weights, 0)
+
+    #  Nadaraya/Watson normalization for missing values s
+    mN[1:nr,1:nc] = u$weights
+    mN[!is.finite(mN)] = 0
+
     u =NULL
 
     fY = Re(fft(fft(mY) * sp.covar.kernel, inverse = TRUE))[1:nr, 1:nc]
@@ -173,34 +196,32 @@ if (0) {
 loadfunctions( c("aegis.env", "aegis", "stmv"))
 RLibrary(c ("fields", "MBA", "geoR") )
 
-        xyz = stmv_test_data( datasource="swiss" )
-        xy = xyz[, c("x", "y")]
-        mz = log( xyz$rain )
-        mm = lm( mz ~ 1 )
-        z = residuals( mm)
-gr = stmv_variogram( xy, z, methods="fields", plotdata=TRUE ) # ml via profile likelihood
+  xyz = stmv_test_data( datasource="swiss" )
+  xy = xyz[, c("x", "y")]
+  mz = log( xyz$rain )
+  mm = lm( mz ~ 1 )
+  z = residuals( mm)
+  xyz = cbind(xyz[, c("x", "y")], z)
+  gr = stmv_variogram( xy, z, methods="geoR", plotdata=TRUE ) # ml via profile likelihood
 
 
-      xyz = stmv_test_data( datasource="meuse" )
-        xy = xyz[, c("x", "y")]
-         z = xyz$elev
-gr = stmv_variogram( xy, z, methods="fields", plotdata=TRUE ) # ml via profile likelihood
+  xyz = stmv_test_data( datasource="meuse" )
+  xy = xyz[, c("x", "y")]
+  z = log(xyz$elev)
+  xyz = cbind(xyz[, c("x", "y")], z)
+  gr = stmv_variogram( xy, z, methods="geoR", plotdata=TRUE ) # ml via profile likelihood
 
+  nu = gr$geoR$nu
+  phi = gr$geoR$phi
 
-  nu = gr$fields$nu
-  phi = gr$fields$phi
-
-  fit <- Krig(xyz[, c("x", "y")], z, theta=phi)
+  fit <- Krig(xyz[, c("x", "y")], xyz[,"z"], theta=phi)
   x11()
   surface( fit, type="C") # look at the surface
 
   x11()
   require(MBA)
-  xyz = xyz[, c("x", "y", "elev")]
   mba.int <- mba.surf( xyz, 100, 100, extend=TRUE)$xyz.est
-  image(mba.int, xaxs="r", yaxs="r")
-
-
+  surface(mba.int, xaxs="r", yaxs="r")
 
   x_r = range(xyz$x)
   x_c = range(xyz$y)
@@ -226,9 +247,9 @@ gr = stmv_variogram( xy, z, methods="fields", plotdata=TRUE ) # ml via profile l
 
   center = matrix(c((dx * nr), (dy * nc)), nrow = 1, ncol = 2)
 
-  theta = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_range_correlation_fft_smooth  )
-  # theta = phi / 5
-  sp.covar = stationary.cov( x1=dgrid, x2=center, Covariance="Matern", theta=theta, smoothness=nu )
+  theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=0.5 )
+  sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
+    Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
   sp.covar = as.surface(dgrid, c(sp.covar))$z
   sp.covar.kernel = fft(sp.covar) / fft_mC
 
@@ -236,23 +257,31 @@ gr = stmv_variogram( xy, z, methods="fields", plotdata=TRUE ) # ml via profile l
   mN = matrix(0, nrow = nr2, ncol = nc2)
 
   u = as.image(
-    Z=z,
+    Z=xyz$z,
     x=xyz[, c("x", "y")],
     na.rm=TRUE,
     nx=nr,
     ny=nc
   )
-  weights=1
+  # surface(u)
 
-  mY[1:nr,1:nc] = u$z * weights
+  mY[1:nr,1:nc] = u$z
   mY[!is.finite(mY)] = 0
-  mN[1:nr,1:nc] = ifelse(!is.na(u$z), weights, 0)
 
+  #  Nadaraya/Watson normalization for missing values s
+  mN[1:nr,1:nc] = u$weights
+  mN[!is.finite(mN)] = 0
 
   fY = Re(fft(fft(mY) * sp.covar.kernel, inverse = TRUE))[1:nr, 1:nc]
   fN = Re(fft(fft(mN) * sp.covar.kernel, inverse = TRUE))[1:nr, 1:nc]
+
+  tol = 1e-12
   Z = fY/fN
+  Z = ifelse((fN > tol), (fY/fN), NA)
+  Z[!is.finite(Z)] = NA
+
   x11()
-  image(Z)
+
+  surface(list(x=c(1:nr)*dx, y=c(1:nc)*dy, z=Z), xaxs="r", yaxs="r")
 
 }
