@@ -139,6 +139,8 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
       }
     }
 
+    if(is.null( U )) next()
+
     # last check
     ndata = length(U)
     if (ndata < p$stmv_nmin) next()
