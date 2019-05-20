@@ -1,5 +1,5 @@
 
-stmv_scale = function( ip=NULL, p, debugging=FALSE, ... ) {
+stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", ... ) {
   #\\ core function to interpolate (model variogram) in parallel
 
   if (0) {
