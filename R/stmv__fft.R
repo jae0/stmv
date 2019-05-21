@@ -193,95 +193,209 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, distance=NUL
 
 if (0) {
 
-loadfunctions( c("aegis.env", "aegis", "stmv"))
-RLibrary(c ("fields", "MBA", "geoR") )
+  # testing and debugging
 
-  xyz = stmv_test_data( datasource="swiss" )
-  xy = xyz[, c("x", "y")]
-  mz = log( xyz$rain )
-  mm = lm( mz ~ 1 )
-  z = residuals( mm)
-  xyz = cbind(xyz[, c("x", "y")], z)
-  gr = stmv_variogram( xy, z, methods="geoR", plotdata=TRUE ) # ml via profile likelihood
+  # loadfunctions( c("aegis.env", "aegis", "stmv"))
+  # RLibrary(c ("fields", "MBA", "geoR") )
+
+  # xyz = stmv_test_data( datasource="swiss" )
+  # xy = xyz[, c("x", "y")]
+  # mz = log( xyz$rain )
+  # mm = lm( mz ~ 1 )
+  # z = residuals( mm)
+  # xyz = cbind(xyz[, c("x", "y")], z)
+  # gr = stmv_variogram( xy, z, methods="geoR", plotdata=TRUE ) # ml via profile likelihood
 
 
-  xyz = stmv_test_data( datasource="meuse" )
-  xy = xyz[, c("x", "y")]
-  z = log(xyz$elev)
-  xyz = cbind(xyz[, c("x", "y")], z)
-  gr = stmv_variogram( xy, z, methods="geoR", plotdata=TRUE ) # ml via profile likelihood
+  # xyz = stmv_test_data( datasource="meuse" )
+  # xy = xyz[, c("x", "y")]
+  # z = log(xyz$elev)
+  # xyz = cbind(xyz[, c("x", "y")], z)
+  # gr = stmv_variogram( xy, z, methods="geoR", plotdata=TRUE ) # ml via profile likelihood
 
-  nu = gr$geoR$nu
-  phi = gr$geoR$phi
+  # nu = gr$geoR$nu
+  # phi = gr$geoR$phi
 
-  fit <- Krig(xyz[, c("x", "y")], xyz[,"z"], theta=phi)
-  x11()
-  surface( fit, type="C") # look at the surface
+  # fit <- Krig(xyz[, c("x", "y")], xyz[,"z"], theta=phi)
+  # x11()
+  # surface( fit, type="C") # look at the surface
 
-  x11()
-  require(MBA)
-  mba.int <- mba.surf( xyz, 100, 100, extend=TRUE)$xyz.est
-  surface(mba.int, xaxs="r", yaxs="r")
+  # x11()
+  # require(MBA)
+  # mba.int <- mba.surf( xyz, 100, 100, extend=TRUE)$xyz.est
+  # surface(mba.int, xaxs="r", yaxs="r")
 
-  x_r = range(xyz$x)
-  x_c = range(xyz$y)
+  # x_r = range(xyz$x)
+  # x_c = range(xyz$y)
 
-  rez = diff(x_r)/100
-  nr = round( diff(x_r)/rez ) + 1
-  nc = round( diff(x_c)/rez ) + 1
+  # rez = diff(x_r)/100
+  # nr = round( diff(x_r)/rez ) + 1
+  # nc = round( diff(x_c)/rez ) + 1
 
-  dx = dy = rez
+  # dx = dy = rez
 
-  nr2 = 2 * nr
-  nc2 = 2 * nc
+  # nr2 = 2 * nr
+  # nc2 = 2 * nc
 
-  mC = matrix(0, nrow = nr2, ncol = nc2)
-  mC[nr, nc] = 1
-  fft_mC = fft(mC) * nr2 * nc2
+  # mC = matrix(0, nrow = nr2, ncol = nc2)
+  # mC[nr, nc] = 1
+  # fft_mC = fft(mC) * nr2 * nc2
 
-  # constainer for spatial filters
-  grid.list = list((1:nr2) * dx, (1:nc2) * dy)
-  dgrid = as.matrix(expand.grid(grid.list))
-  dimnames(dgrid) = list(NULL, names(grid.list))
-  attr(dgrid, "grid.list") = grid.list
+  # # constainer for spatial filters
+  # grid.list = list((1:nr2) * dx, (1:nc2) * dy)
+  # dgrid = as.matrix(expand.grid(grid.list))
+  # dimnames(dgrid) = list(NULL, names(grid.list))
+  # attr(dgrid, "grid.list") = grid.list
 
-  center = matrix(c((dx * nr), (dy * nc)), nrow = 1, ncol = 2)
+  # center = matrix(c((dx * nr), (dy * nc)), nrow = 1, ncol = 2)
 
-  theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=0.5 )
-  sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
-    Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
-  sp.covar = as.surface(dgrid, c(sp.covar))$z
-  sp.covar.kernel = fft(sp.covar) / fft_mC
+  # theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=0.5 )
+  # sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
+  #   Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
+  # sp.covar = as.surface(dgrid, c(sp.covar))$z
+  # sp.covar.kernel = fft(sp.covar) / fft_mC
 
-  mY = matrix(0, nrow = nr2, ncol = nc2)
-  mN = matrix(0, nrow = nr2, ncol = nc2)
+  # mY = matrix(0, nrow = nr2, ncol = nc2)
+  # mN = matrix(0, nrow = nr2, ncol = nc2)
 
-  u = as.image(
-    Z=xyz$z,
-    x=xyz[, c("x", "y")],
-    na.rm=TRUE,
-    nx=nr,
-    ny=nc
-  )
-  # surface(u)
+  # u = as.image(
+  #   Z=xyz$z,
+  #   x=xyz[, c("x", "y")],
+  #   na.rm=TRUE,
+  #   nx=nr,
+  #   ny=nc
+  # )
+  # # surface(u)
 
-  mY[1:nr,1:nc] = u$z
-  mY[!is.finite(mY)] = 0
+  # mY[1:nr,1:nc] = u$z
+  # mY[!is.finite(mY)] = 0
 
-  #  Nadaraya/Watson normalization for missing values s
-  mN[1:nr,1:nc] = u$weights
-  mN[!is.finite(mN)] = 0
+  # #  Nadaraya/Watson normalization for missing values s
+  # mN[1:nr,1:nc] = u$weights
+  # mN[!is.finite(mN)] = 0
 
-  fY = Re(fft(fft(mY) * sp.covar.kernel, inverse = TRUE))[1:nr, 1:nc]
-  fN = Re(fft(fft(mN) * sp.covar.kernel, inverse = TRUE))[1:nr, 1:nc]
+  # fY = Re(fft(fft(mY) * sp.covar.kernel, inverse = TRUE))[1:nr, 1:nc]
+  # fN = Re(fft(fft(mN) * sp.covar.kernel, inverse = TRUE))[1:nr, 1:nc]
 
-  tol = 1e-12
-  Z = fY/fN
-  Z = ifelse((fN > tol), (fY/fN), NA)
-  Z[!is.finite(Z)] = NA
+  # tol = 1e-12
+  # Z = fY/fN
+  # Z = ifelse((fN > tol), (fY/fN), NA)
+  # Z[!is.finite(Z)] = NA
 
-  x11()
+  # x11()
 
-  surface(list(x=c(1:nr)*dx, y=c(1:nc)*dy, z=Z), xaxs="r", yaxs="r")
+  # surface(list(x=c(1:nr)*dx, y=c(1:nc)*dy, z=Z), xaxs="r", yaxs="r")
+
+  # -------------------------
+
+  # useful tools and links
+
+    # https://www.iro.umontreal.ca/~pift6080/H09/documents/
+    # https://www.iro.umontreal.ca/~pift6080/H09/documents/eck_fft.pdf
+    # https://riptutorial.com/r/example/14464/fourier-series
+    # http://www.di.fc.ul.pt/~jpn/r/fourier/fourier.html
+
+
+    # # cs is the vector of complex points to convert
+    # convert.fft <- function(cs, sample.rate=1) {
+    # cs <- cs / length(cs) # normalize
+
+    # distance.center <- function(c)signif( Mod(c),        4)
+    # angle           <- function(c)signif( 180*Arg(c)/pi, 3)
+
+    # df <- data.frame(cycle    = 0:(length(cs)-1),
+    #                   freq     = 0:(length(cs)-1) * sample.rate / length(cs),
+    #                   strength = sapply(cs, distance.center),
+    #                   delay    = sapply(cs, angle))
+    # df
+    # }
+
+    # convert.fft(fft(1:4))
+
+    # plot.frequency.spectrum <- function(X.k, xlimits=c(0,length(X.k))) {
+    # plot.data  <- cbind(0:(length(X.k)-1), Mod(X.k))
+
+    # # TODO: why this scaling is necessary?
+    # plot.data[2:length(X.k),2] <- 2*plot.data[2:length(X.k),2]
+
+    # plot(plot.data, t="h", lwd=2, main="",
+    #       xlab="Frequency (Hz)", ylab="Strength",
+    #       xlim=xlimits, ylim=c(0,max(Mod(plot.data[,2]))))
+    # }
+
+    # # Plot the i-th harmonic
+    # # Xk: the frequencies computed by the FFt
+    # #  i: which harmonic
+    # # ts: the sampling time points
+    # # acq.freq: the acquisition rate
+    # plot.harmonic <- function(Xk, i, ts, acq.freq, color="red") {
+    # Xk.h <- rep(0,length(Xk))
+    # Xk.h[i+1] <- Xk[i+1] # i-th harmonic
+    # harmonic.trajectory <- get.trajectory(Xk.h, ts, acq.freq=acq.freq)
+    # points(ts, harmonic.trajectory, type="l", col=color)
+    # }
+
+    # # returns the x.n time series for a given time sequence (ts) and
+    # # a vector with the amount of frequencies k in the signal (X.k)
+    # get.trajectory <- function(X.k,ts,acq.freq) {
+
+    # N   <- length(ts)
+    # i   <- complex(real = 0, imaginary = 1)
+    # x.n <- rep(0,N)           # create vector to keep the trajectory
+    # ks  <- 0:(length(X.k)-1)
+
+    # for(n in 0:(N-1)) {       # compute each time point x_n based on freqs X.k
+    #   x.n[n+1] <- sum(X.k * exp(i*2*pi*ks*n/N)) / N
+    # }
+
+    # x.n * acq.freq
+    # }
+
+    # X.k <- fft(c(4,0,0,0))                   # get amount of each frequency k
+
+    # time     <- 4                            # measuring time interval (seconds)
+    # acq.freq <- 100                          # data acquisition frequency (Hz)
+    # ts  <- seq(0,time-1/acq.freq,1/acq.freq) # vector of sampling time-points (s)
+
+    # x.n <- get.trajectory(X.k,ts,acq.freq)   # create time wave
+
+    # plot(ts,x.n,type="l",ylim=c(-2,4),lwd=2)
+    # abline(v=0:time,h=-2:4,lty=3); abline(h=0)
+
+    # plot.harmonic(X.k,1,ts,acq.freq,"red")
+    # plot.harmonic(X.k,2,ts,acq.freq,"green")
+    # plot.harmonic(X.k,3,ts,acq.freq,"blue")
+
+
+    # Nyquist frequency is the maximum frequency that can be detected for a given sampling rate.
+
+    # acq.freq <- 100                    # data acquisition (sample) frequency (Hz)
+    # time     <- 6                      # measuring time interval (seconds)
+    # ts       <- seq(0,time-1/acq.freq,1/acq.freq) # vector of sampling time-points (s)
+    # f.0 <- 1/time
+
+    # dc.component <- 1
+    # component.freqs <- c(3,7,10)        # frequency of signal components (Hz)
+    # component.delay <- c(0,0,0)         # delay of signal components (radians)
+    # component.strength <- c(1.5,.5,.75) # strength of signal components
+
+    # f   <- function(t,w) {
+    # dc.component +
+    # sum( component.strength * sin(component.freqs*w*t + component.delay))
+    # }
+
+    # plot.fourier(f,f.0,ts=ts)
+
+    # w <- 2*pi*f.0
+    # trajectory <- sapply(ts, function(t) f(t,w))
+    # head(trajectory,n=30)
+
+    # X.k <- fft(trajectory)                   # find all harmonics with fft()
+    # plot.frequency.spectrum(X.k, xlimits=c(0,20))
+
+    # x.n <- get.trajectory(X.k,ts,acq.freq) / acq.freq  # TODO: why the scaling?
+    # plot(ts,x.n, type="l"); abline(h=0,lty=3)
+    # points(ts,trajectory,col="red",type="l") # compare with original
+
 
 }
