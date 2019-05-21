@@ -527,7 +527,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="saved_state",
   if ( "scale" %in% runmode ) {
     # must be done in 2-passes .. the first in paranoid mode to fill with estimates that are reliable,
     # then a second pass to borrow from neighbouring estimate where possible
-    message ( "\n", "||| Entering spatial scale (variogram) determination:", format(Sys.time()) , "\n" )
+    message ( "\n", "||| Entering spatial scale (variogram) determination: ", format(Sys.time()) , "\n" )
     p$time_start_scale = Sys.time()
     tmpDATA = file.path( p$stmvSaveDir, "tmp_DATA.rdata" )
     save( DATA, file=tmpDATA)
@@ -546,7 +546,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="saved_state",
     load( tmpDATA )
 
     message( "||| Scale estimation surface complete." )
-    message( "||| Time used for <interpolate_boost>:", format(difftime(  Sys.time(), p$time_start_scale )), "\n"  )
+    message( "||| Time used for <interpolate_boost>: ", format(difftime(  Sys.time(), p$time_start_scale )), "\n"  )
     message( "||| Stats temporarily saved to (for restarts): ", p$saved_state_fn$stats )
 
   } else {
@@ -813,7 +813,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="saved_state",
     p$time_start_interpolation = Sys.time()
     currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
     parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) )
-    message( paste( "Time used for <interpolate>:", format(difftime(  Sys.time(), p$time_start_interpolation )), "\n" ) )
+    message( paste( "Time used for <interpolate>: ", format(difftime(  Sys.time(), p$time_start_interpolation )), "\n" ) )
   }
 
 
@@ -858,7 +858,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="saved_state",
     p$time_start_interpolate_boost = Sys.time()
     currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
     parallel_run( stmv_interpolate, p=p, runoption="boostdata", runindex=list( locs=sample( currentstatus$todo )))
-    message( "||| Time used for <interpolate_boost>:", format(difftime(  Sys.time(), p$time_start_interpolate_boost )), "\n" )
+    message( "||| Time used for <interpolate_boost>: ", format(difftime(  Sys.time(), p$time_start_interpolate_boost )), "\n" )
   }
 
   # --------------------
@@ -877,7 +877,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, variogram_source ="saved_state",
     #parallel_run( stmv_interpolate_force_complete, p=p, nu=nu, phi=phi, runindex=list( locs=sample( currentstatus$todo )))
 
     parallel_run( stmv_interpolate_force_complete, p=p, force_complete_method=p$force_complete_method, runindex=list( time_index=1:p$nt ))
-    message( "||| Time used for <interpolate_force_complete>:", format(difftime(  Sys.time(), p$time_start_interpolate_force_complete )), "\n" )
+    message( "||| Time used for <interpolate_force_complete>: ", format(difftime(  Sys.time(), p$time_start_interpolate_force_complete )), "\n" )
   }
 
 
