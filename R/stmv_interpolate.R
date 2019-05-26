@@ -121,6 +121,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
     useglobal = FALSE
     if (!is.finite( localrange ) ) useglobal =TRUE
     if (!is.finite( ndata ) ) useglobal =TRUE
+    if (vg$flag =="variogram_failure") useglobal =TRUE
     if (useglobal) vg = vg_global
 
     if (runoption=="boostdata") localrange = matern_phi2distance( phi=vg$phi, nu=vg$nu, cor=p$stmv_range_correlation_boostdata )
@@ -265,10 +266,12 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
     }
 
     if (length(which( is.finite(res$predictions$mean ))) < 5) {
-      browser()
       Sflag[Si] =  E[["prediction_error"]]   # modelling / prediction did not complete properly
       res = NULL
-      if (debugging) message("Error: prediction error")
+      if (debugging) {
+        message("Error: prediction error")
+        browser()
+      }
       next()  # looks to be a faulty solution
     }
 

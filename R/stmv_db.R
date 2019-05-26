@@ -1,5 +1,5 @@
 
-  stmv_db = function( DS, p, B=NULL, yr=NULL, ret="mean" ) {
+  stmv_db = function( DS, p, B=NULL, yr=NULL, ret="mean", runmode=NULL ) {
     #// usage: low level function to convert data into file-based data obects to permit parallel
     #// data access and manipulation and deletes/updates
     #// B is the xyz or xytz data or the function to get the data to work upon
@@ -531,6 +531,7 @@
 
     }
 
+
     # ----------------
 
 
@@ -550,16 +551,16 @@
         }
       }
 
-      save( sP, file=p$saved_state_fn$P, compress=TRUE )
-      save( sPn, file=p$saved_state_fn$Pn, compress=TRUE )
-      save( sPsd, file=p$saved_state_fn$Psd, compress=TRUE )
-      save( sS, file=p$saved_state_fn$stats, compress=TRUE )
-      save( sSflag, file=p$saved_state_fn$sflag, compress=TRUE )
+      save( sP, file=paste(p$saved_state_fn$P, runmode, sep="."), compress=TRUE )
+      save( sPn, file=paste(p$saved_state_fn$Pn, runmode, sep="."), compress=TRUE )
+      save( sPsd, file=paste(p$saved_state_fn$Psd, runmode, sep="."), compress=TRUE )
+      save( sS, file=paste(p$saved_state_fn$stats, runmode, sep="."), compress=TRUE )
+      save( sSflag, file=paste(p$saved_state_fn$sflag, runmode, sep="."), compress=TRUE )
 
       if (exists("stmv_global_modelengine", p)) {
         if (p$stmv_global_modelengine !="none" ) {
-          save( sP0,   file=p$saved_state_fn$P0,   compress=TRUE )
-          save( sP0sd, file=p$saved_state_fn$P0sd, compress=TRUE )
+          save( sP0,   file=paste(p$saved_state_fn$P0, runmode, sep="."),   compress=TRUE )
+          save( sP0sd, file=paste(p$saved_state_fn$P0sd, runmode, sep="."), compress=TRUE )
         }
       }
       sP = sPsd = sPn = NULL
@@ -594,11 +595,11 @@
       sS = matrix( NaN, nrow=nrow(S), ncol=ncol(S) )
       sSflag = matrix( NaN, nrow=nrow(Sflag), ncol=ncol(Sflag) )
 
-      if (file.exists(p$saved_state_fn$P)) load( p$saved_state_fn$P )
-      if (file.exists(p$saved_state_fn$Pn)) load( p$saved_state_fn$Pn )
-      if (file.exists(p$saved_state_fn$Psd)) load( p$saved_state_fn$Psd )
-      if (file.exists(p$saved_state_fn$stats)) load( p$saved_state_fn$stats )
-      if (file.exists(p$saved_state_fn$sflag)) load( p$saved_state_fn$sflag )
+      if (file.exists(paste( p$saved_state_fn$P, runmode, sep="."))) load( paste( p$saved_state_fn$P, runmode, sep=".") )
+      if (file.exists(paste( p$saved_state_fn$Pn, runmode, sep="."))) load( paste( p$saved_state_fn$Pn, runmode, sep=".") )
+      if (file.exists(paste( p$saved_state_fn$Psd, runmode, sep="."))) load( paste( p$saved_state_fn$Psd, runmode, sep=".") )
+      if (file.exists(paste( p$saved_state_fn$stats, runmode, sep="."))) load( paste( p$saved_state_fn$stats, runmode, sep=".") )
+      if (file.exists(paste( p$saved_state_fn$sflag, runmode, sep="."))) load( paste( p$saved_state_fn$sflag, runmode, sep=".") )
 
       P[] = sP[]
       Pn[] = sPn[]
@@ -613,8 +614,8 @@
         if (p$stmv_global_modelengine !="none" ) {
           sP0 = matrix( NaN, nrow=nrow(P0), ncol=ncol(P0) )
           sP0sd = matrix( NaN, nrow=nrow(P0sd), ncol=ncol(P0sd) )
-          if (file.exists(p$saved_state_fn$P0)) load( p$saved_state_fn$P0 )
-          if (file.exists(p$saved_state_fn$P0sd)) load( p$saved_state_fn$P0sd )
+          if (file.exists(paste( p$saved_state_fn$P0, runmode, sep="."))) load( paste( p$saved_state_fn$P0, runmode, sep=".") )
+          if (file.exists(paste( p$saved_state_fn$P0sd, runmode, sep="."))) load( paste( p$saved_state_fn$P0sd, runmode, sep=".") )
           P0[] = sP0[]
           P0sd[] = sP0sd[]
           sP0 = sP0sd = NULL

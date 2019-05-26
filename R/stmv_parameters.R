@@ -37,10 +37,11 @@ stmv_parameters = function( p=list(), ... ) {
   if( !exists( "storage.backend", p))  p$storage.backend="bigmemory.ram"
 
   if( !exists( "stmv_variogram_method", p)) p$stmv_variogram_method="geoR"   # note GP methods are slow when there is too much data
-  if( !exists( "stmv_range_correlation", p)) p$stmv_range_correlation = 0.1   # auto-correlation value at which to compute a "range" distance for estimation
-  if( !exists( "stmv_range_correlation", p)) p$stmv_range_correlation_fft_taper = 0.5   # auto-correlation value at which to compute a tapered "range" distance for estimation
 
-  if( !exists( "stmv_range_correlation_boostdata", p)) p$stmv_range_correlation_boostdata = 0.05   # auto-correlation value at which to compute a "range" distance for estimation
+  if( !exists( "stmv_range_correlation", p)) p$stmv_range_correlation = 0.1   # auto-correlation at which to compute range distance
+  if( !exists( "stmv_range_correlation", p)) p$stmv_range_correlation_fft_taper = 0.5   # auto-correlation value at which to compute a tapered "range" distance for estimation/interpolation
+
+  if( !exists( "stmv_range_correlation_boostdata", p)) p$stmv_range_correlation_boostdata = 0.05   # auto-correlation value at which to compute a "range" distance for estimation when default range estimates do not work
 
   if (!exists( "stmv_global_family", p)) p$stmv_global_family = gaussian(link = "identity")
 
@@ -77,6 +78,7 @@ stmv_parameters = function( p=list(), ... ) {
   if ( p$stmv_local_modelengine %in% c("krige" )) {
      # nothing to add yet ..
   }
+
 
 
   if (!exists("variables", p)) p$variables=list()
@@ -149,6 +151,8 @@ stmv_parameters = function( p=list(), ... ) {
 
   # construct prediction/output grid area ('pa')
   if ( !exists("windowsize.half", p)) p$windowsize.half = floor(p$stmv_distance_prediction/p$pres) # convert distance to discretized increments of row/col indices; stmv_distance_prediction = 0.75* stmv_distance_statsgrid (unless overridden)
+
+  if ( !exists("stmv_force_complete_method", p)) p$stmv_force_complete_method = "linear"
 
   return(p)
 }
