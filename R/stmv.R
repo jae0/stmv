@@ -585,13 +585,6 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
   }
 
 
-
-  if ( !{"interpolate" %in% runmode} ) {
-    message( "||| Completed runmode." )
-    return()
-  }
-
-
   if (exists("stmv_global_modelengine", p) ) {
     if (p$stmv_global_modelengine !="none" ) {
       # create prediction suface .. additive offsets
@@ -655,9 +648,8 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
 
 
       # test to see if all covars are static as this can speed up the initial predictions
-      message(" ")
-      message( "||| Predicting global effect of covariates at each prediction location. This can take a while ")
-      message( "||| depending upon the size of the prediction grid, complexity and number of cpus ... ")
+      message ( "\n", "||| Entering Predicting global effect of covariates at each prediction location: ", format(Sys.time()) , "\n" )
+      message( "||| This can take a while (usually a few minutes but hours if complex) ... ")
 
       p$time_covariates_0 =  Sys.time()
       if (exists("COV", p$variables)) {
@@ -866,15 +858,18 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
 
     stmv_db( p=p, DS="stmv.results" ) # save to disk for use outside stmv*, returning to user scale
 
+  }
+
+
+  message( "||| Temporary files exist in case you need to examine them or restart a process. ")
+  message( "||| You can delete them by running: stmv_db( p=p, DS='cleanup.all' ), once you are done. ")
+  message( "||| Or by adding 'cleanup.all' to the runmodes"  )
+
+
+  if ("cleanup.all" %in% runmode) {
     if ( p$storage.backend !="bigmemory.ram" ) {
       resp = readline( "||| Delete temporary files? Type to confirm <YES>:  ")
-      if (resp=="YES") {
-        stmv_db( p=p, DS="cleanup.all" )
-      } else {
-        message(" ")
-        message( "||| Leaving temporary files alone in case you need to examine them or restart a process. ")
-        message( "||| You can delete them by running: stmv_db( p=p, DS='cleanup.all' ), once you are done. ")
-      }
+      if (resp=="YES")  stmv_db( p=p, DS="cleanup.all" )
     }
   }
 
