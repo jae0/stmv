@@ -8,8 +8,8 @@ stmv_predictionarea = function(p, sloc, windowsize.half ) {
   pa_w_n = length(pa_w)
 
   # determine prediction locations and time slices
-  iwplon = floor( {sloc[1]-p$origin[1]}/p$pres + 1 + pa_w )
-  iwplat = floor( {sloc[2]-p$origin[2]}/p$pres + 1 + pa_w )
+  iwplon = trunc( {sloc[1]-p$origin[1]}/p$pres + 1 + pa_w )
+  iwplat = trunc( {sloc[2]-p$origin[2]}/p$pres + 1 + pa_w )
 
   pa = data.frame( iplon = rep.int(iwplon, pa_w_n) ,
                    iplat = rep.int(iwplat, rep.int(pa_w_n, pa_w_n)) )
