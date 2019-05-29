@@ -42,7 +42,7 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=N
         minresolution = diff(xr) / discretized_n
       }
 
-      coo = trunc( coo  / minresolution ) * minresolution
+      coo = floor( coo  / minresolution ) * minresolution
 
       if ( method=="default" ) {
         # basic discretization in 1D
@@ -76,7 +76,7 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=N
           oo = which( coo[,1] == res[o,1]  )
           noo = length(oo)
           if ( noo > 1) {
-            okeep = trunc(invcount[o] * noo)
+            okeep = floor(invcount[o] * noo)
             if (okeep > 1) {
               ss = oo[ .Internal( sample( noo, okeep, replace=FALSE, prob=NULL)) ]
               keep = c(keep, icoo[ss] )
@@ -101,8 +101,8 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=N
       minresolution = rep( dmin / discretized_n, 2)
     }
 
-    coo[,1] = trunc( coo[,1] / minresolution[1] ) * minresolution[1]
-    coo[,2] = trunc( coo[,2] / minresolution[2] ) * minresolution[2]
+    coo[,1] = floor( coo[,1] / minresolution[1] ) * minresolution[1]
+    coo[,2] = floor( coo[,2] / minresolution[2] ) * minresolution[2]
 
     if ( method=="default" ) {
       # basic discretization in 2D
@@ -140,7 +140,7 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=N
         oo = which( coo[,1] == res[o,1] & coo[,2] == res[o,2] )
         noo = length(oo)
         if ( noo > 1) {
-          okeep = trunc(invcount[o] * noo)
+          okeep = floor(invcount[o] * noo)
           if (okeep > 1) {
             ss = oo[ .Internal( sample( noo, okeep, replace=FALSE, prob=NULL)) ]
             keep = c(keep, icoo[ss] )
@@ -166,9 +166,9 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=N
         minresolution = c( dmin / discretized_n, dmin / discretized_n, tmin/discretized_n )
       }
 
-      coo[,1] = trunc( coo[,1] / minresolution[1] ) * minresolution[1]
-      coo[,2] = trunc( coo[,2] / minresolution[2] ) * minresolution[2]
-      coo[,3] = trunc( coo[,3] / minresolution[3] ) * minresolution[3]
+      coo[,1] = floor( coo[,1] / minresolution[1] ) * minresolution[1]
+      coo[,2] = floor( coo[,2] / minresolution[2] ) * minresolution[2]
+      coo[,3] = floor( coo[,3] / minresolution[3] ) * minresolution[3]
 
       if ( method=="default" ) {
         # basic discretization in 2D
@@ -207,7 +207,7 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=N
           oo = which( coo[,1] == res[o,1] & coo[,2] == res[o,2] & coo[,3] == res[o,3] )
           noo = length(oo)
           if ( noo > 1) {
-            okeep = trunc(invcount[o] * noo)
+            okeep = floor(invcount[o] * noo)
             if (okeep > 1) {
               ss = oo[ .Internal( sample( noo, okeep, replace=FALSE, prob=NULL)) ]
               keep = c(keep, icoo[ss] )

@@ -24,8 +24,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, distance=NUL
   x_r = range(dat[,p$variables$LOCS[1]])
   x_c = range(dat[,p$variables$LOCS[2]])
 
-  nr = round( diff(x_r)/p$pres ) + 1
-  nc = round( diff(x_c)/p$pres ) + 1
+  nr = floor( diff(x_r)/p$pres ) + 1
+  nc = floor( diff(x_c)/p$pres ) + 1
 
   # final output grid
   x_locs = expand.grid(
@@ -231,8 +231,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, distance=NUL
     x_c = range(xyz$y)
 
     rez = diff(x_r)/100
-    nr = round( diff(x_r)/rez ) + 1
-    nc = round( diff(x_c)/rez ) + 1
+    nr = floor( diff(x_r)/rez ) + 1
+    nc = floor( diff(x_c)/rez ) + 1
 
     dx = dy = rez
 

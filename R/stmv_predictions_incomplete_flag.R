@@ -17,8 +17,8 @@ stmv_predictions_incomplete_flag  = function( p ) {
     Sloc_nplon = ceiling( diff( p$corners$plon) / p$stmv_distance_statsgrid)
 
     Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
-    uS = array_map( "2->1", round( cbind(Sloc[,1]-p$origin[1], Sloc[,2]-p$origin[2])/p$stmv_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
-    uP = array_map( "2->1", round( cbind(Ploc[noP,1]-p$origin[1], Ploc[noP,2]-p$origin[2])/p$stmv_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
+    uS = array_map( "2->1", floor( cbind(Sloc[,1]-p$origin[1], Sloc[,2]-p$origin[2])/p$stmv_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
+    uP = array_map( "2->1", floor( cbind(Ploc[noP,1]-p$origin[1], Ploc[noP,2]-p$origin[2])/p$stmv_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
     inrange = which( (uP >= min(uS)) & (uP <= max(uS)) )
     if (length( inrange) > 0) uP = uP[inrange]
     uP = unique(uP)
