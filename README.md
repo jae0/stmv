@@ -2,13 +2,13 @@
 
 Core functions and the data architecture required for prediction and inference of spatiotemporal models: kernal-based lattice models that divide and conquer large space-time modelling and prediction problems. A local space-time operator/filter is used with a global covariate model. It is therefore, an hierarchical model.
 
-To install you need to bootstrap from https://github.com/jae0/aegis.env directly: 
+To install you need to bootstrap from https://bitbucket.org/ecomod/aegis.base directly:
 
 ```
-  devtools::install_github( "jae0/aegis.env" )
+  devtools::install_bitbucket( "ecomod/aegis.base" )
 ```
 
-Then, you need to have an Rprofile set up properly. An example can be seen in aegis.env/R/project.Rprofile.example.R, or use the following, being careful to define the required R-global variables:
+Then, you need to have an Rprofile set up properly. An example can be seen in aegis.base/R/project.Rprofile.example.R, or use the following, being careful to define the required R-global variables:
 
 ```.
 libPaths("~/R")
@@ -22,21 +22,21 @@ data_root = file.path( homedir, "bio.data" )   ### replace with correct path to 
 passwords = file.path( homedir, ".passwords" )
 if (file.exists(passwords)) source( passwords )
 
-require( aegis.env ) 
+require( aegis.base )
 ```
 
 
-Thereafter, you can used the bootstrapped environment to install the other basic tools: 
+Thereafter, you can used the bootstrapped environment to install the other basic tools:
 
 ```
-  aegis.env::project.libraryInstall()
+  aegis.base::project.libraryInstall()
 ```
 
 If you have a local git clone of the required packages, you can install with:
 
 ```
-  aegis.env::project.libraryInstall(local=TRUE)  
+  aegis.base::project.libraryInstall(local=TRUE)
 
 ```
 
-For usage, examples can be found in https://github.com/jae0/aegis/tree/master/inst/scripts.
+For usage, examples can be found in https://bitbucket.org/ecomod/aegis.*.

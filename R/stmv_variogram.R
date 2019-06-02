@@ -20,8 +20,8 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
       if ( 0 ) {
         # debugging / comparison of results
 
-        # project.library("aegis.env", "aegis", "stmv"  )
-        loadfunctions( c("aegis.env", "aegis", "stmv" ))
+        # project.library("aegis.base", "aegis", "stmv"  )
+        loadfunctions( c("aegis.base", "aegis", "stmv" ))
         xyz = stmv_test_data( datasource="swiss" )
         xy = xyz[, c("x", "y")]
         mz = log( xyz$rain )
