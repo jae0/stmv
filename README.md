@@ -2,10 +2,10 @@
 
 Core functions and the data architecture required for prediction and inference of spatiotemporal models: kernal-based lattice models that divide and conquer large space-time modelling and prediction problems. A local space-time operator/filter is used with a global covariate model. It is therefore, an hierarchical model.
 
-To install you need to bootstrap from https://bitbucket.org/ecomod/aegis directly:
+To install you need to bootstrap from https://github.com/jae0/aegis directly:
 
 ```
-  devtools::install_bitbucket( "ecomod/aegis" )
+  devtools::install_github( "jae0/aegis" )
 ```
 
 Then, you need to have an Rprofile set up properly. An example can be seen in aegis/R/project.Rprofile.example.R, or use the following, being careful to define the required R-global variables:
@@ -39,4 +39,4 @@ If you have a local git clone of the required packages, you can install with:
 
 ```
 
-For usage, examples can be found in https://bitbucket.org/ecomod/aegis.*.
+For usage, examples can be found in https://github.com/jae0/aegis.*.

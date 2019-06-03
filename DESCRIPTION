@@ -28,4 +28,4 @@ NeedsCompilation: no
 ByteCompile: TRUE
 License: MIT
 LazyData: true
-URL: https://bitbucket.org/ecomod/stmv
+URL: https://github.com/jae0/stmv
