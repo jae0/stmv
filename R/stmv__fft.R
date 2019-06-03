@@ -197,7 +197,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, distance=NUL
 
     # testing and debugging
 
-    loadfunctions( c("aegis.base", "aegis", "stmv"))
+    loadfunctions( c("aegis", "aegis", "stmv"))
     RLibrary(c ("fields", "MBA", "geoR") )
 
     xyz = stmv_test_data( datasource="swiss" )
