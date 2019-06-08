@@ -18,7 +18,7 @@ stmv_parameters = function( p=list(), ... ) {
     message( "||| stmv_distance_scale must be defined" )
     stop()
   }
-
+s
   if ( !exists("stmv_distance_statsgrid", p)) {
     message( "||| stmv_distance_statsgrid must be defined" )
     stop()
@@ -36,10 +36,11 @@ stmv_parameters = function( p=list(), ... ) {
 
   if( !exists( "storage.backend", p))  p$storage.backend="bigmemory.ram"
 
-  if( !exists( "stmv_variogram_method", p)) p$stmv_variogram_method="fft"   # note GP methods are slow when there is too much data
+  if( !exists( "stmv_variogram_method", p)) p$stmv_variogram_method = "fft"   # note GP methods are slow when there is too much data
+  if( !exists( "stmv_variogram_nbreaks", p)) p$stmv_variogram_nbreaks = 20
 
   if( !exists( "stmv_range_correlation", p)) p$stmv_range_correlation = 0.1   # auto-correlation at which to compute range distance
-  if( !exists( "stmv_range_correlation", p)) p$stmv_range_correlation_fft_taper = 0.5   # auto-correlation value at which to compute a tapered "range" distance for estimation/interpolation
+  if( !exists( "stmv_range_correlation", p)) p$stmv_range_correlation_fft_taper = 0.1   # auto-correlation value at which to compute a tapered "range" distance for estimation/interpolation
 
   if( !exists( "stmv_range_correlation_boostdata", p)) p$stmv_range_correlation_boostdata = 0.05   # auto-correlation value at which to compute a "range" distance for estimation when default range estimates do not work
 

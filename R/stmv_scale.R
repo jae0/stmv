@@ -65,7 +65,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", ... ) {
   }
 
 
-  stmv_nmins = sort( unique( c(1, p$stmv_nmin_downsize_factor) * p$stmv_nmin ) , decreasing=TRUE )
+  stmv_nmins = sort( unique( c(1, p$stmv_nmin_downsize_factor) * p$stmv_nmin ) , decreasing=FALSE )
   stmv_nmax = p$stmv_nmax
 
 # main loop over each output location in S (stats output locations)
@@ -79,12 +79,12 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", ... ) {
     # obtain indices of data locations withing a given spatial range, optimally determined via variogram
     # find data nearest Sloc[Si,] and with sufficient data
     ndata = 0
+    d1 = abs( Sloc[Si,1] - Yloc[Yi[],1] )
+    d2 = abs( Sloc[Si,2] - Yloc[Yi[],2] )
+
     for ( nmin_data in stmv_nmins ) {
       for ( stmv_distance_cur in p$stmv_distance_scale )  {
-
-        U = which(
-          {abs( Sloc[Si,1] - Yloc[Yi[],1] ) <= stmv_distance_cur} &
-          {abs( Sloc[Si,2] - Yloc[Yi[],2] ) <= stmv_distance_cur} )  # faster to take a block
+        U = which( d1 <= stmv_distance_cur & d2 <= stmv_distance_cur )  # faster to take a block
         ndata = length(U)
         if ( ndata >= nmin_data ) {
           if (ndata > stmv_nmax ) {
@@ -105,6 +105,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", ... ) {
 
     YiU = Yi[U]
     U = NULL
+    d1 = d2 = NULL
 
     Sflag[Si] = E[["todo"]]
 
@@ -117,7 +118,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", ... ) {
     o = NULL
 
     if (p$stmv_variogram_method=="inla_nonseparable") {
-
+      # TODO
       return()
     }
 
@@ -129,7 +130,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", ... ) {
       z=Y[YiU,],
       methods=p$stmv_variogram_method,
       distance_cutoff=stmv_distance_cur,
-      nbreaks=15,
+      nbreaks=p$stmv_variogram_nbreaks,
       range_correlation=p$stmv_range_correlation # ,  plotdata=TRUE
     ) )
     gc()  # for geoR ....
