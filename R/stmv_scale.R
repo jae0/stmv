@@ -83,12 +83,17 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", ... ) {
     d2 = abs( Sloc[Si,2] - Yloc[Yi[],2] )
 
     for ( nmin_data in stmv_nmins ) {
+      # print(nmin_data)
       for ( stmv_distance_cur in p$stmv_distance_scale )  {
+        # print(stmv_distance_cur)
         U = which( d1 <= stmv_distance_cur & d2 <= stmv_distance_cur )  # faster to take a block
         ndata = length(U)
+        # print(ndata)
         if ( ndata >= nmin_data ) {
+          # print( "enough data")
           if (ndata > stmv_nmax ) {
             # try to trim
+            # print("trimming")
             if ( exists("TIME", p$variables)) {
               Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )
               iU = stmv_discretize_coordinates( coo=cbind(Yloc[U,], Ytime[U]), ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )
@@ -96,11 +101,13 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", ... ) {
               iU = stmv_discretize_coordinates( coo=Yloc[U,], ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )
             }
             ndata = length(iU)
+            # print(ndata)
             U=U[iU]
             if ( ndata >= nmin_data ) break()
           }
         }
       }
+      if ( ndata >= nmin_data ) break()
     }
 
     YiU = Yi[U]

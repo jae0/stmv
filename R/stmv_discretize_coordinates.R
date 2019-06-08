@@ -76,8 +76,8 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=N
           oo = which( coo[,1] == res[o,1]  )
           noo = length(oo)
           if ( noo > 1) {
-            okeep = floor(invcount[o] * noo)
-            if (okeep > 1) {
+            okeep = max(1, floor(invcount[o] * noo))
+            if (okeep >= 1) {
               ss = oo[ .Internal( sample( noo, okeep, replace=FALSE, prob=NULL)) ]
               keep = c(keep, icoo[ss] )
             }
@@ -85,6 +85,9 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=N
             keep = c(keep, icoo[oo] )
           }
         }
+        nk = length(keep)
+        if (nk > ntarget) keep = keep[ .Internal( sample( nk, ntarget, replace=FALSE, prob=NULL)) ]
+
         return( keep )
       }
 
@@ -140,8 +143,8 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=N
         oo = which( coo[,1] == res[o,1] & coo[,2] == res[o,2] )
         noo = length(oo)
         if ( noo > 1) {
-          okeep = floor(invcount[o] * noo)
-          if (okeep > 1) {
+          okeep = max(1, floor(invcount[o] * noo))
+          if (okeep >= 1) {
             ss = oo[ .Internal( sample( noo, okeep, replace=FALSE, prob=NULL)) ]
             keep = c(keep, icoo[ss] )
           }
@@ -149,6 +152,9 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=N
           keep = c(keep, icoo[oo] )
         }
       }
+      nk = length(keep)
+      if (nk > ntarget) keep = keep[ .Internal( sample( nk, ntarget, replace=FALSE, prob=NULL)) ]
+
       return( keep )
     }
 
@@ -207,8 +213,8 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=N
           oo = which( coo[,1] == res[o,1] & coo[,2] == res[o,2] & coo[,3] == res[o,3] )
           noo = length(oo)
           if ( noo > 1) {
-            okeep = floor(invcount[o] * noo)
-            if (okeep > 1) {
+            okeep = max(1, floor(invcount[o] * noo))
+            if (okeep >= 1) {
               ss = oo[ .Internal( sample( noo, okeep, replace=FALSE, prob=NULL)) ]
               keep = c(keep, icoo[ss] )
             }
@@ -216,6 +222,9 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=N
             keep = c(keep, icoo[oo] )
           }
         }
+        nk = length(keep)
+        if (nk > ntarget) keep = keep[ .Internal( sample( nk, ntarget, replace=FALSE, prob=NULL)) ]
+
         return( keep )
       }
     }

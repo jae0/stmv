@@ -527,13 +527,8 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
     # then a second pass to borrow from neighbouring estimate where possible
     message ( "\n", "||| Entering spatial scale (variogram) determination: ", format(Sys.time()) , "\n" )
     p$time_start_scale = Sys.time()
-    tmpDATA = file.path( p$stmvSaveDir, "tmp_DATA.rdata" )
-    save( DATA, file=tmpDATA)
-    DATA = NULL
-    E = stmv_error_codes()
     currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
     p$clusters = p$stmv_clusters[["scale"]] # as ram reqeuirements increase drop cpus
-    p$time_start_interpolation = Sys.time()
     parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
 
     # temp save to disk
@@ -541,7 +536,6 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
     save( sS, file=p$saved_state_fn$stats, compress=TRUE );
     sS = NULL
     # reload main data to continue
-    load( tmpDATA )
 
     message( "||| Scale estimation surface complete." )
     message( "||| Time used for <interpolate_boost>: ", format(difftime(  Sys.time(), p$time_start_scale )), "\n"  )

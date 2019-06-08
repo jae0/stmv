@@ -31,7 +31,6 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
         plotdata=TRUE
         nbreaks = 15
         distance_cutoff=NA
-        nbreaks = 15
         family="gaussian"
         range_correlation=0.1
 
@@ -356,8 +355,8 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
 
     vario = stmv_variogram_fft( xyz=XYZ, nx=discretized_n, ny=discretized_n, nbreaks=nbreaks )
 
-    uu = which( (vario$res$distances < median(vario$res$distances) ) & is.finite(vario$res$sv) )
-    fit = try( stmv_variogram_optimization( vx=res$distances[uu], vg=res$sv[uu], plotvgm=plotvgm, stmv_internal_scale=out$stmv_internal_scale, cor=range_correlation  ))
+    uu = which( (vario$res$distances < 0.9*max(vario$res$distances) ) & is.finite(vario$res$sv) )
+    fit = try( stmv_variogram_optimization( vx=vario$res$distances[uu], vg=vario$res$sv[uu], plotvgm=plotdata, stmv_internal_scale=out$stmv_internal_scale, cor=range_correlation  ))
 
     if ( !inherits(fit, "try-error") ) {
       out$fft = fit$summary
