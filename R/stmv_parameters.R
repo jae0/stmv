@@ -18,7 +18,7 @@ stmv_parameters = function( p=list(), ... ) {
     message( "||| stmv_distance_scale must be defined" )
     stop()
   }
-s
+
   if ( !exists("stmv_distance_statsgrid", p)) {
     message( "||| stmv_distance_statsgrid must be defined" )
     stop()
