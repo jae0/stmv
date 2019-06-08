@@ -197,22 +197,23 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, distance=NUL
 
     # testing and debugging
 
-    loadfunctions( c("aegis", "aegis", "stmv"))
+    loadfunctions( c("aegis", "stmv"))
     RLibrary(c ("fields", "MBA", "geoR") )
 
-    xyz = stmv_test_data( datasource="swiss" )
-    xy = xyz[, c("x", "y")]
-    mz = log( xyz$rain )
-    mm = lm( mz ~ 1 )
-    z = residuals( mm)
-    xyz = cbind(xyz[, c("x", "y")], z)
-    gr = stmv_variogram( xy, z, methods="geoR", plotdata=TRUE ) # ml via profile likelihood
+    # xyz = stmv_test_data( datasource="swiss" )
+    # xy = xyz[, c("x", "y")]
+    # mz = log( xyz$rain )
+    # mm = lm( mz ~ 1 )
+    # z = residuals( mm)
+    # xyz = cbind(xyz[, c("x", "y")], z)
+    # gr = stmv_variogram( xy, z, methods="geoR", plotdata=TRUE ) # ml via profile likelihood
 
 
     xyz = stmv_test_data( datasource="meuse" )
     xy = xyz[, c("x", "y")]
     z = log(xyz$elev)
-    xyz = cbind(xyz[, c("x", "y")], z)
+
+    xyz = cbind(xyz[, c("x", "y")], z=((z-mean(z))/sd(z) ) )
     gr = stmv_variogram( xy, z, methods="geoR", plotdata=TRUE ) # ml via profile likelihood
 
     nu = gr$geoR$nu
@@ -226,6 +227,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, distance=NUL
     require(MBA)
     mba.int  =  mba.surf( xyz, 100, 100, extend=TRUE)$xyz.est
     surface(mba.int, xaxs="r", yaxs="r")
+
 
     x_r = range(xyz$x)
     x_c = range(xyz$y)
@@ -251,7 +253,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, distance=NUL
 
     center = matrix(c((dx * nr), (dy * nc)), nrow = 1, ncol = 2)
 
-    theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=0.5 )
+    theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=0.1 )
     sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
       Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
     sp.covar = as.surface(dgrid, c(sp.covar))$z
@@ -295,46 +297,46 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, distance=NUL
     # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3414238/
 
 
-    fY = fft( mY)
-    ff = fY * Conj(fY)
-    ii = fft( ff, inverse=TRUE)
-    oo = fftshift(ii) / (nr*nc)
-    pp = log( Mod(oo)^2 )
-    # pp = log( oo * Conj(oo) )
-    # pp = log10(abs(oo)^2)
-    image(pp)
+    fY = fft(mY)/(nr*nc)
+    YY = fY * Conj(fY) # power spectra
+    ii = Re( fft( YY, inverse=TRUE)  )  # autocorrelation (amplitude)
 
-    # yy = ii[1:nr, 1:nc]
-    # zz = log(Mod(yy)^2)
-    # hist(pp)
-
-    # oo = Re(fft(fY, inverse = TRUE) )
+    fN = fft(mN)/(nr*nc)
+    NN = fN * Conj(fN) # power spectra
+    jj = Re( fft( NN, inverse = TRUE)  ) # autocorrelation (amplitude) correction
 
 
-      # , dx=1, dy=1 ) {
+    tol = 1e-9
+    kk = ifelse(( jj > tol), (ii / jj), NA) # autocorrelation
+    # kk[kk< -1] = -1
+    # kk[kk>1] = 1
 
-      # nr .. x/plon
-      # nc .. y/plat
-      dims = dim(M)
-      nr = dims[1]
-      nc = dims[2]
 
-      x = c((nr/2) : 1, -1:(-nr/2)) * dx
-      y = c((nc/2) : 1, -1:(-nc/2)) * dy
+    oo = fftshift(kk)
 
-      xy = expand.grid( x=x, y=y)
-      xy$dist = sqrt(xy$x^2 + xy$y^2)
-      xy$angle = atan2( xy$y, xy$x )
+    xy = expand.grid(
+      x = c(-nr:-1, 1:nr) * dx,
+      y = c(-nc:-1, 1:nc) * dy
+    )
 
-      xx = c(oo^2)
-      xx = zapsmall(Re(xx))
+    distances = sqrt(xy$x^2 + xy$y^2)
+    dmax = max(distances, na.rm=TRUE ) * 0.4  # approx nyquist distance (0.9 as corners exist)
+    breaks = seq( 0, dmax, length.out=20)
+    db = breaks[2] - breaks[1]
+    # angles = atan2( xy$y, xy$x )  # not used
 
-      ii = c( floor(matrix( xy$dist, ncol=nc, nrow=nr )) )
-      # ii = cut(ii, breaks=1000)
+    ii = cut( distances, breaks=c(breaks, max(breaks)+db), label=breaks+(db/2) )
 
-      res = tapply( X = xx, INDEX= ii, FUN=mean, na.rm=TRUE )
+    res = as.data.frame.table(tapply( X=oo, INDEX=ii, FUN=mean, na.rm=TRUE ))
+    names(res) = c("distances", "ac")
+    res$distances = as.numeric( as.character(res$distances))
 
-      plot(res[-1])
+    res$sv =  var(xyz$z) * (1-res$ac^2)
+    uu = which(res$distances < dmax/3) & is.finite(res$sv)
+    plot(ac ~ distances, data=res[uu,]   )
+    plot(sv ~ distances, data=res[uu,]   )
+
+    fit = try( stmv_variogram_optimization( vx=res$distances[uu], vg=res$sv[uu], plotvgm=TRUE, stmv_internal_scale=dmax/4, cor=0.1 ))
 
   }
 

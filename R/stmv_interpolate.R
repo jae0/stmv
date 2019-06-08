@@ -208,7 +208,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
       points( Yloc[U,2] ~ Yloc[U,1], col="green" )  # with covars and no other data issues
       points( Sloc[Si,2] ~ Sloc[Si,1], col="blue" ) # statistical locations
       # statistical output locations
-      grids= aegis::spatial_grid(p, DS="planar.coords" )
+      grids= spatial_grid(p, DS="planar.coords" )
       points( grids$plat[floor( (Sloc[Si,2]-p$origin[2])/p$pres) + 1]
             ~ grids$plon[floor( (Sloc[Si,1]-p$origin[1])/p$pres) + 1] , col="purple", pch=25, cex=5 )
       points( grids$plat[pa$iplat] ~ grids$plon[ pa$iplon] , col="cyan", pch=20, cex=0.01 ) # check on Proc iplat indexing

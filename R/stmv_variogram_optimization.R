@@ -34,8 +34,8 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, eps=1e-6
       return(obj)
     }
     par = c(tau.sq=vgm_var_max*0.2, sigma.sq=vgm_var_max*0.8, phi=1, nu=0.5)
-    lower =c(0, 0, 0.75, 0.3 )
-    upper =c(vgm_var_max*2, vgm_var_max*2, 3, 3)
+    lower =c(0, 0, 0.75, 0.1 )
+    upper =c(vgm_var_max*2, vgm_var_max*2, 3, 5)
 
     fit = try( optim( par=par, vg=vg, vx=vx, method="L-BFGS-B", lower=lower, upper=upper, fn=vario_function ) )
   }
@@ -61,7 +61,7 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, eps=1e-6
       fit$summary$phi=fit$par[["phi"]]
       fit$summary$varSpatial=fit$par[["sigma.sq"]]
       fit$summary$varObs=fit$par[["tau.sq"]]
-      fit$summary$range=matern_phi2distance( phi=fit$summary$phi, nu=fit$summary$nu, cor=p$stmv_range_correlation )
+      fit$summary$range=matern_phi2distance( phi=fit$summary$phi, nu=fit$summary$nu, cor=cor )
       fit$summary$range_ok = ifelse( fit$summary$range < fit$summary$vgm_dist_max*0.99, TRUE, FALSE )
       fit$summary$objfn=fit$value
     }

@@ -123,14 +123,14 @@
 
       datarange = range( out_mean, na.rm=TRUE )
       dr = seq( datarange[1], datarange[2], length.out=150)
-      lp = levelplot( out_mean ~ x+y, pG, aspect="iso", main="Posterior mean", at=dr, col.regions=aegis::color.code( "seis", dr) ,
+      lp = levelplot( out_mean ~ x+y, pG, aspect="iso", main="Posterior mean", at=dr, col.regions=color.code( "seis", dr) ,
         contour=FALSE, labels=FALSE, pretty=TRUE, xlab=NULL,ylab=NULL,scales=list(draw=FALSE) )
       print(lp)
 
 
       datarange = range( out_sd, na.rm=TRUE )
       dr = seq( datarange[1], datarange[2], length.out=150)
-      lp = levelplot( out_sd ~ x+y, pG, aspect="iso", main="Posterior SD", at=dr, col.regions=aegis::color.code( "seis", dr) ,
+      lp = levelplot( out_sd ~ x+y, pG, aspect="iso", main="Posterior SD", at=dr, col.regions=color.code( "seis", dr) ,
         contour=FALSE, labels=FALSE, pretty=TRUE, xlab=NULL,ylab=NULL,scales=list(draw=FALSE) )
       print(lp)
 

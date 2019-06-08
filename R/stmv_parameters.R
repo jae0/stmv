@@ -36,7 +36,7 @@ stmv_parameters = function( p=list(), ... ) {
 
   if( !exists( "storage.backend", p))  p$storage.backend="bigmemory.ram"
 
-  if( !exists( "stmv_variogram_method", p)) p$stmv_variogram_method="geoR"   # note GP methods are slow when there is too much data
+  if( !exists( "stmv_variogram_method", p)) p$stmv_variogram_method="fft"   # note GP methods are slow when there is too much data
 
   if( !exists( "stmv_range_correlation", p)) p$stmv_range_correlation = 0.1   # auto-correlation at which to compute range distance
   if( !exists( "stmv_range_correlation", p)) p$stmv_range_correlation_fft_taper = 0.5   # auto-correlation value at which to compute a tapered "range" distance for estimation/interpolation

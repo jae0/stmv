@@ -33,8 +33,11 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
         distance_cutoff=NA
         nbreaks = 15
         family="gaussian"
-        range_correlation=0.9
+        range_correlation=0.1
 
+
+        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="fft", plotdata=FALSE )}, times= 10 )  # 63 milli sec
+        gr = stmv_variogram( xy, z, methods="fft", plotdata=TRUE ) # nls
 
 
         microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="optim", plotdata=FALSE )}, times= 10 )  # 63 milli sec
@@ -340,6 +343,49 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
   zmin = min( z, na.rm=TRUE )
 
   xy = xy + out$stmv_internal_scale * runif(2*out$Ndata, -1e-6, 1e-6) # add a small error term to prevent some errors in GRMF methods
+
+
+
+  # ------------------------
+
+
+  if ("fft" %in% methods) {
+    # spatial discretization
+    XYZ = stmv_discretize_coordinates(coo=xy, z=z, discretized_n=discretized_n, method="aggregate", FUNC=mean, na.rm=TRUE)
+    names(XYZ) =  c("plon", "plat", "z" ) # arbitrary
+
+    vario = stmv_variogram_fft( xyz=XYZ, nx=discretized_n, ny=discretized_n, nbreaks=nbreaks )
+
+    uu = which( (vario$res$distances < median(vario$res$distances) ) & is.finite(vario$res$sv) )
+    fit = try( stmv_variogram_optimization( vx=res$distances[uu], vg=res$sv[uu], plotvgm=plotvgm, stmv_internal_scale=out$stmv_internal_scale, cor=range_correlation  ))
+
+    if ( !inherits(fit, "try-error") ) {
+      out$fft = fit$summary
+      if (exists("range", out$fft)) {
+        if (is.finite(out$fft$range)) {
+          out$fft$range_ok = ifelse( out$fft$range < out$distance_cutoff*0.99, TRUE, FALSE )
+          if (exists("range_ok", out$fft)) if( out$fft$range_ok ) return(out)
+        }
+      }
+    }
+
+      if (plotdata) {
+        xlim= c(0, fit$summary$vgm_dist_max*1.1)
+        ylim= c(0, fit$summary$vgm_var_max*1.1)
+        plot( fit$summary$vx, fit$summary$vg, col="green", xlim=xlim, ylim=ylim )
+        ds = seq( 0, fit$summary$vgm_dist_max, length.out=100 )
+        ac = fit$summary$varObs + fit$summary$varSpatial*(1 - stmv_matern( ds, fit$summary$phi, fit$summary$nu ) )
+        lines( ds, ac, col="orange" )
+        abline( h=0, lwd=1, col="lightgrey" )
+        abline( v=0 ,lwd=1, col="lightgrey" )
+        abline( h=fit$summary$varObs, lty="dashed", col="grey" )
+        abline( h=fit$summary$varObs + fit$summary$varSpatial, lty="dashed", col="grey" )
+        abline( v=fit$summary$range, lty="dashed", col="grey")
+      }
+
+    return(out)
+  }
+
 
 
 
