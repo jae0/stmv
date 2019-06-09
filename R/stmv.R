@@ -526,7 +526,7 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
     # must be done in 2-passes .. the first in paranoid mode to fill with estimates that are reliable,
     # then a second pass to borrow from neighbouring estimate where possible
     message ( "\n", "||| Entering spatial scale (variogram) determination: ", format(Sys.time()) , "\n" )
-    p$time_start_scale = Sys.time()
+    p$time_start_runmode = Sys.time()
     currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
     p$clusters = p$stmv_clusters[["scale"]] # as ram reqeuirements increase drop cpus
     parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
@@ -538,7 +538,7 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
     # reload main data to continue
 
     message( "||| Scale estimation surface complete." )
-    message( "||| Time used for <interpolate_boost>: ", format(difftime(  Sys.time(), p$time_start_scale )), "\n"  )
+    message( "||| Time used for <interpolate_boost>: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n"  )
     message( "||| Stats temporarily saved to (for restarts): ", p$saved_state_fn$stats )
 
   } else {
@@ -796,12 +796,12 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
       stmv_db(p=p, DS="load_saved_state", runmode="interpolate")
     } else {
       p$clusters = p$stmv_clusters[["interpolate"]] # as ram reqeuirements increase drop cpus
-      p$time_start_interpolation = Sys.time()
+      p$time_start_runmode = Sys.time()
       currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
       parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) )
       if ( "restart_save" %in% runmode ) stmv_db(p=p, DS="save_current_state", runmode="interpolate")
     }
-    message( paste( "Time used for <interpolate>: ", format(difftime(  Sys.time(), p$time_start_interpolation )), "\n" ) )
+    message( paste( "Time used for <interpolate>: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
   }
 
 
@@ -816,12 +816,12 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
       p$clusters = p$stmv_clusters[["interpolate"]] # as ram reqeuirements increase drop cpus
       p$stmv_local_modelengine = "fft"
       p$stmv_fft_filter="matern"  #  matern, krige (very slow), lowpass, lowpass_matern
-      p$time_start_interpolate_boost = Sys.time()
+      p$time_start_runmode = Sys.time()
       currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
       parallel_run( stmv_interpolate, p=p, runoption="boostdata", runindex=list( locs=sample( currentstatus$todo )))
       if ( "restart_start" %in% runmode ) stmv_db(p=p, DS="save_current_state", runmode="interpolate_boost")
     }
-    message( "||| Time used for <interpolate_boost>: ", format(difftime(  Sys.time(), p$time_start_interpolate_boost )), "\n" )
+    message( "||| Time used for <interpolate_boost>: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" )
   }
 
   # --------------------
@@ -837,12 +837,12 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
     } else {
       p$clusters = p$stmv_clusters[["interpolate"]] # as ram reqeuirements increase drop cpus
       p$stmv_local_modelengine = "mba"
-      p$time_start_interpolate_force_complete = Sys.time()
+      p$time_start_runmode = Sys.time()
       currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
       parallel_run( stmv_interpolate_force_complete, p=p, runindex=list( time_index=1:p$nt ))
       if ( "restart_start" %in% runmode ) stmv_db(p=p, DS="save_current_state", runmode="interpolate_force_complete")
     }
-    message( "||| Time used for <interpolate_force_complete>: ", format(difftime(  Sys.time(), p$time_start_interpolate_force_complete )), "\n" )
+    message( "||| Time used for <interpolate_force_complete>: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" )
   }
 
 

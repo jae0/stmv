@@ -1,22 +1,11 @@
 stmv_logfile = function(p, flag="default"){
 
   time_current = Sys.time()
-
-  time_interpolation = time_current
-  t_suffix = ""
-
-  if (exists("time_start_interpolation", p)) {
-    time_interpolation = p$time_start_interpolation
-    t_suffix = "main"
-  }
-  if (exists("time_start_interpolation_debug", p)) {
-    time_interpolation = p$time_start_interpolation_debug
-    t_suffix = "debug"
-  }
+  time_runmode = p$time_start_runmode
 
   dtime_totalelapsed = difftime( time_current, p$time_start )
-  dtime = difftime( time_current, time_interpolation )
-  dtimehr = difftime( time_current, time_interpolation, units="hours" )
+  dtime = difftime( time_current, time_runmode )
+  dtimehr = difftime( time_current, time_runmode, units="hours" )
 
   varstoout = c(
     "n.total",
@@ -48,17 +37,17 @@ stmv_logfile = function(p, flag="default"){
   if (exists("clusters", p)) nclusters = length(p$clusters)
 
   cat( paste( "---", p$data_root, p$variables$Y, p$spatial.domain, "--- \n\n"), file=fn, append=FALSE )
-  cat( paste( "stmv start time :", p$time_start, "\n"), file=fn, append=TRUE )
-  cat( paste( flag, "\n"), file=fn, append=FALSE )
-  cat( paste( paste("Start time (", t_suffix, "):", sep=""), time_interpolation, "\n"), file=fn, append=TRUE )
+  cat( paste( "Runmode : ", flag, "\n"), file=fn, append=TRUE )
+  cat( paste( "Start time :", p$time_start, "\n"), file=fn, append=TRUE )
+  cat( paste( "Start time of current runmode : ", time_runmode, "\n"), file=fn, append=TRUE )
   cat( paste( "Current time :", time_current, "\n"), file=fn, append=TRUE )
   cat( paste( "Total elapsed time :", format(dtime_totalelapsed), "\n" ), file=fn, append=TRUE)
-  cat( paste( paste("Time spent interpolating (", t_suffix, "):", sep=""), format(dtime), "\n" ), file=fn, append=TRUE)
-  cat( paste( "Rate (no. per hour) :  ", round(nrate,3), "\n"), file=fn, append=TRUE )
-  cat( paste( "Rate (no. per hour per core) :  ", round(nrate/nclusters,3), "\n"), file=fn, append=TRUE )
-  cat( paste( "Estimated time remaining (hrs) :", round( tmore,3), "\n" ), file=fn, append=TRUE)
-  cat( paste( "Estimated time total (hrs) :", round( tall,3), "\n" ), file=fn, append=TRUE)
-  for ( hd in varstoout ){
+  cat( paste( "Time spent in current runmode :", format(dtime), "\n" ), file=fn, append=TRUE)
+  cat( paste( "Runmode rate (no. per hour) :  ", round(nrate,3), "\n"), file=fn, append=TRUE )
+  cat( paste( "Runmode rate (no. per hour per core) :  ", round(nrate/nclusters,3), "\n"), file=fn, append=TRUE )
+  cat( paste( "Runmode estimated time remaining (hrs) :", round( tmore,3), "\n" ), file=fn, append=TRUE)
+  cat( paste( "Runmode estimated time total (hrs) :", round( tall,3), "\n" ), file=fn, append=TRUE)
+    for ( hd in varstoout ){
     cat( paste( hd, ":", currentstatus[hd], "\n" ), file=fn, append=TRUE)
   }
   # message( readLines( p$stmv_current_status ) )
