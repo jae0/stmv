@@ -1,11 +1,11 @@
 
-stmv_variogram_fft = function( xyz, nx=101, ny=101, nbreaks=20, plotvgm=FALSE, eps=1e-9, add.interpolation=FALSE, cor=0.1 ) {
+stmv_variogram_fft = function( xyz, nx=128, ny=128, nbreaks=32, plotdata=FALSE, eps=1e-9, add.interpolation=FALSE, stmv_range_correlation=0.1, stmv_range_correlation_fft_taper=0.05 ) {
 
   names(xyz) =c("x", "y", "z")
   zmean = mean(xyz$z, na.rm=TRUE)
   zsd = sd(xyz$z, na.rm=TRUE)
   zvar = zsd^2
-  Z = (xyz$z - zmean) / zsd # zscore
+  Z = (xyz$z - zmean) / zsd # zscore -- making it mean 0 removes the DC component
 
   nr = nx
   nc = ny
@@ -37,22 +37,24 @@ stmv_variogram_fft = function( xyz, nx=101, ny=101, nbreaks=20, plotvgm=FALSE, e
   # correlation spectroscopy. Journal of biomedical optics, 17(8), 080801. doi:10.1117/1.JBO.17.8.080801
   # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3414238/
 
-  fY = fft(mY)/(nr2*nc2)
-  fN = fft(mN)/(nr2*nc2)
+  fY = fftwtools::fftw2d(mY)
+  fN = fftwtools::fftw2d(mN)
 
   # fY * Conj(fY) == power spectra
-  ii = Re( fft( fY * Conj(fY), inverse=TRUE)  ) # autocorrelation (amplitude)
-  jj = Re( fft( fN * Conj(fN), inverse=TRUE)  ) # autocorrelation (amplitude) correction
+  ii = Re( fftwtools::fftw2d( fY * Conj(fY), inverse=TRUE)  ) # autocorrelation (amplitude)
+  jj = Re( fftwtools::fftw2d( fN * Conj(fN), inverse=TRUE)  ) # autocorrelation (amplitude) correction
 
-  X = ifelse(( jj > eps), (ii / jj), NA) # autocorrelation
+  X = ifelse(( jj > eps), (ii / jj), NA) # autocorrelation (amplitude)
   ii = jj = NULL
 
   # fftshift
-  X = rbind(X[((nr+1):nr2), (1:nc2)], X[(1:nr), (1:nc2)])  # swap_up_down
+  X = rbind( X[((nr+1):nr2), (1:nc2)], X[(1:nr), (1:nc2)] )  # swap_up_down
   X = cbind(X[1:nr2, ((nc+1):nc2)], X[1:nr2, 1:nc])  # swap_left_right
 
+  # X[c(nr: (nr+1)), nc:(nc+1)]
+
   # radial representation
-  xy = expand.grid( x = c(-nr:-1, 1:nr) * dr,  y = c(-nc:-1, 1:nc) * dc )
+  xy = expand.grid( x = c(-(nr-1):0, 0:(nr-1)) * dr,  y = c(-(nc-1):0, 0:(nc-1)) * dc )
   distances = sqrt(xy$x^2 + xy$y^2)
   dmax = max(distances, na.rm=TRUE ) * 0.4  # approx nyquist distance (<0.5 as corners exist)
   breaks = seq( 0, dmax, length.out=nbreaks)
@@ -68,16 +70,18 @@ stmv_variogram_fft = function( xyz, nx=101, ny=101, nbreaks=20, plotvgm=FALSE, e
   res$distances = as.numeric( as.character(res$distances))
 
   res$sv =  zvar * (1-res$ac^2) # each sv are truly orthogonal
-  # plot(ac ~ distances, data=res[uu,]   )
-  # plot(sv ~ distances, data=res[uu,]   )
+
+  # plot(ac ~ distances, data=res[which(res$distances < median(res$distances)),]   )
+  # plot(sv ~ distances, data=res[which(res$distances < median(res$distances)),]   )
 
   out = list(res=res )
 
   if (add.interpolation) {
     # interpolated surface
   # constainer for spatial filters
-    uu = which( (res$distances < dmax/3) & is.finite(res$sv) )
-    fit = try( stmv_variogram_optimization( vx=res$distances[uu], vg=res$sv[uu], plotvgm=plotvgm, stmv_internal_scale=dmax/4, cor=cor ))
+    uu = which( (res$distances < dmax ) & is.finite(res$sv) )  # dmax ~ Nyquist freq
+    fit = try( stmv_variogram_optimization( vx=res$distances[uu], vg=res$sv[uu], plotvgm=plotdata, stmv_internal_scale=dmax*0.5, cor=stmv_range_correlation ))
+
     phi = fit$summary$phi
     nu = fit$summary$nu
 
@@ -88,15 +92,15 @@ stmv_variogram_fft = function( xyz, nx=101, ny=101, nbreaks=20, plotvgm=FALSE, e
     grid.list = NULL
     mC = matrix(0, nrow = nr2, ncol = nc2)
     mC[nr, nc] = 1
-    mC =NULL
     center = matrix(c((dr * nr), (dc * nc)), nrow = 1, ncol = 2)
-    theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=cor )
+    theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=stmv_range_correlation_fft_taper )
     sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
       Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
-    sp.covar = as.surface(dgrid, c(sp.covar))$z
-    sp.covar.kernel = fft(sp.covar) / fft(mC)
-    ffY = Re(fft( sp.covar.kernel * fY, inverse = TRUE))[1:nr, 1:nc]
-    ffN = Re(fft( sp.covar.kernel * fN, inverse = TRUE))[1:nr, 1:nc]
+
+    sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
+    sp.covar.kernel = fftwtools::fftw2d(sp.covar) / fftwtools::fftw2d(mC)
+    ffY = Re( fftwtools::fftw2d( sp.covar.kernel * fY, inverse = TRUE))[1:nr, 1:nc]
+    ffN = Re( fftwtools::fftw2d( sp.covar.kernel * fN, inverse = TRUE))[1:nr, 1:nc]
     Z = ifelse((ffN > eps), (ffY/ffN), NA)
     Z[!is.finite(Z)] = NA
     Z = Z * zsd + zmean # revert to input scale
@@ -104,8 +108,47 @@ stmv_variogram_fft = function( xyz, nx=101, ny=101, nbreaks=20, plotvgm=FALSE, e
       dev.new()
       surface(list(x=c(1:nr)*dr, y=c(1:nc)*dc, z=Z), xaxs="r", yaxs="r")
     }
-    out = c(out, fit=fit, Z=Z)
+    out$fit = fit
+    out$Z = Z
   }
 
   return(out)
+
+
+
+  if (0) {
+    # testing and debugging
+
+    loadfunctions( c("aegis", "stmv"))
+    RLibrary(c ("fields", "MBA", "geoR") )
+
+    if (0) {
+      XYZ = stmv_test_data( datasource="swiss" )
+      mz = log( XYZ$rain )
+      mm = lm( mz ~ 1 )
+      XYZ$z = residuals( mm)
+      XYZ=XYZ[c("x","y","z")]
+    }
+
+    if (0) {
+      XYZ = stmv_test_data( datasource="meuse" )
+      XYZ$z = log(XYZ$elev)
+      XYZ=XYZ[, c("x","y","z") ]
+    }
+
+    gr = stmv_variogram( XYZ[, c("x", "y")], XYZ[,"z"], methods="geoR", plotdata=TRUE ) # ml via profile likelihood
+
+    nu = gr$geoR$nu
+    phi = gr$geoR$phi
+
+    fit  =  Krig(XYZ[, c("x", "y")], XYZ[,"z"], theta=phi)
+    x11(); surface( fit, type="C") # look at the surface
+
+    mba.int  =  mba.surf( XYZ, 100, 100, extend=TRUE)$xyz.est
+    x11(); surface(mba.int, xaxs="r", yaxs="r")
+
+    oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=64, ny=64, nbreaks=32, plotdata=TRUE,  add.interpolation=TRUE, stmv_range_correlation_fft_taper=0.05 )
+
+  }
+
 }

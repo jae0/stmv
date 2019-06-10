@@ -1,6 +1,6 @@
 
 stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
-  plotdata=FALSE, methods=c("geoR"), discretized_n=100,
+  plotdata=FALSE, methods=c("geoR"), discretized_n=128,
   distance_cutoff=NA, nbreaks = 15, family="gaussian", stanmodel=NULL, range_correlation=0.1,
   modus_operandi="easygoing" ) {
 
@@ -353,8 +353,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
     XYZ = stmv_discretize_coordinates(coo=xy, z=z, discretized_n=discretized_n, method="aggregate", FUNC=mean, na.rm=TRUE)
     names(XYZ) =  c("plon", "plat", "z" ) # arbitrary
 
-    vario = stmv_variogram_fft( xyz=XYZ, nx=discretized_n, ny=discretized_n, nbreaks=nbreaks )
-
+    vario = stmv_variogram_fft( xyz=XYZ, nx=discretized_n, ny=discretized_n, nbreaks=nbreaks )  # empirical variogram by fftw2d
     uu = which( (vario$res$distances < 0.9*max(vario$res$distances) ) & is.finite(vario$res$sv) )
     fit = try( stmv_variogram_optimization( vx=vario$res$distances[uu], vg=vario$res$sv[uu], plotvgm=plotdata, stmv_internal_scale=out$stmv_internal_scale, cor=range_correlation  ))
 
@@ -454,7 +453,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
       # -------------------------
 
       # spatial discretization only
-      XYZ = stmv_discretize_coordinates(coo=xy, z=z, discretized_n=200, method="aggregate", FUNC=mean, na.rm=TRUE)
+      XYZ = stmv_discretize_coordinates(coo=xy, z=z, discretized_n=discretized_n, method="aggregate", FUNC=mean, na.rm=TRUE)
 
       maxdist = out$range_crude   # begin with this (diagonal)
 

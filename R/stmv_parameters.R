@@ -37,10 +37,10 @@ stmv_parameters = function( p=list(), ... ) {
   if( !exists( "storage.backend", p))  p$storage.backend="bigmemory.ram"
 
   if( !exists( "stmv_variogram_method", p)) p$stmv_variogram_method = "fft"   # note GP methods are slow when there is too much data
-  if( !exists( "stmv_variogram_nbreaks", p)) p$stmv_variogram_nbreaks = 20
+  if( !exists( "stmv_variogram_nbreaks", p)) p$stmv_variogram_nbreaks = 32
 
   if( !exists( "stmv_range_correlation", p)) p$stmv_range_correlation = 0.1   # auto-correlation at which to compute range distance
-  if( !exists( "stmv_range_correlation", p)) p$stmv_range_correlation_fft_taper = 0.1   # auto-correlation value at which to compute a tapered "range" distance for estimation/interpolation
+  if( !exists( "stmv_range_correlation_fft_taper", p)) p$stmv_range_correlation_fft_taper = 0.05   # auto-correlation value at which to compute a tapered "range" distance for estimation/interpolation
 
   if( !exists( "stmv_range_correlation_boostdata", p)) p$stmv_range_correlation_boostdata = 0.05   # auto-correlation value at which to compute a "range" distance for estimation when default range estimates do not work
 
@@ -117,8 +117,8 @@ stmv_parameters = function( p=list(), ... ) {
     if (p$stmv_local_modelengine=="bayesx")  p$libs = c( p$libs, "R2BayesX" )
     if (p$stmv_local_modelengine %in% c("gam", "mgcv") )  p$libs = c( p$libs, "mgcv" )
     if (p$stmv_local_modelengine %in% c("inla") )  p$libs = c( p$libs, "INLA" )
-    if (p$stmv_local_modelengine %in% c("fft", "gaussianprocess2Dt") )  p$libs = c( p$libs, "fields" )
-    if (p$stmv_local_modelengine %in% c("twostep") )  p$libs = c( p$libs, "mgcv", "fields" )
+    if (p$stmv_local_modelengine %in% c("fft", "gaussianprocess2Dt") )  p$libs = c( p$libs, "fields", "fftwtools", "fftw" )
+    if (p$stmv_local_modelengine %in% c("twostep") )  p$libs = c( p$libs, "mgcv", "fields", "fftwtools", "fftw"  )
     if (p$stmv_local_modelengine %in% c("krige") ) p$libs = c( p$libs, "fields" )
     if (p$stmv_local_modelengine %in% c("gstat") ) p$libs = c( p$libs, "gstat" )
   }

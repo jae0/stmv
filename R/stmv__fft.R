@@ -9,6 +9,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, distance=NUL
   #\\ based upon fields::image.smooth and setup.image.smooth
   #\\ now that the local area of interest is stationary, we use local convolutions of highly autocorrelated (short-range)
   #\\ determined by p
+  #\\ using fftw interace fftwtools::fftw2d
 
   if (variablelist)  return( c() )
 
@@ -54,32 +55,29 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, distance=NUL
 
   mC = matrix(0, nrow = nr2, ncol = nc2)
   mC[nr, nc] = 1
-  fft_mC = fft(mC) * nr2 * nc2
-  mC = NULL
 
   if (!exists("stmv_fft_filter",p) ) p$stmv_fft_filter="lowpass" # default in case of no specification
 
   if ( p$stmv_fft_filter == "lowpass") {
     theta = p$stmv_lowpass_phi
     sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=theta, smoothness=p$stmv_lowpass_nu )
-    sp.covar = as.surface(dgrid, c(sp.covar))$z
-    sp.covar.kernel = fft(sp.covar) / fft_mC
+    sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
+    sp.covar.kernel = fftwtools::fftw2d(sp.covar) / fftwtools::fftw2d(mC)
   }
 
   if (p$stmv_fft_filter %in% c("matern") ) {
     sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=phi, smoothness=nu )
-    sp.covar = as.surface(dgrid, c(sp.covar))$z
-    sp.covar.kernel = fft(sp.covar) / fft_mC
+    sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
+    sp.covar.kernel = fftwtools::fftw2d(sp.covar) / fftwtools::fftw2d(mC)
   }
 
   if (p$stmv_fft_filter == "lowpass_matern") {
     # both ..
     sp.covar.lowpass = stationary.cov( dgrid, center, Covariance="Matern", theta=p$stmv_lowpass_phi, smoothness=p$stmv_lowpass_nu )
-    sp.covar.lowpass = as.surface(dgrid, c(sp.covar.lowpass))$z
-
+    sp.covar.lowpass = as.surface(dgrid, c(sp.covar.lowpass))$z / (nr2*nc2)
     sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=phi, smoothness=nu )
-    sp.covar = as.surface(dgrid, c(sp.covar))$z
-    sp.covar.kernel = {fft(sp.covar.lowpass) / fft_mC } * {fft(sp.covar)/ fft_mC }
+    sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
+    sp.covar.kernel = ( fftwtools::fftw2d(sp.covar.lowpass) / fftwtools::fftw2d(mC) ) * (fftwtools::fftw2d(sp.covar)/ fftwtools::fftw2d(mC) )
     sp.covar = sp.covar.lowpass = NULL
   }
 
@@ -87,20 +85,19 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, distance=NUL
     theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_range_correlation_fft_taper )
     sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
       Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
-    sp.covar = as.surface(dgrid, c(sp.covar))$z
-    sp.covar.kernel = fft(sp.covar) / fft_mC
+    sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
+    sp.covar.kernel = fftwtools::fftw2d(sp.covar) / fftwtools::fftw2d(mC)
     sp.covar = theta.Taper = NULL
   }
 
   if (p$stmv_fft_filter == "lowpass_matern_tapered") {
     sp.covar.lowpass = stationary.cov( dgrid, center, Covariance="Matern", theta=p$stmv_lowpass_phi, smoothness=p$stmv_lowpass_nu )
-    sp.covar.lowpass = as.surface(dgrid, c(sp.covar.lowpass))$z
-
+    sp.covar.lowpass = as.surface(dgrid, c(sp.covar.lowpass))$z / (nr2*nc2)
     theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_range_correlation_fft_taper )
     sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
       Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
-    sp.covar = as.surface(dgrid, c(sp.covar))$z
-    sp.covar.kernel = {fft(sp.covar.lowpass) / fft_mC } * {fft(sp.covar)/ fft_mC }
+    sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
+    sp.covar.kernel = (fftwtools::fftw2d(sp.covar.lowpass) / fftwtools::fftw2d(mC) ) * ( fftwtools::fftw2d(sp.covar)/ fftwtools::fftw2d(mC) )
     sp.covar = sp.covar.lowpass = theta.Taper = NULL
   }
 
@@ -115,8 +112,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, distance=NUL
       # default is exp( -abs(x)) yielding a normal kernel
       kk = double.exp(dd)
       mK = matrix(kk, nrow = nr2, ncol = nc2)
-      W = fft(mK) / fft_mC
-      sp.covar.kernel = W/(nr2 * nc2)  # kernal weights
+      sp.covar.kernel = fftwtools::fftw2d(mK) / fftwtools::fftw2d(mC) / (nr2*nc2)# kernal weights
   }
 
   sp.covar = sp.covar.lowpass = dgrid = center =  NULL
@@ -159,8 +155,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, distance=NUL
 
     u =NULL
 
-    fY = Re(fft(fft(mY) * sp.covar.kernel, inverse = TRUE))[1:nr, 1:nc]  #real amplitudes
-    fN = Re(fft(fft(mN) * sp.covar.kernel, inverse = TRUE))[1:nr, 1:nc]
+    fY = Re(fftwtools::fftw2d( sp.covar.kernel * fftwtools::fftw2d(mY), inverse = TRUE))[1:nr, 1:nc]  #real amplitudes
+    fN = Re(fftwtools::fftw2d( sp.covar.kernel * fftwtools::fftw2d(mN), inverse = TRUE))[1:nr, 1:nc]
     Z = ifelse((fN > tol), (fY/fN), NA)
     fY = fN = NULL
 
@@ -243,7 +239,6 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, distance=NUL
 
     mC = matrix(0, nrow = nr2, ncol = nc2)
     mC[nr, nc] = 1
-    fft_mC = fft(mC) * nr2 * nc2
 
     # constainer for spatial filters
     grid.list = list((1:nr2) * dx, (1:nc2) * dy)
@@ -257,7 +252,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, distance=NUL
     sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
       Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
     sp.covar = as.surface(dgrid, c(sp.covar))$z
-    sp.covar.kernel = fft(sp.covar) / fft_mC
+    sp.covar.kernel = fft(sp.covar) / fft(mC)
 
     mY = matrix(0, nrow = nr2, ncol = nc2)
     mN = matrix(0, nrow = nr2, ncol = nc2)
@@ -278,8 +273,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, distance=NUL
     mN[1:nr,1:nc] = u$weights
     mN[!is.finite(mN)] = 0
 
-    fY = Re(fft(fft(mY) * sp.covar.kernel, inverse = TRUE))[1:nr, 1:nc]
-    fN = Re(fft(fft(mN) * sp.covar.kernel, inverse = TRUE))[1:nr, 1:nc]
+    fY = Re( fft( sp.covar.kernel * fft(mY) / (nr2 * nc2), inverse = TRUE) )[1:nr, 1:nc]
+    fN = Re( fft( sp.covar.kernel * fft(mN) / (nr2 * nc2), inverse = TRUE) )[1:nr, 1:nc]
 
     tol = 1e-9
     Z = fY/fN
@@ -297,11 +292,11 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, distance=NUL
     # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3414238/
 
 
-    fY = fft(mY)/(nr*nc)
+    fY = fft(mY) / (nr2*nc2)
     YY = fY * Conj(fY) # power spectra
     ii = Re( fft( YY, inverse=TRUE)  )  # autocorrelation (amplitude)
 
-    fN = fft(mN)/(nr*nc)
+    fN = fft(mN) / (nr2*nc2)
     NN = fN * Conj(fN) # power spectra
     jj = Re( fft( NN, inverse = TRUE)  ) # autocorrelation (amplitude) correction
 

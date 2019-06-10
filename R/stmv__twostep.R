@@ -138,8 +138,9 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
     out = stmv__bayesx( p, dat=pxts, pa=pa  )
   }
 
-  # override the spatial rsquared with the timeseries model as that is more meaningful (based upon the raw data, rather than a "boosted" series)
-  out$stmv_stats$rsquared = ts_preds_rsquared
+  # TODO
+  # evaluate goodness of fit of data (nonboosted):
+  #  out$stmv_stats$rsquared =
 
   return( out )
 
