@@ -1,5 +1,5 @@
 
-stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_internal_scale=NA, cor=0.1, control=list(factr=1e-9) ) {
+stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_internal_scale=NA, cor=0.1, control=list(factr=1e-9, maxit = 500L) ) {
   #\\ simple nonlinear least squares fit
 
   if (is.na(stmv_internal_scale)) stmv_internal_scale= max(vx)/2
@@ -21,7 +21,7 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
       return(obj)
     }
     par = c(tau.sq=vgm_var_max*0.25, sigma.sq=vgm_var_max*0.75, phi=0.9 )
-    lower =c(0, 0, 0.25 )
+    lower =c(0, 0, 0.05 )
     upper =c(vgm_var_max*2, vgm_var_max*2, 3)
 
     fit = try( optim( par=par, vg=vg, vx=vx, nu=nu, method="L-BFGS-B", lower=lower, upper=upper, fn=vario_function, control=control  ) )
@@ -34,8 +34,8 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
       return(obj)
     }
     par = c(tau.sq=vgm_var_max*0.25, sigma.sq=vgm_var_max*0.75, phi=0.9, nu=0.4)
-    lower =c(0, 0, 0.25, 0.05 )
-    upper =c(vgm_var_max*2, vgm_var_max*2, 2.5, 3)
+    lower =c(0, 0, 0.05, 0.2 )
+    upper =c(vgm_var_max*2, vgm_var_max*2, 2.5, 5)
 
     fit = try( optim( par=par, vg=vg, vx=vx, method="L-BFGS-B", lower=lower, upper=upper, fn=vario_function, control=control  ))
   }
@@ -69,13 +69,16 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
   fit$summary$vx = fit$summary$vx * stmv_internal_scale
   fit$summary$vgm_dist_max = fit$summary$vgm_dist_max * stmv_internal_scale
 
+
   # message( " Optim flag (0==all good): ", fit$convergence, " --- ", fit$message )
+  if (!is.finite(  fit$summary$phi *  fit$summary$nu  )) return(fit)
 
   if( plotvgm ) {
     xlim= c(0, fit$summary$vgm_dist_max*1.1)
     ylim= c(0, vgm_var_max*1.1)
     plot( fit$summary$vx, fit$summary$vg, col="green", xlim=xlim, ylim=ylim )
     ds = seq( 0, fit$summary$vgm_dist_max, length.out=100 )
+
     ac = fit$summary$varObs + fit$summary$varSpatial*(1 - stmv_matern( ds, fit$summary$phi, fit$summary$nu ) )
     lines( ds, ac, col="orange" )
     abline( h=0, lwd=1, col="lightgrey" )

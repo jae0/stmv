@@ -1,5 +1,5 @@
 
-stmv_variogram_fft = function( xyz, nx=128, ny=128, nbreaks=32, plotdata=FALSE, eps=1e-9, add.interpolation=FALSE,
+stmv_variogram_fft = function( xyz, nx=64, ny=64, nbreaks=13, plotdata=FALSE, eps=1e-8, add.interpolation=FALSE,
   stmv_range_correlation=0.1, stmv_range_correlation_fft_taper=0.05 ) {
 
   names(xyz) =c("x", "y", "z")
@@ -83,6 +83,9 @@ stmv_variogram_fft = function( xyz, nx=128, ny=128, nbreaks=32, plotdata=FALSE, 
     uu = which( (res$distances < dmax ) & is.finite(res$sv) )  # dmax ~ Nyquist freq
     fit = try( stmv_variogram_optimization( vx=res$distances[uu], vg=res$sv[uu], plotvgm=plotdata,
       stmv_internal_scale=dmax*0.5, cor=stmv_range_correlation ))
+    out$fit = fit
+
+    if (any(!is.finite( c(fit$summary$phi, fit$summary$nu) ))) return(out)
 
     phi = fit$summary$phi
     nu = fit$summary$nu
@@ -110,7 +113,6 @@ stmv_variogram_fft = function( xyz, nx=128, ny=128, nbreaks=32, plotdata=FALSE, 
       dev.new()
       surface(list(x=c(1:nr)*dr, y=c(1:nc)*dc, z=Z), xaxs="r", yaxs="r")
     }
-    out$fit = fit
     out$Z = Z
   }
 
@@ -146,10 +148,10 @@ stmv_variogram_fft = function( xyz, nx=128, ny=128, nbreaks=32, plotdata=FALSE, 
     fit  =  Krig(XYZ[, c("x", "y")], XYZ[,"z"], theta=phi)
     x11(); surface( fit, type="C") # look at the surface
 
-    mba.int  =  mba.surf( XYZ, 100, 100, extend=TRUE)$xyz.est
+    mba.int  =  mba.surf( XYZ, 64, 64, extend=TRUE)$xyz.est
     x11(); surface(mba.int, xaxs="r", yaxs="r")
 
-    oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=64, ny=64, nbreaks=32, plotdata=TRUE,  add.interpolation=TRUE, stmv_range_correlation_fft_taper=0.05 )
+    oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=64, ny=64, nbreaks=13, plotdata=TRUE,  add.interpolation=TRUE, stmv_range_correlation_fft_taper=0.01 )
 
   }
 
