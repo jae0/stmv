@@ -1,5 +1,5 @@
 
-stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, distance=NULL, variablelist=FALSE, tol=1e-9, ... ) {
+stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist=FALSE, tol=1e-9, ... ) {
 
   #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
   #\\ note: time is not being modelled and treated independently
@@ -103,7 +103,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, distance=NUL
 
 
   if (p$stmv_fft_filter == "normal_kernel") {
-      theta = matern_phi2distance( phi=phi, nu=nu, cor=0.5 )
+      theta = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_range_correlation )
       xi = seq(-(nr - 1), nr, 1) * dx / theta
       yi = seq(-(nc - 1), nc, 1) * dy / theta
       dd = ((matrix(xi, nr2, nc2)^2 + matrix(yi, nr2, nc2, byrow = TRUE)^2))  # squared distances
@@ -248,7 +248,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, distance=NUL
 
     center = matrix(c((dx * nr), (dy * nc)), nrow = 1, ncol = 2)
 
-    theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=0.1 )
+    theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_range_correlation_fft_taper )
     sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
       Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
     sp.covar = as.surface(dgrid, c(sp.covar))$z
@@ -331,7 +331,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, distance=NUL
     plot(ac ~ distances, data=res[uu,]   )
     plot(sv ~ distances, data=res[uu,]   )
 
-    fit = try( stmv_variogram_optimization( vx=res$distances[uu], vg=res$sv[uu], plotvgm=TRUE, stmv_internal_scale=dmax/4, cor=0.1 ))
+    fit = try( stmv_variogram_optimization( vx=res$distances[uu], vg=res$sv[uu], plotvgm=TRUE,
+      stmv_internal_scale=dmax/4, cor=p$stmv_range_correlation_fft_taper ))
 
   }
 

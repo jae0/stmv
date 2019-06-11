@@ -34,11 +34,9 @@ stmv__bayesx = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
   varObs = hmod$fixed.effects[1,"Std. Error"]
   nu = 1.5
   phi=1/hmod$smooth.hyp[,"Smooth Par."]
-  # range = geoR::practicalRange("matern", phi=phi, kappa=nu  )
-  range = matern_phi2distance(phi=phi, nu=nu, cor=p$stmv_range_correlation  )
 
   stmv_stats = list( sdTotal=sdTotal, rsquared=ss$r.squared, ndata=nrow(dat),
-    sdSpatial=sqrt(varSpatial), sdObs=sqrt(varObs), phi=phi, nu=nu, range=range )
+    sdSpatial=sqrt(varSpatial), sdObs=sqrt(varObs), phi=phi, nu=nu )
 
   # lattice::levelplot( mean ~ plon + plat, data=pa[pa$tiyr==2012.05,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
 

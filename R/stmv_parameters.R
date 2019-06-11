@@ -87,7 +87,7 @@ stmv_parameters = function( p=list(), ... ) {
   p = stmv_variablelist(p)
 
   # require knowledge of size of stats output which varies with a given type of analysis
-  p$statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "range", "phi", "nu" )
+  p$statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "phi", "nu" )
   if (exists("TIME", p$variables) )  p$statsvars = c( p$statsvars, "ar_timerange", "ar_1" )
   if (p$stmv_local_modelengine == "userdefined" ) {
     if (exists("stmv_local_modelengine", p) ) {

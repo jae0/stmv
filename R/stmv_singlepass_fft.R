@@ -76,7 +76,6 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
 
   # global estimates -- required? ?
   vg_global = list(
-    range = max(p$stmv_distance_scale ),
     nu = 0.5,
     varObs = median( S[, match("varObs", p$statsvars)], na.rm=TRUE ),
     varSpatial = median( S[, match("varSpatial", p$statsvars)], na.rm=TRUE ),
@@ -85,7 +84,6 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
 
   if ( vg_global$nu < 0.1 | vg_global$nu > 5) vg_global$nu = 0.5
 
-  range_index = match( "range", p$statsvars )
   ndata_index = match( "ndata", p$statsvars )
   rsquared_index = match("rsquared", p$statsvars )
 
@@ -238,9 +236,9 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
 
     if ( !inherits(fit, "try-error") ) {
       SK$fft = fit$summary
-      if (exists("range", SK$fft)) {
-        if (is.finite(SK$fft$range)) {
-          SK$fft$range_ok = ifelse( SK$fft$range < SK$distance_cutoff*0.99, TRUE, FALSE )
+      if (exists("phi", SK$fft)) {
+        if (is.finite(SK$fft$phi)) {
+          SK$fft$phi_ok = ifelse( SK$fft$phi < SK$distance_cutoff*0.99, TRUE, FALSE )
         }
       }
     }
@@ -259,7 +257,8 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
       #   abline( v=0 ,lwd=1, col="lightgrey" )
       #   abline( h=fit$summary$varObs, lty="dashed", col="grey" )
       #   abline( h=fit$summary$varObs + fit$summary$varSpatial, lty="dashed", col="grey" )
-      #   abline( v=fit$summary$range, lty="dashed", col="grey")
+      #   localrange = matern_phi2distance( phi=fit$summary$phi, nu=fit$summary$nu, cor=p$stmv_range_correlation )
+      #   abline( v=localrange, lty="dashed", col="grey")
       # }
 
 
@@ -291,7 +290,6 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
       sdTotal =sqrt( o$varZ),
       sdSpatial = sqrt(om$varSpatial) ,
       sdObs = sqrt(om$varObs),
-      range = om$range,
       phi = om$phi,
       nu = om$nu,
       ndata=ndata
@@ -415,7 +413,6 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
     distance_limits = range( c(p$pres*3,  p$stmv_distance_scale ) )   # for range estimate
 
     vg = list(
-      range = S[Si, match("range", p$statsvars)] ,
       nu    = S[Si, match("nu",   p$statsvars)] ,
       phi   = S[Si, match("phi",  p$statsvars)] ,
       varSpatial = S[Si, match("sdSpatial", p$statsvars)]^2 ,
@@ -426,17 +423,17 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
     )
 
     #range checks
-    range_redo = FALSE
-    if (!is.finite(vg$range)) {
-      range_redo = TRUE
+    phi_redo = FALSE
+    if (!is.finite(vg$phi)) {
+      phi_redo = TRUE
     } else {
-      if (vg$range < distance_limits[1] | vg$range > distance_limits[2])  {
-        range_redo = TRUE
+      if (vg$phi < distance_limits[1] | vg$phi > distance_limits[2])  {
+        phi_redo = TRUE
       }
     }
 
     ii = NULL
-    if (range_redo) {
+    if (phi_redo) {
       vg$flag = "variogram_failure"
       max_dist = max(p$stmv_distance_scale)
       ii = which(
@@ -444,22 +441,23 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
         {abs( Sloc[Si,2] - Sloc[,2] ) <= distance_limits[2]}
       )
       if (length(ii) > 0) {
-        range_median = median( S[ii, match("range", p$statsvars)], na.rm=TRUE )
-        if (is.finite( range_median)) {
-          vg$range =  range_median
+        phi_median = median( S[ii, match("phi", p$statsvars)], na.rm=TRUE )
+        if (is.finite( phi_median)) {
+          vg$phi =  phi_median
         }
       }
     }
 
-    if (!is.finite(vg$range)) vg$range = median(distance_limits)
-    if ( vg$range < distance_limits[1] )  vg$range = distance_limits[1]
-    if ( vg$range > distance_limits[2] )  vg$range = distance_limits[2]
+    if (!is.finite(vg$phi)) vg$phi = median(distance_limits)
+    if ( vg$phi < distance_limits[1] )  vg$phi = distance_limits[1]
+    if ( vg$phi > distance_limits[2] )  vg$phi = distance_limits[2]
 
     # as range is now set, the following becomes fixed
     if (is.null(ii)) {
+      localrange = matern_phi2distance( phi=vg$phi, nu=vg$nu, cor=p$stmv_range_correlation )
       ii = which(
-        {abs( Sloc[Si,1] - Sloc[,1] ) <= vg$range} &
-        {abs( Sloc[Si,2] - Sloc[,2] ) <= vg$range}
+        {abs( Sloc[Si,1] - Sloc[,1] ) <= localrange} &
+        {abs( Sloc[Si,2] - Sloc[,2] ) <= localrange}
       )
     }
 
@@ -649,7 +647,7 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
       # interpolated surface
     # constainer for spatial filters
       uu = which( (res$distances < dmax/3) & is.finite(res$sv) )
-      fit = try( stmv_variogram_optimization( vx=res$distances[uu], vg=res$sv[uu], plotvgm=plotdata, stmv_internal_scale=dmax/4, cor=cor ))
+      fit = try( stmv_variogram_optimization( vx=res$distances[uu], vg=res$sv[uu], plotvgm=plotdata, stmv_internal_scale=dmax/4, cor=p$stmv_range_correlation ))
       phi = fit$summary$phi
       nu = fit$summary$nu
 
@@ -661,7 +659,7 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
       mC = matrix(0, nrow = nr2, ncol = nc2)
       mC[nr, nc] = 1
       center = matrix(c((dr * nr), (dc * nc)), nrow = 1, ncol = 2)
-      theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=cor )
+      theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_range_correlation_fft_taper )
       sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
         Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
       sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2 * nc2)
@@ -894,7 +892,7 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
 
 
   if (p$stmv_fft_filter == "normal_kernel") {
-      theta = matern_phi2distance( phi=phi, nu=nu, cor=0.5 )
+      theta = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_range_correlation )
       xi = seq(-(nr - 1), nr, 1) * dx / theta
       yi = seq(-(nc - 1), nc, 1) * dy / theta
       dd = ((matrix(xi, nr2, nc2)^2 + matrix(yi, nr2, nc2, byrow = TRUE)^2))  # squared distances
@@ -1029,7 +1027,7 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
 
 
     if (runoption=="default") {
-      # update to rsquared and "range" in stats
+      # update to rsquared and "ndata" in stats
       S[Si, rsquared_index] = res$stmv_stats$rsquared
       S[Si, ndata_index] = ndata
     }

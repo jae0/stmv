@@ -1,18 +1,18 @@
 
 stmv__gaussianprocess2Dt = function(p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ...  ) {
-  #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation 
+  #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
   # \ as a 2D gaussian process (basically, simple krigimg or TPS -- time is treated as being independent)
-  #\\ note: time is not being modelled and treated independently 
-  #\\      .. you had better have enough data in each time slice ..  essentially this is kriging 
+  #\\ note: time is not being modelled and treated independently
+  #\\      .. you had better have enough data in each time slice ..  essentially this is kriging
   if (variablelist)  return( c() )
 
   if (!exists("fields.cov.function", p)) p$fields.cov.function="stationary.cov"
   if (!exists("fields.cov.args", p) & p$fields.Covariance=="Matern") {
-    if (!exists("fields.nu", p)) p$fields.nu=0.5  # note: this is the smoothness or shape parameter (fix at 0.5 if not calculated or given -- exponential)   
-    p$fields.cov.args=list( Covariance=p$fields.Covariance, smoothness=p$fields.nu ) # this is exponential covariance 
+    if (!exists("fields.nu", p)) p$fields.nu=0.5  # note: this is the smoothness or shape parameter (fix at 0.5 if not calculated or given -- exponential)
+    p$fields.cov.args=list( Covariance=p$fields.Covariance, smoothness=p$fields.nu ) # this is exponential covariance
   }
   if (!exists("fields.Covariance", p)) p$fields.Covariance="Exponential" # note that "Rad.cov" is TPS
-  
+
   sdTotal=sd(dat[,p$variable$Y], na.rm=TRUE)
 
   dat$mean = NA
@@ -20,10 +20,11 @@ stmv__gaussianprocess2Dt = function(p=NULL, dat=NULL, pa=NULL, variablelist=FALS
   pa$sd = NA
 
 
-  phi.grid = p$phi.grid * distance  
+  localrange = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_range_correlation )
+  phi.grid = p$phi.grid * localrange
 
   for ( ti in 1:p$nt ) {
-    
+
     if ( exists("TIME", p$variables) ) {
       xi = which( dat[ , p$variables$TIME ] == p$prediction.ts[ti] )
     } else {
@@ -32,15 +33,15 @@ stmv__gaussianprocess2Dt = function(p=NULL, dat=NULL, pa=NULL, variablelist=FALS
 
     xy = dat[xi, p$variables$LOCS]
     z = dat[xi, p$variables$Y]
-    
+
     fsp = try( MLESpatialProcess(xy, z, cov.function=p$fields.cov.function, cov.args=p$fields.cov.args ,
-      theta.grid=phi.grid, lambda.grid=p$lambda.grid, ngrid = 10, niter = 15, tol = 0.01, 
+      theta.grid=phi.grid, lambda.grid=p$lambda.grid, ngrid = 10, niter = 15, tol = 0.01,
       Distance = "rdist", nstep.cv = 50 ) )
 
     if (inherits(fsp, "try-error") )  next()
     if ( fsp$converge != 0 ) next()
 
-    fspmodel <- try( Krig( xy, z, cov.function=p$fields.cov.function, cov.args=p$fields.cov.args, 
+    fspmodel <- try( Krig( xy, z, cov.function=p$fields.cov.function, cov.args=p$fields.cov.args,
       theta=fsp$pars["theta"], lambda=fsp$pars["lambda"] ) )
     if (inherits(fspmodel, "try-error") )  next()
 
@@ -58,8 +59,8 @@ stmv__gaussianprocess2Dt = function(p=NULL, dat=NULL, pa=NULL, variablelist=FALS
 
     pa$mean[pa_i] = predict(fspmodel, x=pa[pa_, p$variables$LOCS] )
     pa$sd[pa_i]   = predictSE(fspmodel, x=pa[pa_, p$variables$LOCS] )
- 
-   
+
+
     if ( 0 ){
       # debugging plots
       surface(fspmodel)
@@ -68,7 +69,7 @@ stmv__gaussianprocess2Dt = function(p=NULL, dat=NULL, pa=NULL, variablelist=FALS
       fsp.p2<- predictSurfaceSE(fspmodel)
       surface(fsp.p, type="C")
     }
- 
+
   }
 
   # plot(pred ~ z , dat)
@@ -80,9 +81,9 @@ stmv__gaussianprocess2Dt = function(p=NULL, dat=NULL, pa=NULL, variablelist=FALS
   # TODO:: add some more stats: eg. range estimates, nugget/sill, etc..
 
   stmv_stats = list( sdTotal=sdTotal, rsquared=rsquared, ndata=nrow(dat) ) # must be same order as p$statsvars
-  
+
   # lattice::levelplot( mean ~ plon + plat, data=pa, col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
 
-  return( list( predictions=pa, stmv_stats=stmv_stats ) )  
+  return( list( predictions=pa, stmv_stats=stmv_stats ) )
 }
 

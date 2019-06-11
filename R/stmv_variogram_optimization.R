@@ -7,7 +7,7 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
 
   if (any(!is.finite(vx)) | any(!is.finite(vg))) {
     fit=list()
-    fit$summary = list(range_ok=FALSE )
+    fit$summary = list(phi_ok=FALSE )
     return(fit)
   }
 
@@ -50,8 +50,7 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
     phi=NA,
     varSpatial=NA,
     varObs=NA ,
-    range=NA,
-    range_ok = FALSE,
+    phi_ok = FALSE,
     objfn = NA
   )
 
@@ -61,14 +60,12 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
       fit$summary$phi=fit$par[["phi"]]
       fit$summary$varSpatial=fit$par[["sigma.sq"]]
       fit$summary$varObs=fit$par[["tau.sq"]]
-      fit$summary$range=matern_phi2distance( phi=fit$summary$phi, nu=fit$summary$nu, cor=cor )
-      fit$summary$range_ok = ifelse( fit$summary$range < fit$summary$vgm_dist_max*0.99, TRUE, FALSE )
+      fit$summary$phi_ok = ifelse( fit$summary$phi < fit$summary$vgm_dist_max*0.99, TRUE, FALSE )
       fit$summary$objfn=fit$value
     }
   }
 
   fit$summary$phi = fit$summary$phi * stmv_internal_scale
-  fit$summary$range = fit$summary$range * stmv_internal_scale
   fit$summary$vx = fit$summary$vx * stmv_internal_scale
   fit$summary$vgm_dist_max = fit$summary$vgm_dist_max * stmv_internal_scale
 
@@ -85,7 +82,8 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
     abline( v=0 ,lwd=1, col="lightgrey" )
     abline( h=fit$summary$varObs, lty="dashed", col="grey" )
     abline( h=fit$summary$varObs + fit$summary$varSpatial, lty="dashed", col="grey" )
-    abline( v=fit$summary$range, lty="dashed", col="grey")
+    localrange = matern_phi2distance( phi=fit$summary$phi, nu=fit$summary$nu, cor=cor )
+    abline( v=localrange, lty="dashed", col="grey")
   }
 
   return(fit)

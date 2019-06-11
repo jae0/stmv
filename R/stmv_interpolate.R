@@ -80,9 +80,10 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
     savepoints = sample(logpoints, nsavepoints)
   }
 
+## drange = max( min( max(p$stmv_distance_scale )),  min(p$pres, p$stmv_distance_scale ))
+
   # global estimates
   vg_global = list(
-    range = max( min( median( S[, match( "range", p$statsvars )], na.rm=TRUE ), max(p$stmv_distance_scale )),  min(p$pres, p$stmv_distance_scale )),
     nu = median( S[, match("nu", p$statsvars)], na.rm=TRUE ),
     varObs = median( S[, match("varObs", p$statsvars)], na.rm=TRUE ),
     varSpatial = median( S[, match("varSpatial", p$statsvars)], na.rm=TRUE ),
@@ -91,7 +92,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
 
   if( vg_global$nu < 0.25 | vg_global$nu > 4) vg_global$nu = 0.5
 
-  range_index = match( "range", p$statsvars )
   ndata_index = match( "ndata", p$statsvars )
   rsquared_index = match("rsquared", p$statsvars )
 
@@ -116,8 +116,8 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
       }
     }
 
-    localrange = vg$range
-    ndata = vg$range
+    localrange = matern_phi2distance( phi=vg$phi, nu=vg$nu, cor=p$stmv_range_correlation )
+    ndata = vg$ndata
     useglobal = FALSE
     if (!is.finite( localrange ) ) useglobal =TRUE
     if (!is.finite( ndata ) ) useglobal =TRUE

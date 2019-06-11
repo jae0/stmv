@@ -1,5 +1,6 @@
 
-stmv_variogram_fft = function( xyz, nx=128, ny=128, nbreaks=32, plotdata=FALSE, eps=1e-9, add.interpolation=FALSE, stmv_range_correlation=0.1, stmv_range_correlation_fft_taper=0.05 ) {
+stmv_variogram_fft = function( xyz, nx=128, ny=128, nbreaks=32, plotdata=FALSE, eps=1e-9, add.interpolation=FALSE,
+  stmv_range_correlation=0.1, stmv_range_correlation_fft_taper=0.05 ) {
 
   names(xyz) =c("x", "y", "z")
   zmean = mean(xyz$z, na.rm=TRUE)
@@ -80,7 +81,8 @@ stmv_variogram_fft = function( xyz, nx=128, ny=128, nbreaks=32, plotdata=FALSE, 
     # interpolated surface
   # constainer for spatial filters
     uu = which( (res$distances < dmax ) & is.finite(res$sv) )  # dmax ~ Nyquist freq
-    fit = try( stmv_variogram_optimization( vx=res$distances[uu], vg=res$sv[uu], plotvgm=plotdata, stmv_internal_scale=dmax*0.5, cor=stmv_range_correlation ))
+    fit = try( stmv_variogram_optimization( vx=res$distances[uu], vg=res$sv[uu], plotvgm=plotdata,
+      stmv_internal_scale=dmax*0.5, cor=stmv_range_correlation ))
 
     phi = fit$summary$phi
     nu = fit$summary$nu
