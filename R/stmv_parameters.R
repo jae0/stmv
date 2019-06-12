@@ -40,7 +40,7 @@ stmv_parameters = function( p=list(), ... ) {
   if( !exists( "stmv_variogram_nbreaks", p)) p$stmv_variogram_nbreaks = 32
 
   if( !exists( "stmv_range_correlation", p)) p$stmv_range_correlation = 0.1   # auto-correlation at which to compute range distance
-  if( !exists( "stmv_range_correlation_fft_taper", p)) p$stmv_range_correlation_fft_taper = 0.05   # auto-correlation value at which to compute a tapered "range" distance for estimation/interpolation
+  if( !exists( "stmv_range_correlation_fft_taper", p)) p$stmv_range_correlation_fft_taper = 0.01   # auto-correlation value at which to compute a tapered "range" distance for estimation/interpolation
 
   if( !exists( "stmv_range_correlation_boostdata", p)) p$stmv_range_correlation_boostdata = 0.05   # auto-correlation value at which to compute a "range" distance for estimation when default range estimates do not work
 
