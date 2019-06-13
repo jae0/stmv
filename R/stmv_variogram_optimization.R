@@ -1,5 +1,5 @@
 
-stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_internal_scale=NA, cor=0.1, control=list(factr=1e-9, maxit = 500L) ) {
+stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_internal_scale=NA, cor=0.1, control=list(factr=1e-9, maxit = 400L) ) {
   #\\ simple nonlinear least squares fit
 
   if (is.na(stmv_internal_scale)) stmv_internal_scale= max(vx)/2
@@ -44,7 +44,7 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
       if ( fit$convergence != 0 ) redofit = TRUE
     }
     if (redofit) {
-      par = c(tau.sq=vgm_var_max*0.25, sigma.sq=vgm_var_max*0.25, phi=0.75)
+      par = c(tau.sq=vgm_var_max*0.25, sigma.sq=vgm_var_max*0.25, phi=0.5)
       fit = try( optim( par=par, vg=vg, vx=vx, nu=nu, fn=vario_function, control=list(factr=1e-12, maxit = 500L) ))
       redofit= FALSE
     }
@@ -79,7 +79,7 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
       if ( fit$convergence != 0 ) redofit = TRUE
     }
     if (redofit) {
-      par = c(tau.sq=vgm_var_max*0.25, sigma.sq=vgm_var_max*0.25, phi=0.75, nu=0.5)
+      par = c(tau.sq=vgm_var_max*0.25, sigma.sq=vgm_var_max*0.25, phi=0.25, nu=0.25)
       fit = try( optim( par=par, vg=vg, vx=vx, fn=vario_function, control=list(factr=1e-12, maxit = 500L)  ))
       redofit = FALSE
     }

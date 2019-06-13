@@ -1,5 +1,5 @@
 
-stmv_variogram_fft = function( xyz, nx=64, ny=64, nbreaks=13, plotdata=FALSE, eps=1e-8, add.interpolation=FALSE,
+stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=32, plotdata=FALSE, eps=1e-8, add.interpolation=FALSE,
   stmv_range_correlation=0.1, stmv_range_correlation_fft_taper=0.05 ) {
 
   names(xyz) =c("x", "y", "z")
@@ -7,6 +7,10 @@ stmv_variogram_fft = function( xyz, nx=64, ny=64, nbreaks=13, plotdata=FALSE, ep
   zsd = sd(xyz$z, na.rm=TRUE)
   zvar = zsd^2
   Z = (xyz$z - zmean) / zsd # zscore -- making it mean 0 removes the DC component
+
+  if (is.null(nx)) {
+    nx = ny = floor( nbreaks * 2.35 )
+  }
 
   nr = nx
   nc = ny
@@ -41,18 +45,25 @@ stmv_variogram_fft = function( xyz, nx=64, ny=64, nbreaks=13, plotdata=FALSE, ep
   fY = fftwtools::fftw2d(mY)
   fN = fftwtools::fftw2d(mN)
 
+  mY = NULL
+  mN = NULL
+
   # fY * Conj(fY) == power spectra
   ii = Re( fftwtools::fftw2d( fY * Conj(fY), inverse=TRUE)  ) # autocorrelation (amplitude)
   jj = Re( fftwtools::fftw2d( fN * Conj(fN), inverse=TRUE)  ) # autocorrelation (amplitude) correction
 
   X = ifelse(( jj > eps), (ii / jj), NA) # autocorrelation (amplitude)
-  ii = jj = NULL
+  ii = NULL
+  jj = NULL
+
+  if (!add.interpolation) {
+    fN = NULL
+    fY = NULL
+  }
 
   # fftshift
   X = rbind( X[((nr+1):nr2), (1:nc2)], X[(1:nr), (1:nc2)] )  # swap_up_down
   X = cbind(X[1:nr2, ((nc+1):nc2)], X[1:nr2, 1:nc])  # swap_left_right
-
-  # X[c(nr: (nr+1)), nc:(nc+1)]
 
   # radial representation
   xy = expand.grid( x = c(-(nr-1):0, 0:(nr-1)) * dr,  y = c(-(nc-1):0, 0:(nc-1)) * dc )
@@ -68,8 +79,11 @@ stmv_variogram_fft = function( xyz, nx=64, ny=64, nbreaks=13, plotdata=FALSE, ep
 
   res = as.data.frame.table(tapply( X=X, INDEX=zz, FUN=mean, na.rm=TRUE ))
   names(res) = c("distances", "ac")
-  res$distances = as.numeric( as.character(res$distances))
+  X = NULL
+  zz = NULL
+  gc()
 
+  res$distances = as.numeric( as.character(res$distances))
   res$sv =  zvar * (1-res$ac^2) # each sv are truly orthogonal
 
   # plot(ac ~ distances, data=res[which(res$distances < median(res$distances)),]   )
@@ -126,32 +140,38 @@ stmv_variogram_fft = function( xyz, nx=64, ny=64, nbreaks=13, plotdata=FALSE, ep
     loadfunctions( c("aegis", "stmv"))
     RLibrary(c ("fields", "MBA", "geoR") )
 
+    nx = ny = 128
+    nx = ny = 64
+
     if (0) {
       XYZ = stmv_test_data( datasource="swiss" )
       mz = log( XYZ$rain )
       mm = lm( mz ~ 1 )
       XYZ$z = residuals( mm)
       XYZ=XYZ[c("x","y","z")]
+      x11()
+      oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=32, plotdata=TRUE,  add.interpolation=TRUE, stmv_range_correlation_fft_taper=0.01 )
+      gr = stmv_variogram( XYZ[, c("x", "y")], XYZ[,"z"], methods="fft", plotdata=TRUE ) # fft/nl elast squares via profile likelihood
     }
 
     if (0) {
       XYZ = stmv_test_data( datasource="meuse" )
       XYZ$z = log(XYZ$elev)
       XYZ=XYZ[, c("x","y","z") ]
-    }
+      x11()
+      oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=32, plotdata=TRUE,  add.interpolation=TRUE, stmv_range_correlation_fft_taper=0.01 )
+      gr = stmv_variogram( XYZ[, c("x", "y")], XYZ[,"z"], methods="fft", plotdata=TRUE ) # fft/nl elast squares via profile likelihood
+  }
 
     gr = stmv_variogram( XYZ[, c("x", "y")], XYZ[,"z"], methods="geoR", plotdata=TRUE ) # ml via profile likelihood
-
     nu = gr$geoR$nu
     phi = gr$geoR$phi
-
     fit  =  Krig(XYZ[, c("x", "y")], XYZ[,"z"], theta=phi)
     x11(); surface( fit, type="C") # look at the surface
 
-    mba.int  =  mba.surf( XYZ, 64, 64, extend=TRUE)$xyz.est
+    mba.int  =  mba.surf( XYZ, nx, ny, extend=TRUE)$xyz.est
     x11(); surface(mba.int, xaxs="r", yaxs="r")
 
-    oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=64, ny=64, nbreaks=32, plotdata=TRUE,  add.interpolation=TRUE, stmv_range_correlation_fft_taper=0.01 )
 
   }
 

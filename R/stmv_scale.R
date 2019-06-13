@@ -110,9 +110,9 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", ... ) {
       if ( ndata >= nmin_data ) break()
     }
 
+    d1 = d2 = NULL
     YiU = Yi[U]
     U = NULL
-    d1 = d2 = NULL
 
     Sflag[Si] = E[["todo"]]
 
@@ -137,9 +137,11 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", ... ) {
       z=Y[YiU,],
       methods=p$stmv_variogram_method,
       distance_cutoff=stmv_distance_cur,
+      discretized_n = p$stmv_discretized_n,
       nbreaks=p$stmv_variogram_nbreaks,
       range_correlation=p$stmv_range_correlation # ,  plotdata=TRUE
     ) )
+
     gc()  # for geoR ....
 
     if ( is.null(o)) {
