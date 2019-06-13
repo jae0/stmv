@@ -1,7 +1,5 @@
 
-stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default",
-  eps=1e-9, tol=1e-9, discretized_n=100
-  , ... ) {
+stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default", eps=1e-9, tol=1e-9, discretized_n=100, ... ) {
   #\\ core function to interpolate (model and predict) in parallel
   #\\ unfold all main subroutines to max speed and reduce memory usage
 
@@ -73,23 +71,11 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
   }
   logpoints  = ip[ floor( seq( from=10, to=(nip-10), length.out=nlogs ) ) ]
 
-
-  # global estimates -- required? ?
-  vg_global = list(
-    nu = 0.5,
-    varObs = median( S[, match("varObs", p$statsvars)], na.rm=TRUE ),
-    varSpatial = median( S[, match("varSpatial", p$statsvars)], na.rm=TRUE ),
-    phi = median( S[, match("phi", p$statsvars)], na.rm=TRUE )
-  )
-
-  if ( vg_global$nu < 0.1 | vg_global$nu > 5) vg_global$nu = 0.5
-
   ndata_index = match( "ndata", p$statsvars )
   rsquared_index = match("rsquared", p$statsvars )
 
   stmv_nmins = sort( unique( c(1, p$stmv_nmin_downsize_factor) * p$stmv_nmin ) , decreasing=FALSE )
   stmv_nmax = p$stmv_nmax
-
 
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
@@ -202,7 +188,7 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
     ii = Re( fftwtools::fftw2d( fY * Conj(fY), inverse=TRUE)  ) # autocorrelation (amplitude)
     jj = Re( fftwtools::fftw2d( fN * Conj(fN), inverse=TRUE)  ) # autocorrelation (amplitude) correction
 
-    X = ifelse(( jj > eps), (ii / jj), NA) # autocorrelation
+    X = ifelse(( jj > eps), (ii / jj), NA) # autocorrelation, corrected for missing values
     ii = jj = NULL
 
     # fftshift
@@ -210,7 +196,7 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
     X = cbind(X[1:nr2, ((nc+1):nc2)], X[1:nr2, 1:nc])  # swap_left_right
 
     # radial representation
-    xy = expand.grid( x = c(-nr:-1, 1:nr) * dr,  y = c(-nc:-1, 1:nc) * dc )
+    xy = expand.grid( x = c(-(nr-1):0, 0:(nr-1)) * dr,  y = c(-(nc-1):0, 0:(nc-1)) * dc )
     distances = sqrt(xy$x^2 + xy$y^2)
     dmax = max(distances, na.rm=TRUE ) * 0.4  # approx nyquist distance (<0.5 as corners exist)
     breaks = seq( 0, dmax, length.out=p$stmv_variogram_nbreaks)
@@ -540,11 +526,17 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
 
     localrange = vg$range
     ndata = vg$range
+
     useglobal = FALSE
     if (!is.finite( localrange ) ) useglobal =TRUE
     if (!is.finite( ndata ) ) useglobal =TRUE
     if (vg$flag =="variogram_failure") useglobal =TRUE
-    if (useglobal) vg = vg_global
+    if (useglobal) {
+      vg = list(
+        nu=0.5,
+        phi=xx
+      )
+    }
 
     if (runoption=="boostdata") localrange = matern_phi2distance( phi=vg$phi, nu=vg$nu, cor=p$stmv_range_correlation_boostdata )
 
@@ -562,7 +554,7 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
       }
     }
 
-    if(is.null( U )) next()
+    if (is.null( U )) next()
 
     # last check
     ndata = length(U)
@@ -641,42 +633,6 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
 
     # model and prediction .. outputs are in scale of the link (and not response)
     # the following permits user-defined models (might want to use compiler::cmpfun )
-
-
-    if (add.interpolation) {
-      # interpolated surface
-    # constainer for spatial filters
-      uu = which( (res$distances < dmax/3) & is.finite(res$sv) )
-      fit = try( stmv_variogram_optimization( vx=res$distances[uu], vg=res$sv[uu], plotvgm=plotdata, stmv_internal_scale=dmax/4, cor=p$stmv_range_correlation ))
-      phi = fit$summary$phi
-      nu = fit$summary$nu
-
-      grid.list = list((1:nr2) * dr, (1:nc2) * dc)
-      dgrid = as.matrix(expand.grid(grid.list))
-      dimnames(dgrid) = list(NULL, names(grid.list))
-      attr(dgrid, "grid.list") = grid.list
-      grid.list = NULL
-      mC = matrix(0, nrow = nr2, ncol = nc2)
-      mC[nr, nc] = 1
-      center = matrix(c((dr * nr), (dc * nc)), nrow = 1, ncol = 2)
-      theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_range_correlation_fft_taper )
-      sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
-        Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
-      sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2 * nc2)
-      sp.covar.kernel = fftwtools::fftw2d(sp.covar) / fftwtools::fftw2d(mC)
-      ffY = Re(fftwtools::fftw2d( sp.covar.kernel * fY, inverse = TRUE))[1:nr, 1:nc]
-      ffN = Re(fftwtools::fftw2d( sp.covar.kernel * fN, inverse = TRUE))[1:nr, 1:nc]
-      Z = ifelse((ffN > eps), (ffY/ffN), NA)
-      Z[!is.finite(Z)] = NA
-      Z = Z * zsd + zmean # revert to input scale
-      if (plotdata) {
-        dev.new()
-        surface(list(x=c(1:nr)*dr, y=c(1:nc)*dc, z=Z), xaxs="r", yaxs="r")
-      }
-      SK = c(SK, fit=fit, Z=Z)
-    }
-
-
 
 
   nu=vg$nu
@@ -1119,6 +1075,42 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
       points( mean~tiyr, res$predictions, pch=20, col="gray", cex=0.5 )
 
     }
+
+
+  if (0) {
+    # testing and debugging
+
+    loadfunctions( c("aegis", "stmv"))
+    RLibrary(c ("fields", "MBA", "geoR") )
+
+    if (0) {
+      XYZ = stmv_test_data( datasource="swiss" )
+      mz = log( XYZ$rain )
+      mm = lm( mz ~ 1 )
+      XYZ$z = residuals( mm)
+      XYZ=XYZ[c("x","y","z")]
+    }
+
+    if (0) {
+      XYZ = stmv_test_data( datasource="meuse" )
+      XYZ$z = log(XYZ$elev)
+      XYZ=XYZ[, c("x","y","z") ]
+    }
+
+    gr = stmv_variogram( XYZ[, c("x", "y")], XYZ[,"z"], methods="geoR", plotdata=TRUE ) # ml via profile likelihood
+
+    nu = gr$geoR$nu
+    phi = gr$geoR$phi
+
+    fit  =  Krig(XYZ[, c("x", "y")], XYZ[,"z"], theta=phi)
+    x11(); surface( fit, type="C") # look at the surface
+
+    mba.int  =  mba.surf( XYZ, 64, 64, extend=TRUE)$xyz.est
+    x11(); surface(mba.int, xaxs="r", yaxs="r")
+
+    oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=64, ny=64, nbreaks=32, plotdata=TRUE,  add.interpolation=TRUE, stmv_range_correlation_fft_taper=0.01 )
+
+  }
 
 
 }
