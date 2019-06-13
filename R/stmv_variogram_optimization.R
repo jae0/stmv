@@ -30,15 +30,25 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
     if ( inherits(fit, "try-error")) {
       redofit = TRUE
     } else {
-      if ( fit$convergence==0 ) redofit = TRUE
+      if ( fit$convergence != 0 ) redofit = TRUE
     }
     if (redofit) {
-      # shrink range
-      par = c(tau.sq=vgm_var_max*0.5, sigma.sq=vgm_var_max*0.5, phi=1)
-      lower =c(vgm_var_max*0.1, vgm_var_max*0.1, 0.1 )
-      upper =c(vgm_var_max*1.25, vgm_var_max*1.25, 1.25)
-      fit = try( optim( par=par, vg=vg, vx=vx, nu=nu, method="L-BFGS-B", lower=lower, upper=upper, fn=vario_function, control=control  ))
+      fit = try( optim( par=par, vg=vg, vx=vx, nu=nu, fn=vario_function, control=list(factr=1e-12, maxit = 500L) ))
+      redofit= FALSE
     }
+
+    redofit = FALSE
+    if ( inherits(fit, "try-error")) {
+      redofit = TRUE
+    } else {
+      if ( fit$convergence != 0 ) redofit = TRUE
+    }
+    if (redofit) {
+      par = c(tau.sq=vgm_var_max*0.25, sigma.sq=vgm_var_max*0.25, phi=0.75)
+      fit = try( optim( par=par, vg=vg, vx=vx, nu=nu, fn=vario_function, control=list(factr=1e-12, maxit = 500L) ))
+      redofit= FALSE
+    }
+
 
   } else {
 
@@ -47,7 +57,7 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
       obj = sum( (vg - vgm)^2, na.rm=TRUE) # vario normal errors, no weights , etc.. just the line
       return(obj)
     }
-    par = c(tau.sq=vgm_var_max*0.25, sigma.sq=vgm_var_max*0.75, phi=0.9, nu=0.4)
+    par = c(tau.sq=vgm_var_max*0.5, sigma.sq=vgm_var_max*0.5, phi=1.1, nu=0.9)
     lower =c(0, 0, 0.05, 0.2 )
     upper =c(vgm_var_max*2, vgm_var_max*2, 2.5, 5)
     fit = try( optim( par=par, vg=vg, vx=vx, method="L-BFGS-B", lower=lower, upper=upper, fn=vario_function, control=control  ))
@@ -56,15 +66,24 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
     if ( inherits(fit, "try-error")) {
       redofit = TRUE
     } else {
-      if ( fit$convergence==0 ) redofit = TRUE
+      if ( fit$convergence != 0 ) redofit = TRUE
     }
     if (redofit) {
-      # shrink range
-      par = c(tau.sq=vgm_var_max*0.5, sigma.sq=vgm_var_max*0.5, phi=1, nu=1)
-      lower =c(vgm_var_max*0.1, vgm_var_max*0.1, 0.1, 0.25 )
-      upper =c(vgm_var_max*1.25, vgm_var_max*1.25, 1.25, 2.0)
-      fit = try( optim( par=par, vg=vg, vx=vx, method="L-BFGS-B", lower=lower, upper=upper, fn=vario_function, control=control  ))
+      fit = try( optim( par=par, vg=vg, vx=vx, fn=vario_function, control=list(factr=1e-12, maxit = 500L)  ) )
+      redofit= FALSE
     }
+
+    if ( inherits(fit, "try-error")) {
+      redofit = TRUE
+    } else {
+      if ( fit$convergence != 0 ) redofit = TRUE
+    }
+    if (redofit) {
+      par = c(tau.sq=vgm_var_max*0.25, sigma.sq=vgm_var_max*0.25, phi=0.75, nu=0.5)
+      fit = try( optim( par=par, vg=vg, vx=vx, fn=vario_function, control=list(factr=1e-12, maxit = 500L)  ))
+      redofit = FALSE
+    }
+
   }
 
   fit$summary = list(

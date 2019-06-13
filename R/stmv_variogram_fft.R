@@ -80,7 +80,7 @@ stmv_variogram_fft = function( xyz, nx=64, ny=64, nbreaks=13, plotdata=FALSE, ep
   if (add.interpolation) {
     # interpolated surface
   # constainer for spatial filters
-    uu = which( (res$distances < dmax ) & is.finite(res$sv) )  # dmax ~ Nyquist freq
+    uu = which( (res$distances < dmax*0.75 ) & is.finite(res$sv) )  # dmax ~ Nyquist freq
     fit = try( stmv_variogram_optimization( vx=res$distances[uu], vg=res$sv[uu], plotvgm=plotdata,
       stmv_internal_scale=dmax*0.5, cor=stmv_range_correlation ))
     out$fit = fit
@@ -151,7 +151,7 @@ stmv_variogram_fft = function( xyz, nx=64, ny=64, nbreaks=13, plotdata=FALSE, ep
     mba.int  =  mba.surf( XYZ, 64, 64, extend=TRUE)$xyz.est
     x11(); surface(mba.int, xaxs="r", yaxs="r")
 
-    oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=64, ny=64, nbreaks=13, plotdata=TRUE,  add.interpolation=TRUE, stmv_range_correlation_fft_taper=0.01 )
+    oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=64, ny=64, nbreaks=32, plotdata=TRUE,  add.interpolation=TRUE, stmv_range_correlation_fft_taper=0.01 )
 
   }
 
