@@ -1,7 +1,7 @@
 
 stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
-  plotdata=FALSE, methods=c("geoR"), discretized_n=128,
-  distance_cutoff=NA, nbreaks = 15, family="gaussian", stanmodel=NULL, range_correlation=0.1,
+  plotdata=FALSE, methods=c("geoR"), discretized_n=64, nbreaks = 32,
+  distance_cutoff=NA, family="gaussian", stanmodel=NULL, range_correlation=0.1,
   modus_operandi="easygoing" ) {
 
   #\\ estimate empirical variograms (actually correlation functions)

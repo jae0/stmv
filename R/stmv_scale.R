@@ -104,6 +104,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", ... ) {
       z=Y[Yi[U],],
       methods=p$stmv_variogram_method,
       distance_cutoff=stmv_distance_cur,
+      discretized_n = p$stmv_discretized_n,
       nbreaks=p$stmv_variogram_nbreaks,
       range_correlation=p$stmv_range_correlation # ,  plotdata=TRUE
     ) )
