@@ -95,6 +95,9 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
   ndata_index = match( "ndata", p$statsvars )
   rsquared_index = match("rsquared", p$statsvars )
 
+  if (runoption=="default") local_corel = p$stmv_range_correlation
+  if (runoption=="boostdata") local_corel = p$stmv_range_correlation_boostdata
+
 
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
@@ -116,17 +119,16 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
       }
     }
 
-    localrange = matern_phi2distance( phi=vg$phi, nu=vg$nu, cor=p$stmv_range_correlation )
-    ndata = vg$ndata
+    localrange = matern_phi2distance( phi=vg$phi, nu=vg$nu, cor=local_corel )
+
     useglobal = FALSE
     if (!is.finite( localrange ) ) useglobal =TRUE
-    if (!is.finite( ndata ) ) useglobal =TRUE
+    if (!is.finite( vg$ndata ) ) useglobal =TRUE
     if (vg$flag =="variogram_failure") useglobal =TRUE
     if (useglobal) vg = vg_global
 
-    if (runoption=="boostdata") localrange = matern_phi2distance( phi=vg$phi, nu=vg$nu, cor=p$stmv_range_correlation_boostdata )
-
     U = stmv_select_data( p=p, Si=Si, localrange=localrange )
+    if (is.null( U )) next()
 
     if ( Sflag[Si] != E[["todo"]] ) {
       if (exists("stmv_rangecheck", p)) {
@@ -140,10 +142,10 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
       }
     }
 
-    if(is.null( U )) next()
-
     # last check
     ndata = length(U)
+    S[, match( "ndata", p$statsvars )] = ndata  # some random sampling makes this potentially vary .. update
+
     if (ndata < p$stmv_nmin) next()
 
     # if here then there is something to do
@@ -276,12 +278,10 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
     }
 
 
-    if (runoption=="default") {
-      # update to rsquared and "range" in stats
-      S[Si, rsquared_index] = res$stmv_stats$rsquared
-      S[Si, ndata_index] = ndata
+    # update to rsquared and "range" in stats
+    if ( exists("rsquared", res$stmv_stats ) ) {
+      if (is.finite(res$stmv_stats$rsquared)) S[Si, rsquared_index] = res$stmv_stats$rsquared
     }
-
     res$stmv_stats = NULL # reduce memory usage
 
 
@@ -317,8 +317,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
 
 
   return(NULL)
-
-
 
 
 

@@ -369,8 +369,6 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
     sSflag = NULL
   }
 
-
-
   nPloc = nrow(DATA$output$LOCS)
 
   if (exists("COV", p$variables)) {
@@ -522,64 +520,6 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
   ################
 
 
-  if ( "scale" %in% runmode ) {
-    # must be done in 2-passes .. the first in paranoid mode to fill with estimates that are reliable,
-    # then a second pass to borrow from neighbouring estimate where possible
-    message ( "\n", "||| Entering spatial scale (variogram) determination: ", format(Sys.time()) , "\n" )
-    p$time_start_runmode = Sys.time()
-    currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
-    p$clusters = p$stmv_clusters[["scale"]] # as ram reqeuirements increase drop cpus
-    parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
-
-    # temp save to disk
-    sS = stmv_attach( p$storage.backend, p$ptr$S )[]
-    save( sS, file=p$saved_state_fn$stats, compress=TRUE );
-    sS = NULL
-    # reload main data to continue
-
-    message( "||| Scale estimation surface complete." )
-    message( "||| Time used for <interpolate_boost>: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n"  )
-    message( "||| Stats temporarily saved to (for restarts): ", p$saved_state_fn$stats )
-
-  } else {
-
-    if ( any( grepl( "interpolate", runmode) ) ) {
-
-      S = stmv_attach( p$storage.backend, p$ptr$S )
-      if (length( which (is.finite(S[]))) == 0 ) {
-        if (variogram_source =="saved_state") {
-          if (!file.exists(p$saved_state_fn$stats)) stop( "Variogram stats not found.")
-          sS = NULL
-          load(p$saved_state_fn$stats)
-          if (is.null(sS)) stop( "Variogram stats empty.")
-          S[] = sS[]
-          sS = NULL
-        }
-      }
-
-      if (length( which (is.finite(S[]))) == 0 ) {
-        if (variogram_source =="stmv.statistics") {
-          fn = file.path( p$stmvSaveDir, paste( "stmv.statistics", "rdata", sep=".") )
-          if (!file.exists(fn)) stop( "stmv.stats not found")
-          stats = NULL
-          load(fn)
-          if (is.null(stats)) stop ("stmv.stats empty")
-          Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
-          Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
-          nx = length(seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ))
-          ny = length(seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ) )
-          if (nx*ny != nrow(S) ) stop( "stmv.statistics has the wrong dimensionality/size" )
-          for ( i in 1:length( p$statsvars ) ) {
-            # linear interpolation
-            u = as.image( stats[,i], x=Ploc[,], na.rm=TRUE, nx=nx, ny=ny )
-            S[,i] = as.vector( fields::interp.surface( u, loc=Sloc[] ) ) # linear interpolation
-          }
-          nx = ny = u = stats = NULL
-        }
-      }
-    }
-  }
-
 
   if (exists("stmv_global_modelengine", p) ) {
     if (p$stmv_global_modelengine !="none" ) {
@@ -704,6 +644,12 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
 
   if (is.null(use_saved_state)) stmv_statistics_status( p=p, reset="features" )  # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
 
+  # -----------------------------------------------------
+
+  stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data
+
+  # -----------------------------------------------------
+
 
   if ( any(grepl("debug", runmode)) ) {
 
@@ -789,9 +735,68 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
 
   # -----------------------------------------------------
 
-  stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data
 
-  # -----------------------------------------------------
+  if ( "scale" %in% runmode ) {
+    # must be done in 2-passes .. the first in paranoid mode to fill with estimates that are reliable,
+    # then a second pass to borrow from neighbouring estimate where possible
+    message ( "\n", "||| Entering spatial scale (variogram) determination: ", format(Sys.time()) , "\n" )
+    p$time_start_runmode = Sys.time()
+    currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
+    p$clusters = p$stmv_clusters[["scale"]] # as ram reqeuirements increase drop cpus
+    parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
+
+    # temp save to disk
+    sS = stmv_attach( p$storage.backend, p$ptr$S )[]
+    save( sS, file=p$saved_state_fn$stats, compress=TRUE );
+    sS = NULL
+    # reload main data to continue
+
+    message( "||| Scale estimation surface complete." )
+    message( "||| Time used for <interpolate_boost>: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n"  )
+    message( "||| Stats temporarily saved to (for restarts): ", p$saved_state_fn$stats )
+
+  } else {
+
+    if ( any( grepl( "interpolate", runmode) ) ) {
+
+      S = stmv_attach( p$storage.backend, p$ptr$S )
+      if (length( which (is.finite(S[]))) == 0 ) {
+        if (variogram_source =="saved_state") {
+          if (!file.exists(p$saved_state_fn$stats)) stop( "Variogram stats not found.")
+          sS = NULL
+          load(p$saved_state_fn$stats)
+          if (is.null(sS)) stop( "Variogram stats empty.")
+          S[] = sS[]
+          sS = NULL
+        }
+      }
+
+      if (length( which (is.finite(S[]))) == 0 ) {
+        if (variogram_source =="stmv.statistics") {
+          fn = file.path( p$stmvSaveDir, paste( "stmv.statistics", "rdata", sep=".") )
+          if (!file.exists(fn)) stop( "stmv.stats not found")
+          stats = NULL
+          load(fn)
+          if (is.null(stats)) stop ("stmv.stats empty")
+          Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
+          Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+          nx = length(seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ))
+          ny = length(seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ) )
+          if (nx*ny != nrow(S) ) stop( "stmv.statistics has the wrong dimensionality/size" )
+          for ( i in 1:length( p$statsvars ) ) {
+            # linear interpolation
+            u = as.image( stats[,i], x=Ploc[,], na.rm=TRUE, nx=nx, ny=ny )
+            S[,i] = as.vector( fields::interp.surface( u, loc=Sloc[] ) ) # linear interpolation
+          }
+          nx = ny = u = stats = NULL
+        }
+      }
+    }
+  }
+
+
+  # ------------------------------
+
 
   if ("singlepass_fft" %in% runmode ) {
     message( "\n||| Entering <singlepass_fft> stage: ", format(Sys.time()) , "\n" )
@@ -838,7 +843,7 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
       p$time_start_runmode = Sys.time()
       currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
       parallel_run( stmv_interpolate, p=p, runoption="boostdata", runindex=list( locs=sample( currentstatus$todo )))
-      if ( "restart_start" %in% runmode ) stmv_db(p=p, DS="save_current_state", runmode="interpolate_boost")
+      if ( "restart_save" %in% runmode ) stmv_db(p=p, DS="save_current_state", runmode="interpolate_boost")
     }
     message( "||| Time used for <interpolate_boost>: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" )
   }
@@ -859,7 +864,7 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
       p$time_start_runmode = Sys.time()
       currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
       parallel_run( stmv_interpolate_force_complete, p=p, runindex=list( time_index=1:p$nt ))
-      if ( "restart_start" %in% runmode ) stmv_db(p=p, DS="save_current_state", runmode="interpolate_force_complete")
+      if ( "restart_save" %in% runmode ) stmv_db(p=p, DS="save_current_state", runmode="interpolate_force_complete")
     }
     message( "||| Time used for <interpolate_force_complete>: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" )
   }

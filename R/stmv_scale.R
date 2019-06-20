@@ -32,14 +32,11 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", ... ) {
   Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
   E = stmv_error_codes()
 
-  Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
   Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
-
   Y = stmv_attach( p$storage.backend, p$ptr$Y )
   Yi = stmv_attach( p$storage.backend, p$ptr$Yi )  # initial indices of good data
 
   if (p$nloccov > 0) Ycov = stmv_attach( p$storage.backend, p$ptr$Ycov )
-  if ( exists("TIME", p$variables) ) Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )
 
   # misc intermediate calcs to be done outside of parallel loops
 
@@ -59,14 +56,10 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", ... ) {
   }
   logpoints  = ip[ floor( seq( from=10, to=(nip-10), length.out=nlogs ) ) ]
 
-  if (debugging) {
-    nsavepoints = 3
-    savepoints = sample(logpoints, nsavepoints)
-  }
-
-
-  stmv_nmins = sort( unique( c(1, p$stmv_nmin_downsize_factor) * p$stmv_nmin ) , decreasing=FALSE )
+  stmv_nmins = sort( unique( c(1, p$stmv_nmin_downsize_factor) * p$stmv_nmin ), decreasing=TRUE )  # largest first
   stmv_nmax = p$stmv_nmax
+
+  stmv_distances = sort( unique( p$stmv_distance_scale ), decreasing=FALSE ) # smallest first
 
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
@@ -79,68 +72,42 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", ... ) {
     # obtain indices of data locations withing a given spatial range, optimally determined via variogram
     # find data nearest Sloc[Si,] and with sufficient data
     ndata = 0
-    d1 = abs( Sloc[Si,1] - Yloc[Yi[],1] )
-    d2 = abs( Sloc[Si,2] - Yloc[Yi[],2] )
 
-    for ( nmin_data in stmv_nmins ) {
-      # print(nmin_data)
-      for ( stmv_distance_cur in p$stmv_distance_scale )  {
-        # print(stmv_distance_cur)
-        U = which( d1 <= stmv_distance_cur & d2 <= stmv_distance_cur )  # faster to take a block
+    for ( stmv_distance_cur in stmv_distances )  {
+      # print(stmv_distance_cur)
+      for ( nmin_data in stmv_nmins ) {
+        U = NULL
+        U = stmv_select_data( p=p, Si=Si, localrange=stmv_distance_cur )
+        if ( is.null( U ) ) next()
         ndata = length(U)
-        # print(ndata)
-        if ( ndata >= nmin_data ) {
-          # print( "enough data")
-          if (ndata > stmv_nmax ) {
-            # try to trim
-            # print("trimming")
-            if ( exists("TIME", p$variables)) {
-              Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )
-              iU = stmv_discretize_coordinates( coo=cbind(Yloc[U,], Ytime[U]), ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )
-            } else {
-              iU = stmv_discretize_coordinates( coo=Yloc[U,], ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )
-            }
-            ndata = length(iU)
-            # print(ndata)
-            U=U[iU]
-            if ( ndata >= nmin_data ) break()
-          }
-        }
+        if ( ndata >= nmin_data ) break()  # innermost loop
       }
-      if ( ndata >= nmin_data ) break()
+      if ( ndata >= nmin_data ) break() # middle loop
     }
 
-    YiU = Yi[U]
-    U = NULL
-    d1 = d2 = NULL
-
-    Sflag[Si] = E[["todo"]]
-
-    if (ndata < nmin_data) {
+    if (ndata < p$stmv_nmin ) {
       Sflag[Si] = E[["insufficient_data"]]
       if (debugging) print( paste("index =", iip, ";  insufficient data"  ) )
       next()   #not enough data
     }
-    # NOTE: this range is a crude estimate that averages across years (if any) ...
-    o = NULL
 
-    if (p$stmv_variogram_method=="inla_nonseparable") {
-      # TODO
-      return()
-    }
+    # if (p$stmv_variogram_method=="inla_nonseparable") {
+    #   # TODO
+    #   return()
+    # }
 
     # generic ... crude separable approximations
     # spatial first
-    gc()  # for geoR ....
+    o = NULL
     o = try( stmv_variogram(
-      xy=Yloc[YiU,],
-      z=Y[YiU,],
+      xy=Yloc[Yi[U],],
+      z=Y[Yi[U],],
       methods=p$stmv_variogram_method,
       distance_cutoff=stmv_distance_cur,
       nbreaks=p$stmv_variogram_nbreaks,
       range_correlation=p$stmv_range_correlation # ,  plotdata=TRUE
     ) )
-    gc()  # for geoR ....
+    U = NULL
 
     if ( is.null(o)) {
       Sflag[Si] = E[["variogram_failure"]]
@@ -283,8 +250,6 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", ... ) {
         S[Si, match( names(statsvars_time), p$statsvars )] = statsvars_time
       }
     }
-
-    YiU = NULL
 
     Sflag[Si] = E[["complete"]]  # mark as complete without issues
 

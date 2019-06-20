@@ -7,11 +7,35 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL  ) {
 
   if (!is.null(reset)) {
     if ("incomplete" %in% reset) {
-      locs_to_do = stmv_predictions_incomplete_flag( p=p )
-      if ( !is.null(locs_to_do) && length(locs_to_do) > 0) {
-        Sflag[locs_to_do] = stmv_error_codes()[["todo"]]
+      # statistics locations where estimations need to be redone
+      P = stmv_attach( p$storage.backend, p$ptr$P )
+      if (ncol(P) == 1 ) {
+        noP = which( !is.finite( P[]) )
+      } else {
+        noP = which( !is.finite( rowSums( P[])) )
       }
-      locs_to_do = NULL
+      uP = NULL
+      if( length(noP) > 0 ) {
+        Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
+        Sloc_nplat = ceiling( diff( p$corners$plat) / p$stmv_distance_statsgrid)
+        Sloc_nplon = ceiling( diff( p$corners$plon) / p$stmv_distance_statsgrid)
+        Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+        uS = array_map( "2->1", floor( cbind(Sloc[,1]-p$origin[1], Sloc[,2]-p$origin[2])/p$stmv_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
+        toreset = array_map( "2->1", floor( cbind(Ploc[noP,1]-p$origin[1], Ploc[noP,2]-p$origin[2])/p$stmv_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
+        Sloc_nplon = Sloc_nplat = noP = NULL
+        inrange = which( (toreset >= min(uS, na.rm=TRUE)) & (toreset <= max(uS, na.rm=TRUE)) )
+        uS = NULL
+        if (length( inrange) > 0) toreset = toreset[inrange]
+        toreset = unique(toreset)
+        if ( !is.null(toreset) && length(toreset) > 0) {
+          E_not_to_alter =  E[ c("outside_bounds", "too_shallow") ]
+          ignore = which( Sflag[] %in% unlist(E_not_to_alter) )
+          if (length(ignore) > 0 ) toreset = setdiff( toreset, ignore )
+          if (length(toreset) > 0) Sflag[toreset] = E[["todo"]]
+        }
+        ignore = toreset = inrange = E_not_to_alter = NULL
+        gc()
+      }
 
     } else if ("features"  %in% reset) {
 
@@ -60,12 +84,15 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL  ) {
           pidA = array_map( "xy->1", Ploc[Pabove,], gridparams=p$gridparams )
           pidB = array_map( "xy->1", Ploc[Pbelow,], gridparams=p$gridparams )
           sid  = array_map( "xy->1", Sloc[], gridparams=p$gridparams )
+          Pabove = Pbelow = NULL
 
-          below = which( is.finite( match( sid, pidB ) ))
           above = which( is.finite( match( sid, pidA ) ))
+          below = which( is.finite( match( sid, pidB ) ))
+          piA = piB = NULL
 
-          if (length(below) > 0 ) Sflag[below] = E[["todo"]]
           if (length(above) > 0 ) Sflag[above] = E[["too_shallow"]]
+          if (length(below) > 0 ) Sflag[below] = E[["todo"]]
+          above = below = NULL
 
           if (0) {
             Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
