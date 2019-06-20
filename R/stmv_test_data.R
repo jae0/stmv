@@ -86,26 +86,25 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
       return(out)
     }
 
-    discret = 0.5 # km
+    discret = 0.1 # km
 
     if (is.null(p)) p = stmv_test_data( "aegis.test.paramaters")
 
     pb = bathymetry_parameters( project.mode="stmv" )
-    Bout = bathymetry.db( p=pb,  DS="stmv.inputs")$input  # this is a subset of "complete" with depth filtered
-    Bout = planar2lonlat( Bout, proj.type=pb$internal.crs )
-    Bout = Bout[ which( Bout$lon < p$corners$lon0 & Bout$plon > p$corners$lon1  & Bout$plat < p$corners$lat0 & Bout$plat > p$corners$lat1 ), ]
-    Bout = Bout[,c( "lon", "lat", "z")]
-
-    Blon = range(Bout$lon)
-    Blat = range(Bout$lat)
+    B = bathymetry.db( p=pb,  DS="stmv.inputs")$input  # this is a subset of "complete" with depth filtered
+    B = planar2lonlat( B, proj.type=pb$internal.crs )
+    B = B[,c( "lon", "lat", "z")]
+    B = B[ which( B$lon > p$corners$lon[1] & B$lon < p$corners$lon[2]  & B$lat > p$corners$lat[1] & B$lat < p$corners$lat[2] ), ]
 
     ps = substrate_parameters( project.mode="stmv" )
     S = substrate.db( p=ps, DS="lonlat.highres" )
 
-    S = S[ which( S$lon > Blon[1] & S$lon < Blon[2] & S$lat > Blat[1] & S$lat < Blat[2] ) , ]
+    S = S[ which( S$lon > p$corners$lon[1] & S$lon < p$corners$lon[2] & S$lat > p$corners$lat[1] & S$lat < p$corners$lat[2] ) , ]
     S$substrate.grainsize = S$grainsize
     S = S[ ,c("lon", "lat", "substrate.grainsize" )]
-    S = lonlat2planar( S, proj.type=ps$internal.crs )
+    S$plon = NULL
+    S$plat = NULL
+    S = lonlat2planar( S, proj.type=p$internal.crs )
     S$lon = NULL
     S$lat = NULL
     S$plon = floor(S$plon/discret) * discret
@@ -113,13 +112,15 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
     dups = duplicates.toremove( paste( S$plon, S$plat) )
     if (length(dups) > 0 ) S = S[ -dups , ]
 
-    Bout = lonlat2planar( Bout, proj.type=p$internal.crs )
-    Bout$plon = floor(Bout$plon/discret) * discret
-    Bout$plat = floor(Bout$plat/discret) * discret
-    dups = duplicates.toremove( paste( Bout$plon, Bout$plat) )
-    Bout = Bout[ -dups , ]
+    B = lonlat2planar( B, proj.type=p$internal.crs )
+    B$lon = NULL
+    B$lat = NULL
+    B$plon = floor(B$plon/discret) * discret
+    B$plat = floor(B$plat/discret) * discret
+    dups = duplicates.toremove( paste( B$plon, B$plat) )
+    if (length(dups) > 0 ) B = B[ -dups , ]
 
-    out = merge( Bout[,c("plon", "plat", "z")], S[, c("plon", "plat", "substrate.grainsize")], by=c("plon", "plat"), all.x=TRUE, all.y=TRUE )
+    out = merge( B[,c("plon", "plat", "z")], S[, c("plon", "plat", "substrate.grainsize")], by=c("plon", "plat"), all.x=TRUE, all.y=TRUE )
     out = planar2lonlat( out, proj.type=p$internal.crs )
     out$plon = out$plat = NULL
 
@@ -140,17 +141,11 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
       return(out)
     }
 
-    static_data = stmv_test_data( "aegis.space" )
-    lonrange = range( static_data$lon)
-    latrange = range( static_data$lat)
-
-    discret = 0.5 # km
-
     p = temperature_parameters( spatial.domain="SSE" )
 
     out = temperature.db( p=p, DS="bottom.all"  )
-    out = out[ which(out$lon > lonrange[1] & out$lon < lonrange[2] & out$lat > latrange[1] & out$lat < latrange[2]), ]
-    out = out[ which(out$yr %in% c(1970:2010)), ]
+    out = out[ which( out$lon > p$corners$lon[1] & out$lon < p$corners$lon[2] & out$lat > p$corners$lat[1] & out$lat < p$corners$lat[2] ) , ]
+    out = out[ which(out$yr %in% c(1980:2010)), ]
     out$tiyr = lubridate::decimal_date ( out$date )
 
     # globally remove all unrealistic data
@@ -162,7 +157,7 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
     keep = which( out$z >=  2 ) # ignore very shallow areas ..
     if (length(keep) > 0 ) out = out[ keep, ]
 
-    out = out[, c("lon", "lat", "t", "z", "date", "yr", "dyear", "tiyr")]
+    out = out[, c("lon", "lat", "t", "z", "date", "tiyr")]
     save(out, file=fn, compress=TRUE)
     return (out)
 
@@ -171,7 +166,7 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
 
   if ( datasource == "aegis.test.paramaters" ) {
       # dres  is the 15 second grid from CHS  .. default use highest resolution
-    p = aegis::spatial_parameters( spatial.domain="testing", internal.crs="+proj=utm +ellps=WGS84 +zone=20 +units=km", dres=1/60/4, pres=0.5, lon0=-63.29, lon1=-60.71, lat0=44.09, lat1=45.88, psignif=2 )
+    p = aegis::spatial_parameters( spatial.domain="testing", internal.crs="+proj=utm +ellps=WGS84 +zone=20 +units=km", dres=1/60/4, pres=0.5, lon0=-64, lon1=-62, lat0=44, lat1=45, psignif=2 )
     return(p)
   }
 
@@ -185,8 +180,10 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
 
   if (0) {
 
-    p = aegis::spatial_parameters( spatial.domain="testing", internal.crs="+proj=utm +ellps=WGS84 +zone=20 +units=km", dres=1/60/4, pres=0.5, lon0=-63.29, lon1=-60.71, lat0=44.09, lat1=45.88, psignif=2 )
+    p = aegis::spatial_parameters( spatial.domain="testing", internal.crs="+proj=utm +ellps=WGS84 +zone=20 +units=km", dres=1/60/4, pres=0.5, lon0=-64, lon1=-62, lat0=44, lat1=45, psignif=2 )
+    # or:  p = stmv_test_data( "aegis.test.paramaters")
 
+    PREDLOCS = spatial_grid(p)
 
   }
 
