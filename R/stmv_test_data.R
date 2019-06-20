@@ -1,6 +1,6 @@
 
 
-stmv_test_data = function( datasource="swiss" ) {
+stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
 
   if ( datasource == "swiss" ) {
     require(geostatsp)
@@ -75,120 +75,119 @@ stmv_test_data = function( datasource="swiss" ) {
 
 
   if ( datasource == "aegis.space" ) {
-    fn = system.file( "extdata", "aegis_space_test.Rdata", package="stmv" )
-    if (!redo) {
 
-    }
     RLibrary( "aegis.bathymetry", "aegis.substrate" )
     require(sp)
+    # fn = system.file( "extdata", "aegis_space_test.Rdata", package="stmv" )
+    out = NULL
+    fn = project.codedirectory("stmv", "inst", "extdata", "aegis_space_test.Rdata")
+    if (!redo) {
+      if (file.exists(fn)) load(fn)
+      return(out)
+    }
 
-    p = bathymetry_parameters( project.mode="stmv" )
-    Bout = bathymetry.db( p=p,  DS="stmv.inputs")$input  # this is a subset of "complete" with depth filtered
-    Bout = Bout[ which( Bout$plon <60 & Bout$plon > -60 & Bout$plat < 60 & Bout$plat > -60 ), ]
-    Bout = planar2lonlat( Bout, proj.type=p$internal.crs )
+    discret = 0.5 # km
+
+    if (is.null(p)) p = stmv_test_data( "aegis.test.paramaters")
+
+    pb = bathymetry_parameters( project.mode="stmv" )
+    Bout = bathymetry.db( p=pb,  DS="stmv.inputs")$input  # this is a subset of "complete" with depth filtered
+    Bout = planar2lonlat( Bout, proj.type=pb$internal.crs )
+    Bout = Bout[ which( Bout$lon < p$corners$lon0 & Bout$plon > p$corners$lon1  & Bout$plat < p$corners$lat0 & Bout$plat > p$corners$lat1 ), ]
     Bout = Bout[,c( "lon", "lat", "z")]
-    Blon = range(B$lon)
-    Blat = range(B$lat)
 
-    p = substrate_parameters( project.mode="stmv" )
-    S = substrate.db( p=p, DS="lonlat.highres" )
+    Blon = range(Bout$lon)
+    Blat = range(Bout$lat)
+
+    ps = substrate_parameters( project.mode="stmv" )
+    S = substrate.db( p=ps, DS="lonlat.highres" )
 
     S = S[ which( S$lon > Blon[1] & S$lon < Blon[2] & S$lat > Blat[1] & S$lat < Blat[2] ) , ]
     S$substrate.grainsize = S$grainsize
     S = S[ ,c("lon", "lat", "substrate.grainsize" )]
+    S = lonlat2planar( S, proj.type=ps$internal.crs )
+    S$lon = NULL
+    S$lat = NULL
+    S$plon = floor(S$plon/discret) * discret
+    S$plat = floor(S$plat/discret) * discret
+    dups = duplicates.toremove( paste( S$plon, S$plat) )
+    if (length(dups) > 0 ) S = S[ -dups , ]
 
-    # discretize to speed up the rest
-    discret = 0.01 # angular
-    S$lon = floor(S$lon/discret) * discret
-    S$lat = floor(S$lat/discret) * discret
-    S = S[ unique( paste( S$lon, S$lat) ), ]
+    Bout = lonlat2planar( Bout, proj.type=p$internal.crs )
+    Bout$plon = floor(Bout$plon/discret) * discret
+    Bout$plat = floor(Bout$plat/discret) * discret
+    dups = duplicates.toremove( paste( Bout$plon, Bout$plat) )
+    Bout = Bout[ -dups , ]
 
-    Sout = substrate.db ( p=p, DS="complete" )
-    Sind = which(names(Sout) %in% "substrate.grainsize")
-    if (nrow(Sout) != nrow(Bout)) stop( "Row numbers between bathymetry and substrate databases differ")
-    Sout = as.data.frame( Sout[,Sind])
-    names(Sout) = vars_required[toadd]
-    Bout = cbind( Bout, Sout)
+    out = merge( Bout[,c("plon", "plat", "z")], S[, c("plon", "plat", "substrate.grainsize")], by=c("plon", "plat"), all.x=TRUE, all.y=TRUE )
+    out = planar2lonlat( out, proj.type=p$internal.crs )
+    out$plon = out$plat = NULL
 
+    save(out, file=fn, compress=TRUE)
     return (out)
   }
 
 
   if ( datasource == "aegis.spacetime" ) {
-    # small peice of temperature data
 
-    RLibrary( "aegis.bathymetry", "aegis.substrate" )
-
-    p = spatial_parameters( p=p, spatial.domain="SSE" )
-
-    vars_required = c( "lon", "lat", "z", "substrate.grainsize" )
-    p = bathymetry_parameters( project.mode="stmv" )
-    Bout = bathymetry.db( p=p,  DS="stmv.inputs")$input  # this is a subset of "complete" with depth filtered
-    Bout = Bout[ which( Bout$plon <60 & Bout$plon > -60 & Bout$plat < 60 & Bout$plat > -60 ), ]
-    Bout = planar2lonlat( Bout, proj.type=p$internal.crs )
-    Bout = Bout[,c( "lon", "lat", "z")]
-    Blon = range(B$lon)
-    Blat = range(B$lat)
-
-    p = substrate_parameters( project.mode="stmv" )
-    S = substrate.db( p=p, DS="lonlat.highres" )
-
-    S = S[ which( S$lon > Blon[1] & S$lon < Blon[2] & S$lat > Blat[1] & S$lat < Blat[2] ) , ]
-    S$substrate.grainsize = S$grainsize
-    S = S[ ,c("lon", "lat", "substrate.grainsize" )]
-
-    # discretize to speed up the rest
-    discret = 0.01 # angular
-    S$lon = floor(S$lon/discret) * discret
-    S$lat = floor(S$lat/discret) * discret
-    S = S[ unique( paste( S$lon, S$lat) ), ]
-
-    Sout = substrate.db ( p=p, DS="complete" )
-    Sind = which(names(Sout) %in% "substrate.grainsize")
-    if (nrow(Sout) != nrow(Bout)) stop( "Row numbers between bathymetry and substrate databases differ")
-    Sout = as.data.frame( Sout[,Sind])
-    names(Sout) = vars_required[toadd]
-    Bout = cbind( Bout, Sout)
-    Sout = NULL; gc()
-    if (length(p$variables$COV)==1) {
-      covs = list( Bout[,p$variables$COV] )
-      names(covs) = p$variables$COV
-      OUT  = list( LOCS = Bout[,p$variables$LOCS], COV=covs )
-    } else {
-      OUT  = list( LOCS = Bout[,p$variables$LOCS], COV=as.list( Bout[,p$variables$COV] ) )
+    RLibrary( "aegis.bathymetry", "aegis.substrate", "aegis.temperature" )
+    require(sp)
+    # fn = system.file( "extdata", "aegis_space_test.Rdata", package="stmv" )
+    out = NULL
+    fn = project.codedirectory("stmv", "inst", "extdata", "aegis_spacetime_test.Rdata")
+    if (!redo) {
+      if (file.exists(fn)) load(fn)
+      return(out)
     }
 
-    B = temperature.db( p=p, DS="bottom.all"  )
-    B = B[ which(B$yr %in% p$yrs), ]
-    B$tiyr = lubridate::decimal_date ( B$date )
+    static_data = stmv_test_data( "aegis.space" )
+    lonrange = range( static_data$lon)
+    latrange = range( static_data$lat)
+
+    discret = 0.5 # km
+
+    p = temperature_parameters( spatial.domain="SSE" )
+
+    out = temperature.db( p=p, DS="bottom.all"  )
+    out = out[ which(out$lon > lonrange[1] & out$lon < lonrange[2] & out$lat > latrange[1] & out$lat < latrange[2]), ]
+    out = out[ which(out$yr %in% c(1970:2010)), ]
+    out$tiyr = lubridate::decimal_date ( out$date )
 
     # globally remove all unrealistic data
-    keep = which( B$t >= -3 & B$t <= 25 ) # hard limits
-    if (length(keep) > 0 ) B = B[ keep, ]
-    TR = quantile(B$t, probs=c(0.0005, 0.9995), na.rm=TRUE ) # this was -1.7, 21.8 in 2015
-    keep = which( B$t >=  TR[1] & B$t <=  TR[2] )
-    if (length(keep) > 0 ) B = B[ keep, ]
-    keep = which( B$z >=  2 ) # ignore very shallow areas ..
-    if (length(keep) > 0 ) B = B[ keep, ]
+    keep = which( out$t >= -3 & out$t <= 25 ) # hard limits
+    if (length(keep) > 0 ) out = out[ keep, ]
+    TR = quantile(out$t, probs=c(0.0005, 0.9995), na.rm=TRUE ) # this was -1.7, 21.8 in 2015
+    keep = which( out$t >=  TR[1] & out$t <=  TR[2] )
+    if (length(keep) > 0 ) out = out[ keep, ]
+    keep = which( out$z >=  2 ) # ignore very shallow areas ..
+    if (length(keep) > 0 ) out = out[ keep, ]
 
-    locsmap = match(
-      stmv::array_map( "xy->1", B[,c("plon","plat")], gridparams=p$gridparams ),
-      stmv::array_map( "xy->1", bathymetry.db(p=p, DS="baseline"), gridparams=p$gridparams ) )
+    out = out[, c("lon", "lat", "t", "z", "date", "yr", "dyear", "tiyr")]
+    save(out, file=fn, compress=TRUE)
+    return (out)
 
-    newvars = setdiff(p$variables$COV, names(B) )
-    if (length(newvars) > 0) {
-      sn = Bout[locsmap,newvars]
-      if (ncol(sn) > 0) {
-        B = cbind( B,  sn )
-      }
-    }
-
-    varstokeep = unique( c( p$variables$Y, p$variables$LOCS, p$variables$TIME, p$variables$COV ) )
-    B = B[,varstokeep]
-
-    return (list(input=B, output=OUT))
   }
 
 
+  if ( datasource == "aegis.test.paramaters" ) {
+      # dres  is the 15 second grid from CHS  .. default use highest resolution
+    p = aegis::spatial_parameters( spatial.domain="testing", internal.crs="+proj=utm +ellps=WGS84 +zone=20 +units=km", dres=1/60/4, pres=0.5, lon0=-63.29, lon1=-60.71, lat0=44.09, lat1=45.88, psignif=2 )
+    return(p)
+  }
+
+  if ( datasource == "aegis.prediction.locations" ) {
+      # dres  is the 15 second grid from CHS  .. default use highest resolution
+      ## 1 km resolution!,
+    if (is.null(p)) p = stmv_test_data( "aegis.test.paramaters")
+    LOCS = spatial_grid(p)
+    return(LOCS)
+  }
+
+  if (0) {
+
+    p = aegis::spatial_parameters( spatial.domain="testing", internal.crs="+proj=utm +ellps=WGS84 +zone=20 +units=km", dres=1/60/4, pres=0.5, lon0=-63.29, lon1=-60.71, lat0=44.09, lat1=45.88, psignif=2 )
+
+
+  }
 
 }
