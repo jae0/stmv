@@ -338,10 +338,15 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
   out$stmv_internal_scale = matern_distance2phi( out$range_crude, nu=0.5 )  # the presumed scaling distance to make calcs use smaller numbers
 
   # if max dist not given, make a sensible choice using exponential variogram as a first estimate
-  out$distance_cutoff = ifelse( is.na(distance_cutoff), out$range_crude * 1.5, distance_cutoff )
+  if ( is.na(distance_cutoff) ) {
+    out$distance_cutoff = out$range_crude * 1.5
+  } else {
+    out$distance_cutoff = distance_cutoff
+  }
+
   zmin = min( z, na.rm=TRUE )
 
-  xy = xy + out$stmv_internal_scale * runif(2*out$Ndata, -1e-6, 1e-6) # add a small error term to prevent some errors in GRMF methods
+  xy = xy + out$stmv_internal_scale * runif(2*out$Ndata, -1e-9, 1e-9) # add a small error term to prevent some errors in GRMF methods
 
 
 
@@ -354,7 +359,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
     names(XYZ) =  c("plon", "plat", "z" ) # arbitrary
 
     vario = stmv_variogram_fft( xyz=XYZ, nx=discretized_n, ny=discretized_n, nbreaks=nbreaks )  # empirical variogram by fftw2d
-    uu = which( (vario$res$distances < 0.9*max(vario$res$distances) ) & is.finite(vario$res$sv) )
+    uu = which( (vario$res$distances < 0.95*max(vario$res$distances) ) & is.finite(vario$res$sv) )
     fit = try( stmv_variogram_optimization( vx=vario$res$distances[uu], vg=vario$res$sv[uu], plotvgm=plotdata, stmv_internal_scale=out$stmv_internal_scale, cor=range_correlation  ))
 
     if ( !inherits(fit, "try-error") ) {

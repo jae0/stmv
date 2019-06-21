@@ -11,6 +11,27 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   #\\ determined by p
   #\\ using fftw interace fftwtools::fftw2d
 
+# The following documentation is from fields::smooth.2d:
+  # The irregular locations are first discretized to a regular grid (
+  #    using as.image) then a 2d- FFT is used to compute a
+  #    Nadaraya-Watson type kernel estimator. Here we take advantage of
+  #    two features. The kernel estimator is a convolution and by padding
+  #    the regular by zeroes where data is not obsevred one can sum the
+  #    kernel over irregular sets of locations.  A second convolutions to
+  #    find the normalization of the kernel weights.
+
+  #    The kernel function is specified by an function that should
+  #    evaluate with the kernel for two matrices of locations. Assume
+  #    that the kernel has the form: K( u-v) for two locations u and v.
+  #    The function given as the argument to cov.function should have the
+  #    call myfun( x1,x2) where x1 and x2 are matrices of 2-d locations
+  #    if nrow(x1)=m and nrow( x2)=n then this function should return a
+  #    mXn matrix where the (i,j) element is K( x1[i,]- x2[j,]).
+  #    Optional arguments that are included in the ... arguments are
+  #    passed to this function when it is used. The default kernel is the
+  #    Gaussian and the argument theta is the bandwidth. It is easy to
+  #    write other other kernels, just use Exp.cov.simple as a template.
+
   if (variablelist)  return( c() )
 
   params = list(...)
@@ -82,7 +103,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   }
 
   if (p$stmv_fft_filter == "matern_tapered") {
-    theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_range_correlation_fft_taper )
+    theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_fft_taper_factor )
     sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
       Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
     sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
@@ -93,7 +114,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   if (p$stmv_fft_filter == "lowpass_matern_tapered") {
     sp.covar.lowpass = stationary.cov( dgrid, center, Covariance="Matern", theta=p$stmv_lowpass_phi, smoothness=p$stmv_lowpass_nu )
     sp.covar.lowpass = as.surface(dgrid, c(sp.covar.lowpass))$z / (nr2*nc2)
-    theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_range_correlation_fft_taper )
+    theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_fft_taper_factor )
     sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
       Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
     sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
@@ -248,7 +269,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
 
     center = matrix(c((dx * nr), (dy * nc)), nrow = 1, ncol = 2)
 
-    theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_range_correlation_fft_taper )
+    theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_fft_taper_factor )
     sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
       Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
     sp.covar = as.surface(dgrid, c(sp.covar))$z
@@ -332,7 +353,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     plot(sv ~ distances, data=res[uu,]   )
 
     fit = try( stmv_variogram_optimization( vx=res$distances[uu], vg=res$sv[uu], plotvgm=TRUE,
-      stmv_internal_scale=dmax/4, cor=p$stmv_range_correlation_fft_taper ))
+      stmv_internal_scale=dmax/4, cor=p$stmv_fft_taper_factor ))
 
   }
 

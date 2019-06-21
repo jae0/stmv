@@ -1,5 +1,5 @@
 
-stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_internal_scale=NA, cor=0.1, control=list(factr=1e-9, maxit = 400L) ) {
+stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_internal_scale=NA, cor=0.1, control=list(factr=1e-9, maxit = 400L), weight_by_inverse_distance=TRUE ) {
   #\\ simple nonlinear least squares fit
 
   if (is.na(stmv_internal_scale)) stmv_internal_scale= max(vx)/2
@@ -13,75 +13,72 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
 
   vgm_var_max = max(vg)
   vgm_dist_max = max(vx)
+  if (weight_by_inverse_distance) {
+    w = 1/vx
+  } else {
+    w = rep(1, length(vx ) )
+  }
 
   if (!is.null(nu)) {  # ie. nu is fixed
-    vario_function = function(par, vg, vx, nu){
+    vario_function = function(par, vg, vx, nu, w){
+      if (par["phi"] < 0.001) return(Inf)
       vgm = par["tau.sq"] + par["sigma.sq"]*{ 1-stmv_matern(distance=vx, mRange=par["phi"], mSmooth=nu) }
-      obj = sum( (vg - vgm)^2, na.rm=TRUE) # vario normal errors, no weights , etc.. just the line
+      obj = sum( w * (vg - vgm)^2, na.rm=TRUE) # vario normal errors, no weights , etc.. just the line
       return(obj)
     }
     par = c(tau.sq=vgm_var_max*0.25, sigma.sq=vgm_var_max*0.75, phi=0.9 )
     lower =c(0, 0, 0.05 )
     upper =c(vgm_var_max*2, vgm_var_max*2, 3)
 
-    fit = try( optim( par=par, vg=vg, vx=vx, nu=nu, method="L-BFGS-B", lower=lower, upper=upper, fn=vario_function, control=control  ) )
+    fit = try( optim( par=par, vg=vg, vx=vx, nu=nu, w=w, method="L-BFGS-B", lower=lower, upper=upper, fn=vario_function, control=control  ) )
 
-    redofit = FALSE
-    if ( inherits(fit, "try-error")) {
-      redofit = TRUE
-    } else {
-      if ( fit$convergence != 0 ) redofit = TRUE
-    }
-    if (redofit) {
-      fit = try( optim( par=par, vg=vg, vx=vx, nu=nu, fn=vario_function, control=list(factr=1e-12, maxit = 500L) ))
-      redofit= FALSE
+    if ( !inherits(fit, "try-error")) if ( fit$convergence != 0 ) class(fit) = "try-error"
+
+    if ( inherits(fit, "try-error") ) {
+      ilast = length(vg)  # last data point .. drop it
+      fit = try( optim( par=par, vg=vg[-ilast], vx=vx[-ilast], nu=nu, w=w[-ilast], method="L-BFGS-B", lower=lower, upper=upper, fn=vario_function, control=list(factr=1e-12, maxit = 500L) ))
     }
 
-    redofit = FALSE
-    if ( inherits(fit, "try-error")) {
-      redofit = TRUE
-    } else {
-      if ( fit$convergence != 0 ) redofit = TRUE
-    }
-    if (redofit) {
+    if ( !inherits(fit, "try-error")) if ( fit$convergence != 0 ) class(fit) = "try-error"
+
+    if ( inherits(fit, "try-error") ) {
       par = c(tau.sq=vgm_var_max*0.25, sigma.sq=vgm_var_max*0.25, phi=0.5)
-      fit = try( optim( par=par, vg=vg, vx=vx, nu=nu, fn=vario_function, control=list(factr=1e-12, maxit = 500L) ))
-      redofit= FALSE
+      ilast = c(length(vg)-1, length(vg))  # last two data point .. drop it
+      fit = try( optim( par=par, vvg=vg[-ilast], vx=vx[-ilast], nu=nu, w=w[-ilast], method="L-BFGS-B", lower=lower, upper=upper, fn=vario_function, control=list(factr=1e-12, maxit = 500L) ))
+      if ( fit$par[["phi"]] < lower[3] | fit$par[["phi"]] > upper[3] ) class(fit) = "try-error"    # give up
     }
-
 
   } else {
 
-    vario_function = function(par, vg, vx){
+    vario_function = function(par, vg, vx, w){
+      if (par["nu"] < 0.001) return(Inf)
+      if (par["phi"] < 0 ) return(Inf)
       vgm = par["tau.sq"] + par["sigma.sq"]*{ 1-stmv_matern(distance=vx, mRange=par["phi"], mSmooth=par["nu"]) }
-      obj = sum( (vg - vgm)^2, na.rm=TRUE) # vario normal errors, no weights , etc.. just the line
+      obj = sum( ((vg - vgm)^2) * w, na.rm=TRUE) # vario normal errors, no weights , etc.. just the line
       return(obj)
     }
     par = c(tau.sq=vgm_var_max*0.5, sigma.sq=vgm_var_max*0.5, phi=1.1, nu=0.9)
     lower =c(0, 0, 0.05, 0.2 )
     upper =c(vgm_var_max*2, vgm_var_max*2, 2.5, 5)
-    fit = try( optim( par=par, vg=vg, vx=vx, method="L-BFGS-B", lower=lower, upper=upper, fn=vario_function, control=control  ))
 
-    redofit = FALSE
-    if ( inherits(fit, "try-error")) {
-      redofit = TRUE
-    } else {
-      if ( fit$convergence != 0 ) redofit = TRUE
-    }
-    if (redofit) {
-      fit = try( optim( par=par, vg=vg, vx=vx, fn=vario_function, control=list(factr=1e-12, maxit = 500L)  ) )
-      redofit= FALSE
-    }
+    fit = try( optim( par=par, vg=vg, vx=vx, w=w, method="L-BFGS-B", lower=lower, upper=upper, fn=vario_function, control=control  ))
+
+    if ( !inherits(fit, "try-error")) if ( fit$convergence != 0 ) class(fit) = "try-error"
 
     if ( inherits(fit, "try-error")) {
-      redofit = TRUE
-    } else {
-      if ( fit$convergence != 0 ) redofit = TRUE
+      ilast = length(vg)  # last data point .. drop it
+      fit = try( optim( par=par, vg=vg[-ilast], vx=vx[-ilast], w=w[-ilast], method="L-BFGS-B",  lower=lower, upper=upper, fn=vario_function, control=list(factr=1e-12, maxit = 500L)  ) )
     }
-    if (redofit) {
+
+    if ( !inherits(fit, "try-error")) if ( fit$convergence != 0 ) class(fit) = "try-error"
+
+    if ( inherits(fit, "try-error") ) {
       par = c(tau.sq=vgm_var_max*0.25, sigma.sq=vgm_var_max*0.25, phi=0.25, nu=0.25)
-      fit = try( optim( par=par, vg=vg, vx=vx, fn=vario_function, control=list(factr=1e-12, maxit = 500L)  ))
-      redofit = FALSE
+      ilast = c(length(vg)-1, length(vg))  # last two data point .. drop it
+      fit = try( optim( par=par, vg=vg[-ilast], vx=vx[-ilast], w=w[-ilast], method="L-BFGS-B",  lower=lower, upper=upper,  fn=vario_function, control=list(factr=1e-12, maxit = 500L)  ))
+      if ( fit$convergence != 0 ) class(fit) = "try-error"    # give up
+      if ( fit$par[["phi"]] < lower[3] | fit$par[["phi"]] > upper[3] ) class(fit) = "try-error"    # give up
+      if ( fit$par[["nu"]]  < lower[4] | fit$par[["nu"]]  > upper[4] ) class(fit) = "try-error"    # give up
     }
 
   }

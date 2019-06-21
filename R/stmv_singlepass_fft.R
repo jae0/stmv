@@ -790,6 +790,22 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
   nr2 = 2 * nr
   nc2 = 2 * nc
 
+
+  rr = diff( x_r )  # system length scale
+  rc = diff( x_c )
+
+  # no of elements
+  dr = rr/(nr-1)
+  dc = rc/(nc-1)
+
+  # approx sa associate with each datum
+  sa = rr * rc
+  d_sa = sa/nrow(dat) # sa associated with each datum
+  d_length = sqrt( d_sa/pi )  # sa = pi*l^2  # characteristic length scale
+
+  theta.Taper = d_length * stmv_fft_taper_factor
+
+
   # constainer for spatial filters
   grid.list = list((1:nr2) * dx, (1:nc2) * dy)
   dgrid = as.matrix(expand.grid(grid.list))
@@ -800,6 +816,8 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
 
   mC = matrix(0, nrow = nr2, ncol = nc2)
   mC[nr, nc] = 1
+
+
 
   if (!exists("stmv_fft_filter",p) ) p$stmv_fft_filter="lowpass" # default in case of no specification
 
@@ -827,7 +845,7 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
   }
 
   if (p$stmv_fft_filter == "matern_tapered") {
-    theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_range_correlation_fft_taper )
+    # theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_fft_taper_factor )
     sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
       Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
     sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2 * nc2)
@@ -838,7 +856,7 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
   if (p$stmv_fft_filter == "lowpass_matern_tapered") {
     sp.covar.lowpass = stationary.cov( dgrid, center, Covariance="Matern", theta=p$stmv_lowpass_phi, smoothness=p$stmv_lowpass_nu )
     sp.covar.lowpass = as.surface(dgrid, c(sp.covar.lowpass))$z / (nr2 * nc2)
-    theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_range_correlation_fft_taper )
+    # theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_fft_taper_factor )
     sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
       Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
     sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2 * nc2)
@@ -1108,7 +1126,7 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
     mba.int  =  mba.surf( XYZ, 64, 64, extend=TRUE)$xyz.est
     x11(); surface(mba.int, xaxs="r", yaxs="r")
 
-    oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=64, ny=64, nbreaks=32, plotdata=TRUE,  add.interpolation=TRUE, stmv_range_correlation_fft_taper=0.01 )
+    oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=64, ny=64, nbreaks=32, plotdata=TRUE,  add.interpolation=TRUE, stmv_fft_taper_factor=5 )
 
   }
 

@@ -73,9 +73,9 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", ... ) {
     # find data nearest Sloc[Si,] and with sufficient data
     ndata = 0
 
-    for ( stmv_distance_cur in stmv_distances )  {
-      # print(stmv_distance_cur)
-      for ( nmin_data in stmv_nmins ) {
+    for ( nmin_data in stmv_nmins ) {
+      for ( stmv_distance_cur in stmv_distances )  {
+      print(stmv_distance_cur)
         U = NULL
         U = stmv_select_data( p=p, Si=Si, localrange=stmv_distance_cur )
         if ( is.null( U ) ) next()
@@ -102,12 +102,16 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", ... ) {
     o = try( stmv_variogram(
       xy=Yloc[Yi[U],],
       z=Y[Yi[U],],
-      methods=p$stmv_variogram_method,
+#      methods=p$stmv_variogram_method,
+      methods="inla",
       distance_cutoff=stmv_distance_cur,
       discretized_n = p$stmv_discretized_n,
       nbreaks=p$stmv_variogram_nbreaks,
+      plotdata=T,
       range_correlation=p$stmv_range_correlation # ,  plotdata=TRUE
     ) )
+
+
     U = NULL
 
     if ( is.null(o)) {

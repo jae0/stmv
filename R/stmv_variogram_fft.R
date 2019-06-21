@@ -1,6 +1,18 @@
 
-stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=32, plotdata=FALSE, eps=1e-8, add.interpolation=FALSE,
-  stmv_range_correlation=0.1, stmv_range_correlation_fft_taper=0.05 ) {
+stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE, eps=1e-9, add.interpolation=FALSE,
+  stmv_range_correlation=0.1, stmv_fft_taper_factor=5 ) {
+
+  if (0) {
+    XYZ = as.data.frame( cbind( RMprecip$x, RMprecip$y, RMprecip$elev ) )
+    names(XYZ) =c( "x","y","z", "elev" )
+    xyz = XYZ[, c("x", "y", "z")]
+    nbreaks=30
+    plotdata=FALSE
+    eps=1e-9
+    add.interpolation=FALSE
+    stmv_range_correlation=0.1
+    stmv_fft_taper_factor=5  # multiplier
+  }
 
   names(xyz) =c("x", "y", "z")
   zmean = mean(xyz$z, na.rm=TRUE)
@@ -12,14 +24,21 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=32, plotdata=FALSE
     nx = ny = floor( nbreaks * 2.35 )
   }
 
+  # system size
   nr = nx
   nc = ny
 
-  x_r = range(xyz$x)
-  x_c = range(xyz$y)
+  rr = diff( range(xyz$x) )  # system length scale
+  rc = diff( range(xyz$y) )
 
-  dr = diff(x_r)/(nr-1)
-  dc = diff(x_c)/(nc-1)
+  # no of elements
+  dr = rr/(nr-1)
+  dc = rc/(nc-1)
+
+  # approx sa associate with each datum
+  sa = rr * rc
+  d_sa = sa/nrow(xyz) # sa associated with each datum
+  d_length = sqrt( d_sa/pi )  # sa = pi*l^2  # characteristic length scale
 
   nr2 = 2 * nr
   nc2 = 2 * nc
@@ -56,11 +75,6 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=32, plotdata=FALSE
   ii = NULL
   jj = NULL
 
-  if (!add.interpolation) {
-    fN = NULL
-    fY = NULL
-  }
-
   # fftshift
   X = rbind( X[((nr+1):nr2), (1:nc2)], X[(1:nr), (1:nc2)] )  # swap_up_down
   X = cbind(X[1:nr2, ((nc+1):nc2)], X[1:nr2, 1:nc])  # swap_left_right
@@ -86,17 +100,17 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=32, plotdata=FALSE
   res$distances = as.numeric( as.character(res$distances))
   res$sv =  zvar * (1-res$ac^2) # each sv are truly orthogonal
 
-  # plot(ac ~ distances, data=res[which(res$distances < median(res$distances)),]   )
-  # plot(sv ~ distances, data=res[which(res$distances < median(res$distances)),]   )
+  # plot(ac ~ distances, data=res   )
+  # plot(sv ~ distances, data=res   )
 
   out = list(res=res )
 
   if (add.interpolation) {
     # interpolated surface
   # constainer for spatial filters
-    uu = which( (res$distances < dmax*0.75 ) & is.finite(res$sv) )  # dmax ~ Nyquist freq
+    uu = which( (res$distances < dmax ) & is.finite(res$sv) )  # dmax ~ Nyquist freq
     fit = try( stmv_variogram_optimization( vx=res$distances[uu], vg=res$sv[uu], plotvgm=plotdata,
-      stmv_internal_scale=dmax*0.5, cor=stmv_range_correlation ))
+      stmv_internal_scale=dmax*0.75, cor=stmv_range_correlation ))
     out$fit = fit
 
     if (any(!is.finite( c(fit$summary$phi, fit$summary$nu) ))) return(out)
@@ -110,14 +124,14 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=32, plotdata=FALSE
     attr(dgrid, "grid.list") = grid.list
     grid.list = NULL
     mC = matrix(0, nrow = nr2, ncol = nc2)
-    mC[nr, nc] = 1
+    mC[nr, nc] = 1  # equal weights
     center = matrix(c((dr * nr), (dc * nc)), nrow = 1, ncol = 2)
-    theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=stmv_range_correlation_fft_taper )
+    # theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=stmv_fft_taper_factor )
+    theta.Taper = d_length * stmv_fft_taper_factor
     sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
       Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
-
     sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
-    sp.covar.kernel = fftwtools::fftw2d(sp.covar) / fftwtools::fftw2d(mC)
+    sp.covar.kernel = fftwtools::fftw2d(sp.covar)  / fftwtools::fftw2d(mC)
     ffY = Re( fftwtools::fftw2d( sp.covar.kernel * fY, inverse = TRUE))[1:nr, 1:nc]
     ffN = Re( fftwtools::fftw2d( sp.covar.kernel * fN, inverse = TRUE))[1:nr, 1:nc]
     Z = ifelse((ffN > eps), (ffY/ffN), NA)
@@ -150,7 +164,7 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=32, plotdata=FALSE
       XYZ$z = residuals( mm)
       XYZ=XYZ[c("x","y","z")]
       x11()
-      oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=32, plotdata=TRUE,  add.interpolation=TRUE, stmv_range_correlation_fft_taper=0.01 )
+      oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=nx, plotdata=TRUE, add.interpolation=TRUE, stmv_fft_taper_factor=3 )
       gr = stmv_variogram( XYZ[, c("x", "y")], XYZ[,"z"], methods="fft", plotdata=TRUE ) # fft/nl elast squares via profile likelihood
     }
 
@@ -159,19 +173,42 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=32, plotdata=FALSE
       XYZ$z = log(XYZ$elev)
       XYZ=XYZ[, c("x","y","z") ]
       x11()
-      oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=32, plotdata=TRUE,  add.interpolation=TRUE, stmv_range_correlation_fft_taper=0.01 )
+      oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=nx, plotdata=TRUE,  add.interpolation=TRUE, stmv_fft_taper_factor=5 )
       gr = stmv_variogram( XYZ[, c("x", "y")], XYZ[,"z"], methods="fft", plotdata=TRUE ) # fft/nl elast squares via profile likelihood
-  }
+   }
 
-    gr = stmv_variogram( XYZ[, c("x", "y")], XYZ[,"z"], methods="geoR", plotdata=TRUE ) # ml via profile likelihood
-    nu = gr$geoR$nu
-    phi = gr$geoR$phi
+    if (0) {
+      str(fields::RMprecip)
+      fit <- smooth.2d( RMprecip$y, x=RMprecip$x, theta=.5)
+      image( fit )
+      points( RMprecip$x, pch=".")
+
+      XYZ = as.data.frame( cbind( RMprecip$x, RMprecip$y, RMprecip$elev ) )
+      names(XYZ) =c( "x","y","z", "elev" )
+      oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=nx, plotdata=TRUE,  add.interpolation=TRUE, stmv_fft_taper_factor=5 )
+      gr = stmv_variogram( XYZ[, c("x", "y")], XYZ[,"z"], methods="fft", plotdata=TRUE ) # fft/nl elast squares via profile likelihood
+
+    }
+
+    variomethod="geoR"
+    variomethod="gstat"
+    variomethod="fft"
+    variomethod="inla"
+
+    gr = stmv_variogram( XYZ[, c("x", "y")], XYZ[,"z"], methods=variomethod, plotdata=TRUE ) # ml via profile likelihood
+    nu = gr[[variomethod]]$nu
+    phi = gr[[variomethod]]$phi
     fit  =  Krig(XYZ[, c("x", "y")], XYZ[,"z"], theta=phi)
     x11(); surface( fit, type="C") # look at the surface
 
     mba.int  =  mba.surf( XYZ, nx, ny, extend=TRUE)$xyz.est
     x11(); surface(mba.int, xaxs="r", yaxs="r")
 
+    str(fields::RMprecip)
+    fit <- smooth.2d( RMprecip$y, x=RMprecip$x, theta=.25)
+    x11()
+    image( fit )
+    points( RMprecip$x, pch=".")
 
   }
 
