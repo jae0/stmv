@@ -632,6 +632,30 @@
     }
 
     # =--------------------
+    if ( DS="load_results" ) {
+      if (ret =="prediction") {
+        fn = file.path( p$stmvSaveDir, "stmv.prediction.mean.rdata" )
+        if (file.exists(fn)) load(fn)
+        return(P)
+      }
 
+      if (ret =="prediction.lb"){
+        fn = file.path( p$stmvSaveDir, "stmv.prediction.lb.rdata" )
+        if (file.exists(fn)) load(fn)
+        return(Pl)
+      }
+
+      if (ret =="prediction.ub") {
+        fn = file.path( p$stmvSaveDir, "stmv.prediction.ub.rdata" )
+        if (file.exists(fn)) load(fn)
+        return(Pu)
+      }
+
+      if (ret =="statistics") {
+        fn = file.path( p$stmvSaveDir, "stmv.statistics.rdata" )
+        if (file.exists(fn)) load(fn)
+        return(stats)
+      }
+    }
 
   }

@@ -55,11 +55,11 @@ p = aegis.bathymetry::bathymetry_parameters(
     invers = function(x) {10^(x - 2500)}
   ), # data range is from -1667 to 5467 m: make all positive valued
   stmv_rsquared_threshold = 0.75, # lower threshold
-  stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
-  stmv_distance_scale = c(10, 20, 30, 40, 50), # km ... approx guess of 95% AC range
+  stmv_distance_statsgrid = 3, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
+  stmv_distance_scale = c(5, 10, 20, 30, 40, 50, 60), # km ... approx guess of 95% AC range
   stmv_distance_prediction_fraction = 4/5, # i.e. 4/5 * 5 = 4 km
   stmv_nmin = 500,  # min number of data points req before attempting to model in a localized space
-  stmv_nmax = 750, # no real upper bound.. just speed
+  stmv_nmax = 600, # no real upper bound.. just speed
   stmv_clusters = list( scale=rep("localhost", scale_ncpus), interpolate=rep("localhost", interpolate_ncpus) )  # ncpus for each runmode
 )
 
@@ -72,15 +72,11 @@ stmv( p=p, runmode=runmode )  # This will take from 40-70 hrs, depending upon sy
 p0 = p  # store in case needed in a debug
 
 
-# bring together stats and predictions and any other required computations: slope and curvature
-# and then regrid/warp as the interpolation process is so expensive, regrid/upscale/downscale based off the above run
-# .. still uses about 30-40 GB as the base layer is "superhighres" ..
-# if parallelizing .. use different servers than local nodes
-bathymetry.db( p=p, DS="complete.redo" ) # finalise at diff resolutions 15 min ..
-bathymetry.db( p=p, DS="baseline.redo" )  # coords of areas of interest ..filtering of areas and or depth to reduce file size, in planar coords only
+predictions = stmv_db( DS="load_results", ret="predictions" )
+statistics  = stmv_db( DS="load_results", ret="statistics" )
+locations   = spatial_grid(p0)
+
+levelplot( predictions ~ locations[,1] + locations[,2], aspect="iso" )
+levelplot( statistics  ~ locations[,1] + locations[,2], aspect="iso" )
 
 
-# a few plots :
-pb = aegis.bathymetry::bathymetry_parameters( project.mode="stmv", spatial.domain="canada.east.highres" )
-bathymetry.figures( p=pb, varnames=c("z", "dZ", "ddZ", "b.ndata", "b.range"), logyvar=TRUE, savetofile="png" )
-bathymetry.figures( p=pb, varnames=c("b.sdTotal", "b.sdSpatial", "b.sdObs"), logyvar=FALSE, savetofile="png" )
