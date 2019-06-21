@@ -632,7 +632,7 @@
     }
 
     # =--------------------
-    if ( DS="load_results" ) {
+    if ( DS=="load_results" ) {
       if (ret =="prediction") {
         fn = file.path( p$stmvSaveDir, "stmv.prediction.mean.rdata" )
         if (file.exists(fn)) load(fn)
