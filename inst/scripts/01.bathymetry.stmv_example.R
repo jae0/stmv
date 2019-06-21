@@ -66,7 +66,7 @@ p = aegis.bathymetry::bathymetry_parameters(
 p$spatial.domain.subareas =NULL
 
 
-# runmode=c( "debug", "globalmodel", "scale", "interpolate", "interpolate_boost", "interpolate_force_complete", "save_completed_data")
+# runmode=c( "globalmodel", "scale", "interpolate", "interpolate_boost", "interpolate_force_complete", "save_completed_data")
 # runmode=c( "interpolate", "interpolate_boost", "save_completed_data")
 stmv( p=p, runmode=runmode )  # This will take from 40-70 hrs, depending upon system
 p0 = p  # store in case needed in a debug

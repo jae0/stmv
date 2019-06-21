@@ -488,9 +488,8 @@
       Sloc_nplat = ceiling( diff( p$corners$plat) / p$stmv_distance_statsgrid)
       Sloc_nplon = ceiling( diff( p$corners$plon) / p$stmv_distance_statsgrid)
 
-      statsvars = c( p$statsvars, "range" )
-      stats = matrix( NaN, ncol=length( statsvars ), nrow=nrow( Ploc) )  # output data .. ff does not handle NA's .. using NaN for now
-      colnames(stats) = statsvars
+      stats = matrix( NaN, ncol=length( p$statsvars )+1, nrow=nrow( Ploc) )  # output data .. ff does not handle NA's .. using NaN for now
+      colnames(stats) = c( p$statsvars, "range" )
 
       for ( i in 1:length( p$statsvars ) ) {
         print(i)
@@ -500,10 +499,13 @@
       }
 
       # estimate range
-      iphi = match( "phi", statsvars )
-      inu  = match( "nu",  statsvars )
-      u = as.image( matern_phi2distance( phi=S[,iphi], nu=S[,inu], cor=p$stmv_range_correlation ), x=Sloc[,], na.rm=TRUE, nx=Sloc_nplon, ny=Sloc_nplat )
-      stats[,i] = as.vector( fields::interp.surface( u, loc=Ploc[] ) ) # linear interpolation
+      iphi = match( "phi", p$statsvars )
+      inu  = match( "nu",  p$statsvars )
+      rang = apply( S[], 1, FUN=function(x) { ifelse( is.finite(x[iphi]*x[inu]), matern_phi2distance( phi=x[iphi], nu=x[inu], cor=p$stmv_range_correlation ), NA)} )
+
+      u = as.image( rang, x=Sloc[,], na.rm=TRUE, nx=Sloc_nplon, ny=Sloc_nplat )
+
+      stats[,(length(p$statsvars)+1)] = as.vector( fields::interp.surface( u, loc=Ploc[] ) ) # linear interpolation
 
       # lattice::levelplot( stats[,1] ~ Ploc[,1]+Ploc[,2])
       boundary = try( stmv_db( p=p, DS="boundary" ) )
