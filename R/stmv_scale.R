@@ -102,12 +102,11 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", ... ) {
     o = try( stmv_variogram(
       xy=Yloc[Yi[U],],
       z=Y[Yi[U],],
-#      methods=p$stmv_variogram_method,
-      methods="inla",
+      methods=p$stmv_variogram_method,
       distance_cutoff=stmv_distance_cur,
       discretized_n = p$stmv_discretized_n,
       nbreaks=p$stmv_variogram_nbreaks,
-      plotdata=T,
+#      plotdata=T,
       range_correlation=p$stmv_range_correlation # ,  plotdata=TRUE
     ) )
 
