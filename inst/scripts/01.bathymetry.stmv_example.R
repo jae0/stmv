@@ -48,7 +48,8 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_lowpass_phi = 0.1,  # note: p$pres = 0.2
   stmv_fft_taper_factor = 5,  # in local smoothing convolutions occur of this correlation scale
   stmv_variogram_method = "fft",
-  stmv_variogram_nbreaks = 32,
+  stmv_variogram_nbreaks = 50,
+  stmv_discretized_n = 100,
   depth.filter = FALSE,  # need data above sea level to get coastline
   stmv_Y_transform =list(
     transf = function(x) {log10(x + 2500)} ,

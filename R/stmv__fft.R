@@ -46,8 +46,11 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   x_r = range(dat[,p$variables$LOCS[1]])
   x_c = range(dat[,p$variables$LOCS[2]])
 
-  nr = floor( diff(x_r)/p$pres ) + 1
-  nc = floor( diff(x_c)/p$pres ) + 1
+  rr = diff(x_r)
+  rc = diff(x_c)
+
+  nr = floor( rr/p$pres ) + 1
+  nc = floor( rc/p$pres ) + 1
 
   # final output grid
   x_locs = expand.grid(
@@ -65,6 +68,12 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
 
   nr2 = 2 * nr
   nc2 = 2 * nc
+
+  # approx sa associated with each datum
+  sa = rr * rc
+  d_sa = sa/nrow(dat) # sa associated with each datum
+  d_length = sqrt( d_sa/pi )  # sa = pi*l^2  # characteristic length scale
+  theta.Taper = d_length * p$stmv_fft_taper_factor
 
   # constainer for spatial filters
   grid.list = list((1:nr2) * dx, (1:nc2) * dy)
@@ -103,7 +112,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   }
 
   if (p$stmv_fft_filter == "matern_tapered") {
-    theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_fft_taper_factor )
+    #theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_fft_taper_factor )
+
     sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
       Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
     sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
@@ -114,7 +124,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   if (p$stmv_fft_filter == "lowpass_matern_tapered") {
     sp.covar.lowpass = stationary.cov( dgrid, center, Covariance="Matern", theta=p$stmv_lowpass_phi, smoothness=p$stmv_lowpass_nu )
     sp.covar.lowpass = as.surface(dgrid, c(sp.covar.lowpass))$z / (nr2*nc2)
-    theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_fft_taper_factor )
+    # theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_fft_taper_factor )
     sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
       Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
     sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
@@ -249,9 +259,10 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     x_r = range(xyz$x)
     x_c = range(xyz$y)
 
-    rez = diff(x_r)/100
-    nr = floor( diff(x_r)/rez ) + 1
-    nc = floor( diff(x_c)/rez ) + 1
+    rez = rr/100
+
+    nr = floor( rr/rez ) + 1
+    nc = floor( rc/rez ) + 1
 
     dx = dy = rez
 
