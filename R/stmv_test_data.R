@@ -86,7 +86,7 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
       return(out)
     }
 
-    discret = 1 # km
+    discret = 0.5 # km
 
     if (is.null(p)) p = stmv_test_data( "aegis.test.paramaters")
 
