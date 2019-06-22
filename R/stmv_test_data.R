@@ -86,14 +86,14 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
       return(out)
     }
 
-    discret = 0.1 # km
+    discret = 1 # km
 
     if (is.null(p)) p = stmv_test_data( "aegis.test.paramaters")
 
     pb = bathymetry_parameters( project.mode="stmv" )
     B = bathymetry.db( p=pb,  DS="stmv.inputs")$input  # this is a subset of "complete" with depth filtered
     B = planar2lonlat( B, proj.type=pb$internal.crs )
-    B = B[,c( "lon", "lat", "z")]
+    # B = B[,c( "lon", "lat", "z")]
     B = B[ which( B$lon > p$corners$lon[1] & B$lon < p$corners$lon[2]  & B$lat > p$corners$lat[1] & B$lat < p$corners$lat[2] ), ]
 
     ps = substrate_parameters( project.mode="stmv" )
@@ -109,7 +109,7 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
     S$lat = NULL
     S$plon = floor(S$plon/discret) * discret
     S$plat = floor(S$plat/discret) * discret
-    dups = duplicates.toremove( paste( S$plon, S$plat) )
+    dups = which(duplicated( paste( S$plon, S$plat) ) )
     if (length(dups) > 0 ) S = S[ -dups , ]
 
     B = lonlat2planar( B, proj.type=p$internal.crs )
@@ -117,7 +117,7 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
     B$lat = NULL
     B$plon = floor(B$plon/discret) * discret
     B$plat = floor(B$plat/discret) * discret
-    dups = duplicates.toremove( paste( B$plon, B$plat) )
+    dups = which( duplicated( paste( B$plon, B$plat) ) )
     if (length(dups) > 0 ) B = B[ -dups , ]
 
     out = merge( B[,c("plon", "plat", "z")], S[, c("plon", "plat", "substrate.grainsize")], by=c("plon", "plat"), all.x=TRUE, all.y=TRUE )
