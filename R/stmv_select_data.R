@@ -24,9 +24,9 @@ stmv_select_data = function( p, Si, localrange ) {
 
     # try to trim
     if ( exists("TIME", p$variables)) {
-      iU = stmv_discretize_coordinates( coo=cbind(Yloc[Yi[U],], Ytime[Yi[U]]), ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )
+      iU = stmv_discretize_coordinates( coo=cbind(Yloc[U,], Ytime[U]), ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )
     } else {
-      iU = stmv_discretize_coordinates( coo=Yloc[Yi[U],], ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )
+      iU = stmv_discretize_coordinates( coo=Yloc[U,], ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )
     }
     ndata = length(iU)
     # print(ndata)
@@ -60,6 +60,6 @@ stmv_select_data = function( p, Si, localrange ) {
   }
   iU = NULL
 
-  return(U)
+  return(Yi[U])
 
 }

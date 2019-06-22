@@ -34,7 +34,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
   Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
 
   Y = stmv_attach( p$storage.backend, p$ptr$Y )
-  Yi = stmv_attach( p$storage.backend, p$ptr$Yi )  # initial indices of good data
 
   if (p$nloccov > 0) Ycov = stmv_attach( p$storage.backend, p$ptr$Ycov )
   if ( exists("TIME", p$variables) ) Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )
@@ -127,14 +126,14 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
     if (vg$flag =="variogram_failure") useglobal =TRUE
     if (useglobal) vg = vg_global
 
-    U = stmv_select_data( p=p, Si=Si, localrange=localrange )
-    if (is.null( U )) next()
+    yi = stmv_select_data( p=p, Si=Si, localrange=localrange )
+    if (is.null( yi )) next()
 
     if ( Sflag[Si] != E[["todo"]] ) {
       if (exists("stmv_rangecheck", p)) {
         if (p$stmv_rangecheck=="paranoid") {
           if ( Sflag[Si] %in% c( E[["variogram_range_limit"]], E[["variogram_failure"]]) ) {
-            U = NULL
+            yi = NULL
             if (debugging) message("Error: stmv_rangecheck paranoid")
             if (runoption == "default" ) next()
           }
@@ -143,33 +142,29 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
     }
 
     # last check
-    ndata = length(U)
+    ndata = length(yi)
     S[, match( "ndata", p$statsvars )] = ndata  # some random sampling makes this potentially vary .. update
 
     if (ndata < p$stmv_nmin) next()
 
     # if here then there is something to do
-    # NOTE:: U are the indices of locally useful data
+    # NOTE:: yi are the indices of locally useful data
     # p$stmv_distance_prediction determines the data entering into local model construction
 
     # prep dependent data
     # reconstruct data for modelling (dat)
     dat = matrix( 1, nrow=ndata, ncol=dat_nc )
-    dat[,iY] = Y[U] # these are residuals if there is a global model
+    dat[,iY] = Y[yi] # these are residuals if there is a global model
     # add a small error term to prevent some errors when duplicate locations exist; localrange offsets to positive values
-    dat[,ilocs] = Yloc[U,] + localrange * runif(2*ndata, -1e-6, 1e-6)
+    dat[,ilocs] = Yloc[yi,] + localrange * runif(2*ndata, -1e-6, 1e-6)
 
-    if (p$nloccov > 0) dat[,icov] = Ycov[U, icov_local] # no need for other dim checks as this is user provided
-    if (exists("TIME", p$variables)) dat[, itime_cov] = as.matrix(stmv_timecovars( vars=ti_cov, ti=Ytime[U,] ) )
+    if (p$nloccov > 0) dat[,icov] = Ycov[yi, icov_local] # no need for other dim checks as this is user provided
+    if (exists("TIME", p$variables)) {
+      dat[, itime_cov] = as.matrix(stmv_timecovars( vars=ti_cov, ti=Ytime[yi,] ) )
+      dat[, p$variables$TIME] = Ytime[yi,] # not sure if this is needed ?...
+    }
     dat = as.data.frame(dat)
     names(dat) = dat_names
-
-    # not sure if this is needed ?...
-    if (p$stmv_local_modelengine %in% c("fft", "tps") ) {
-      if ( exists("TIME", p$variables)) {
-        dat[, p$variables$TIME] = Ytime[U,]
-      }
-    }
 
     # remember that these are crude mean/discretized estimates
     if (debugging) {
@@ -177,7 +172,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
       # check data and statistical locations
       plot( Sloc[,], pch=20, cex=0.5, col="gray")
       points( Yloc[,], pch=20, cex=0.2, col="green")
-      points( Yloc[U,], pch=20, cex=1, col="yellow" )
+      points( Yloc[yi,], pch=20, cex=1, col="yellow" )
       points( Sloc[Si,2] ~ Sloc[Si,1], pch=20, cex=5, col="blue" )
     }
 
@@ -204,10 +199,10 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
       Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
       Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
       Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
-      plot( Yloc[U,2] ~ Yloc[U,1], col="red", pch=".",
-        ylim=range(c(Yloc[U,2], Sloc[Si,2], Ploc[pa$i,2]) ),
-        xlim=range(c(Yloc[U,1], Sloc[Si,1], Ploc[pa$i,1]) ) ) # all data
-      points( Yloc[U,2] ~ Yloc[U,1], col="green" )  # with covars and no other data issues
+      plot( Yloc[yi,2] ~ Yloc[yi,1], col="red", pch=".",
+        ylim=range(c(Yloc[yi,2], Sloc[Si,2], Ploc[pa$i,2]) ),
+        xlim=range(c(Yloc[yi,1], Sloc[Si,1], Ploc[pa$i,1]) ) ) # all data
+      points( Yloc[yi,2] ~ Yloc[yi,1], col="green" )  # with covars and no other data issues
       points( Sloc[Si,2] ~ Sloc[Si,1], col="blue" ) # statistical locations
       # statistical output locations
       grids= spatial_grid(p, DS="planar.coords" )
@@ -217,6 +212,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
       points( Ploc[pa$i,2] ~ Ploc[ pa$i, 1] , col="black", pch=20, cex=0.7 ) # check on pa$i indexing -- prediction locations
     }
 
+    yi = NULL
 
 
     # model and prediction .. outputs are in scale of the link (and not response)

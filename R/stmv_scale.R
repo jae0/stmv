@@ -34,7 +34,6 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", ... ) {
 
   Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
   Y = stmv_attach( p$storage.backend, p$ptr$Y )
-  Yi = stmv_attach( p$storage.backend, p$ptr$Yi )  # initial indices of good data
 
   if (p$nloccov > 0) Ycov = stmv_attach( p$storage.backend, p$ptr$Ycov )
 
@@ -76,10 +75,10 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", ... ) {
     for ( nmin_data in stmv_nmins ) {
       for ( stmv_distance_cur in stmv_distances )  {
       print(stmv_distance_cur)
-        U = NULL
-        U = stmv_select_data( p=p, Si=Si, localrange=stmv_distance_cur )
-        if ( is.null( U ) ) next()
-        ndata = length(U)
+        yi = NULL
+        yi = stmv_select_data( p=p, Si=Si, localrange=stmv_distance_cur )
+        if ( is.null( yi ) ) next()
+        ndata = length(yi)
         if ( ndata >= nmin_data ) break()  # innermost loop
       }
       if ( ndata >= nmin_data ) break() # middle loop
@@ -100,8 +99,8 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", ... ) {
     # spatial first
     o = NULL
     o = try( stmv_variogram(
-      xy=Yloc[Yi[U],],
-      z=Y[Yi[U],],
+      xy=Yloc[yi,],
+      z=Y[yi,],
       methods=p$stmv_variogram_method,
       distance_cutoff=stmv_distance_cur,
       discretized_n = p$stmv_discretized_n,
@@ -109,9 +108,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", ... ) {
 #      plotdata=T,
       range_correlation=p$stmv_range_correlation # ,  plotdata=TRUE
     ) )
-
-
-    U = NULL
+    yi = NULL
 
     if ( is.null(o)) {
       Sflag[Si] = E[["variogram_failure"]]
