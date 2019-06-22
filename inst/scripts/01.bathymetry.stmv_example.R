@@ -33,7 +33,7 @@ DATA$input = DATA$input[, c("plon", "plat", "z")]
 p = aegis.bathymetry::bathymetry_parameters(
   p=p0,
   project.mode="stmv",
-  data_root = tempdir(), # project.datadirectory( "aegis", "bathymetry" ),
+  data_root = file.path(work_root, "test"),
   DATA = DATA,
   spatial.domain = p0$spatial.domain,
   pres_discretization_bathymetry = p0$pres,
@@ -47,7 +47,7 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_lowpass_nu = 0.5,
   stmv_lowpass_phi = 0.1,  # note: p$pres = 0.2
   stmv_fft_taper_factor = 5,  # in local smoothing convolutions occur of this correlation scale
-  stmv_variogram_method = "geoR",
+  stmv_variogram_method = "fft",
   stmv_variogram_nbreaks = 32,
   depth.filter = FALSE,  # need data above sea level to get coastline
   stmv_Y_transform =list(
@@ -75,10 +75,11 @@ predictions = stmv_db( p=p, DS="load_results", ret="predictions" )
 statistics  = stmv_db( p=p, DS="load_results", ret="statistics" )
 locations   = spatial_grid(p )
 
-levelplot( predictions ~ locations[,1] + locations[,2], aspect="iso" )
-levelplot( statistics[,7]  ~ locations[,1] + locations[,2], aspect="iso" ) # nu
-levelplot( statistics[,1]  ~ locations[,1] + locations[,2], aspect="iso" ) #sd total
-levelplot( statistics[,8]  ~ locations[,1] + locations[,2], aspect="iso" ) #range
+
+dev.new(); levelplot( predictions ~ locations[,1] + locations[,2], aspect="iso" )
+dev.new(); levelplot( statistics[,7]  ~ locations[,1] + locations[,2], aspect="iso" ) # nu
+dev.new(); levelplot( statistics[,1]  ~ locations[,1] + locations[,2], aspect="iso" ) #sd total
+dev.new(); levelplot( statistics[,8]  ~ locations[,1] + locations[,2], aspect="iso" ) #range
 
 u = as.image( Z=DATA$input$z, x=DATA$input[, c("plon", "plat")], nx=p$nplons, ny=p$nplats, na.rm=TRUE)
 surface(u)

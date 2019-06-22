@@ -30,13 +30,14 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
     lower =c(0, 0, 0.05 )
     upper =c(vgm_var_max*2, vgm_var_max*2, 3)
 
-    fit = try( optim( par=par, vg=vg, vx=vx, nu=nu, w=w, method="L-BFGS-B", lower=lower, upper=upper, fn=vario_function, control=control  ) )
+    fit = try( optim( par=par, vg=vg, vx=vx, nu=nu, w=w, method="L-BFGS-B", lower=lower, upper=upper, fn=vario_function ) )
 
     if ( !inherits(fit, "try-error")) if ( fit$convergence != 0 ) class(fit) = "try-error"
 
     if ( inherits(fit, "try-error") ) {
       ilast = length(vg)  # last data point .. drop it
-      fit = try( optim( par=par, vg=vg[-ilast], vx=vx[-ilast], nu=nu, w=w[-ilast], method="L-BFGS-B", lower=lower, upper=upper, fn=vario_function, control=list(factr=1e-12, maxit = 500L) ))
+      fit = try( optim( par=par, vg=vg[-ilast], vx=vx[-ilast], nu=nu, w=w[-ilast], method="L-BFGS-B", lower=lower, upper=upper, fn=vario_function,
+        control=list(factr=1e-9, maxit = 500L) ))
     }
 
     if ( !inherits(fit, "try-error")) if ( fit$convergence != 0 ) class(fit) = "try-error"
@@ -44,7 +45,8 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
     if ( inherits(fit, "try-error") ) {
       par = c(tau.sq=vgm_var_max*0.25, sigma.sq=vgm_var_max*0.25, phi=0.5)
       ilast = c(length(vg)-1, length(vg))  # last two data point .. drop it
-      fit = try( optim( par=par, vvg=vg[-ilast], vx=vx[-ilast], nu=nu, w=w[-ilast], method="L-BFGS-B", lower=lower, upper=upper, fn=vario_function, control=list(factr=1e-12, maxit = 500L) ))
+      fit = try( optim( par=par, vvg=vg[-ilast], vx=vx[-ilast], nu=nu, w=w[-ilast], method="L-BFGS-B", lower=lower, upper=upper, fn=vario_function,
+        control=list(factr=1e-9, maxit = 1000L) ))
       if ( fit$par[["phi"]] < lower[3] | fit$par[["phi"]] > upper[3] ) class(fit) = "try-error"    # give up
     }
 
@@ -61,24 +63,35 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
     lower =c(0, 0, 0.05, 0.2 )
     upper =c(vgm_var_max*2, vgm_var_max*2, 2.5, 5)
 
-    fit = try( optim( par=par, vg=vg, vx=vx, w=w, method="L-BFGS-B", lower=lower, upper=upper, fn=vario_function, control=control  ))
+    # fit = try( optim( par=fit$par, vg=vg, vx=vx, w=w, method="L-BFGS-B", lower=lower, upper=upper, fn=vario_function, control=control ))
+    fit = try( optim( par=par, vg=vg, vx=vx, w=w, method="Nelder-Mead", fn=vario_function))
 
     if ( !inherits(fit, "try-error")) if ( fit$convergence != 0 ) class(fit) = "try-error"
 
     if ( inherits(fit, "try-error")) {
       ilast = length(vg)  # last data point .. drop it
-      fit = try( optim( par=par, vg=vg[-ilast], vx=vx[-ilast], w=w[-ilast], method="L-BFGS-B",  lower=lower, upper=upper, fn=vario_function, control=list(factr=1e-12, maxit = 500L)  ) )
+      # fit = try( optim( par=par, vg=vg[-ilast], vx=vx[-ilast], w=w[-ilast], method="L-BFGS-B",  lower=lower, upper=upper, fn=vario_function,
+      #   control=list(factr=1e-9, maxit = 500L)  ) )
+      fit = try( optim( par=par, vg=vg[-ilast], vx=vx[-ilast], w=w[-ilast], method="Nelder-Mead", fn=vario_function))
+      if ( !inherits(fit, "try-error"))  if ( fit$convergence != 0 ) class(fit) = "try-error"
+      if (exist( "par", fit)) {
+        if ( fit$par[["phi"]] < lower[3] | fit$par[["phi"]] > upper[3] ) class(fit) = "try-error"    # give up
+        if ( fit$par[["nu"]]  < lower[4] | fit$par[["nu"]]  > upper[4] ) class(fit) = "try-error"    # give up
+      }
     }
 
-    if ( !inherits(fit, "try-error")) if ( fit$convergence != 0 ) class(fit) = "try-error"
 
     if ( inherits(fit, "try-error") ) {
       par = c(tau.sq=vgm_var_max*0.25, sigma.sq=vgm_var_max*0.25, phi=0.25, nu=0.25)
       ilast = c(length(vg)-1, length(vg))  # last two data point .. drop it
-      fit = try( optim( par=par, vg=vg[-ilast], vx=vx[-ilast], w=w[-ilast], method="L-BFGS-B",  lower=lower, upper=upper,  fn=vario_function, control=list(factr=1e-12, maxit = 500L)  ))
-      if ( fit$convergence != 0 ) class(fit) = "try-error"    # give up
-      if ( fit$par[["phi"]] < lower[3] | fit$par[["phi"]] > upper[3] ) class(fit) = "try-error"    # give up
-      if ( fit$par[["nu"]]  < lower[4] | fit$par[["nu"]]  > upper[4] ) class(fit) = "try-error"    # give up
+      # fit = try( optim( par=par, vg=vg[-ilast], vx=vx[-ilast], w=w[-ilast], method="L-BFGS-B",  lower=lower, upper=upper, fn=vario_function,
+      #   control=list(factr=1e-9, maxit = 1000L)  ))
+      fit = try( optim( par=par, vg=vg[-ilast], vx=vx[-ilast], w=w[-ilast], method="BFGS", fn=vario_function))
+      if ( !inherits(fit, "try-error"))  if ( fit$convergence != 0 ) class(fit) = "try-error"
+      if (exist( "par", fit)) {
+        if ( fit$par[["phi"]] < lower[3] | fit$par[["phi"]] > upper[3] ) class(fit) = "try-error"    # give up
+        if ( fit$par[["nu"]]  < lower[4] | fit$par[["nu"]]  > upper[4] ) class(fit) = "try-error"    # give up
+      }
     }
 
   }

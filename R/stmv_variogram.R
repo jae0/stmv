@@ -359,7 +359,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
     names(XYZ) =  c("plon", "plat", "z" ) # arbitrary
 
     vario = stmv_variogram_fft( xyz=XYZ, nx=discretized_n, ny=discretized_n, nbreaks=nbreaks )  # empirical variogram by fftw2d
-    uu = which( (vario$res$distances < 0.95*max(vario$res$distances) ) & is.finite(vario$res$sv) )
+    uu = which( (vario$res$distances < 0.9*max(vario$res$distances) ) & is.finite(vario$res$sv) )
     fit = try( stmv_variogram_optimization( vx=vario$res$distances[uu], vg=vario$res$sv[uu], plotvgm=plotdata, stmv_internal_scale=out$stmv_internal_scale, cor=range_correlation  ))
 
     if ( !inherits(fit, "try-error") ) {
@@ -367,25 +367,24 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
       if (exists("phi", out$fft)) {
         if (is.finite(out$fft$phi)) {
           out$fft$phi_ok = ifelse( out$fft$phi < out$distance_cutoff*0.99, TRUE, FALSE )
-          if (exists("phi_ok", out$fft)) if( out$fft$phi_ok ) return(out)
         }
       }
     }
 
-      if (plotdata) {
-        xlim= c(0, fit$summary$vgm_dist_max*1.1)
-        ylim= c(0, fit$summary$vgm_var_max*1.1)
-        plot( fit$summary$vx, fit$summary$vg, col="green", xlim=xlim, ylim=ylim )
-        ds = seq( 0, fit$summary$vgm_dist_max, length.out=100 )
-        ac = fit$summary$varObs + fit$summary$varSpatial*(1 - stmv_matern( ds, fit$summary$phi, fit$summary$nu ) )
-        lines( ds, ac, col="orange" )
-        abline( h=0, lwd=1, col="lightgrey" )
-        abline( v=0 ,lwd=1, col="lightgrey" )
-        abline( h=fit$summary$varObs, lty="dashed", col="grey" )
-        abline( h=fit$summary$varObs + fit$summary$varSpatial, lty="dashed", col="grey" )
-        localrange = matern_phi2distance( phi=fit$summary$phi, nu=fit$summary$nu, cor=range_correlation )
-        abline( v=localrange, lty="dashed", col="grey")
-      }
+    if (plotdata) {
+      xlim= c(0, fit$summary$vgm_dist_max*1.1)
+      ylim= c(0, fit$summary$vgm_var_max*1.1)
+      plot( fit$summary$vx, fit$summary$vg, col="green", xlim=xlim, ylim=ylim )
+      ds = seq( 0, fit$summary$vgm_dist_max, length.out=100 )
+      ac = fit$summary$varObs + fit$summary$varSpatial*(1 - stmv_matern( ds, fit$summary$phi, fit$summary$nu ) )
+      lines( ds, ac, col="orange" )
+      abline( h=0, lwd=1, col="lightgrey" )
+      abline( v=0 ,lwd=1, col="lightgrey" )
+      abline( h=fit$summary$varObs, lty="dashed", col="grey" )
+      abline( h=fit$summary$varObs + fit$summary$varSpatial, lty="dashed", col="grey" )
+      localrange = matern_phi2distance( phi=fit$summary$phi, nu=fit$summary$nu, cor=range_correlation )
+      abline( v=localrange, lty="dashed", col="grey")
+    }
 
     return(out)
   }
@@ -415,7 +414,6 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
       if (exists("phi", out$optim)) {
         if (is.finite(out$optim$phi)) {
           out$optim$phi_ok = ifelse( out$optim$phi < out$distance_cutoff*0.99, TRUE, FALSE )
-          if (exists("phi_ok", out$optim)) if( out$optim$phi_ok ) return(out)
         }
       }
     }
