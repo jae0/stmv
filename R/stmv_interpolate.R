@@ -93,7 +93,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
   if ( global_range < distance_limits[1] | global_range > distance_limits[2] ) global_range = distance_limits[2]
 
   i_ndata = match( "ndata", p$statsvars )
-  # i_rsquared = match("rsquared", p$statsvars )
+  i_rsquared = match("rsquared", p$statsvars )
   i_nu = match("nu",   p$statsvars)
   i_phi = match("phi",   p$statsvars)
   i_sdSpatial = match("sdSpatial",   p$statsvars)
@@ -309,7 +309,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
 
     # update to rsquared and "range" in stats
     if ( exists("rsquared", res$stmv_stats ) ) {
-      if (is.finite(res$stmv_stats$rsquared)) S[Si, rsquared_index] = res$stmv_stats$rsquared
+      if (is.finite(res$stmv_stats$rsquared)) S[Si, i_rsquared] = res$stmv_stats$rsquared
     }
     res$stmv_stats = NULL # reduce memory usage
 

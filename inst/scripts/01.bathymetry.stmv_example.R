@@ -42,7 +42,7 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_global_modelengine = "none",  # too much data to use glm as an entry into link space ... use a direct transformation
   stmv_global_modelformula = "none",  # only marginally useful .. consider removing it and use "none",
   stmv_global_family ="none",
-  stmv_local_modelengine="fft",
+  stmv_local_modelengine="tps",
   stmv_fft_filter = "matern_tapered", #  act as a low pass filter first before matern .. depth has enough data for this. Otherwise, use:
   stmv_lowpass_nu = 0.5,
   stmv_lowpass_phi = 0.1,  # note: p$pres = 0.2
@@ -61,7 +61,7 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
   stmv_distance_scale = c(5, 10, 20, 30, 40, 50, 60), # km ... approx guess of 95% AC range
   stmv_distance_prediction_fraction = 4/5, # i.e. 4/5 * 5 = 4 km
-  stmv_nmin = 500,  # min number of data points req before attempting to model in a localized space
+  stmv_nmin = 250,  # min number of data points req before attempting to model in a localized space
   stmv_nmax = 1000, # no real upper bound.. just speed
   stmv_clusters = list( scale=rep("localhost", scale_ncpus), interpolate=rep("localhost", interpolate_ncpus) )  # ncpus for each runmode
 )
@@ -72,6 +72,8 @@ p$spatial.domain.subareas =NULL
 # runmode=c( "globalmodel", "scale", "interpolate", "interpolate_boost", "interpolate_force_complete", "save_completed_data")
 # runmode=c( "interpolate", "interpolate_boost", "save_completed_data")
 runmode=c( "globalmodel", "scale", "interpolate", "save_completed_data")
+runmode=c( "globalmodel", "interpolate", "save_completed_data")
+
 stmv( p=p, runmode=runmode )  # This will take from 40-70 hrs, depending upon system
 
 
