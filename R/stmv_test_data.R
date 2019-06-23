@@ -149,13 +149,13 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
     out$tiyr = lubridate::decimal_date ( out$date )
 
     # globally remove all unrealistic data
-    keep = which( out$t >= -3 & out$t <= 25 ) # hard limits
-    if (length(keep) > 0 ) out = out[ keep, ]
+    tokeep = which( out$t >= -3 & out$t <= 25 ) # hard limits
+    if (length(tokeep) > 0 ) out = out[ tokeep, ]
     TR = quantile(out$t, probs=c(0.0005, 0.9995), na.rm=TRUE ) # this was -1.7, 21.8 in 2015
-    keep = which( out$t >=  TR[1] & out$t <=  TR[2] )
-    if (length(keep) > 0 ) out = out[ keep, ]
-    keep = which( out$z >=  2 ) # ignore very shallow areas ..
-    if (length(keep) > 0 ) out = out[ keep, ]
+    tokeep = which( out$t >=  TR[1] & out$t <=  TR[2] )
+    if (length(tokeep) > 0 ) out = out[ tokeep, ]
+    tokeep = which( out$z >=  2 ) # ignore very shallow areas ..
+    if (length(tokeep) > 0 ) out = out[ tokeep, ]
 
     out = out[, c("lon", "lat", "t", "z", "date", "tiyr")]
     save(out, file=fn, compress=TRUE)

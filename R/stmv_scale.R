@@ -55,7 +55,8 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", ... ) {
   }
   logpoints  = ip[ floor( seq( from=10, to=(nip-10), length.out=nlogs ) ) ]
 
-  stmv_nmins = sort( unique( c(1, p$stmv_nmin_downsize_factor) * p$stmv_nmin ), decreasing=TRUE )  # largest first
+  stmv_ntarget = sort( unique( c(1, p$stmv_nmin_downsize_factor) * p$stmv_nmax ), decreasing=TRUE )  # largest first
+  stmv_ntarget = stmv_ntarget[ stmv_ntarget >=  p$stmv_nmin ]
   stmv_nmax = p$stmv_nmax
 
   stmv_distances = sort( unique( p$stmv_distance_scale ), decreasing=FALSE ) # smallest first
@@ -72,16 +73,16 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", ... ) {
     # find data nearest Sloc[Si,] and with sufficient data
     ndata = 0
 
-    for ( nmin_data in stmv_nmins ) {
+    for ( ntarget in stmv_ntarget ) {
       for ( stmv_distance_cur in stmv_distances )  {
-      print(stmv_distance_cur)
+        print(stmv_distance_cur)
         yi = NULL
         yi = stmv_select_data( p=p, Si=Si, localrange=stmv_distance_cur )
         if ( is.null( yi ) ) next()
         ndata = length(yi)
-        if ( ndata >= nmin_data ) break()  # innermost loop
+        if ( ndata >= ntarget ) break()  # innermost loop
       }
-      if ( ndata >= nmin_data ) break() # middle loop
+      if ( ndata >= ntarget ) break() # middle loop
     }
 
     if (ndata < p$stmv_nmin ) {
@@ -134,7 +135,6 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", ... ) {
       sdTotal =sqrt( o$varZ),
       sdSpatial = sqrt(om$varSpatial) ,
       sdObs = sqrt(om$varObs),
-      range = om$range,
       phi = om$phi,
       nu = om$nu,
       ndata=ndata

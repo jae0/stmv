@@ -32,8 +32,6 @@ stmv__mba = function( p=NULL, dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) {
   origin=c(x_r[1], x_c[1])
   res=c(p$pres, p$pres)
 
-  zz = matrix(1:(nr*nc), nrow = nr, ncol = nc)
-
   for ( ti in 1:p$nt ) {
 
     if ( exists("TIME", p$variables) ) {
@@ -59,16 +57,12 @@ stmv__mba = function( p=NULL, dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) {
     Z = mba.surf(dat[xi, c(p$variables$LOCS, p$variables$Y)], no.X=nr, no.Y=nc, extend=TRUE)$xyz.est$z
 
     # bounds check: make sure predictions exist
-    Z_i = array_map( "xy->2", coords=pa[pa_i,p$variables$LOCS], origin=origin, res=res )
-    Z_i_test = which( Z_i[,1]<1 | Z_i[,2]<1  | Z_i[,1] > nr | Z_i[,2] > nc )
+    Z_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=res )
+    tokeep = which( Z_i[,1] >= 1 & Z_i[,2] >= 1  & Z_i[,1] <= nr & Z_i[,2] <= nc )
+    if (length(tokeep) < 1) next()
+    Z_i = Z_i[tokeep,]
 
-    if (length(Z_i_test) > 0) {
-      keep = zz[ Z_i[-Z_i_test,] ]
-      if (length(keep) > 0 ) pa$mean[pa_i[keep]] = Z[keep]
-      keep = NULL
-    } else {
-      pa$mean[pa_i] = Z[Z_i]
-    }
+    pa$mean[pa_i[tokeep]] = Z[Z_i]
 
     # pa$sd[pa_i] = NA  ## fix as NA
     Z = Z_i = Z_i_test = NULL

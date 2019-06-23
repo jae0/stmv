@@ -161,7 +161,6 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   origin = c(x_r[1], x_c[1])
   res = c(dx, dy)
 
-  zz = matrix(1:(nr*nc), nrow = nr, ncol = nc)
   mY = matrix(0, nrow = nr2, ncol = nc2)
   mN = matrix(0, nrow = nr2, ncol = nc2)
 
@@ -178,6 +177,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
       xi   = 1:nrow(dat) # all data as p$nt==1
       pa_i = 1:nrow(pa)
     }
+    # bounds check: make sure predictions exist
 
     u = as.image(
       dat[xi, p$variables$Y],
@@ -201,24 +201,19 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     Z = ifelse((fN > tol), (fY/fN), NA)
     fY = fN = NULL
 
-    # bounds check: make sure predictions exist
-    Z_i = array_map( "xy->2", coords=pa[pa_i,p$variables$LOCS], origin=origin, res=res )
-    Z_i_test = which( Z_i[,1]<1 | Z_i[,2]<1  | Z_i[,1] > nr | Z_i[,2] > nc )
-    if (length(Z_i_test) > 0) {
-      keep = zz[ Z_i[-Z_i_test,] ]
-      if ( length(keep) > 0) pa$mean[pa_i[keep]] = Z[keep]
-      keep = NULL
-    } else {
-      pa$mean[pa_i] = Z[Z_i]
-    }
+    Z_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=res )
+    tokeep = which( Z_i[,1] >= 1 & Z_i[,2] >= 1  & Z_i[,1] <= nr & Z_i[,2] <= nc )
+    if (length(tokeep) < 1) next()
+    Z_i = Z_i[tokeep,]
 
-    # pa$sd[pa_i] = NA  ## fix as NA
+    pa$mean[pa_i[tokeep]] = Z[Z_i]
+      # pa$sd[pa_i] = NA  ## fix as NA
     Z = Z_i = Z_i_test = NULL
   }
 
   stmv_stats = list( sdTotal=sdTotal, rsquared=NA, ndata=nrow(dat) ) # must be same order as p$statsvars
 
-  # lattice::levelplot( mean ~ plon + plat, data=pa, col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
+  # lattice::levelplot( mean ~ plon + plat, data=pa, col.regions=heat.colors(100), scale=list(draw=TRUE) , aspect="iso" )
 
   return( list( predictions=pa, stmv_stats=stmv_stats ) )
 
@@ -363,7 +358,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
         # a vector with the amount of frequencies k in the signal (X.k)
         N    =  length(ts)
         i    =  complex(real = 0, imaginary = 1)
-        x.n  =  rep(0,N)           # create vector to keep the trajectory
+        x.n  =  rep(0,N)           # create vector to tokeep the trajectory
         ks   =  0:(length(X.k)-1)
         for(n in 0:(N-1)) {       # compute each time point x_n based on freqs X.k
           x.n[n+1]  =  sum(X.k * exp(i*2*pi*ks*n/N)) / N

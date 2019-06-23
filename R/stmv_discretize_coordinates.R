@@ -71,7 +71,7 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=N
         ressum = sum(res$n, na.rm=TRUE)
 
         invcount = 1/res$n * ntarget / ressum  # proportion to remove to make each cell equal in weight
-        keep = NULL
+        tokeep = NULL
         for (o in 1:nrow(res)) {
           oo = which( coo[,1] == res[o,1]  )
           noo = length(oo)
@@ -79,16 +79,16 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=N
             okeep = max(1, floor(invcount[o] * noo))
             if (okeep >= 1) {
               ss = oo[ .Internal( sample( noo, okeep, replace=FALSE, prob=NULL)) ]
-              keep = c(keep, icoo[ss] )
+              tokeep = c(tokeep, icoo[ss] )
             }
           } else {
-            keep = c(keep, icoo[oo] )
+            tokeep = c(tokeep, icoo[oo] )
           }
         }
-        nk = length(keep)
-        if (nk > ntarget) keep = keep[ .Internal( sample( nk, ntarget, replace=FALSE, prob=NULL)) ]
+        nk = length(tokeep)
+        if (nk > ntarget) tokeep = tokeep[ .Internal( sample( nk, ntarget, replace=FALSE, prob=NULL)) ]
 
-        return( keep )
+        return( tokeep )
       }
 
     }
@@ -138,7 +138,7 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=N
       ressum = sum(res$n, na.rm=TRUE)
 
       invcount = 1/res$n * ntarget / ressum  # proportion to remove to make each cell equal in weight
-      keep = NULL
+      tokeep = NULL
       for (o in 1:nrow(res)) {
         oo = which( coo[,1] == res[o,1] & coo[,2] == res[o,2] )
         noo = length(oo)
@@ -146,16 +146,16 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=N
           okeep = max(1, floor(invcount[o] * noo))
           if (okeep >= 1) {
             ss = oo[ .Internal( sample( noo, okeep, replace=FALSE, prob=NULL)) ]
-            keep = c(keep, icoo[ss] )
+            tokeep = c(tokeep, icoo[ss] )
           }
         } else {
-          keep = c(keep, icoo[oo] )
+          tokeep = c(tokeep, icoo[oo] )
         }
       }
-      nk = length(keep)
-      if (nk > ntarget) keep = keep[ .Internal( sample( nk, ntarget, replace=FALSE, prob=NULL)) ]
+      nk = length(tokeep)
+      if (nk > ntarget) tokeep = tokeep[ .Internal( sample( nk, ntarget, replace=FALSE, prob=NULL)) ]
 
-      return( keep )
+      return( tokeep )
     }
 
   }
@@ -208,7 +208,7 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=N
         ressum = sum(res$n, na.rm=TRUE)
 
         invcount = 1/res$n * ntarget / ressum  # proportion to remove to make each cell equal in weight
-        keep = NULL
+        tokeep = NULL
         for (o in 1:nrow(res)) {
           oo = which( coo[,1] == res[o,1] & coo[,2] == res[o,2] & coo[,3] == res[o,3] )
           noo = length(oo)
@@ -216,16 +216,16 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=N
             okeep = max(1, floor(invcount[o] * noo))
             if (okeep >= 1) {
               ss = oo[ .Internal( sample( noo, okeep, replace=FALSE, prob=NULL)) ]
-              keep = c(keep, icoo[ss] )
+              tokeep = c(tokeep, icoo[ss] )
             }
           } else {
-            keep = c(keep, icoo[oo] )
+            tokeep = c(tokeep, icoo[oo] )
           }
         }
-        nk = length(keep)
-        if (nk > ntarget) keep = keep[ .Internal( sample( nk, ntarget, replace=FALSE, prob=NULL)) ]
+        nk = length(tokeep)
+        if (nk > ntarget) tokeep = tokeep[ .Internal( sample( nk, ntarget, replace=FALSE, prob=NULL)) ]
 
-        return( keep )
+        return( tokeep )
       }
     }
 

@@ -360,7 +360,8 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
 
     vario = stmv_variogram_fft( xyz=XYZ, nx=discretized_n, ny=discretized_n, nbreaks=nbreaks )  # empirical variogram by fftw2d
     uu = which( (vario$res$distances < 0.9*max(vario$res$distances) ) & is.finite(vario$res$sv) )
-    fit = try( stmv_variogram_optimization( vx=vario$res$distances[uu], vg=vario$res$sv[uu], plotvgm=plotdata, stmv_internal_scale=out$stmv_internal_scale, cor=range_correlation  ))
+    fit = try( stmv_variogram_optimization( vx=vario$res$distances[uu], vg=vario$res$sv[uu], plotvgm=plotdata,
+      stmv_internal_scale=out$stmv_internal_scale, cor=range_correlation  ))
 
     if ( !inherits(fit, "try-error") ) {
       out$fft = fit$summary

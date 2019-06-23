@@ -14,19 +14,19 @@ stmv_predictionarea = function(p, sloc, windowsize.half ) {
   pa = data.frame( iplon = rep.int(iwplon, pa_w_n) ,
                    iplat = rep.int(iwplat, rep.int(pa_w_n, pa_w_n)) )
 
-  bad = which( {pa$iplon < 1 & pa$iplon > p$nplons} | {pa$iplat < 1 & pa$iplat > p$nplats} )
-  if (length(bad) > 0 ) pa = pa[-bad,]
-  if (nrow(pa) < 5) return(NULL)
+  tokeep = which( pa$iplon >= 1 & pa$iplon <= p$nplons & pa$iplat >= 1 & pa$iplat <= p$nplats )
+  if (length(tokeep) < 5 ) return(NULL)
+  pa = pa[tokeep,]
 
   Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
   ploc_ids = array_map( "xy->1", Ploc[], gridparams=p$gridparams )
 
   pa$i = match( array_map( "2->1", pa[, c("iplon", "iplat")], gridparams=p$gridparams ), ploc_ids )
 
-  bad = which( !is.finite(pa$i) )
-  if (length(bad) > 0 ) pa = pa[-bad,]
+  tokeep = which( is.finite(pa$i) )
+  if (length(tokeep) < 5 ) return(NULL)
+  pa = pa[tokeep,]
   pa_n = nrow(pa)
-  if ( pa_n < 5) return(NULL)
 
   pa$plon = Ploc[ pa$i, 1 ]
   pa$plat = Ploc[ pa$i, 2 ]

@@ -931,9 +931,9 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
     Z_i_test = which( Z_i[,1]<1 | Z_i[,2]<1  | Z_i[,1] > nr | Z_i[,2] > nc )
 
     if (length(Z_i_test) > 0) {
-      keep = zz[ Z_i[-Z_i_test,] ]
-      if ( length(keep) > 0) pa$mean[pa_i[keep]] = Z[keep]
-      keep = NULL
+      tokeep = zz[ Z_i[-Z_i_test,] ]
+      if ( length(tokeep) > 0) pa$mean[pa_i[tokeep]] = Z[tokeep]
+      tokeep = NULL
     } else {
       pa$mean[pa_i] = Z[Z_i]
     }

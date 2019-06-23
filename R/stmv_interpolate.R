@@ -79,24 +79,25 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
     savepoints = sample(logpoints, nsavepoints)
   }
 
-## drange = max( min( max(p$stmv_distance_scale )),  min(p$pres, p$stmv_distance_scale ))
-
-  # global estimates
-  vg_global = list(
-    nu = median( S[, match("nu", p$statsvars)], na.rm=TRUE ),
-    varObs = median( S[, match("varObs", p$statsvars)], na.rm=TRUE ),
-    varSpatial = median( S[, match("varSpatial", p$statsvars)], na.rm=TRUE ),
-    phi = median( S[, match("phi", p$statsvars)], na.rm=TRUE )
-  )
-
-  if( vg_global$nu < 0.25 | vg_global$nu > 4) vg_global$nu = 0.5
-
-  ndata_index = match( "ndata", p$statsvars )
-  rsquared_index = match("rsquared", p$statsvars )
 
   if (runoption=="default") local_corel = p$stmv_range_correlation
   if (runoption=="boostdata") local_corel = p$stmv_range_correlation_boostdata
 
+## drange = max( min( max(p$stmv_distance_scale )),  min(p$pres, p$stmv_distance_scale ))
+      # global estimates
+  global_nu = median( S[, match("nu", p$statsvars)], na.rm=TRUE )
+  if ( global_nu < 0.01 | global_nu > 5) global_nu = 0.5
+  global_phi = median( S[, match("phi", p$statsvars)], na.rm=TRUE )
+  global_range = matern_phi2distance( phi=global_phi, nu=global_nu, cor=local_corel )
+  distance_limits = range( c(p$pres*3,  p$stmv_distance_scale ) )   # for range estimate
+  if ( global_range < distance_limits[1] | global_range > distance_limits[2] ) global_range = distance_limits[2]
+
+  i_ndata = match( "ndata", p$statsvars )
+  # i_rsquared = match("rsquared", p$statsvars )
+  i_nu = match("nu",   p$statsvars)
+  i_phi = match("phi",   p$statsvars)
+  i_sdSpatial = match("sdSpatial",   p$statsvars)
+  i_sdObs = match("sdObs",   p$statsvars)
 
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
@@ -108,44 +109,77 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
     if (debugging) print( paste("index =", iip, ";  Si = ", Si ) )
     if ( Sflag[Si] == E[["complete"]] ) next()
 
-    vg = stmv_scale_filter( p=p, Si=Si )
-    if (exists("stmv_rangecheck", p)) {
-      if (p$stmv_rangecheck=="paranoid") {
-        if ( vg$flag %in% c("variogram_range_limit", "variogram_failure") ) {
-          Sflag[Si] = E[[vg$flag]]
-          if (runoption == "default" ) next()
-        }
+    nu    = S[Si, i_nu]
+    phi   = S[Si, i_phi]
+
+    ii = NULL
+    ii = which(
+      {abs( Sloc[Si,1] - Sloc[,1] ) <= distance_limits[2]} &
+      {abs( Sloc[Si,2] - Sloc[,2] ) <= distance_limits[2]}
+    )
+
+    # nu checks
+    if ( !is.finite(nu) ) {
+      Sflag[Si] %in% E[["variogram_failure"]]
+    } else {
+      if ( (nu < 0.01 ) | (nu > 5) ) {
+        Sflag[Si] %in% E[["variogram_range_limit"]]
       }
     }
+    if ( !is.finite(nu) | (nu < 0.01) | (nu > 5) ) if (length(ii) > 0) nu =  median( S[ii, match("nu", p$statsvars)], na.rm=TRUE )
+    if ( !is.finite(nu) | (nu < 0.01) | (nu > 5) ) nu = global_nu
+    if ( !is.finite(nu) | (nu < 0.01) | (nu > 5) ) nu = 0.5
 
-    localrange = matern_phi2distance( phi=vg$phi, nu=vg$nu, cor=local_corel )
+    # phi checks
+    phi_lim = distance_limits / sqrt(8*nu)  # inla-approximation
+    if ( !is.finite(phi) ) {
+      Sflag[Si] %in% E[["variogram_failure"]]
+    } else {
+      if ( (phi < phi_lim[1]) | (phi > phi_lim[2]) ) {
+        Sflag[Si] %in% E[["variogram_range_limit"]]
+      }
+    }
+    if ( !is.finite(phi) | (phi < phi_lim[1]) | (phi > phi_lim[2]) )  if (length(ii) > 0)  phi =  median( S[ii, match("phi", p$statsvars)], na.rm=TRUE )
+    if ( !is.finite(phi) | (phi < phi_lim[1]) | (phi > phi_lim[2]) )  phi = global_phi
+    if ( !is.finite(phi) | (phi < phi_lim[1]) | (phi > phi_lim[2]) )  phi = phi_lim[2]
 
-    useglobal = FALSE
-    if (!is.finite( localrange ) ) useglobal =TRUE
-    if (!is.finite( vg$ndata ) ) useglobal =TRUE
-    if (vg$flag =="variogram_failure") useglobal =TRUE
-    if (useglobal) vg = vg_global
 
-    yi = stmv_select_data( p=p, Si=Si, localrange=localrange )
-    if (is.null( yi )) next()
+    # range checks
+    localrange =  matern_phi2distance( phi=phi, nu=nu, cor=local_corel )
+    if ( !is.finite(localrange) )  {
+      Sflag[Si] %in% E[["variogram_failure"]]
+    } else {
+      if ( (localrange < distance_limits[1] ) | (localrange > distance_limits[2]) )  {
+        Sflag[Si] %in% E[["variogram_range_limit"]]
+      }
+    }
+    if ( !is.finite(localrange) | (localrange < distance_limits[1] ) | (localrange > distance_limits[2]) ) if (length(ii) > 0) localrange = median( S[ii, match("range", p$statsvars)], na.rm=TRUE )
+    if ( !is.finite(localrange) | (localrange < distance_limits[1] ) | (localrange > distance_limits[2]) ) localrange = global_range
+    if ( !is.finite(localrange) | (localrange < distance_limits[1] ) | (localrange > distance_limits[2]) ) localrange = distance_limits[2]
+
+    ii = NULL
 
     if ( Sflag[Si] != E[["todo"]] ) {
       if (exists("stmv_rangecheck", p)) {
         if (p$stmv_rangecheck=="paranoid") {
           if ( Sflag[Si] %in% c( E[["variogram_range_limit"]], E[["variogram_failure"]]) ) {
-            yi = NULL
             if (debugging) message("Error: stmv_rangecheck paranoid")
-            if (runoption == "default" ) next()
+            if (runoption == "default" )  next()
           }
         }
       }
     }
 
-    # last check
+    # last check .. ndata can change due to random sampling
+    yi = stmv_select_data( p=p, Si=Si, localrange=localrange )
+    if (is.null( yi )) next()
     ndata = length(yi)
-    S[, match( "ndata", p$statsvars )] = ndata  # some random sampling makes this potentially vary .. update
+    S[Si, i_ndata] = ndata
 
-    if (ndata < p$stmv_nmin) next()
+    if (ndata < p$stmv_nmin) {
+      yi=NULL;
+      next()
+    }
 
     # if here then there is something to do
     # NOTE:: yi are the indices of locally useful data
@@ -208,7 +242,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
       grids= spatial_grid(p, DS="planar.coords" )
       points( grids$plat[floor( (Sloc[Si,2]-p$origin[2])/p$pres) + 1]
             ~ grids$plon[floor( (Sloc[Si,1]-p$origin[1])/p$pres) + 1] , col="purple", pch=25, cex=5 )
-      points( Ploc[pa$i,2] ~ Ploc[ pa$i, 1] , col="black", pch=20, cex=0.7 ) # check on pa$i indexing -- prediction locations
+      points( Ploc[pa$i,2] ~ Ploc[ pa$i, 1] , col="black", pch=6, cex=0.7 ) # check on pa$i indexing -- prediction locations
     }
 
     yi = NULL
@@ -223,12 +257,12 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
         p=p,
         dat=dat,
         pa=pa,
-        nu=vg$nu,
-        phi=vg$phi,
-        varObs=vg$varObs,
-        varSpatial=vg$varSpatial,
-        sloc=Sloc[Si,],
-        distance=localrange
+        nu=nu,
+        phi=phi,
+        varObs = S[Si, i_sdObs]^2,
+        varSpatial = S[Si, i_sdSpatial]^2,
+        sloc = Sloc[Si,],
+        distance = localrange
       )
     )
 
@@ -321,40 +355,34 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
       require(fields)
 
       # kriged
-      fit = Krig( dat[, c("plon", "plat")], dat$z, Covariance="Matern", theta=vg$phi, smoothness=0.5)
-      x11()
+      fit = Krig( dat[, c("plon", "plat")], dat$z, Covariance="Matern", theta=phi, smoothness=0.5)
+      dev.new()
       op = predict(fit)
       tst = cbind( dat[, c("plon", "plat")], op )
       mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
       image(mba.int, xaxs="r", yaxs="r")
 
       # raw data + mba
-      x11()
+      dev.new()
       tst = cbind(  dat[, c("plon", "plat")], dat$z )
       mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
       image(mba.int, xaxs="r", yaxs="r")
 
-      # mba - pa
-      x11()
-      tst = cbind( pa$plon, pa$plat, pa$mean )
-      mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
-      image(mba.int, xaxs="r", yaxs="r")
-
       # default
-      x11()
+      dev.new()
       tst = cbind( res$predictions$plon,  res$predictions$plat,  res$predictions$mean )
-      mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
+      mba.int <- mba.surf( tst, p$windowsize.half *2, p$windowsize.half *2, extend=TRUE)$xyz.est
       image(mba.int, xaxs="r", yaxs="r")
 
       # kernel-based
       tst = as.image( Z=dat$z, x=dat[, c("plon", "plat")], nx=300, ny=300, na.rm=TRUE)
-      out = fields::image.smooth( tst, theta=vg$phi/300, xwidth=p$pres, ywidth=p$pres )
-      image(out)
+      out = fields::image.smooth( tst, theta=phi/300, xwidth=p$pres, ywidth=p$pres )
+      dev.new(); image(out)
 
       print( str(res) )
 
       lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==2012.05,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
-      lattice::levelplot( mean ~ plon + plat, data=res$predictions, col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
+      lattice::levelplot( mean ~ plon + plat, data=res$predictions, col.regions=heat.colors(100), scale=list(draw=TRUE) , aspect="iso" )
       for( i in sort(unique(res$predictions[,p$variables$TIME])))  print(lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==i,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
 
       dev.new()
