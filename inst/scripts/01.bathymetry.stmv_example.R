@@ -56,10 +56,10 @@ p = aegis.bathymetry::bathymetry_parameters(
     invers = function(x) {10^(x - 2500)}
   ), # data range is from -1667 to 5467 m: make all positive valued
   stmv_rsquared_threshold = 0.75, # lower threshold
-  stmv_distance_statsgrid = 3, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
+  stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
   stmv_distance_scale = c(5, 10, 20, 30, 40, 50, 60), # km ... approx guess of 95% AC range
   stmv_distance_prediction_fraction = 4/5, # i.e. 4/5 * 5 = 4 km
-  stmv_nmin = 750,  # min number of data points req before attempting to model in a localized space
+  stmv_nmin = 500,  # min number of data points req before attempting to model in a localized space
   stmv_nmax = 1000, # no real upper bound.. just speed
   stmv_clusters = list( scale=rep("localhost", scale_ncpus), interpolate=rep("localhost", interpolate_ncpus) )  # ncpus for each runmode
 )
@@ -69,6 +69,7 @@ p$spatial.domain.subareas =NULL
 
 # runmode=c( "globalmodel", "scale", "interpolate", "interpolate_boost", "interpolate_force_complete", "save_completed_data")
 # runmode=c( "interpolate", "interpolate_boost", "save_completed_data")
+runmode=c( "globalmodel", "scale", "interpolate", "save_completed_data")
 stmv( p=p, runmode=runmode )  # This will take from 40-70 hrs, depending upon system
 
 

@@ -43,14 +43,31 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   # pa_r = range(pa[,p$variables$LOCS[1]])
   # pa_c = range(pa[,p$variables$LOCS[2]])
 
+  dx = p$pres
+  dy = p$pres
+
+  # system size
+  #nr = nx
+  #nc = ny
+
   x_r = range(dat[,p$variables$LOCS[1]])
   x_c = range(dat[,p$variables$LOCS[2]])
 
   rr = diff(x_r)
   rc = diff(x_c)
 
-  nr = floor( rr/p$pres ) + 1
-  nc = floor( rc/p$pres ) + 1
+  nr = floor( rr/dx ) + 1
+  nc = floor( rc/dy ) + 1
+
+  nr2 = 2 * nr
+  nc2 = 2 * nc
+
+  # approx sa associated with each datum
+  sa = rr * rc
+  d_sa = sa/nrow(dat) # sa associated with each datum
+  d_length = sqrt( d_sa/pi )  # sa = pi*l^2  # characteristic length scale
+  theta.Taper = d_length * p$stmv_fft_taper_factor
+
 
   # final output grid
   x_locs = expand.grid(
@@ -63,17 +80,6 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   dat$mean = NA
   pa$mean = NA
   pa$sd = sdTotal  # this is ignored with fft
-
-  dx = dy = p$pres
-
-  nr2 = 2 * nr
-  nc2 = 2 * nc
-
-  # approx sa associated with each datum
-  sa = rr * rc
-  d_sa = sa/nrow(dat) # sa associated with each datum
-  d_length = sqrt( d_sa/pi )  # sa = pi*l^2  # characteristic length scale
-  theta.Taper = d_length * p$stmv_fft_taper_factor
 
   # constainer for spatial filters
   grid.list = list((1:nr2) * dx, (1:nc2) * dy)
@@ -93,13 +99,15 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=theta, smoothness=p$stmv_lowpass_nu )
     sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
     sp.covar.kernel = fftwtools::fftw2d(sp.covar) / fftwtools::fftw2d(mC)
+    sp.covar = NULL
   }
 
   if (p$stmv_fft_filter %in% c("matern") ) {
     sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=phi, smoothness=nu )
     sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
     sp.covar.kernel = fftwtools::fftw2d(sp.covar) / fftwtools::fftw2d(mC)
-  }
+    sp.covar = NULL
+   }
 
   if (p$stmv_fft_filter == "lowpass_matern") {
     # both ..
@@ -108,18 +116,18 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=phi, smoothness=nu )
     sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
     sp.covar.kernel = ( fftwtools::fftw2d(sp.covar.lowpass) / fftwtools::fftw2d(mC) ) * (fftwtools::fftw2d(sp.covar)/ fftwtools::fftw2d(mC) )
-    sp.covar = sp.covar.lowpass = NULL
+    sp.covar.lowpass = NULL
+    sp.covar = NULL
   }
 
   if (p$stmv_fft_filter == "matern_tapered") {
     #theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_fft_taper_factor )
-
     sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
       Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
     sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
     sp.covar.kernel = fftwtools::fftw2d(sp.covar) / fftwtools::fftw2d(mC)
-    sp.covar = theta.Taper = NULL
-  }
+    sp.covar = NULL
+ }
 
   if (p$stmv_fft_filter == "lowpass_matern_tapered") {
     sp.covar.lowpass = stationary.cov( dgrid, center, Covariance="Matern", theta=p$stmv_lowpass_phi, smoothness=p$stmv_lowpass_nu )
@@ -129,27 +137,29 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
       Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
     sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
     sp.covar.kernel = (fftwtools::fftw2d(sp.covar.lowpass) / fftwtools::fftw2d(mC) ) * ( fftwtools::fftw2d(sp.covar)/ fftwtools::fftw2d(mC) )
-    sp.covar = sp.covar.lowpass = theta.Taper = NULL
-  }
+    sp.covar.lowpass = NULL
+    sp.covar = NULL
+   }
 
 
   if (p$stmv_fft_filter == "normal_kernel") {
-      theta = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_range_correlation )
-      xi = seq(-(nr - 1), nr, 1) * dx / theta
-      yi = seq(-(nc - 1), nc, 1) * dy / theta
-      dd = ((matrix(xi, nr2, nc2)^2 + matrix(yi, nr2, nc2, byrow = TRUE)^2))  # squared distances
-      # double.exp: An R function that takes as its argument the _squared_
-      # distance between two points divided by the bandwidth. The
-      # default is exp( -abs(x)) yielding a normal kernel
-      kk = double.exp(dd)
-      mK = matrix(kk, nrow = nr2, ncol = nc2)
-      sp.covar.kernel = fftwtools::fftw2d(mK) / fftwtools::fftw2d(mC) / (nr2*nc2)# kernal weights
+    theta = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_range_correlation )
+    xi = seq(-(nr - 1), nr, 1) * dx / theta
+    yi = seq(-(nc - 1), nc, 1) * dy / theta
+    dd = ((matrix(xi, nr2, nc2)^2 + matrix(yi, nr2, nc2, byrow = TRUE)^2))  # squared distances
+    # double.exp: An R function that takes as its argument the _squared_
+    # distance between two points divided by the bandwidth. The
+    # default is exp( -abs(x)) yielding a normal kernel
+    sp.covar = matrix( double.exp(dd), nrow = nr2, ncol = nc2)
+    sp.covar.kernel = fftwtools::fftw2d(sp.covar) / fftwtools::fftw2d(mC) / (nr2*nc2)# kernal weights
+    sp.covar = NULL
+
   }
 
-  sp.covar = sp.covar.lowpass = dgrid = center =  NULL
+  dgrid = center =  NULL
 
-  origin=c(x_r[1], x_c[1])
-  res=c(p$pres, p$pres)
+  origin = c(x_r[1], x_c[1])
+  res = c(dx, dy)
 
   zz = matrix(1:(nr*nc), nrow = nr, ncol = nc)
   mY = matrix(0, nrow = nr2, ncol = nc2)
@@ -191,12 +201,9 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     Z = ifelse((fN > tol), (fY/fN), NA)
     fY = fN = NULL
 
-    # low pass filter based upon a global nu,phi .. remove high freq variation
-    Z_i = array_map( "xy->2", coords=pa[pa_i,p$variables$LOCS], origin=origin, res=res )
-
     # bounds check: make sure predictions exist
+    Z_i = array_map( "xy->2", coords=pa[pa_i,p$variables$LOCS], origin=origin, res=res )
     Z_i_test = which( Z_i[,1]<1 | Z_i[,2]<1  | Z_i[,1] > nr | Z_i[,2] > nc )
-
     if (length(Z_i_test) > 0) {
       keep = zz[ Z_i[-Z_i_test,] ]
       if ( length(keep) > 0) pa$mean[pa_i[keep]] = Z[keep]
@@ -217,159 +224,6 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
 
 
   # -------------------------------
-
-
-
-  if (0) {
-
-    # testing and debugging
-
-    loadfunctions( c("aegis", "stmv"))
-    RLibrary(c ("fields", "MBA", "geoR") )
-
-    # xyz = stmv_test_data( datasource="swiss" )
-    # xy = xyz[, c("x", "y")]
-    # mz = log( xyz$rain )
-    # mm = lm( mz ~ 1 )
-    # z = residuals( mm)
-    # xyz = cbind(xyz[, c("x", "y")], z)
-    # gr = stmv_variogram( xy, z, methods="geoR", plotdata=TRUE ) # ml via profile likelihood
-
-
-    xyz = stmv_test_data( datasource="meuse" )
-    xy = xyz[, c("x", "y")]
-    z = log(xyz$elev)
-
-    xyz = cbind(xyz[, c("x", "y")], z=((z-mean(z))/sd(z) ) )
-    gr = stmv_variogram( xy, z, methods="geoR", plotdata=TRUE ) # ml via profile likelihood
-
-    nu = gr$geoR$nu
-    phi = gr$geoR$phi
-
-    fit  =  Krig(xyz[, c("x", "y")], xyz[,"z"], theta=phi)
-    x11()
-    surface( fit, type="C") # look at the surface
-
-    x11()
-    require(MBA)
-    mba.int  =  mba.surf( xyz, 100, 100, extend=TRUE)$xyz.est
-    surface(mba.int, xaxs="r", yaxs="r")
-
-
-    x_r = range(xyz$x)
-    x_c = range(xyz$y)
-
-    rez = rr/100
-
-    nr = floor( rr/rez ) + 1
-    nc = floor( rc/rez ) + 1
-
-    dx = dy = rez
-
-    nr2 = 2 * nr
-    nc2 = 2 * nc
-
-    mC = matrix(0, nrow = nr2, ncol = nc2)
-    mC[nr, nc] = 1
-
-    # constainer for spatial filters
-    grid.list = list((1:nr2) * dx, (1:nc2) * dy)
-    dgrid = as.matrix(expand.grid(grid.list))
-    dimnames(dgrid) = list(NULL, names(grid.list))
-    attr(dgrid, "grid.list") = grid.list
-
-    center = matrix(c((dx * nr), (dy * nc)), nrow = 1, ncol = 2)
-
-    theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_fft_taper_factor )
-    sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
-      Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
-    sp.covar = as.surface(dgrid, c(sp.covar))$z
-    sp.covar.kernel = fft(sp.covar) / fft(mC)
-
-    mY = matrix(0, nrow = nr2, ncol = nc2)
-    mN = matrix(0, nrow = nr2, ncol = nc2)
-
-    u = as.image(
-      Z=xyz$z,
-      x=xyz[, c("x", "y")],
-      na.rm=TRUE,
-      nx=nr,
-      ny=nc
-    )
-    # surface(u)
-
-    mY[1:nr,1:nc] = u$z
-    mY[!is.finite(mY)] = 0
-
-    #  Nadaraya/Watson normalization for missing values s
-    mN[1:nr,1:nc] = u$weights
-    mN[!is.finite(mN)] = 0
-
-    fY = Re( fft( sp.covar.kernel * fft(mY) / (nr2 * nc2), inverse = TRUE) )[1:nr, 1:nc]
-    fN = Re( fft( sp.covar.kernel * fft(mN) / (nr2 * nc2), inverse = TRUE) )[1:nr, 1:nc]
-
-    tol = 1e-9
-    Z = fY/fN
-    Z = ifelse((fN > tol), (fY/fN), NA)
-    Z[!is.finite(Z)] = NA
-
-    x11()
-
-    surface(list(x=c(1:nr)*dx, y=c(1:nc)*dy, z=Z), xaxs="r", yaxs="r")
-
-
-    # 2D
-    # Robertson, C., & George, S. C. (2012). Theory and practical recommendations for autocorrelation-based image
-    # correlation spectroscopy. Journal of biomedical optics, 17(8), 080801. doi:10.1117/1.JBO.17.8.080801
-    # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3414238/
-
-
-    fY = fft(mY) / (nr2*nc2)
-    YY = fY * Conj(fY) # power spectra
-    ii = Re( fft( YY, inverse=TRUE)  )  # autocorrelation (amplitude)
-
-    fN = fft(mN) / (nr2*nc2)
-    NN = fN * Conj(fN) # power spectra
-    jj = Re( fft( NN, inverse = TRUE)  ) # autocorrelation (amplitude) correction
-
-
-    tol = 1e-9
-    kk = ifelse(( jj > tol), (ii / jj), NA) # autocorrelation
-    # kk[kk< -1] = -1
-    # kk[kk>1] = 1
-
-
-    oo = fftshift(kk)
-
-    xy = expand.grid(
-      x = c(-nr:-1, 1:nr) * dx,
-      y = c(-nc:-1, 1:nc) * dy
-    )
-
-    distances = sqrt(xy$x^2 + xy$y^2)
-    dmax = max(distances, na.rm=TRUE ) * 0.4  # approx nyquist distance (0.9 as corners exist)
-    breaks = seq( 0, dmax, length.out=20)
-    db = breaks[2] - breaks[1]
-    # angles = atan2( xy$y, xy$x )  # not used
-
-    ii = cut( distances, breaks=c(breaks, max(breaks)+db), label=breaks+(db/2) )
-
-    res = as.data.frame.table(tapply( X=oo, INDEX=ii, FUN=mean, na.rm=TRUE ))
-    names(res) = c("distances", "ac")
-    res$distances = as.numeric( as.character(res$distances))
-
-    res$sv =  var(xyz$z) * (1-res$ac^2)
-    uu = which(res$distances < dmax/3) & is.finite(res$sv)
-    plot(ac ~ distances, data=res[uu,]   )
-    plot(sv ~ distances, data=res[uu,]   )
-
-    fit = try( stmv_variogram_optimization( vx=res$distances[uu], vg=res$sv[uu], plotvgm=TRUE,
-      stmv_internal_scale=dmax/4, cor=p$stmv_fft_taper_factor ))
-
-  }
-
-
-  # -------------------------
 
 
   if (0) {
@@ -597,9 +451,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   }
 
 
-
-
-  }
+}
 
 
 
