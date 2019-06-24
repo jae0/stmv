@@ -86,6 +86,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
 ## drange = max( min( max(p$stmv_distance_scale )),  min(p$pres, p$stmv_distance_scale ))
       # global estimates
   global_nu = median( S[, match("nu", p$statsvars)], na.rm=TRUE )
+
   if ( global_nu < 0.01 | global_nu > 5) global_nu = 0.5
   global_phi = median( S[, match("phi", p$statsvars)], na.rm=TRUE )
   global_range = matern_phi2distance( phi=global_phi, nu=global_nu, cor=local_corel )

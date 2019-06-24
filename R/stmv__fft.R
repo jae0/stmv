@@ -67,6 +67,9 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   nr = floor( rr/dx ) + 1
   nc = floor( rc/dy ) + 1
 
+  dr = rr/(nr-1)
+  dc = rc/(nc-1)
+
   nr2 = 2 * nr
   nc2 = 2 * nc
 
@@ -153,9 +156,6 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     fY = fftwtools::fftw2d(mY)
     fN = fftwtools::fftw2d(mN)
 
-    mY = NULL
-    mN = NULL
-
     # fY * Conj(fY) == power spectra
     ii = Re( fftwtools::fftw2d( fY * Conj(fY), inverse=TRUE)  ) # autocorrelation (amplitude)
     jj = Re( fftwtools::fftw2d( fN * Conj(fN), inverse=TRUE)  ) # autocorrelation (amplitude) correction
@@ -172,7 +172,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     xy = expand.grid( x = c(-(nr-1):0, 0:(nr-1)) * dr,  y = c(-(nc-1):0, 0:(nc-1)) * dc )
     distances = sqrt(xy$x^2 + xy$y^2)
     dmax = max(distances, na.rm=TRUE ) * 0.4  # approx nyquist distance (<0.5 as corners exist)
-    breaks = seq( 0, dmax, length.out=nbreaks)
+    breaks = seq( 0, dmax, length.out=nr)
     db = breaks[2] - breaks[1]
     # angles = atan2( xy$y, xy$x )  # not used
 
@@ -186,22 +186,32 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     zz = NULL
     gc()
 
-    res$distances = as.numeric( as.character(res$distances))
-    res$sv =  zvar * (1-res$ac^2) # each sv are truly orthogonal
+    vgm$distances = as.numeric( as.character(vgm$distances))
+    vgm$sv =  zvar * (1-vgm$ac^2) # each sv are truly orthogonal
 
    # interpolated surface
    # constainer for spatial filters
-    uu = which( (res$distances < dmax ) & is.finite(res$sv) )  # dmax ~ Nyquist freq
-    fit = try( stmv_variogram_optimization( vx=res$distances[uu], vg=res$sv[uu], plotvgm=plotdata,
-      stmv_internal_scale=dmax*0.75, cor=stmv_range_correlation ))
-    out$fit = fit
+    uu = which( (vgm$distances < dmax ) & is.finite(vgm$sv) )  # dmax ~ Nyquist freq
+    fit = try( stmv_variogram_optimization( vx=vgm$distances[uu], vg=vgm$sv[uu], plotvgm=FALSE,
+      stmv_internal_scale=dmax*0.75, cor=p$stmv_range_correlation ))
+    # out$fit = fit
 
-    if (any(!is.finite( c(fit$summary$phi, fit$summary$nu) ))) {
-      local_phi = phi
-      local_nu = nu
-    } else {
-      local_phi = fit$summary$phi
-      local_nu  = fit$summary$nu
+    local_phi = phi
+    local_nu = nu
+
+    if ( !inherits(fit, "try-error") ) {
+      if (exists("summary", fit)) {
+        if ( exists("nu", fit$summary )) {
+          if ( is.finite( c(fit$summary$nu)) ) {
+            local_nu = fit$summary$nu
+          }
+        }
+        if ( exists("phi", fit$summary )) {
+          if ( is.finite( c(fit$summary$phi)) ) {
+            local_phi = fit$summary$phi
+          }
+        }
+      }
     }
 
     if ( p$stmv_fft_filter == "lowpass") {
@@ -271,11 +281,11 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     Z = ifelse((ffN > eps), (ffY/ffN), NA)
     Z[!is.finite(Z)] = NA
     Z = Z * zsd + zmean # revert to input scale
-    if (plotdata) {
+    if (0) {
       dev.new()
       surface(list(x=c(1:nr)*dr, y=c(1:nc)*dc, z=Z), xaxs="r", yaxs="r")
     }
-    out$Z = Z
+    # out$Z = Z
     fY = fN = ffY = ffN = NULL
 
     Z_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=res )
