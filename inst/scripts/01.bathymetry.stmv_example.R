@@ -52,14 +52,14 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_local_modelengine="fft",
   # stmv_fft_filter = "matern_tapered", #  matern with taper
   stmv_fft_filter = "lowpass_matern_tapered", #  act as a low pass filter first before matern with taper .. depth has enough data for this. Otherwise, use:
-  stmv_lowpass_nu = 0.5,
+  stmv_lowpass_nu = 0.25,
   stmv_lowpass_phi = 0.1,  # note: p$pres = 0.2
   stmv_fft_taper_factor = 5,  # in local smoothing convolutions taper to this areal expansion factor 1 ~ distance of one datum -- 5-6 seems optimal
   stmv_variogram_method = "fft",
   stmv_variogram_nbreaks = 50,
   stmv_discretized_n = 100,
   stmv_range_correlation=0.1,
-  stmv_range_correlation_boostdata=0.05,
+  stmv_range_correlation_boostdata = c(0.05, 0.01),
   depth.filter = FALSE,  # need data above sea level to get coastline
   stmv_Y_transform =list(
     transf = function(x) {log10(x + 2500)} ,
@@ -69,8 +69,8 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
   stmv_distance_scale = c(5, 10, 20, 30, 40, 50, 60), # km ... approx guesses of 95% AC range
   stmv_distance_prediction_fraction = 4/5, # i.e. 4/5 * 5 = 4 km .. relative to stats grid
-  stmv_nmin = 100,  # min number of data points req before attempting to model in a localized space
-  stmv_nmax = 900, # no real upper bound.. just speed /RAM
+  stmv_nmin = 250,  # min number of data points req before attempting to model in a localized space
+  stmv_nmax = 750, # no real upper bound.. just speed /RAM
   stmv_clusters = list( scale=rep("localhost", scale_ncpus), interpolate=rep("localhost", interpolate_ncpus) )  # ncpus for each runmode
 )
 

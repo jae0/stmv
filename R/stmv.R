@@ -840,12 +840,14 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
       stmv_db(p=p, DS="load_saved_state", runmode="interpolate_boost")
     } else {
       p$clusters = p$stmv_clusters[["interpolate"]] # as ram reqeuirements increase drop cpus
-      p$stmv_local_modelengine = "fft"
-      p$stmv_fft_filter="matern"  #  matern, krige (very slow), lowpass, lowpass_matern
-      p$time_start_runmode = Sys.time()
-      currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
-      parallel_run( stmv_interpolate, p=p, runoption="boostdata", runindex=list( locs=sample( currentstatus$todo )))
-      if ( "restart_save" %in% runmode ) stmv_db(p=p, DS="save_current_state", runmode="interpolate_boost")
+      cor_boost0 = p$stmv_range_correlation_boostdata
+      for ( cor_b in cor_boost0) {
+        p$time_start_runmode = Sys.time()
+        p$stmv_range_correlation_boostdata = cor_b
+        currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
+        parallel_run( stmv_interpolate, p=p, runoption="boostdata", runindex=list( locs=sample( currentstatus$todo )))
+        if ( "restart_save" %in% runmode ) stmv_db(p=p, DS="save_current_state", runmode="interpolate_boost")
+      }
     }
     message( "||| Time used for <interpolate_boost>: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" )
   }
@@ -862,7 +864,7 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
       stmv_db(p=p, DS="load_saved_state", runmode="interpolate_force_complete")
     } else {
       p$clusters = p$stmv_clusters[["interpolate"]] # as ram reqeuirements increase drop cpus
-      p$stmv_local_modelengine = "mba"
+      p$stmv_local_modelengine = "linear"
       p$time_start_runmode = Sys.time()
       currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
       parallel_run( stmv_interpolate_force_complete, p=p, runindex=list( time_index=1:p$nt ))
