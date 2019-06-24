@@ -42,7 +42,7 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_global_modelengine = "none",  # too much data to use glm as an entry into link space ... use a direct transformation
   stmv_global_modelformula = "none",  # only marginally useful .. consider removing it and use "none",
   stmv_global_family ="none",
-  stmv_local_modelengine="tps",
+  stmv_local_modelengine="fft",
   stmv_fft_filter = "matern_tapered", #  act as a low pass filter first before matern .. depth has enough data for this. Otherwise, use:
   stmv_lowpass_nu = 0.5,
   stmv_lowpass_phi = 0.1,  # note: p$pres = 0.2
@@ -55,7 +55,7 @@ p = aegis.bathymetry::bathymetry_parameters(
   depth.filter = FALSE,  # need data above sea level to get coastline
   stmv_Y_transform =list(
     transf = function(x) {log10(x + 2500)} ,
-    invers = function(x) {10^(x - 2500)}
+    invers = function(x) {10^(x) - 2500}
   ), # data range is from -1667 to 5467 m: make all positive valued
   stmv_rsquared_threshold = 0.01, # lower threshold
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )

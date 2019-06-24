@@ -1,5 +1,5 @@
 
-stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist=FALSE, tol=1e-9, ... ) {
+stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist=FALSE, eps=1e-9, ... ) {
 
   #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
   #\\ note: time is not being modelled and treated independently
@@ -31,6 +31,14 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   #    passed to this function when it is used. The default kernel is the
   #    Gaussian and the argument theta is the bandwidth. It is easy to
   #    write other other kernels, just use Exp.cov.simple as a template.
+
+  if (0) {
+    varObs = S[Si, i_sdObs]^2
+    varSpatial = S[Si, i_sdSpatial]^2
+    sloc = Sloc[Si,]
+    distance = localrange
+
+  }
 
   if (variablelist)  return( c() )
 
@@ -86,6 +94,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   dgrid = as.matrix(expand.grid(grid.list))
   dimnames(dgrid) = list(NULL, names(grid.list))
   attr(dgrid, "grid.list") = grid.list
+  grid.list = NULL
 
   center = matrix(c((dx * nr), (dy * nc)), nrow = 1, ncol = 2)
 
@@ -93,70 +102,6 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   mC[nr, nc] = 1
 
   if (!exists("stmv_fft_filter",p) ) p$stmv_fft_filter="lowpass" # default in case of no specification
-
-  if ( p$stmv_fft_filter == "lowpass") {
-    theta = p$stmv_lowpass_phi
-    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=theta, smoothness=p$stmv_lowpass_nu )
-    sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
-    sp.covar.kernel = fftwtools::fftw2d(sp.covar) / fftwtools::fftw2d(mC)
-    sp.covar = NULL
-  }
-
-  if (p$stmv_fft_filter %in% c("matern") ) {
-    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=phi, smoothness=nu )
-    sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
-    sp.covar.kernel = fftwtools::fftw2d(sp.covar) / fftwtools::fftw2d(mC)
-    sp.covar = NULL
-   }
-
-  if (p$stmv_fft_filter == "lowpass_matern") {
-    # both ..
-    sp.covar.lowpass = stationary.cov( dgrid, center, Covariance="Matern", theta=p$stmv_lowpass_phi, smoothness=p$stmv_lowpass_nu )
-    sp.covar.lowpass = as.surface(dgrid, c(sp.covar.lowpass))$z / (nr2*nc2)
-    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=phi, smoothness=nu )
-    sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
-    sp.covar.kernel = ( fftwtools::fftw2d(sp.covar.lowpass) / fftwtools::fftw2d(mC) ) * (fftwtools::fftw2d(sp.covar)/ fftwtools::fftw2d(mC) )
-    sp.covar.lowpass = NULL
-    sp.covar = NULL
-  }
-
-  if (p$stmv_fft_filter == "matern_tapered") {
-    #theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_fft_taper_factor )
-    sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
-      Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
-    sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
-    sp.covar.kernel = fftwtools::fftw2d(sp.covar) / fftwtools::fftw2d(mC)
-    sp.covar = NULL
- }
-
-  if (p$stmv_fft_filter == "lowpass_matern_tapered") {
-    sp.covar.lowpass = stationary.cov( dgrid, center, Covariance="Matern", theta=p$stmv_lowpass_phi, smoothness=p$stmv_lowpass_nu )
-    sp.covar.lowpass = as.surface(dgrid, c(sp.covar.lowpass))$z / (nr2*nc2)
-    # theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_fft_taper_factor )
-    sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
-      Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
-    sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
-    sp.covar.kernel = (fftwtools::fftw2d(sp.covar.lowpass) / fftwtools::fftw2d(mC) ) * ( fftwtools::fftw2d(sp.covar)/ fftwtools::fftw2d(mC) )
-    sp.covar.lowpass = NULL
-    sp.covar = NULL
-   }
-
-
-  if (p$stmv_fft_filter == "normal_kernel") {
-    theta = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_range_correlation )
-    xi = seq(-(nr - 1), nr, 1) * dx / theta
-    yi = seq(-(nc - 1), nc, 1) * dy / theta
-    dd = ((matrix(xi, nr2, nc2)^2 + matrix(yi, nr2, nc2, byrow = TRUE)^2))  # squared distances
-    # double.exp: An R function that takes as its argument the _squared_
-    # distance between two points divided by the bandwidth. The
-    # default is exp( -abs(x)) yielding a normal kernel
-    sp.covar = matrix( double.exp(dd), nrow = nr2, ncol = nc2)
-    sp.covar.kernel = fftwtools::fftw2d(sp.covar) / fftwtools::fftw2d(mC) / (nr2*nc2)# kernal weights
-    sp.covar = NULL
-
-  }
-
-  dgrid = center =  NULL
 
   origin = c(x_r[1], x_c[1])
   res = c(dx, dy)
@@ -178,14 +123,23 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
       pa_i = 1:nrow(pa)
     }
     # bounds check: make sure predictions exist
+    zmean = mean(dat[xi, p$variables$Y], na.rm=TRUE)
+    zsd = sd(dat[xi, p$variables$Y], na.rm=TRUE)
+    zvar = zsd^2
+    z = (dat[xi, p$variables$Y] - zmean) / zsd # zscore -- making it mean 0 removes the DC component
 
     u = as.image(
-      dat[xi, p$variables$Y],
+      z,
       ind=as.matrix(array_map( "xy->2", coords=dat[xi, p$variables$LOCS], origin=origin, res=res )),
       na.rm=TRUE,
       nx=nr,
       ny=nc
     )
+
+    # See explanation:  https://en.wikipedia.org/wiki/Autocorrelation#Efficient_computation
+    # Robertson, C., & George, S. C. (2012). Theory and practical recommendations for autocorrelation-based image
+    # correlation spectroscopy. Journal of biomedical optics, 17(8), 080801. doi:10.1117/1.JBO.17.8.080801
+    # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3414238/
 
     mY[1:nr,1:nc] = u$z
     mY[!is.finite(mY)] = 0
@@ -196,10 +150,133 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
 
     u =NULL
 
-    fY = Re(fftwtools::fftw2d( sp.covar.kernel * fftwtools::fftw2d(mY), inverse = TRUE))[1:nr, 1:nc]  #real amplitudes
-    fN = Re(fftwtools::fftw2d( sp.covar.kernel * fftwtools::fftw2d(mN), inverse = TRUE))[1:nr, 1:nc]
-    Z = ifelse((fN > tol), (fY/fN), NA)
-    fY = fN = NULL
+    fY = fftwtools::fftw2d(mY)
+    fN = fftwtools::fftw2d(mN)
+
+    mY = NULL
+    mN = NULL
+
+    # fY * Conj(fY) == power spectra
+    ii = Re( fftwtools::fftw2d( fY * Conj(fY), inverse=TRUE)  ) # autocorrelation (amplitude)
+    jj = Re( fftwtools::fftw2d( fN * Conj(fN), inverse=TRUE)  ) # autocorrelation (amplitude) correction
+
+    X = ifelse(( jj > eps), (ii / jj), NA) # autocorrelation (amplitude)
+    ii = NULL
+    jj = NULL
+
+    # fftshift
+    X = rbind( X[((nr+1):nr2), (1:nc2)], X[(1:nr), (1:nc2)] )  # swap_up_down
+    X = cbind(X[1:nr2, ((nc+1):nc2)], X[1:nr2, 1:nc])  # swap_left_right
+
+    # radial representation
+    xy = expand.grid( x = c(-(nr-1):0, 0:(nr-1)) * dr,  y = c(-(nc-1):0, 0:(nc-1)) * dc )
+    distances = sqrt(xy$x^2 + xy$y^2)
+    dmax = max(distances, na.rm=TRUE ) * 0.4  # approx nyquist distance (<0.5 as corners exist)
+    breaks = seq( 0, dmax, length.out=nbreaks)
+    db = breaks[2] - breaks[1]
+    # angles = atan2( xy$y, xy$x )  # not used
+
+    zz = cut( distances, breaks=c(breaks, max(breaks)+db), label=breaks+(db/2) )
+    distances = NULL
+    xy = NULL
+
+    res = as.data.frame.table(tapply( X=X, INDEX=zz, FUN=mean, na.rm=TRUE ))
+    names(res) = c("distances", "ac")
+    X = NULL
+    zz = NULL
+    gc()
+
+    res$distances = as.numeric( as.character(res$distances))
+    res$sv =  zvar * (1-res$ac^2) # each sv are truly orthogonal
+
+   # interpolated surface
+   # constainer for spatial filters
+    uu = which( (res$distances < dmax ) & is.finite(res$sv) )  # dmax ~ Nyquist freq
+    fit = try( stmv_variogram_optimization( vx=res$distances[uu], vg=res$sv[uu], plotvgm=plotdata,
+      stmv_internal_scale=dmax*0.75, cor=stmv_range_correlation ))
+    out$fit = fit
+
+    if (any(!is.finite( c(fit$summary$phi, fit$summary$nu) ))) {
+      local_phi = phi
+      local_nu = nu
+    } else {
+      local_phi = fit$summary$phi
+      local_nu  = fit$summary$nu
+    }
+
+    if ( p$stmv_fft_filter == "lowpass") {
+      theta = p$stmv_lowpass_phi
+      sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=theta, smoothness=p$stmv_lowpass_nu )
+      sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
+      sp.covar.kernel = fftwtools::fftw2d(sp.covar) / fftwtools::fftw2d(mC)
+      sp.covar = NULL
+    }
+
+    if (p$stmv_fft_filter %in% c("matern") ) {
+      sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=local_phi, smoothness=local_nu )
+      sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
+      sp.covar.kernel = fftwtools::fftw2d(sp.covar) / fftwtools::fftw2d(mC)
+      sp.covar = NULL
+    }
+
+    if (p$stmv_fft_filter == "lowpass_matern") {
+      # both ..
+      sp.covar.lowpass = stationary.cov( dgrid, center, Covariance="Matern", theta=p$stmv_lowpass_phi, smoothness=p$stmv_lowpass_nu )
+      sp.covar.lowpass = as.surface(dgrid, c(sp.covar.lowpass))$z / (nr2*nc2)
+      sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=local_phi, smoothness=local_nu )
+      sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
+      sp.covar.kernel = ( fftwtools::fftw2d(sp.covar.lowpass) / fftwtools::fftw2d(mC) ) * (fftwtools::fftw2d(sp.covar)/ fftwtools::fftw2d(mC) )
+      sp.covar.lowpass = NULL
+      sp.covar = NULL
+    }
+
+    if (p$stmv_fft_filter == "matern_tapered") {
+      #theta.Taper = matern_phi2distance( phi=local_phi, nu=nu, cor=p$stmv_fft_taper_factor )
+      sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=local_phi, smoothness=local_nu,
+        Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
+      sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
+      sp.covar.kernel = fftwtools::fftw2d(sp.covar) / fftwtools::fftw2d(mC)
+      sp.covar = NULL
+  }
+
+    if (p$stmv_fft_filter == "lowpass_matern_tapered") {
+      sp.covar.lowpass = stationary.cov( dgrid, center, Covariance="Matern", theta=p$stmv_lowpass_phi, smoothness=p$stmv_lowpass_nu )
+      sp.covar.lowpass = as.surface(dgrid, c(sp.covar.lowpass))$z / (nr2*nc2)
+      # theta.Taper = matern_phi2distance( phi=local_phi, nu=nu, cor=p$stmv_fft_taper_factor )
+      sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=local_phi, smoothness=local_nu,
+        Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
+      sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
+      sp.covar.kernel = (fftwtools::fftw2d(sp.covar.lowpass) / fftwtools::fftw2d(mC) ) * ( fftwtools::fftw2d(sp.covar)/ fftwtools::fftw2d(mC) )
+      sp.covar.lowpass = NULL
+      sp.covar = NULL
+    }
+
+
+    if (p$stmv_fft_filter == "normal_kernel") {
+      theta = matern_phi2distance( phi=local_phi, nu=local_nu, cor=p$stmv_range_correlation )
+      xseq = seq(-(nr - 1), nr, 1) * dx / theta
+      yseq = seq(-(nc - 1), nc, 1) * dy / theta
+      dd = ((matrix(xseq, nr2, nc2)^2 + matrix(yseq, nr2, nc2, byrow = TRUE)^2))  # squared distances
+      # double.exp: An R function that takes as its argument the _squared_
+      # distance between two points divided by the bandwidth. The
+      # default is exp( -abs(x)) yielding a normal kernel
+      sp.covar = matrix( double.exp(dd), nrow = nr2, ncol = nc2)
+      sp.covar.kernel = fftwtools::fftw2d(sp.covar) / fftwtools::fftw2d(mC) / (nr2*nc2)# kernal weights
+      sp.covar = NULL
+
+    }
+
+    ffY = Re( fftwtools::fftw2d( sp.covar.kernel * fY, inverse = TRUE))[1:nr, 1:nc]
+    ffN = Re( fftwtools::fftw2d( sp.covar.kernel * fN, inverse = TRUE))[1:nr, 1:nc]
+    Z = ifelse((ffN > eps), (ffY/ffN), NA)
+    Z[!is.finite(Z)] = NA
+    Z = Z * zsd + zmean # revert to input scale
+    if (plotdata) {
+      dev.new()
+      surface(list(x=c(1:nr)*dr, y=c(1:nc)*dc, z=Z), xaxs="r", yaxs="r")
+    }
+    out$Z = Z
+    fY = fN = ffY = ffN = NULL
 
     Z_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=res )
     tokeep = which( Z_i[,1] >= 1 & Z_i[,2] >= 1  & Z_i[,1] <= nr & Z_i[,2] <= nc )
