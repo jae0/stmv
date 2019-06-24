@@ -37,7 +37,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     varSpatial = S[Si, i_sdSpatial]^2
     sloc = Sloc[Si,]
     distance = localrange
-
+    eps = 1e-9
   }
 
   if (variablelist)  return( c() )
@@ -107,7 +107,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   if (!exists("stmv_fft_filter",p) ) p$stmv_fft_filter="lowpass" # default in case of no specification
 
   origin = c(x_r[1], x_c[1])
-  res = c(dx, dy)
+  resolution = c(dx, dy)
 
   mY = matrix(0, nrow = nr2, ncol = nc2)
   mN = matrix(0, nrow = nr2, ncol = nc2)
@@ -133,11 +133,12 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
 
     u = as.image(
       z,
-      ind=as.matrix(array_map( "xy->2", coords=dat[xi, p$variables$LOCS], origin=origin, res=res )),
+      ind=as.matrix(array_map( "xy->2", coords=dat[xi, p$variables$LOCS], origin=origin, res=resolution )),
       na.rm=TRUE,
       nx=nr,
       ny=nc
     )
+    # surface (u)
 
     # See explanation:  https://en.wikipedia.org/wiki/Autocorrelation#Efficient_computation
     # Robertson, C., & George, S. C. (2012). Theory and practical recommendations for autocorrelation-based image
@@ -180,14 +181,17 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     distances = NULL
     xy = NULL
 
-    res = as.data.frame.table(tapply( X=X, INDEX=zz, FUN=mean, na.rm=TRUE ))
-    names(res) = c("distances", "ac")
+    vgm = as.data.frame.table(tapply( X=X, INDEX=zz, FUN=mean, na.rm=TRUE ))
+    names(vgm) = c("distances", "ac")
     X = NULL
     zz = NULL
     gc()
 
     vgm$distances = as.numeric( as.character(vgm$distances))
     vgm$sv =  zvar * (1-vgm$ac^2) # each sv are truly orthogonal
+
+  # plot(ac ~ distances, data=vgm   )
+  # plot(sv ~ distances, data=vgm   )
 
    # interpolated surface
    # constainer for spatial filters
@@ -288,7 +292,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     # out$Z = Z
     fY = fN = ffY = ffN = NULL
 
-    Z_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=res )
+    Z_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=resolution )
     tokeep = which( Z_i[,1] >= 1 & Z_i[,2] >= 1  & Z_i[,1] <= nr & Z_i[,2] <= nc )
     if (length(tokeep) < 1) next()
     Z_i = Z_i[tokeep,]

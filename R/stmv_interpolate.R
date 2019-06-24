@@ -372,6 +372,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
       # default
       dev.new()
       tst = cbind( res$predictions$plon,  res$predictions$plat,  res$predictions$mean )
+      tst = na.omit(tst)
       mba.int <- mba.surf( tst, p$windowsize.half *2, p$windowsize.half *2, extend=TRUE)$xyz.est
       image(mba.int, xaxs="r", yaxs="r")
 

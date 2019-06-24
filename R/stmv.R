@@ -513,6 +513,8 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
 
   DATA = NULL;
   Ploc = NULL;
+  p$DATA = NULL # in case data was sent
+  p <<- p  # copy to parent (calling) environment (to remove "p$DATA" )
   gc()
 
 

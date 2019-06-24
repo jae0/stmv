@@ -91,25 +91,25 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
   distances = NULL
   xy = NULL
 
-  res = as.data.frame.table(tapply( X=X, INDEX=zz, FUN=mean, na.rm=TRUE ))
-  names(res) = c("distances", "ac")
+  vgm = as.data.frame.table(tapply( X=X, INDEX=zz, FUN=mean, na.rm=TRUE ))
+  names(vgm) = c("distances", "ac")
   X = NULL
   zz = NULL
   gc()
 
-  res$distances = as.numeric( as.character(res$distances))
-  res$sv =  zvar * (1-res$ac^2) # each sv are truly orthogonal
+  vgm$distances = as.numeric( as.character(vgm$distances))
+  vgm$sv =  zvar * (1-vgm$ac^2) # each sv are truly orthogonal
 
-  # plot(ac ~ distances, data=res   )
-  # plot(sv ~ distances, data=res   )
+  # plot(ac ~ distances, data=vgm   )
+  # plot(sv ~ distances, data=vgm   )
 
-  out = list(res=res )
+  out = list(vgm=vgm )
 
   if (add.interpolation) {
     # interpolated surface
   # constainer for spatial filters
-    uu = which( (res$distances < dmax ) & is.finite(res$sv) )  # dmax ~ Nyquist freq
-    fit = try( stmv_variogram_optimization( vx=res$distances[uu], vg=res$sv[uu], plotvgm=plotdata,
+    uu = which( (vgm$distances < dmax ) & is.finite(vgm$sv) )  # dmax ~ Nyquist freq
+    fit = try( stmv_variogram_optimization( vx=vgm$distances[uu], vg=vgm$sv[uu], plotvgm=plotdata,
       stmv_internal_scale=dmax*0.75, cor=stmv_range_correlation ))
     out$fit = fit
 

@@ -358,9 +358,9 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
     XYZ = stmv_discretize_coordinates(coo=xy, z=z, discretized_n=discretized_n, method="aggregate", FUNC=mean, na.rm=TRUE)
     names(XYZ) =  c("plon", "plat", "z" ) # arbitrary
 
-    vario = stmv_variogram_fft( xyz=XYZ, nx=discretized_n, ny=discretized_n, nbreaks=nbreaks )  # empirical variogram by fftw2d
-    uu = which( (vario$res$distances < 0.9*max(vario$res$distances) ) & is.finite(vario$res$sv) )
-    fit = try( stmv_variogram_optimization( vx=vario$res$distances[uu], vg=vario$res$sv[uu], plotvgm=plotdata,
+    VGM = stmv_variogram_fft( xyz=XYZ, nx=discretized_n, ny=discretized_n, nbreaks=nbreaks )  # empirical variogram by fftw2d
+    uu = which( (VGM$vgm$distances < 0.9*max(VGM$vgm$distances) ) & is.finite(VGM$vgm$sv) )
+    fit = try( stmv_variogram_optimization( vx=VGM$vgm$distances[uu], vg=VGM$vgm$sv[uu], plotvgm=plotdata,
       stmv_internal_scale=out$stmv_internal_scale, cor=range_correlation  ))
 
     if ( !inherits(fit, "try-error") ) {
@@ -403,12 +403,12 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
     rownames( XYZ) = 1:nrow(XYZ)  # RF seems to require rownames ...
 
     require( RandomFields )
-    vario = RFvariogram( data=RFspatialPointsDataFrame( coords=XYZ[,c(1,2)], data=XYZ[,3], RFparams=list(vdim=1, n=1) ) )
+    VGM = RFvariogram( data=RFspatialPointsDataFrame( coords=XYZ[,c(1,2)], data=XYZ[,3], RFparams=list(vdim=1, n=1) ) )
     # remove the (0,0) point -- force intercept
-    todrop = which( !is.finite(vario@empirical )) # occasionally NaN's are created!
+    todrop = which( !is.finite(VGM@empirical )) # occasionally NaN's are created!
     todrop = unique( c(1, todrop) )
-    vg = vario@empirical[-todrop]
-    vx = vario@centers[-todrop]
+    vg = VGM@empirical[-todrop]
+    vx = VGM@centers[-todrop]
     fit = try( stmv_variogram_optimization( vx=vx, vg=vg, nu=0.5, plotvgm=plotdata, stmv_internal_scale=out$stmv_internal_scale, cor=range_correlation ))
     if ( !inherits(fit, "try-error") ) {
       out$optim = fit$summary
@@ -581,14 +581,14 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
     out$CompRandFld$phi_ok = ifelse( out$CompRandFld$phi < out$distance_cutoff*0.99, TRUE, FALSE )
     localrange = matern_phi2distance(phi=out$CompRandFld$phi, nu=out$CompRandFld$nu, cor=range_correlation)
     if( plotdata) {
-      vario = EVariogram(data=z, coordx=as.matrix(xy/out$stmv_internal_scale),
+      VGM = EVariogram(data=z, coordx=as.matrix(xy/out$stmv_internal_scale),
                         maxdist=out$distance_cutoff/out$stmv_internal_scale, numbins=nbreaks)
-      vg = vario$variograms
-      vx = vario$centers
-      xlim= c(0, max(vario$centers)*1.1) * out$stmv_internal_scale
-      ylim= c(0, max(vario$variograms)*1.1)
-      plot( vario$centers* out$stmv_internal_scale, vario$variograms, col="green", xlim=xlim, ylim=ylim )
-      ds = seq( 0, max(vario$centers), length.out=100 ) * out$stmv_internal_scale
+      vg = VGM$variograms
+      vx = VGM$centers
+      xlim= c(0, max(VGM$centers)*1.1) * out$stmv_internal_scale
+      ylim= c(0, max(VGM$variograms)*1.1)
+      plot( VGM$centers* out$stmv_internal_scale, VGM$variograms, col="green", xlim=xlim, ylim=ylim )
+      ds = seq( 0, max(VGM$centers), length.out=100 ) * out$stmv_internal_scale
       ac = out$CompRandFld$varObs + out$CompRandFld$varSpatial*(1 - stmv_matern( ds, out$CompRandFld$phi, out$CompRandFld$nu ) )
       lines( ds, ac, col="orange" )
       abline( h=0, lwd=1, col="lightgrey" )
