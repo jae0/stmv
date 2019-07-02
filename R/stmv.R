@@ -825,7 +825,7 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
       p$time_start_runmode = Sys.time()
       currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
       parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) )
-      if ( "restart_save" %in% runmode ) stmv_db(p=p, DS="save_current_state", runmode="interpolate")
+      stmv_db(p=p, DS="save_current_state", runmode="interpolate")
     }
     message( paste( "Time used for <interpolate>: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
   }
@@ -839,14 +839,14 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
     if ( "restart_load" %in% runmode ) {
       stmv_db(p=p, DS="load_saved_state", runmode="interpolate_boost")
     } else {
-      p$clusters = p$stmv_clusters[["interpolate"]] # as ram reqeuirements increase drop cpus
-      cor_boost0 = p$stmv_range_correlation_boostdata
-      for ( cor_b in cor_boost0) {
+      cor_boost0 = p$stmv_clusters[["interpolate_boost"]]
+      for ( j in 1:length(cor_boost0) ) {
         p$time_start_runmode = Sys.time()
-        p$stmv_range_correlation_boostdata = cor_b
+        p$stmv_range_correlation_boostdata = cor_boost0[[j]]
+        p$clusters = p$stmv_range_correlation_boostdata_ncpu[j] # as ram reqeuirements increase drop cpus
         currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
         parallel_run( stmv_interpolate, p=p, runoption="boostdata", runindex=list( locs=sample( currentstatus$todo )))
-        if ( "restart_save" %in% runmode ) stmv_db(p=p, DS="save_current_state", runmode="interpolate_boost")
+        stmv_db(p=p, DS="save_current_state", runmode="interpolate_boost")
       }
     }
     message( "||| Time used for <interpolate_boost>: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" )
@@ -868,7 +868,7 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
       p$time_start_runmode = Sys.time()
       currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
       parallel_run( stmv_interpolate_force_complete, p=p, runindex=list( time_index=1:p$nt ))
-      if ( "restart_save" %in% runmode ) stmv_db(p=p, DS="save_current_state", runmode="interpolate_force_complete")
+      stmv_db(p=p, DS="save_current_state", runmode="interpolate_force_complete")
     }
     message( "||| Time used for <interpolate_force_complete>: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" )
   }

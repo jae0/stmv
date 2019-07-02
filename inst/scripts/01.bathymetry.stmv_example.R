@@ -14,7 +14,8 @@ interpolate_ram_required_main_process = 1 # GB twostep / fft
 interpolate_ram_required_per_process  = 1 # twostep / fft /fields vario ..
 interpolate_ncpus = min( parallel::detectCores(), floor( (ram_local()- interpolate_ram_required_main_process) / interpolate_ram_required_per_process ) )
 
-p0 = aegis::spatial_parameters( spatial.domain="testing", internal.crs="+proj=utm +ellps=WGS84 +zone=20 +units=km", dres=1/60/4, pres=0.5, lon0=-64, lon1=-62, lat0=44, lat1=45, psignif=2 )
+
+p0 = aegis::spatial_parameters( spatial.domain="bathymetry_example", internal.crs="+proj=utm +ellps=WGS84 +zone=20 +units=km", dres=1/60/4, pres=0.5, lon0=-64, lon1=-62, lat0=44, lat1=45, psignif=2 )
 
 DATA = list(
   input = stmv::stmv_test_data( datasource="aegis.space", p=p0),
@@ -27,7 +28,7 @@ DATA$input = DATA$input[, c("plon", "plat", "z")]
 p = aegis.bathymetry::bathymetry_parameters(
   p=p0,
   project.mode="stmv",
-  data_root = file.path(work_root, "test"),
+  data_root = file.path(work_root, "bathymetry_example"),
   DATA = DATA,
   spatial.domain = p0$spatial.domain,
   pres_discretization_bathymetry = p0$pres,
