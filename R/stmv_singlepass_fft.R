@@ -1,13 +1,12 @@
 
-stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default", eps=1e-9, tol=1e-9, discretized_n=100, ... ) {
+stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default", eps=1e-9, discretized_n=100, ... ) {
   #\\ core function to interpolate (model and predict) in parallel
   #\\ unfold all main subroutines to max speed and reduce memory usage
 
   if (0) {
     # for debugging  runs ..
-    discretized_n=100
+    discretized_n=128
     eps = 1e-9
-    tol = 1e-9
     currentstatus = stmv_statistics_status( p=p )
     p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) )
     ip = 1:p$nruns
@@ -27,26 +26,24 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
 
   #---------------------
   # data for modelling
+  E = stmv_error_codes()
   S = stmv_attach( p$storage.backend, p$ptr$S )
   Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-  E = stmv_error_codes()
-
   Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
   Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
-
   Y = stmv_attach( p$storage.backend, p$ptr$Y )
   Yi = stmv_attach( p$storage.backend, p$ptr$Yi )  # initial indices of good data
 
   if (p$nloccov > 0) Ycov = stmv_attach( p$storage.backend, p$ptr$Ycov )
   if ( exists("TIME", p$variables) ) Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )
 
+
   # pre-calculate indices and dim for data to use inside the loop
   dat_names = unique( c(  p$variables$Y, p$variable$LOCS, p$variables$local_all,  "weights") )  # excludes p$variables$TIME
-  if (p$stmv_local_modelengine %in% c("fft", "tps") ) {
     if ( exists("TIME", p$variables)) {
       dat_names = c(dat_names, p$variables$TIME)
     }
-  }
+
   # unless it is an explicit covariate and not a seasonal component there is no need for it
   # .. prediction grids create these from a time grid on the fly
   dat_nc = length( dat_names )
@@ -87,187 +84,171 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
     # if (debugging) print( paste("index =", iip, ";  Si = ", Si ) )
     if ( Sflag[Si] == E[["complete"]] ) next()
 
+
     # obtain indices of data locations withing a given spatial range, optimally determined via variogram
     # find data nearest Sloc[Si,] and with sufficient data
     ndata = 0
-    d1 = abs( Sloc[Si,1] - Yloc[Yi[],1] )
-    d2 = abs( Sloc[Si,2] - Yloc[Yi[],2] )
 
-    for ( nmin_data in stmv_nmins ) {
-      # print(nmin_data)
-      for ( stmv_distance_cur in p$stmv_distance_scale )  {
-        # print(stmv_distance_cur)
-        U = which( d1 <= stmv_distance_cur & d2 <= stmv_distance_cur )  # faster to take a block
+    for ( ntarget in stmv_ntarget ) {
+      for ( stmv_distance_cur in stmv_distances )  {
+        print(stmv_distance_cur)
+        # obtain indices of data locations withing a given spatial range, optimally determined via variogram
+        # faster to take a block .. but easy enough to take circles ...
+        U = which(
+          (abs( Sloc[Si,1] - Yloc[Yi[],1] ) <= stmv_distance_cur ) &
+          (abs( Sloc[Si,2] - Yloc[Yi[],2] ) <= stmv_distance_cur )
+        )
         ndata = length(U)
-        # print(ndata)
-        if ( ndata >= nmin_data ) {
-          # print( "enough data")
-          if (ndata > stmv_nmax ) {
-            # try to trim
-            # print("trimming")
-            if ( exists("TIME", p$variables)) {
-              iU = stmv_discretize_coordinates( coo=cbind(Yloc[U,], Ytime[U]), ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )
-            } else {
-              iU = stmv_discretize_coordinates( coo=Yloc[U,], ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )
-            }
-            ndata = length(iU)
-            # print(ndata)
-            U=U[iU]
-            if ( ndata >= nmin_data ) break()
+
+        if (ndata < p$stmv_nmin) {
+
+          Sflag[Si] = E[["insufficient_data"]]
+
+        } else if (ndata > p$stmv_nmax) {
+
+          # try to trim
+          if ( exists("TIME", p$variables)) {
+            iU = stmv_discretize_coordinates( coo=cbind(Yloc[U,], Ytime[U]), ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )
+          } else {
+            iU = stmv_discretize_coordinates( coo=Yloc[U,], ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )
           }
+          ndata = length(iU)
+          # print(ndata)
+
+          ntarget = floor( (p$stmv_nmax+p$stmv_nmin)/2 )
+
+          if (ndata < p$stmv_nmin) {
+            # return some data
+            uu = setdiff( 1:length(U), iU)
+            nuu = length(uu)
+            iMore = uu[ .Internal( sample( nuu, {ntarget - ndata}, replace=FALSE, prob=NULL)) ]
+            U = U[c(iU, iMore)]
+            ndata = ntarget
+            iMore = nuu = uu = NULL
+
+          } else if (ndata > p$stmv_nmax) {
+
+            # force via a random subsample
+            U = U[iU]
+            U = U[ .Internal( sample( length(U), ntarget, replace=FALSE, prob=NULL)) ] # simple random
+            ndata = ntarget
+
+          } else {
+
+            U = U[iU]
+
+          }
+
+        } else  if (ndata <= p$stmv_nmax & ndata >= p$stmv_nmin) {
+          # all good .. nothing to do
         }
+        iU = NULL
+
+        yi = Yi[U]
+
+        if ( is.null( yi ) ) next()
+        ndata = length(yi)
+        if ( ndata >= ntarget ) break()  # innermost loop
       }
-      if ( ndata >= nmin_data ) break()
+      if ( ndata >= ntarget ) break() # middle loop
     }
+
+    if (ndata < p$stmv_nmin ) {
+      Sflag[Si] = E[["insufficient_data"]]
+      if (debugging) print( paste("index =", iip, ";  insufficient data"  ) )
+      next()   #not enough data
+    }
+
 
     YiU = Yi[U]
     U = NULL
     d1 = d2 = NULL
 
-    if (ndata < nmin_data) {
-      Sflag[Si] = E[["insufficient_data"]]
-      # if (debugging) print( paste("index =", iip, ";  insufficient data"  ) )
-      next()   #not enough data
-    }
     # NOTE: this range is a crude estimate that averages across years (if any) ...
 
-    SK = NULL
-    SK = list()
-    SK$Ndata = ndata
-    SK$varZ = var( Y[YiU,], na.rm=TRUE )  # this is the scaling factor for semivariance .. diving by sd, below reduces numerical floating point issues
+    o = NULL
+    gc()
+
+    xy = Yloc[yi,]
+    z = Y[yi,]
+
+    distance_cutoff=stmv_distance_cur
+    discretized_n = p$stmv_discretized_n
+    nbreaks=p$stmv_variogram_nbreaks
+    range_correlation=p$stmv_range_correlation
+
+    out = list()
+
+    out$Ndata = length(yi)
+    out$varZ = var( Y[yi,], na.rm=TRUE )  # this is the scaling factor for semivariance .. diving by sd, below reduces numerical floating point issues
+
     # reduce scale of distances to reduce large number effects
-    SK$range_crude = sqrt( diff(range(Yloc[YiU,1]))^2 + diff(range(Yloc[YiU,2]))^2) / 4  #initial scaling distance
-    SK$stmv_internal_scale = matern_distance2phi( SK$range_crude, nu=0.5 )  # the presumed scaling distance to make calcs use smaller numbers
+    out$range_crude = sqrt( diff(range(xy[,1]))^2 + diff(range(xy[,2]))^2) / 4  #initial scaling distance
+    out$stmv_internal_scale = matern_distance2phi( out$range_crude, nu=0.5 )  # the presumed scaling distance to make calcs use smaller numbers
+
     # if max dist not given, make a sensible choice using exponential variogram as a first estimate
-    SK$distance_cutoff = ifelse( is.na(stmv_distance_cur), SK$range_crude * 1.5, stmv_distance_cur )
+    if ( is.na(distance_cutoff) ) {
+      out$distance_cutoff = out$range_crude * 1.5
+    } else {
+      out$distance_cutoff = distance_cutoff
+    }
+
+    zmin = min( Y[yi,], na.rm=TRUE )
+
+    xy = xy + out$stmv_internal_scale * runif(2*out$Ndata, -1e-9, 1e-9) # add a small error term to prevent some errors in GRMF methods
+
 
     # spatial discretization
-    xyz = stmv_discretize_coordinates(coo=Yloc[YiU,], z=Y[YiU,], discretized_n=discretized_n, method="aggregate", FUNC=mean, na.rm=TRUE)
-    names(xyz) =  c("plon", "plat", "z" ) # arbitrary
+    XYZ = stmv_discretize_coordinates(coo=xy, z=Y[yi,], discretized_n=discretized_n, method="aggregate", FUNC=mean, na.rm=TRUE)
+    names(XYZ) =  c("plon", "plat", "z" ) # arbitrary
 
-    nx = nr = discretized_n
-    ny = nc = discretized_n
+    VGM = stmv_variogram_fft( xyz=XYZ, nx=discretized_n, ny=discretized_n, nbreaks=nbreaks )  # empirical variogram by fftw2d
+    uu = which( (VGM$vgm$distances < 0.9*max(VGM$vgm$distances) ) & is.finite(VGM$vgm$sv) )
 
-    names(xyz) =c("x", "y", "z")
-    zmean = mean(xyz$z, na.rm=TRUE)
-    zsd = sd(xyz$z, na.rm=TRUE)
-    zvar = zsd^2
-    Z = (xyz$z - zmean) / zsd # zscore
-
-    x_r = range(xyz$x)
-    x_c = range(xyz$y)
-
-    dr = diff(x_r)/(nr-1)
-    dc = diff(x_c)/(nc-1)
-
-    nr2 = 2 * nr
-    nc2 = 2 * nc
-
-    mY = matrix(0, nrow = nr2, ncol = nc2)
-    mN = matrix(0, nrow = nr2, ncol = nc2)
-
-    u = as.image( Z=Z, x=xyz[, c("x", "y")], na.rm=TRUE, nx=nr, ny=nc )
-    # surface(u)
-
-    mY[1:nr,1:nc] = u$z
-    mY[!is.finite(mY)] = 0
-
-    #  Nadaraya/Watson normalization for missing values s
-    mN[1:nr,1:nc] = u$weights
-    mN[!is.finite(mN)] = 0
-
-    # See explanation:  https://en.wikipedia.org/wiki/Autocorrelation#Efficient_computation
-    # Robertson, C., & George, S. C. (2012). Theory and practical recommendations for autocorrelation-based image
-    # correlation spectroscopy. Journal of biomedical optics, 17(8), 080801. doi:10.1117/1.JBO.17.8.080801
-    # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3414238/
-
-    fY = fftwtools::fftw2d(mY)
-    fN = fftwtools::fftw2d(mN)
-
-    # fY * Conj(fY) == power spectra
-    ii = Re( fftwtools::fftw2d( fY * Conj(fY), inverse=TRUE)  ) # autocorrelation (amplitude)
-    jj = Re( fftwtools::fftw2d( fN * Conj(fN), inverse=TRUE)  ) # autocorrelation (amplitude) correction
-
-    X = ifelse(( jj > eps), (ii / jj), NA) # autocorrelation, corrected for missing values
-    ii = jj = NULL
-
-    # fftshift
-    X = rbind(X[((nr+1):nr2), (1:nc2)], X[(1:nr), (1:nc2)])  # swap_up_down
-    X = cbind(X[1:nr2, ((nc+1):nc2)], X[1:nr2, 1:nc])  # swap_left_right
-
-    # radial representation
-    xy = expand.grid( x = c(-(nr-1):0, 0:(nr-1)) * dr,  y = c(-(nc-1):0, 0:(nc-1)) * dc )
-    distances = sqrt(xy$x^2 + xy$y^2)
-    dmax = max(distances, na.rm=TRUE ) * 0.4  # approx nyquist distance (<0.5 as corners exist)
-    breaks = seq( 0, dmax, length.out=p$stmv_variogram_nbreaks)
-    db = breaks[2] - breaks[1]
-    # angles = atan2( xy$y, xy$x )  # not used
-
-    zz = cut( distances, breaks=c(breaks, max(breaks)+db), label=breaks+(db/2) )
-    distances = NULL
-    xy = NULL
-    breaks = NULL
-
-    SK = as.data.frame.table(tapply( X=X, INDEX=zz, FUN=mean, na.rm=TRUE ))
-    names(SK) = c("distances", "ac")
-    SK$distances = as.numeric( as.character(SK$distances))
-
-    SK$sv =  zvar * (1-SK$ac^2) # each sv are truly orthogonal
-    # plot(ac ~ distances, data=SK[uu,]   )
-    # plot(sv ~ distances, data=SK[uu,]   )
-    zz = NULL
-
-    uu = which( (SK$distances < 0.9*max(SK$distances) ) & is.finite(SK$sv) )
-    fit = try( stmv_variogram_optimization( vx=SK$distances[uu], vg=SK$sv[uu], plotvgm=plotdata, stmv_internal_scale=SK$stmv_internal_scale, cor=p$stmv_range_correlation  ))
+    fit = try( stmv_variogram_optimization( vx=VGM$vgm$distances[uu], vg=VGM$vgm$sv[uu], plotvgm=plotdata,
+      stmv_internal_scale=out$stmv_internal_scale, cor=range_correlation  ))
 
     if ( !inherits(fit, "try-error") ) {
-      SK$fft = fit$summary
-      if (exists("phi", SK$fft)) {
-        if (is.finite(SK$fft$phi)) {
-          SK$fft$phi_ok = ifelse( SK$fft$phi < SK$distance_cutoff*0.99, TRUE, FALSE )
+      out$fft = fit$summary
+      if (exists("phi", out$fft)) {
+        if (is.finite(out$fft$phi)) {
+          out$fft$phi_ok = ifelse( out$fft$phi < out$distance_cutoff*0.99, TRUE, FALSE )
         }
       }
     }
-    fit = NULL
-    uu = NULL
 
+    if (plotdata) {
+      xlim= c(0, fit$summary$vgm_dist_max*1.1)
+      ylim= c(0, fit$summary$vgm_var_max*1.1)
+      plot( fit$summary$vx, fit$summary$vg, col="green", xlim=xlim, ylim=ylim )
+      ds = seq( 0, fit$summary$vgm_dist_max, length.out=100 )
+      ac = fit$summary$varObs + fit$summary$varSpatial*(1 - stmv_matern( ds, fit$summary$phi, fit$summary$nu ) )
+      lines( ds, ac, col="orange" )
+      abline( h=0, lwd=1, col="lightgrey" )
+      abline( v=0 ,lwd=1, col="lightgrey" )
+      abline( h=fit$summary$varObs, lty="dashed", col="grey" )
+      abline( h=fit$summary$varObs + fit$summary$varSpatial, lty="dashed", col="grey" )
+      localrange = matern_phi2distance( phi=fit$summary$phi, nu=fit$summary$nu, cor=range_correlation )
+      abline( v=localrange, lty="dashed", col="grey")
+    }
 
-      # if (debugging) {
-      #   xlim= c(0, fit$summary$vgm_dist_max*1.1)
-      #   ylim= c(0, fit$summary$vgm_var_max*1.1)
-      #   plot( fit$summary$vx, fit$summary$vg, col="green", xlim=xlim, ylim=ylim )
-      #   ds = seq( 0, fit$summary$vgm_dist_max, length.out=100 )
-      #   ac = fit$summary$varObs + fit$summary$varSpatial*(1 - stmv_matern( ds, fit$summary$phi, fit$summary$nu ) )
-      #   lines( ds, ac, col="orange" )
-      #   abline( h=0, lwd=1, col="lightgrey" )
-      #   abline( v=0 ,lwd=1, col="lightgrey" )
-      #   abline( h=fit$summary$varObs, lty="dashed", col="grey" )
-      #   abline( h=fit$summary$varObs + fit$summary$varSpatial, lty="dashed", col="grey" )
-      #   localrange = matern_phi2distance( phi=fit$summary$phi, nu=fit$summary$nu, cor=p$stmv_range_correlation )
-      #   abline( v=localrange, lty="dashed", col="grey")
-      # }
+    yi = NULL
 
-
-
-# ---------------------
-# NOTE -- compute fft-based variogram at each time step ..
-
-
-
+    gc()
 
     if ( is.null(o)) {
       Sflag[Si] = E[["variogram_failure"]]
-      # if (debugging) print( paste("index =", iip, ";  o is null"  ) )
+      if (debugging) print( paste("index =", iip, ";  o is null"  ) )
       next()
     }
     if ( inherits(o, "try-error")) {
       Sflag[Si] = E[["variogram_failure"]]
-      # if (debugging) print( paste("index =", iip, ";  o has try error"  ) )
+      if (debugging) print( paste("index =", iip, ";  o has try error"  ) )
       next()
     }
     if ( !exists(p$stmv_variogram_method, o)) {
       Sflag[Si] =  E[["variogram_failure"]]
-      # if (debugging) print( paste("index =", iip, ";  o does not have a solution"  ) )
+      if (debugging) print( paste("index =", iip, ";  o does not have a solution"  ) )
       next()
     }
     om  = o[[p$stmv_variogram_method]] # save stats
@@ -318,14 +299,14 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
                 }
               }
             }
-            if ( !is.finite(SK[["ar_1"]]) ) {
+            if ( !is.finite(out[["ar_1"]]) ) {
               ar1 = try( cor( pac$mean[1:(length(piid) - 1)], pac$mean[2:(length(piid))], use="pairwise.complete.obs" ) )
               if (!inherits(ar1, "try-error")) ar_1 = ar1
             }
           }
 
           ### Do the logistic model here ! -- if not already done ..
-          if (!exists("ts_K", SK)) {
+          if (!exists("ts_K", out)) {
             # model as a logistic with ts_r, ts_K, etc .. as stats outputs
 
           }
@@ -371,15 +352,16 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
                 }
               }
             }
-            if ( !is.finite(SK[["ar_1"]]) ) {
+            if ( !is.finite(out[["ar_1"]]) ) {
               ar1 = try( cor( pac$mean[1:(length(piid) - 1)], pac$mean[2:(length(piid))], use="pairwise.complete.obs" ) )
               if (!inherits(ar1, "try-error")) ar_1 = ar1
             }
           }
 
           ### Do the logistic model here ! -- if not already done ..
-          if (!exists("ts_K", SK)) {
+          if (!exists("ts_K", out)) {
             # model as a logistic with ts_r, ts_K, etc .. as stats outputs
+
           }
 
         }
@@ -395,44 +377,48 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
       }
     }
 
+    Sflag[Si] = E[["complete"]]  # mark as complete without issues
+
+    if (debugging) {
+      print( paste("index =", iip, ";  Sflag = ", names(E)[match(Sflag[Si], E)]  ) )
+    }
+
+
+    if ( is.null(o)) {
+      Sflag[Si] = E[["variogram_failure"]]
+      # if (debugging) print( paste("index =", iip, ";  o is null"  ) )
+      next()
+    }
+    if ( inherits(o, "try-error")) {
+      Sflag[Si] = E[["variogram_failure"]]
+      # if (debugging) print( paste("index =", iip, ";  o has try error"  ) )
+      next()
+    }
+    if ( !exists(p$stmv_variogram_method, o)) {
+      Sflag[Si] =  E[["variogram_failure"]]
+      # if (debugging) print( paste("index =", iip, ";  o does not have a solution"  ) )
+      next()
+    }
+    om  = o[[p$stmv_variogram_method]] # save stats
+
+    statvars_scale = c(
+      sdTotal =sqrt( o$varZ),
+      sdSpatial = sqrt(om$varSpatial) ,
+      sdObs = sqrt(om$varObs),
+      phi = om$phi,
+      nu = om$nu,
+      ndata=ndata
+    )
+    S[Si,match( names(statvars_scale), p$statsvars )] = statvars_scale
+
+
+
 
     distance_limits = range( c(p$pres*3,  p$stmv_distance_scale ) )   # for range estimate
 
-    vg = list(
-      nu    = S[Si, match("nu",   p$statsvars)] ,
-      phi   = S[Si, match("phi",  p$statsvars)] ,
-      varSpatial = S[Si, match("sdSpatial", p$statsvars)]^2 ,
-      varObs     = S[Si, match("sdObs",   p$statsvars)]^2 ,
-      varTotal   = S[Si, match("sdTotal", p$statsvars)]^2 ,
-      ndata = S[Si, match("ndata", p$statsvars)],
-      flag = "todo"
-    )
 
-    #range checks
-    phi_redo = FALSE
-    if (!is.finite(vg$phi)) {
-      phi_redo = TRUE
-    } else {
-      if (vg$phi < distance_limits[1] | vg$phi > distance_limits[2])  {
-        phi_redo = TRUE
-      }
-    }
 
-    ii = NULL
-    if (phi_redo) {
-      vg$flag = "variogram_failure"
-      max_dist = max(p$stmv_distance_scale)
-      ii = which(
-        {abs( Sloc[Si,1] - Sloc[,1] ) <= distance_limits[2]} &
-        {abs( Sloc[Si,2] - Sloc[,2] ) <= distance_limits[2]}
-      )
-      if (length(ii) > 0) {
-        phi_median = median( S[ii, match("phi", p$statsvars)], na.rm=TRUE )
-        if (is.finite( phi_median)) {
-          vg$phi =  phi_median
-        }
-      }
-    }
+
 
     if (!is.finite(vg$phi)) vg$phi = median(distance_limits)
     if ( vg$phi < distance_limits[1] )  vg$phi = distance_limits[1]
@@ -745,8 +731,6 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
 
   dat=pxts
 
-  tol=1e-9
-
 
   #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
   #\\ note: time is not being modelled and treated independently
@@ -774,7 +758,7 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
   nc = floor( diff(x_c)/p$pres ) + 1
 
   # final output grid
-  x_locs = expand.grid(
+  x_locs = expand_grid_fast(
     seq( x_r[1], x_r[2], length.out=nr ),
     seq( x_c[1], x_c[2], length.out=nc )
   )
@@ -808,9 +792,11 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
 
   # constainer for spatial filters
   grid.list = list((1:nr2) * dx, (1:nc2) * dy)
-  dgrid = as.matrix(expand.grid(grid.list))
+  # dgrid = as.matrix(expand.grid(grid.list))  # a bit slower
+  dgrid = expand_grid_fast(  grid.list[[1]],  grid.list[[2]] )
   dimnames(dgrid) = list(NULL, names(grid.list))
   attr(dgrid, "grid.list") = grid.list
+  grid.list = NULL
 
   center = matrix(c((dx * nr), (dy * nc)), nrow = 1, ncol = 2)
 
@@ -902,26 +888,34 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
       pa_i = 1:nrow(pa)
     }
 
-    u = as.image(
-      dat[xi, p$variables$Y],
-      ind=as.matrix(array_map( "xy->2", coords=dat[xi, p$variables$LOCS], origin=origin, res=res )),
-      na.rm=TRUE,
-      nx=nr,
-      ny=nc
-    )
 
-    mY[1:nr,1:nc] = u$z
+    # u = as.image(
+    #   dat[xi, p$variables$Y],
+    #   ind=as.matrix(array_map( "xy->2", coords=dat[xi, p$variables$LOCS], origin=origin, res=res )),
+    #   na.rm=TRUE,
+    #   nx=nr,
+    #   ny=nc
+    # )
+
+
+    coo = as.matrix(array_map( "xy->2", coords=dat[xi, p$variables$LOCS], origin=origin, res=res ))
+    mY[1:nr,1:nc] = tapply( X=dat[xi, p$variables$Y], INDEX=list(coo[,1], coo[,2]), FUN = function(w) {mean(w, na.rm=TRUE)}, simplify=TRUE )
+    mN[1:nr,1:nc] = tapply( X=dat[xi, p$variables$Y], INDEX=list(coo[,1], coo[,2]), FUN = function(w) {length(w)}, simplify=TRUE )
+    coo = NULL
+
+
+    # mY[1:nr,1:nc] = u$z
     mY[!is.finite(mY)] = 0
 
     #  Nadaraya/Watson normalization for missing values s
-    mN[1:nr,1:nc] = u$weights
+    # mN[1:nr,1:nc] = u$weights
     mN[!is.finite(mN)] = 0
 
     u =NULL
 
     fY = Re( fftwtools::fftw2d( sp.covar.kernel * fftwtools::fftw2d(mY), inverse = TRUE))[1:nr, 1:nc]  #real amplitudes
     fN = Re( fftwtools::fftw2d( sp.covar.kernel * fftwtools::fftw2d(mN), inverse = TRUE))[1:nr, 1:nc]
-    Z = ifelse((fN > tol), (fY/fN), NA)
+    Z = ifelse(fN > eps, (fY / fN), NA)
     fY = fN = NULL
 
     # low pass filter based upon a global nu,phi .. remove high freq variation

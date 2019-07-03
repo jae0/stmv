@@ -18,12 +18,12 @@ stmv__mba = function( p=NULL, dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) {
   nc = floor( diff(x_c)/p$pres ) + 1
 
   # final output grid
-  x_locs = expand.grid(
-    seq( x_r[1], x_r[2], length.out=nr ),
-    seq( x_c[1], x_c[2], length.out=nc )
-  )
-  attr( x_locs , "out.attrs") = NULL
-  names( x_locs ) = p$variables$LOCS
+  # x_locs = expand_grid_fast(
+  #   seq( x_r[1], x_r[2], length.out=nr ),
+  #   seq( x_c[1], x_c[2], length.out=nc )
+  # )
+  # attr( x_locs , "out.attrs") = NULL
+  # names( x_locs ) = p$variables$LOCS
 
   dat$mean = NA
   pa$mean = NA

@@ -1,8 +1,8 @@
 
 
-stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpolate_boost", "interpolate_force_complete", "save_completed_data"),
+stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpolate_boost", "interpolate_force_complete", "save_completed_data", "save_intermediate_results"),
   DATA=NULL, variogram_source ="saved_state",
-  use_saved_state=NULL, save_completed_data=TRUE, nlogs=200,
+  use_saved_state=NULL, nlogs=200,
   debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE, robustify_quantiles=c(0.0005, 0.9995), ... ) {
 
   if (0) {
@@ -10,7 +10,6 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
     use_saved_state=NULL # or "disk"
     DATA=NULL
     variogram_source ="saved_state"
-    save_completed_data=TRUE  # export out of stmv system for use outside (e.g., by aegis)
     debug_plot_variable_index=1
     robustify_quantiles=c(0.0005, 0.9995)
     # runmode=c("interpolate", "globalmodel")
@@ -294,7 +293,7 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
       plats = seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ),
       plons = seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ) )
     # statistics coordinates
-    Sloc = as.matrix( expand.grid( sbox$plons, sbox$plats ))
+    Sloc = as.matrix( expand_grid_fast( sbox$plons, sbox$plats ))
     nSloc = nrow(Sloc)
       if (p$storage.backend == "bigmemory.ram" ) {
         tmp_Sloc = big.matrix(nrow=nSloc, ncol=ncol(Sloc), type="double"  )
@@ -809,7 +808,7 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
       p$time_start_runmode = Sys.time()
       currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
       parallel_run( stmv_singlepass_fft, p=p, runindex=list( locs=sample( currentstatus$todo )) )
-      if ( "restart_save" %in% runmode ) stmv_db(p=p, DS="save_current_state", runmode="singlepass_fft")
+      if ( "save_intermediate_results" %in% runmode )  stmv_db(p=p, DS="save_current_state", runmode="singlepass_fft")
     }
     message( paste( "Time used for <singlepass_fft>: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
   }
@@ -825,7 +824,7 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
       p$time_start_runmode = Sys.time()
       currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
       parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) )
-      stmv_db(p=p, DS="save_current_state", runmode="interpolate")
+      if ( "save_intermediate_results" %in% runmode ) stmv_db(p=p, DS="save_current_state", runmode="interpolate")
     }
     message( paste( "Time used for <interpolate>: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
   }
@@ -846,7 +845,7 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
         p$clusters = p$stmv_range_correlation_boostdata_ncpu[j] # as ram reqeuirements increase drop cpus
         currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
         parallel_run( stmv_interpolate, p=p, runoption="boostdata", runindex=list( locs=sample( currentstatus$todo )))
-        stmv_db(p=p, DS="save_current_state", runmode="interpolate_boost")
+        if ( "save_intermediate_results" %in% runmode ) stmv_db(p=p, DS="save_current_state", runmode="interpolate_boost")
       }
     }
     message( "||| Time used for <interpolate_boost>: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" )
@@ -868,7 +867,7 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
       p$time_start_runmode = Sys.time()
       currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
       parallel_run( stmv_interpolate_force_complete, p=p, runindex=list( time_index=1:p$nt ))
-      stmv_db(p=p, DS="save_current_state", runmode="interpolate_force_complete")
+      if ( "save_intermediate_results" %in% runmode ) stmv_db(p=p, DS="save_current_state", runmode="interpolate_force_complete")
     }
     message( "||| Time used for <interpolate_force_complete>: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" )
   }
