@@ -42,11 +42,11 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_fft_filter = "lowpass_matern_tapered", #  act as a low pass filter first before matern with taper .. depth has enough data for this. Otherwise, use:
   stmv_fft_taper_fraction = sqrt(0.5),  # in local smoothing convolutions taper to this areal expansion factor sqrt( r=0.5 ) ~ 70% of variance in variogram
   stmv_fft_taper_correlation = 0,  # benchmark from which to taper
-  stmv_lowpass_nu = 0.5,
+  stmv_lowpass_nu = 0.25,
   stmv_lowpass_phi = 0.1,  # note: p$pres = 0.2
   stmv_variogram_method = "fft",
-  stmv_variogram_nbreaks = 50,
-  stmv_discretized_n = 100,
+  stmv_variogram_nbreaks = 64,
+  stmv_discretized_n = 128,
   stmv_range_correlation=0.1,
   stmv_range_correlation_boostdata = c(0.01, 0.001, 0.0001),
   depth.filter = FALSE,  # need data above sea level to get coastline

@@ -1,6 +1,6 @@
 
 
-stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", ... ) {
+stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
   #\\ core function to interpolate (model and predict) in parallel
 
   if (0) {
@@ -9,7 +9,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
     p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) )
     ip = 1:p$nruns
     debugging=TRUE
-    runoption="default"
+    p$runoption="default"
   }
 
   # ---------------------
@@ -86,8 +86,8 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
   i_sdSpatial = match("sdSpatial",   p$statsvars)
   i_sdObs = match("sdObs",   p$statsvars)
 
-  if (runoption=="default") local_corel = p$stmv_range_correlation
-  if (runoption=="boostdata") local_corel = p$stmv_range_correlation_boostdata
+  if (p$runoption=="default") local_corel = p$stmv_range_correlation
+  if (p$runoption=="boostdata") local_corel = p$stmv_range_correlation_boostdata
 
 ## drange = max( min( max(p$stmv_distance_scale )),  min(p$pres, p$stmv_distance_scale ))
       # global estimates
@@ -103,7 +103,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
 
-    if ( iip %in% logpoints )  currentstatus = stmv_logfile(p=p, flag= paste("Interpolation", runoption) )
+    if ( iip %in% logpoints )  currentstatus = stmv_logfile(p=p, flag= paste("Interpolation", p$runoption) )
     Si = p$runs[ iip, "locs" ]
 
     # print( paste("index =", iip, ";  Si = ", Si ) )
@@ -170,7 +170,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
         if (p$stmv_rangecheck=="paranoid") {
           if ( Sflag[Si] %in% c( E[["variogram_range_limit"]], E[["variogram_failure"]]) ) {
             if (debugging) message("Error: stmv_rangecheck paranoid")
-            if (runoption == "default" )  next()
+            if (p$runoption == "default" )  next()
           }
         }
       }
