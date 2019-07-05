@@ -839,11 +839,11 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
     if ( "restart_load" %in% runmode ) {
       stmv_db(p=p, DS="load_saved_state", runmode="interpolate_boost")
     } else {
-      cor_boost0 = p$stmv_clusters[["interpolate_boost"]]
+      cor_boost0 = p$stmv_range_correlation_boostdata
       for ( j in 1:length(cor_boost0) ) {
         p$time_start_runmode = Sys.time()
-        p$stmv_range_correlation_boostdata = cor_boost0[[j]]
-        p$clusters = p$stmv_range_correlation_boostdata_ncpu[j] # as ram reqeuirements increase drop cpus
+        p$stmv_range_correlation_boostdata = cor_boost0[j]
+        p$clusters = p$stmv_clusters[["interpolate_boost"]][j] # as ram reqeuirements increase drop cpus
         p$runoption="boostdata"
         currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
         parallel_run( stmv_interpolate, p=p,  runindex=list( locs=sample( currentstatus$todo )))

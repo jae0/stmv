@@ -60,8 +60,16 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_distance_prediction_fraction = 4/5, # i.e. 4/5 * 5 = 4 km .. relative to stats grid
   stmv_nmin = 200,  # min number of data points req before attempting to model in a localized space
   stmv_nmax = 800, # no real upper bound.. just speed /RAM
-  stmv_clusters = list( scale=rep("localhost", scale_ncpus), interpolate=rep("localhost", interpolate_ncpus) )  # ncpus for each runmode
-)
+  stmv_clusters = list(
+    scale=rep("localhost", scale_ncpus),
+    interpolate=rep("localhost", interpolate_ncpus),
+    interpolate_boost = list(
+        cor_0.01 = rep("localhost", max(1, interpolate_ncpus-1)),
+        cor_0.001 = rep("localhost", max(1, interpolate_ncpus-2)),
+        cor_0.0001 = rep("localhost", max(1, interpolate_ncpus-2))
+      )  # ncpus for each runmode
+    )  # ncpus for each runmode
+  )
 
 p$spatial.domain.subareas =NULL
 
