@@ -113,7 +113,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   resolution = c(dx, dy)
 
   # precompute a few things that are used repeatedly for time-specific variograms
-  if ( exists("TIME", p$variables) ) {
+
     xy = expand_grid_fast( c(-(nr-1):0, 0:(nr-1)) * dr,  c(-(nc-1):0, 0:(nc-1)) * dc )
     distances = sqrt(xy[,1]^2 + xy[,2]^2)
     dmax = max(distances, na.rm=TRUE ) * 0.4  # approx nyquist distance (<0.5 as corners exist)
@@ -124,7 +124,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     xy = NULL
     distances = NULL
     breaks = NULL
-  }
+
 
   fY = matrix(0, nrow = nr2, ncol = nc2)
   fN = matrix(0, nrow = nr2, ncol = nc2)
@@ -149,11 +149,12 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     zmean = mean(z, na.rm=TRUE)
     zsd = sd(z, na.rm=TRUE)
     zvar = zsd^2
-    z = (z - zmean) / zsd # zscore -- making it mean 0 removes the DC component
+    X = (z - zmean) / zsd # zscore -- making it mean 0 removes the DC component
+    z = NULL
 
     if (0) {
       u = as.image(
-        z,
+        X,
         ind=as.matrix(array_map( "xy->2", coords=dat[xi, p$variables$LOCS], origin=origin, res=resolution )),
         na.rm=TRUE,
         nx=nr,
@@ -172,8 +173,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3414238/
 
     coo = as.matrix(array_map( "xy->2", coords=dat[xi, p$variables$LOCS], origin=origin, res=resolution ))
-    yy = tapply( X=z, INDEX=list(coo[,1], coo[,2]), FUN = function(w) {mean(w, na.rm=TRUE)}, simplify=TRUE )
-    nn = tapply( X=z, INDEX=list(coo[,1], coo[,2]), FUN = function(w) {length(w)}, simplify=TRUE )
+    yy = tapply( X=X, INDEX=list(coo[,1], coo[,2]), FUN = function(w) {mean(w, na.rm=TRUE)}, simplify=TRUE )
+    nn = tapply( X=X, INDEX=list(coo[,1], coo[,2]), FUN = function(w) {length(w)}, simplify=TRUE )
     fY[as.numeric(dimnames(yy)[[1]]),as.numeric(dimnames(yy)[[2]])] = yy
     fN[as.numeric(dimnames(nn)[[1]]),as.numeric(dimnames(nn)[[2]])] = nn
     yy = nn = NULL
@@ -199,8 +200,10 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     X = rbind( X[((nr+1):nr2), (1:nc2)], X[(1:nr), (1:nc2)] )  # swap_up_down
     X = cbind( X[1:nr2, ((nc+1):nc2)], X[1:nr2, 1:nc])  # swap_left_right
     # zz (distance breaks) precomputed outside of loop
+
     vgm = as.data.frame.table(tapply( X=X, INDEX=zz, FUN=mean, na.rm=TRUE ))
     names(vgm) = c("distances", "ac")
+    vgm$distances = as.numeric(vgm$distances)
     X = NULL
 
     theta.Taper = vgm$distances[ find_intersection( vgm$ac, threshold=p$stmv_fft_taper_correlation ) ]
@@ -303,7 +306,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     X = X * zsd + zmean # revert to input scale
     if (0) {
       dev.new()
-      surface(list(x=c(1:nr)*dr, y=c(1:nc)*dc, z=Z), xaxs="r", yaxs="r")
+      surface(list(x=c(1:nr)*dr, y=c(1:nc)*dc, z=X), xaxs="r", yaxs="r")
     }
 
     X_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=resolution )

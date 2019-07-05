@@ -4,8 +4,10 @@ find_intersection = function( Y, threshold=0 ) {
     ngood = length(good)
     X = 1:ngood
     i = 1
-    while( Y[good[i]] > threshold ) i=i+1
-    if (i > ngood) i=ngood
-    index = good[i-1]
+    for (i in 1:ngood) {
+      if ( Y[good[i]] > threshold ) next()
+    }
+    if (i > ngood) i = ngood
+    index = good[i]
     return(index)
 }
