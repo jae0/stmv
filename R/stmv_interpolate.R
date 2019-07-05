@@ -79,26 +79,26 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
     savepoints = sample(logpoints, nsavepoints)
   }
 
-
-  if (runoption=="default") local_corel = p$stmv_range_correlation
-  if (runoption=="boostdata") local_corel = p$stmv_range_correlation_boostdata
-
-## drange = max( min( max(p$stmv_distance_scale )),  min(p$pres, p$stmv_distance_scale ))
-      # global estimates
-  global_nu = median( S[, match("nu", p$statsvars)], na.rm=TRUE )
-
-  if ( global_nu < 0.01 | global_nu > 5) global_nu = 0.5
-  global_phi = median( S[, match("phi", p$statsvars)], na.rm=TRUE )
-  global_range = matern_phi2distance( phi=global_phi, nu=global_nu, cor=local_corel )
-  distance_limits = range( c(p$pres*3,  p$stmv_distance_scale ) )   # for range estimate
-  if ( global_range < distance_limits[1] | global_range > distance_limits[2] ) global_range = distance_limits[2]
-
   i_ndata = match( "ndata", p$statsvars )
   i_rsquared = match("rsquared", p$statsvars )
   i_nu = match("nu",   p$statsvars)
   i_phi = match("phi",   p$statsvars)
   i_sdSpatial = match("sdSpatial",   p$statsvars)
   i_sdObs = match("sdObs",   p$statsvars)
+
+  if (runoption=="default") local_corel = p$stmv_range_correlation
+  if (runoption=="boostdata") local_corel = p$stmv_range_correlation_boostdata
+
+## drange = max( min( max(p$stmv_distance_scale )),  min(p$pres, p$stmv_distance_scale ))
+      # global estimates
+  global_nu = median( S[, i_nu], na.rm=TRUE )
+
+  if ( global_nu < 0.01 | global_nu > 5) global_nu = 0.5
+  global_phi = median( S[, i_phi], na.rm=TRUE )
+  global_range = matern_phi2distance( phi=global_phi, nu=global_nu, cor=local_corel )
+  distance_limits = range( c(p$pres*3,  p$stmv_distance_scale ) )   # for range estimate
+  if ( global_range < distance_limits[1] | global_range > distance_limits[2] ) global_range = distance_limits[2]
+
 
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
@@ -127,7 +127,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
         Sflag[Si] %in% E[["variogram_range_limit"]]
       }
     }
-    if ( !is.finite(nu) | (nu < 0.01) | (nu > 5) ) if (length(ii) > 0) nu =  median( S[ii, match("nu", p$statsvars)], na.rm=TRUE )
+    if ( !is.finite(nu) | (nu < 0.01) | (nu > 5) ) if (length(ii) > 0) nu =  median( S[ii, i_nu ], na.rm=TRUE )
     if ( !is.finite(nu) | (nu < 0.01) | (nu > 5) ) nu = global_nu
     if ( !is.finite(nu) | (nu < 0.01) | (nu > 5) ) nu = 0.5
 
@@ -140,7 +140,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
         Sflag[Si] %in% E[["variogram_range_limit"]]
       }
     }
-    if ( !is.finite(phi) | (phi < phi_lim[1]) | (phi > phi_lim[2]) )  if (length(ii) > 0)  phi =  median( S[ii, match("phi", p$statsvars)], na.rm=TRUE )
+    if ( !is.finite(phi) | (phi < phi_lim[1]) | (phi > phi_lim[2]) )  if (length(ii) > 0)  phi =  median( S[ii, i_phi ], na.rm=TRUE )
     if ( !is.finite(phi) | (phi < phi_lim[1]) | (phi > phi_lim[2]) )  phi = global_phi
     if ( !is.finite(phi) | (phi < phi_lim[1]) | (phi > phi_lim[2]) )  phi = phi_lim[2]
 
@@ -154,7 +154,12 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, runoption="default", .
         Sflag[Si] %in% E[["variogram_range_limit"]]
       }
     }
-    if ( !is.finite(localrange) | (localrange < distance_limits[1] ) | (localrange > distance_limits[2]) ) if (length(ii) > 0) localrange = median( S[ii, match("range", p$statsvars)], na.rm=TRUE )
+    # if ( !is.finite(localrange) | (localrange < distance_limits[1] ) | (localrange > distance_limits[2]) ) {
+    #   if (length(ii) > 0) {
+    #     local_phi = median( S[ii, i_phi) ], na.rm=TRUE )
+    #     localrange = matern_phi2distance(
+    #   }
+    # }
     if ( !is.finite(localrange) | (localrange < distance_limits[1] ) | (localrange > distance_limits[2]) ) localrange = global_range
     if ( !is.finite(localrange) | (localrange < distance_limits[1] ) | (localrange > distance_limits[2]) ) localrange = distance_limits[2]
 

@@ -41,7 +41,8 @@ stmv_parameters = function( p=list(), ... ) {
   if( !exists( "stmv_discretized_n", p)) p$stmv_discretized_n = 100
 
   if( !exists( "stmv_range_correlation", p)) p$stmv_range_correlation = 0.1   # auto-correlation at which to compute range distance
-  if( !exists( "stmv_fft_taper_factor", p)) p$stmv_fft_taper_factor = 5   # tapered "range" distance for estimation/interpolation .. relative factor ~ 1sd
+  if( !exists( "stmv_fft_taper_fraction", p)) p$stmv_fft_taper_fraction = sqrt(0.5)
+  if( !exists( "stmv_fft_taper_correlation", p)) p$stmv_fft_taper_correlation = 0   # scale at which to mark tapering
 
   if( !exists( "stmv_range_correlation_boostdata", p)) p$stmv_range_correlation_boostdata = 0.05   # auto-correlation value at which to compute a "range" distance for estimation when default range estimates do not work
 

@@ -1,7 +1,7 @@
 
 stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
   plotdata=FALSE, methods=c("geoR"), discretized_n=64, nbreaks = 32,
-  distance_cutoff=NA, family="gaussian", stanmodel=NULL, range_correlation=0.1,
+  distance_cutoff=NA, family="gaussian", stanmodel=NULL, range_correlation=0.1, stmv_fft_taper_correlation=0, stmv_fft_taper_fraction=sqrt(0.5),
   modus_operandi="easygoing" ) {
 
   #\\ estimate empirical variograms (actually correlation functions)
@@ -358,7 +358,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
     XYZ = stmv_discretize_coordinates(coo=xy, z=z, discretized_n=discretized_n, method="aggregate", FUNC=mean, na.rm=TRUE)
     names(XYZ) =  c("plon", "plat", "z" ) # arbitrary
 
-    VGM = stmv_variogram_fft( xyz=XYZ, nx=discretized_n, ny=discretized_n, nbreaks=nbreaks )  # empirical variogram by fftw2d
+    VGM = stmv_variogram_fft( xyz=XYZ, nx=discretized_n, ny=discretized_n, nbreaks=nbreaks, stmv_fft_taper_correlation=stmv_fft_taper_correlation, stmv_fft_taper_fraction=stmv_fft_taper_fraction )  # empirical variogram by fftw2d
     uu = which( (VGM$vgm$distances < 0.9*max(VGM$vgm$distances) ) & is.finite(VGM$vgm$sv) )
     fit = try( stmv_variogram_optimization( vx=VGM$vgm$distances[uu], vg=VGM$vgm$sv[uu], plotvgm=plotdata,
       stmv_internal_scale=out$stmv_internal_scale, cor=range_correlation  ))

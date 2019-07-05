@@ -46,7 +46,11 @@ stmv_interpolate_force_complete = function( ip=NULL, p, qn = c(0.005, 0.995) ) {
     dgrid = make.surface.grid(list((1:nr2) * dx, (1:nc2) * dy))
     center = matrix(c((dx * nr2)/2, (dy * nc2)/2), nrow = 1, ncol = 2)
 
-    theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_fft_taper_factor )
+  vgm = NA
+
+  theta.Taper = vgm$distances[ find_intersection( vgm$ac, threshold=p$stmv_fft_taper_correlation ) ]
+    theta.Taper = theta.Taper * p$stmv_fft_taper_fraction # fraction of the distance to 0 correlation; sqrt(0.5) = ~ 70% of the variability (associated with correlation = 0.5)
+
     sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
       Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
     sp.covar = as.surface(dgrid, c(sp.covar))$z

@@ -1,25 +1,32 @@
 
 stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE, eps=1e-9, add.interpolation=FALSE,
-  stmv_range_correlation=0.1, stmv_fft_taper_factor=5 ) {
+  stmv_range_correlation=0.1, stmv_fft_taper_correlation=0, stmv_fft_taper_fraction=sqrt(0.5) ) {
 
   if (0) {
-    XYZ = as.data.frame( cbind( RMprecip$x, RMprecip$y, RMprecip$elev ) )
-    names(XYZ) =c( "x","y","z", "elev" )
+    require(fields)
+    loadfunctions( c("aegis", "stmv"))
+    RLibrary(c ("fields", "MBA", "geoR") )
+
+    nx = ny = 128
+
+    XYZ = as.data.frame( cbind( RMprecip$x, RMprecip$y ) )
+    names(XYZ) =c( "x","y","z")
+
     xyz = XYZ[, c("x", "y", "z")]
     nbreaks=30
     plotdata=FALSE
     eps=1e-9
     add.interpolation=TRUE
     stmv_range_correlation=0.1
-    stmv_fft_taper_factor=5  # multiplier
-    nx = ny=NULL
+    stmv_fft_taper_correlation=0
+
   }
 
   names(xyz) =c("x", "y", "z")
   zmean = mean(xyz$z, na.rm=TRUE)
   zsd = sd(xyz$z, na.rm=TRUE)
   zvar = zsd^2
-  Z = (xyz$z - zmean) / zsd # zscore -- making it mean 0 removes the DC component
+  z = (xyz$z - zmean) / zsd # zscore -- making it mean 0 removes the DC component
 
   if (is.null(nx)) {
     nx = ny = floor( nbreaks * 2.35 )
@@ -40,10 +47,10 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
   dr = rr/(nr-1)
   dc = rc/(nc-1)
 
-  # approx sa associate with each datum
-  sa = rr * rc
-  d_sa = sa/nrow(xyz) # sa associated with each datum
-  d_length = sqrt( d_sa/pi )  # sa = pi*l^2  # characteristic length scale
+  # # approx sa associated with each datum
+  # sa = rr * rc
+  # d_sa = sa/nrow(xyz) # sa associated with each datum
+  # d_length = sqrt( d_sa/pi )  # sa = pi*radius^2  # characteristic length scale
 
   nr2 = 2 * nr
   nc2 = 2 * nc
@@ -52,19 +59,22 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
   fN = matrix(0, nrow = nr2, ncol = nc2)
 
   if (0) {
-    u = as.image( Z=Z, x=xyz[, c("x", "y")], na.rm=TRUE, nx=nr, ny=nc )
+    u = as.image( Z=z, x=xyz[, c("x", "y")], na.rm=TRUE, nx=nr, ny=nc )
     # surface(u)
     u = NULL
   }
 
 
   origin = c(x_r[1], x_c[1])
-  res  = c(dr, dc)
+  resolution  = c(dr, dc)
 
   #  Nadaraya/Watson normalization for missing values s
-  coo = as.matrix(array_map( "xy->2", coords=xyz[,c("x", "y")], origin=origin, res=res ))
-    fY[1:nr,1:nc] = tapply( X=Z, INDEX=list(coo[,1], coo[,2]),  FUN = function(w) {mean(w, na.rm=TRUE)}, simplify=TRUE )
-    fN[1:nr,1:nc] = tapply( X=Z, INDEX=list(coo[,1], coo[,2]), FUN = function(w) {length(w)}, simplify=TRUE )
+  coo = as.matrix(array_map( "xy->2", coords=xyz[,c("x", "y")], origin=origin, res=resolution ))
+  yy = tapply( X=z, INDEX=list(coo[,1], coo[,2]),  FUN = function(w) {mean(w, na.rm=TRUE)}, simplify=TRUE )
+  nn = tapply( X=z, INDEX=list(coo[,1], coo[,2]), FUN = function(w) {length(w)}, simplify=TRUE )
+  fY[as.numeric(dimnames(yy)[[1]]),as.numeric(dimnames(yy)[[2]])] = yy
+  fN[as.numeric(dimnames(nn)[[1]]),as.numeric(dimnames(nn)[[2]])] = nn
+  yy = nn = NULL
   coo = NULL
 
   #  Nadaraya/Watson normalization for missing valuess
@@ -80,18 +90,12 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
   fY = fftwtools::fftw2d(fY)
   fN = fftwtools::fftw2d(fN)
 
-  if (add.interpolation) {
-    fY0 = fY
-    fN0 = fN
-  }
-
   # fY * Conj(fY) == power spectra
-  fY = Re( fftwtools::fftw2d( fY * Conj(fY), inverse=TRUE)  ) # autocorrelation (amplitude)
-  fN = Re( fftwtools::fftw2d( fN * Conj(fN), inverse=TRUE)  ) # autocorrelation (amplitude) correction
-
-  X = ifelse(( fN > eps), (fY / fN), NA) # autocorrelation (amplitude)
-  fN = NULL
-  fY = NULL
+  acY = Re( fftwtools::fftw2d( fY * Conj(fY), inverse=TRUE)  ) # autocorrelation (amplitude)
+  acN = Re( fftwtools::fftw2d( fN * Conj(fN), inverse=TRUE)  ) # autocorrelation (amplitude) correction
+  X = ifelse(( acN > eps), (acY / acN), NA) # autocorrelation (amplitude)
+  acN = NULL
+  acY = NULL
 
   # fftshift
   X = rbind( X[((nr+1):nr2), (1:nc2)], X[(1:nr), (1:nc2)] )  # swap_up_down
@@ -129,6 +133,8 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
     # interpolated surface
   # constainer for spatial filters
     uu = which( (vgm$distances < dmax ) & is.finite(vgm$sv) )  # dmax ~ Nyquist freq
+
+    if (plotdata) dev.new()
     fit = try( stmv_variogram_optimization( vx=vgm$distances[uu], vg=vgm$sv[uu], plotvgm=plotdata,
       stmv_internal_scale=dmax*0.75, cor=stmv_range_correlation ))
     out$fit = fit
@@ -148,25 +154,31 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
     mC = matrix(0, nrow = nr2, ncol = nc2)
     mC[nr, nc] = 1  # equal weights
     center = matrix(c((dr * nr), (dc * nc)), nrow = 1, ncol = 2)
-    # theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=stmv_fft_taper_factor )
-    theta.Taper = d_length * stmv_fft_taper_factor
+
+    theta.Taper = vgm$distances[ find_intersection( vgm$ac, threshold=stmv_fft_taper_correlation ) ]
+    theta.Taper = theta.Taper * stmv_fft_taper_fraction # fraction of the distance to 0 correlation; sqrt(0.5) = ~ 70% of the variability (associated with correlation = 0.5)
+
     sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
       Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
     sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
     sp.covar = fftwtools::fftw2d(sp.covar)  / fftwtools::fftw2d(mC)
     mC = NULL
-    ffY = Re( fftwtools::fftw2d( sp.covar * fY0, inverse = TRUE))[1:nr, 1:nc]
-    ffN = Re( fftwtools::fftw2d( sp.covar * fN0, inverse = TRUE))[1:nr, 1:nc]
-    Z = ifelse((ffN > eps), (ffY/ffN), NA)
-    ffN = NULL
-    ffY = NULL
-    Z[!is.finite(Z)] = NA
-    Z = Z * zsd + zmean # revert to input scale
+    fY = Re( fftwtools::fftw2d( sp.covar * fY, inverse = TRUE))[1:nr, 1:nc]
+    fN = Re( fftwtools::fftw2d( sp.covar * fN, inverse = TRUE))[1:nr, 1:nc]
+    X = ifelse((fN > eps), (fY/fN), NA)
+    fN = NULL
+    fY = NULL
+    X[!is.finite(X)] = NA
+    X = X * zsd + zmean # revert to input scale
     if (plotdata) {
       dev.new()
-      surface(list(x=c(1:nr)*dr, y=c(1:nc)*dc, z=Z), xaxs="r", yaxs="r")
+      plot(sv ~ distances, data=out$vgm   )
+
+      dev.new()
+      surface(list(x=c(1:nr)*dr, y=c(1:nc)*dc, z=X), xaxs="r", yaxs="r")
+
     }
-    out$Z = Z
+    out$Z = X
   }
 
   return(out)
@@ -189,17 +201,18 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
       XYZ$z = residuals( mm)
       XYZ=XYZ[c("x","y","z")]
       x11()
-      oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=nx, plotdata=TRUE, add.interpolation=TRUE, stmv_fft_taper_factor=3 )
-      gr = stmv_variogram( XYZ[, c("x", "y")], XYZ[,"z"], methods="fft", plotdata=TRUE ) # fft/nl elast squares via profile likelihood
+      oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=nx, plotdata=TRUE, add.interpolation=TRUE, stmv_fft_taper_correlation=0, stmv_fft_taper_fraction=0.75 )
+      gr = stmv_variogram( XYZ[, c("x", "y")], XYZ[,"z"], methods="fft", plotdata=TRUE ) # fft/nl least squares
     }
+
 
     if (0) {
       XYZ = stmv_test_data( datasource="meuse" )
       XYZ$z = log(XYZ$elev)
       XYZ=XYZ[, c("x","y","z") ]
       x11()
-      oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=nx, plotdata=TRUE,  add.interpolation=TRUE, stmv_fft_taper_factor=5 )
-      gr = stmv_variogram( XYZ[, c("x", "y")], XYZ[,"z"], methods="fft", plotdata=TRUE ) # fft/nl elast squares via profile likelihood
+      oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=nx, plotdata=TRUE,  add.interpolation=TRUE, stmv_fft_taper_correlation=0, stmv_fft_taper_fraction=sqrt(.5) )
+      gr = stmv_variogram( XYZ[, c("x", "y")], XYZ[,"z"], methods="fft", plotdata=TRUE )
     }
 
     if (0) {
@@ -208,11 +221,10 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
       image( fit )
       points( RMprecip$x, pch=".")
 
-      XYZ = as.data.frame( cbind( RMprecip$x, RMprecip$y, RMprecip$elev ) )
-      names(XYZ) =c( "x","y","z", "elev" )
-      oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=nx, plotdata=TRUE,  add.interpolation=TRUE, stmv_fft_taper_factor=5 )
-      gr = stmv_variogram( XYZ[, c("x", "y")], XYZ[,"z"], methods="fft", plotdata=TRUE ) # fft/nl elast squares via profile likelihood
-
+      XYZ = as.data.frame( cbind( RMprecip$x, RMprecip$y ) )
+      names(XYZ) =c( "x","y","z")
+      oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=nx, plotdata=TRUE,  add.interpolation=TRUE, stmv_fft_taper_correlation=0, stmv_fft_taper_fraction=sqrt(.5) )
+      gr = stmv_variogram( XYZ[, c("x", "y")], XYZ[,"z"], methods="fft", plotdata=TRUE )
     }
 
     variomethod="geoR"

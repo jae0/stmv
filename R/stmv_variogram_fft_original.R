@@ -55,14 +55,16 @@
       }
 
 
-      coo = as.matrix(array_map( "xy->2", coords=xyz[,c("x", "y")], origin=origin, res=res ))
-        mY[1:nr,1:nc] = tapply( X=Z, INDEX=list(coo[,1], coo[,2]),  FUN = function(w) {mean(w, na.rm=TRUE)}, simplify=TRUE )
-        mY[!is.finite(mY)] = 0
-
-        #  Nadaraya/Watson normalization for missing values s
-        mN[1:nr,1:nc] =  tapply( X=Z, INDEX=list(coo[,1], coo[,2]), FUN = function(w) {length(w)}, simplify=TRUE )
-        mN[!is.finite(mN)] = 0
+      #  Nadaraya/Watson normalization for missing values s
+      coo = as.matrix(array_map( "xy->2", coords=xyz[,c("x", "y")], origin=origin, res=resolution ))
+      yy = tapply( X=Z, INDEX=list(coo[,1], coo[,2]),  FUN = function(w) {mean(w, na.rm=TRUE)}, simplify=TRUE )
+      nn = tapply( X=Z, INDEX=list(coo[,1], coo[,2]), FUN = function(w) {length(w)}, simplify=TRUE )
+      fY[as.numeric(dimnames(yy)[[1]]),as.numeric(dimnames(yy)[[2]])] = yy
+      fN[as.numeric(dimnames(nn)[[1]]),as.numeric(dimnames(nn)[[2]])] = nn
+      yy = nn = NULL
       coo = NULL
+      mY[!is.finite(mY)] = 0
+      mN[!is.finite(mN)] = 0
 
       # See explanation:  https://en.wikipedia.org/wiki/Autocorrelation#Efficient_computation
       # Robertson, C., & George, S. C. (2012). Theory and practical recommendations for autocorrelation-based image
@@ -78,7 +80,6 @@
       # fY * Conj(fY) == power spectra
       ii = Re( fftwtools::fftw2d( fY * Conj(fY), inverse=TRUE)  ) # autocorrelation (amplitude)
       jj = Re( fftwtools::fftw2d( fN * Conj(fN), inverse=TRUE)  ) # autocorrelation (amplitude) correction
-
       X = ifelse(( jj > eps), (ii / jj), NA) # autocorrelation (amplitude)
       ii = NULL
       jj = NULL

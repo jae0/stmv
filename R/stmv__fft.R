@@ -74,10 +74,10 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   nc2 = 2 * nc
 
   # approx sa associated with each datum
-  sa = rr * rc
-  d_sa = sa/nrow(dat) # sa associated with each datum
-  d_length = sqrt( d_sa/pi )  # sa = pi*l^2  # characteristic length scale
-  theta.Taper = d_length * p$stmv_fft_taper_factor
+  # sa = rr * rc
+  # d_sa = sa/nrow(dat) # sa associated with each datum
+  # d_length = sqrt( d_sa/pi )  # sa = pi*l^2  # characteristic length scale
+  # theta.Taper = d_length * 5
 
 
   # final output grid
@@ -112,27 +112,44 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   origin = c(x_r[1], x_c[1])
   resolution = c(dx, dy)
 
+  # precompute a few things that are used repeatedly for time-specific variograms
+  if ( exists("TIME", p$variables) ) {
+    xy = expand_grid_fast( c(-(nr-1):0, 0:(nr-1)) * dr,  c(-(nc-1):0, 0:(nc-1)) * dc )
+    distances = sqrt(xy[,1]^2 + xy[,2]^2)
+    dmax = max(distances, na.rm=TRUE ) * 0.4  # approx nyquist distance (<0.5 as corners exist)
+    breaks = seq( 0, dmax, length.out=nr)
+    db = breaks[2] - breaks[1]
+    # angles = atan2( xy[,2], xy[,1])  # not used
+    zz = cut( distances, breaks=c(breaks, max(breaks)+db), label=breaks+(db/2) )
+    xy = NULL
+    distances = NULL
+    breaks = NULL
+  }
+
   fY = matrix(0, nrow = nr2, ncol = nc2)
   fN = matrix(0, nrow = nr2, ncol = nc2)
+
+  # default is no time, with time, updated in loop
+  xi   = 1:nrow(dat) # all data as p$nt==1
+  pa_i = 1:nrow(pa)
 
   for ( ti in 1:p$nt ) {
 
     if ( exists("TIME", p$variables) ) {
       xi   = which( dat[ , p$variables$TIME] == p$prediction.ts[ti] )
-      pa_i = which( pa[, p$variables$TIME] == p$prediction.ts[ti] )
+      pa_i = which(  pa[ , p$variables$TIME] == p$prediction.ts[ti] )
       if (length(xi) < 5 ) {
         # print( ti)
         next()
       }
-    } else {
-      xi   = 1:nrow(dat) # all data as p$nt==1
-      pa_i = 1:nrow(pa)
     }
+
     # bounds check: make sure predictions exist
-    zmean = mean(dat[xi, p$variables$Y], na.rm=TRUE)
-    zsd = sd(dat[xi, p$variables$Y], na.rm=TRUE)
+    z = dat[xi, p$variables$Y]
+    zmean = mean(z, na.rm=TRUE)
+    zsd = sd(z, na.rm=TRUE)
     zvar = zsd^2
-    z = (dat[xi, p$variables$Y] - zmean) / zsd # zscore -- making it mean 0 removes the DC component
+    z = (z - zmean) / zsd # zscore -- making it mean 0 removes the DC component
 
     if (0) {
       u = as.image(
@@ -143,25 +160,25 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
         ny=nc
       )
       # surface (u)
-    }
+      # fY[1:nr,1:nc] = u$z
+      # fN[1:nr,1:nc] = u$weights
+      # u =NULL
+  }
 
+    # Nadaraya/Watson normalization for missing values
     # See explanation:  https://en.wikipedia.org/wiki/Autocorrelation#Efficient_computation
     # Robertson, C., & George, S. C. (2012). Theory and practical recommendations for autocorrelation-based image
     # correlation spectroscopy. Journal of biomedical optics, 17(8), 080801. doi:10.1117/1.JBO.17.8.080801
     # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3414238/
 
-    #  Nadaraya/Watson normalization for missing values s
-    fY[] = 0
-    fN[] = 0
-
-    # fY[1:nr,1:nc] = u$z
-    # fN[1:nr,1:nc] = u$weights
-    # u =NULL
-
     coo = as.matrix(array_map( "xy->2", coords=dat[xi, p$variables$LOCS], origin=origin, res=resolution ))
-    fY[1:nr,1:nc] = tapply( X=z, INDEX=list(coo[,1], coo[,2]), FUN = function(w) {mean(w, na.rm=TRUE)}, simplify=TRUE )
-    fN[1:nr,1:nc] = tapply( X=z, INDEX=list(coo[,1], coo[,2]), FUN = function(w) {length(w)}, simplify=TRUE )
+    yy = tapply( X=z, INDEX=list(coo[,1], coo[,2]), FUN = function(w) {mean(w, na.rm=TRUE)}, simplify=TRUE )
+    nn = tapply( X=z, INDEX=list(coo[,1], coo[,2]), FUN = function(w) {length(w)}, simplify=TRUE )
+    fY[as.numeric(dimnames(yy)[[1]]),as.numeric(dimnames(yy)[[2]])] = yy
+    fN[as.numeric(dimnames(nn)[[1]]),as.numeric(dimnames(nn)[[2]])] = nn
+    yy = nn = NULL
     coo = NULL
+
 
     fY[!is.finite(fY)] = 0
     fN[!is.finite(fN)] = 0
@@ -169,33 +186,25 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     fY = fftwtools::fftw2d(fY)
     fN = fftwtools::fftw2d(fN)
 
+    local_phi = phi
+    local_nu = nu
+
+    # create time-specific variograms
     # fY * Conj(fY) == power spectra
-    fY = Re( fftwtools::fftw2d( fY * Conj(fY), inverse=TRUE)  ) # autocorrelation (amplitude)
-    fN = Re( fftwtools::fftw2d( fN * Conj(fN), inverse=TRUE)  ) # autocorrelation (amplitude) correction
-
-    X = ifelse(( fN > eps), (fY / fN), NA) # autocorrelation (amplitude)
-
+    acY = Re( fftwtools::fftw2d( fY * Conj(fY), inverse=TRUE)  ) # autocorrelation (amplitude)
+    acN = Re( fftwtools::fftw2d( fN * Conj(fN), inverse=TRUE)  ) # autocorrelation (amplitude) correction
+    X = ifelse(( acN > eps), (acY / acN), NA) # autocorrelation (amplitude)
+    acY = acN = NULL
     # fftshift
     X = rbind( X[((nr+1):nr2), (1:nc2)], X[(1:nr), (1:nc2)] )  # swap_up_down
-    X = cbind(X[1:nr2, ((nc+1):nc2)], X[1:nr2, 1:nc])  # swap_left_right
-
-    # radial representation
-    xy = expand_grid_fast( c(-(nr-1):0, 0:(nr-1)) * dr,  c(-(nc-1):0, 0:(nc-1)) * dc )
-    distances = sqrt(xy[,1]^2 + xy[,2]^2)
-    dmax = max(distances, na.rm=TRUE ) * 0.4  # approx nyquist distance (<0.5 as corners exist)
-    breaks = seq( 0, dmax, length.out=nr)
-    db = breaks[2] - breaks[1]
-    # angles = atan2( xy[,2], xy[,1])  # not used
-
-    zz = cut( distances, breaks=c(breaks, max(breaks)+db), label=breaks+(db/2) )
-    distances = NULL
-    xy = NULL
-
+    X = cbind( X[1:nr2, ((nc+1):nc2)], X[1:nr2, 1:nc])  # swap_left_right
+    # zz (distance breaks) precomputed outside of loop
     vgm = as.data.frame.table(tapply( X=X, INDEX=zz, FUN=mean, na.rm=TRUE ))
     names(vgm) = c("distances", "ac")
     X = NULL
-    zz = NULL
-    gc()
+
+    theta.Taper = vgm$distances[ find_intersection( vgm$ac, threshold=p$stmv_fft_taper_correlation ) ]
+    theta.Taper = theta.Taper * p$stmv_fft_taper_fraction # fraction of the distance to 0 correlation; sqrt(0.5) = ~ 70% of the variability (associated with correlation = 0.5)
 
     vgm$distances = as.numeric( as.character(vgm$distances))
     vgm$sv =  zvar * (1-vgm$ac^2) # each sv are truly orthogonal
@@ -203,15 +212,12 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   # plot(ac ~ distances, data=vgm   )
   # plot(sv ~ distances, data=vgm   )
 
-   # interpolated surface
-   # constainer for spatial filters
     uu = which( (vgm$distances < dmax ) & is.finite(vgm$sv) )  # dmax ~ Nyquist freq
     fit = try( stmv_variogram_optimization( vx=vgm$distances[uu], vg=vgm$sv[uu], plotvgm=FALSE,
       stmv_internal_scale=dmax*0.75, cor=p$stmv_range_correlation ))
+    uu = NULL
+    vgm = NULL
     # out$fit = fit
-
-    local_phi = phi
-    local_nu = nu
 
     if ( !inherits(fit, "try-error") ) {
       if (exists("summary", fit)) {
@@ -227,6 +233,11 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
         }
       }
     }
+
+    fit = NULL
+
+
+    gc()
 
     if ( p$stmv_fft_filter == "lowpass") {
       theta = p$stmv_lowpass_phi
@@ -252,7 +263,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     }
 
     if (p$stmv_fft_filter == "matern_tapered") {
-      #theta.Taper = matern_phi2distance( phi=local_phi, nu=nu, cor=p$stmv_fft_taper_factor )
+
       sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=local_phi, smoothness=local_nu,
         Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
       sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
@@ -262,7 +273,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     if (p$stmv_fft_filter == "lowpass_matern_tapered") {
       sp.covar.lowpass = stationary.cov( dgrid, center, Covariance="Matern", theta=p$stmv_lowpass_phi, smoothness=p$stmv_lowpass_nu )
       sp.covar.lowpass = as.surface(dgrid, c(sp.covar.lowpass))$z / (nr2*nc2)
-      # theta.Taper = matern_phi2distance( phi=local_phi, nu=nu, cor=p$stmv_fft_taper_factor )
+
       sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=local_phi, smoothness=local_nu,
         Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
       sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
@@ -276,6 +287,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
       xseq = seq(-(nr - 1), nr, 1) * dx / theta
       yseq = seq(-(nc - 1), nc, 1) * dy / theta
       dd = ((matrix(xseq, nr2, nc2)^2 + matrix(yseq, nr2, nc2, byrow = TRUE)^2))  # squared distances
+      yseq = xseq = NULL
       # double.exp: An R function that takes as its argument the _squared_
       # distance between two points divided by the bandwidth. The
       # default is exp( -abs(x)) yielding a normal kernel
@@ -286,27 +298,26 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     fY = Re( fftwtools::fftw2d( sp.covar * fY, inverse = TRUE))[1:nr, 1:nc]
     fN = Re( fftwtools::fftw2d( sp.covar * fN, inverse = TRUE))[1:nr, 1:nc]
     sp.covar = NULL
-    Z = ifelse((fN > eps), (fY/fN), NA)
-    Z[!is.finite(Z)] = NA
-    Z = Z * zsd + zmean # revert to input scale
+    X = ifelse((fN > eps), (fY/fN), NA)
+    X[!is.finite(X)] = NA
+    X = X * zsd + zmean # revert to input scale
     if (0) {
       dev.new()
       surface(list(x=c(1:nr)*dr, y=c(1:nc)*dc, z=Z), xaxs="r", yaxs="r")
     }
-    # out$Z = Z
 
-    Z_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=resolution )
-    tokeep = which( Z_i[,1] >= 1 & Z_i[,2] >= 1  & Z_i[,1] <= nr & Z_i[,2] <= nc )
+    X_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=resolution )
+    tokeep = which( X_i[,1] >= 1 & X_i[,2] >= 1  & X_i[,1] <= nr & X_i[,2] <= nc )
     if (length(tokeep) < 1) next()
-    Z_i = Z_i[tokeep,]
+    X_i = X_i[tokeep,]
 
-    pa$mean[pa_i[tokeep]] = Z[Z_i]
+    pa$mean[pa_i[tokeep]] = X[X_i]
       # pa$sd[pa_i] = NA  ## fix as NA
-    Z = Z_i = Z_i_test = NULL
+    X = X_i = NULL
   }
 
-  # map_to_dat = array_map() ...
-  # ss = lm( pa$mean[map_to_dat] ~ dat[,p$variables$Y], na.action=na.omit)
+  # dat_i = array_map( "xy->2", coords=dat[, p$variables$LOCS], origin=origin, res=resolution )
+  # ss = lm( pa$mean[dat_i] ~ dat[,p$variables$Y], na.action=na.omit)
   # if ( "try-error" %in% class( ss ) ) return( NULL )
   # rsquared = summary(ss)$r.squared
   # if (rsquared < p$stmv_rsquared_threshold ) return(NULL)

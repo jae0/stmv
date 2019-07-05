@@ -152,9 +152,13 @@
 
 
       coo = as.matrix(array_map( "xy->2", coords=dat[xi, p$variables$LOCS], origin=origin, res=resolution ))
-      mY[1:nr,1:nc] = tapply( X=z, INDEX=list(coo[,1], coo[,2]), FUN = function(w) {mean(w, na.rm=TRUE)}, simplify=TRUE )
-      mN[1:nr,1:nc] = tapply( X=z, INDEX=list(coo[,1], coo[,2]), FUN = function(w) {length(w)}, simplify=TRUE )
+      yy = tapply( X=z, INDEX=list(coo[,1], coo[,2]), FUN = function(w) {mean(w, na.rm=TRUE)}, simplify=TRUE )
+      nn = tapply( X=z, INDEX=list(coo[,1], coo[,2]), FUN = function(w) {length(w)}, simplify=TRUE )
+      mY[as.numeric(dimnames(yy)[[1]]),as.numeric(dimnames(yy)[[2]])] = yy
+      mN[as.numeric(dimnames(nn)[[1]]),as.numeric(dimnames(nn)[[2]])] = nn
+      yy = nn = NULL
       coo = NULL
+
 
       # mY[1:nr,1:nc] = u$z
       mY[!is.finite(mY)] = 0
@@ -169,12 +173,12 @@
       fN = fftwtools::fftw2d(mN)
 
       # fY * Conj(fY) == power spectra
-      ii = Re( fftwtools::fftw2d( fY * Conj(fY), inverse=TRUE)  ) # autocorrelation (amplitude)
-      jj = Re( fftwtools::fftw2d( fN * Conj(fN), inverse=TRUE)  ) # autocorrelation (amplitude) correction
+      acY = Re( fftwtools::fftw2d( fY * Conj(fY), inverse=TRUE)  ) # autocorrelation (amplitude)
+      acN = Re( fftwtools::fftw2d( fN * Conj(fN), inverse=TRUE)  ) # autocorrelation (amplitude) correction
 
-      X = ifelse(( jj > eps), (ii / jj), NA) # autocorrelation (amplitude)
-      ii = NULL
-      jj = NULL
+      X = ifelse(( acN > eps), (acY / acN), NA) # autocorrelation (amplitude)
+      acY = NULL
+      acN = NULL
 
       # fftshift
       X = rbind( X[((nr+1):nr2), (1:nc2)], X[(1:nr), (1:nc2)] )  # swap_up_down

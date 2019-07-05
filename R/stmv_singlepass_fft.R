@@ -14,6 +14,28 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
     runoption="default"
   }
 
+  if (0) {
+    # testing and debugging
+
+    loadfunctions( c("aegis", "stmv"))
+    RLibrary(c ("fields", "MBA", "geoR") )
+
+    if (0) {
+      XYZ = stmv_test_data( datasource="swiss" )
+      mz = log( XYZ$rain )
+      mm = lm( mz ~ 1 )
+      XYZ$z = residuals( mm)
+      XYZ=XYZ[c("x","y","z")]
+    }
+
+    if (0) {
+      XYZ = stmv_test_data( datasource="meuse" )
+      XYZ$z = log(XYZ$elev)
+      XYZ=XYZ[, c("x","y","z") ]
+    }
+
+  }
+
   # ---------------------
   # deal with additional passed parameters
   p_add = list(...)
@@ -787,7 +809,9 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
   d_sa = sa/nrow(dat) # sa associated with each datum
   d_length = sqrt( d_sa/pi )  # sa = pi*l^2  # characteristic length scale
 
-  theta.Taper = d_length * stmv_fft_taper_factor
+
+  theta.Taper = vgm$distances[ find_intersection( vgm$ac, threshold=p$stmv_fft_taper_correlation ) ]
+    theta.Taper = theta.Taper * p$stmv_fft_taper_fraction # fraction of the distance to 0 correlation; sqrt(0.5) = ~ 70% of the variability (associated with correlation = 0.5)
 
 
   # constainer for spatial filters
@@ -831,7 +855,7 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
   }
 
   if (p$stmv_fft_filter == "matern_tapered") {
-    # theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_fft_taper_factor )
+
     sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
       Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
     sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2 * nc2)
@@ -842,7 +866,7 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
   if (p$stmv_fft_filter == "lowpass_matern_tapered") {
     sp.covar.lowpass = stationary.cov( dgrid, center, Covariance="Matern", theta=p$stmv_lowpass_phi, smoothness=p$stmv_lowpass_nu )
     sp.covar.lowpass = as.surface(dgrid, c(sp.covar.lowpass))$z / (nr2 * nc2)
-    # theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_fft_taper_factor )
+
     sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
       Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
     sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2 * nc2)
@@ -898,10 +922,15 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
     # )
 
 
-    coo = as.matrix(array_map( "xy->2", coords=dat[xi, p$variables$LOCS], origin=origin, res=res ))
-    mY[1:nr,1:nc] = tapply( X=dat[xi, p$variables$Y], INDEX=list(coo[,1], coo[,2]), FUN = function(w) {mean(w, na.rm=TRUE)}, simplify=TRUE )
-    mN[1:nr,1:nc] = tapply( X=dat[xi, p$variables$Y], INDEX=list(coo[,1], coo[,2]), FUN = function(w) {length(w)}, simplify=TRUE )
+
+    coo = as.matrix(array_map( "xy->2", coords=dat[xi, p$variables$LOCS], origin=origin, res=resolution ))
+    yy = tapply( X=z, INDEX=list(coo[,1], coo[,2]), FUN = function(w) {mean(w, na.rm=TRUE)}, simplify=TRUE )
+    nn = tapply( X=z, INDEX=list(coo[,1], coo[,2]), FUN = function(w) {length(w)}, simplify=TRUE )
+    mY[as.numeric(dimnames(yy)[[1]]),as.numeric(dimnames(yy)[[2]])] = yy
+    mN[as.numeric(dimnames(nn)[[1]]),as.numeric(dimnames(nn)[[2]])] = nn
+    yy = nn = NULL
     coo = NULL
+
 
 
     # mY[1:nr,1:nc] = u$z
@@ -1037,92 +1066,6 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
   return(NULL)
 
 
-
-
-
-    if (0) {
-
-      require(MBA)
-      require(fields)
-
-      # kriged
-      fit = Krig( dat[, c("plon", "plat")], dat$z, Covariance="Matern", theta=vg$phi, smoothness=0.5)
-      x11()
-      op = predict(fit)
-      tst = cbind( dat[, c("plon", "plat")], op )
-      mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
-      image(mba.int, xaxs="r", yaxs="r")
-
-      # raw data + mba
-      x11()
-      tst = cbind(  dat[, c("plon", "plat")], dat$z )
-      mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
-      image(mba.int, xaxs="r", yaxs="r")
-
-      # mba - pa
-      x11()
-      tst = cbind( pa$plon, pa$plat, pa$mean )
-      mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
-      image(mba.int, xaxs="r", yaxs="r")
-
-      # default
-      x11()
-      tst = cbind( res$predictions$plon,  res$predictions$plat,  res$predictions$mean )
-      mba.int <- mba.surf( tst, 300, 300, extend=TRUE)$xyz.est
-      image(mba.int, xaxs="r", yaxs="r")
-
-      # kernel-based
-      tst = as.image( Z=dat$z, x=dat[, c("plon", "plat")], nx=300, ny=300, na.rm=TRUE)
-      out = fields::image.smooth( tst, theta=vg$phi/300, xwidth=p$pres, ywidth=p$pres )
-      image(out)
-
-      print( str(res) )
-
-      lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==2012.05,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
-      lattice::levelplot( mean ~ plon + plat, data=res$predictions, col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
-      for( i in sort(unique(res$predictions[,p$variables$TIME])))  print(lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==i,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
-
-      dev.new()
-      plot(  dat[,iY] ~ dat$yr, col="red"  )
-      points( mean~tiyr, res$predictions, pch=20, col="gray", cex=0.5 )
-
-    }
-
-
-  if (0) {
-    # testing and debugging
-
-    loadfunctions( c("aegis", "stmv"))
-    RLibrary(c ("fields", "MBA", "geoR") )
-
-    if (0) {
-      XYZ = stmv_test_data( datasource="swiss" )
-      mz = log( XYZ$rain )
-      mm = lm( mz ~ 1 )
-      XYZ$z = residuals( mm)
-      XYZ=XYZ[c("x","y","z")]
-    }
-
-    if (0) {
-      XYZ = stmv_test_data( datasource="meuse" )
-      XYZ$z = log(XYZ$elev)
-      XYZ=XYZ[, c("x","y","z") ]
-    }
-
-    gr = stmv_variogram( XYZ[, c("x", "y")], XYZ[,"z"], methods="geoR", plotdata=TRUE ) # ml via profile likelihood
-
-    nu = gr$geoR$nu
-    phi = gr$geoR$phi
-
-    fit  =  Krig(XYZ[, c("x", "y")], XYZ[,"z"], theta=phi)
-    x11(); surface( fit, type="C") # look at the surface
-
-    mba.int  =  mba.surf( XYZ, 64, 64, extend=TRUE)$xyz.est
-    x11(); surface(mba.int, xaxs="r", yaxs="r")
-
-    oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=64, ny=64, nbreaks=32, plotdata=TRUE,  add.interpolation=TRUE, stmv_fft_taper_factor=5 )
-
-  }
 
 
 }
