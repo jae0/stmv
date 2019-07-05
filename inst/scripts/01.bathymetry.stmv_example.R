@@ -4,7 +4,7 @@
 
 # Spatial interpolation using stmv
 
-# FFT is the method of choice for speed and ability to capture the variability
+# FFT is the method of choice for speed and ability to capture the variability .. this shold take just a few minutes
 
 scale_ram_required_main_process = 1 # GB twostep / fft
 scale_ram_required_per_process  = 1 # twostep / fft /fields vario ..  (mostly 0.5 GB, but up to 5 GB)
