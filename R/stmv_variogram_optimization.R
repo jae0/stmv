@@ -29,8 +29,8 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
 
     vario_function_phi = function(par, vgs, vxs, nu, w){
       # ie. nu is fixed
-      if (par["phi"] < 0.01) return(Inf)
-      if (par["phi"] > 3 ) return(Inf)
+      if (par["phi"] < 0.01) return(1e12)
+      if (par["phi"] > 5 ) return(1e12)
       vgm = par["total.var"] *( (1 -par["sigma.sq.fraction"])  +  par["sigma.sq.fraction"]*( 1-stmv_matern(distance=vxs, mRange=par["phi"], mSmooth=nu ) ) )
       # vgm = par["tau.sq"] + par["sigma.sq"]*{ 1-stmv_matern(distance=vxs, mRange=par["phi"], mSmooth=nu) }
       obj = sum( w * (vgs - vgm)^2, na.rm=TRUE) # vario normal errors, no weights , etc.. just the line
@@ -40,7 +40,7 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
 
     par = c(total.var=1, sigma.sq.fraction=0.75, phi=0.9 )
     lower =c(0.75, 0, 0.01 )
-    upper =c(1.25, 1, 3)
+    upper =c(1.25, 1, 5)
 
     fit = try( optim( par=par, vgs=vgs, vxs=vxs, nu=nu, w=w, method="Nelder-Meads", fn=vario_function_phi ) )
 
@@ -66,10 +66,10 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
 
     vario_function_phi_nu = function(par, vgs, vxs, w){
       # ie. nu and phi are both estimated
-      if (par["nu"] < 0.01) return(Inf)
-      if (par["phi"] <= 0 ) return(Inf)
-      if (par["nu"] > 3 ) return(Inf)
-      if (par["phi"] > 3 ) return(Inf)
+      if (par["nu"] < 0.01) return(1e12)
+      if (par["phi"] <= 0 ) return(1e12)
+      if (par["nu"] > 5 ) return(1e12)
+      if (par["phi"] > 5 ) return(1e12)
 
       vgm = par["total.var"] *( (1 -par["sigma.sq.fraction"])  +  par["sigma.sq.fraction"]*( 1-stmv_matern(distance=vxs, mRange=par["phi"], mSmooth=par["nu"]) ) )
       obj = sum( w * (vgs - vgm)^2, na.rm=TRUE) # vario normal errors, no weights , etc.. just the line

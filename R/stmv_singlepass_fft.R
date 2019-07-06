@@ -1,11 +1,10 @@
 
-stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default", eps=1e-9, discretized_n=100, ... ) {
+stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default", eps=1e-9, ... ) {
   #\\ core function to interpolate (model and predict) in parallel
   #\\ unfold all main subroutines to max speed and reduce memory usage
 
   if (0) {
     # for debugging  runs ..
-    discretized_n=128
     eps = 1e-9
     currentstatus = stmv_statistics_status( p=p )
     p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) )
@@ -195,7 +194,7 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
     z = Y[yi,]
 
     distance_cutoff=stmv_distance_cur
-    discretized_n = p$stmv_discretized_n
+    discretized_n = stmv_distance_cur / p$pres
     nbreaks=p$stmv_variogram_nbreaks
     range_correlation=p$stmv_range_correlation
 

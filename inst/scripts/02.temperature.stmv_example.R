@@ -59,7 +59,6 @@
   stmv_lowpass_phi = 0.1,  # note: p$pres = 0.2
   stmv_variogram_method = "fft",
   stmv_variogram_nbreaks = 50,
-  stmv_discretized_n = 100,
   stmv_range_correlation=0.1,
   stmv_range_correlation_boostdata = c(0.01, 0.001, 0.0001),
       stmv_local_model_distanceweighted = TRUE,

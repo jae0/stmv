@@ -86,8 +86,8 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
   i_sdSpatial = match("sdSpatial",   p$statsvars)
   i_sdObs = match("sdObs",   p$statsvars)
 
-  if (p$runoption=="default") local_corel = p$stmv_range_correlation
-  if (p$runoption=="boostdata") local_corel = p$stmv_range_correlation_boostdata
+  if (p$runoption=="interpolate") local_corel = p$stmv_range_correlation
+  if (p$runoption=="interpolate_boost") local_corel = p$stmv_range_correlation_boostdata
 
 ## drange = max( min( max(p$stmv_distance_scale )),  min(p$pres, p$stmv_distance_scale ))
       # global estimates
@@ -170,7 +170,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
         if (p$stmv_rangecheck=="paranoid") {
           if ( Sflag[Si] %in% c( E[["variogram_range_limit"]], E[["variogram_failure"]]) ) {
             if (debugging) message("Error: stmv_rangecheck paranoid")
-            if (p$runoption == "default" )  next()
+            if (p$runoption == "interpolate" )  next()
           }
         }
       }
