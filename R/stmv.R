@@ -815,43 +815,27 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
 
   # -----------------------------------------------------
 
+
+
   if ("interpolate" %in% runmode ) {
     message( "\n||| Entering <interpolate> stage: ", format(Sys.time()) , "\n" )
-    if ( "restart_load" %in% runmode ) {
-      stmv_db(p=p, DS="load_saved_state", runmode="interpolate")
-    } else {
-      p$clusters = p$stmv_clusters[["interpolate"]] # as ram reqeuirements increase drop cpus
+    for ( j in 1:length(p$stmv_range_correlation) ) {
       p$time_start_runmode = Sys.time()
-      p$runoption="interpolate"
-      currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
-      parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) )
-      if ( "save_intermediate_results" %in% runmode ) stmv_db(p=p, DS="save_current_state", runoption="interpolate")
-    }
-    message( paste( "Time used for <interpolate>: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
-  }
-
-
-  # --------------------
-
-  if ("interpolate_boost" %in% runmode) {
-    message( "\n||| Entering <interpolate-boost> stage: ", format(Sys.time()),  "\n" )
-    # NOTE:: no covariates are used .. only fft
-    if ( "restart_load" %in% runmode ) {
-      stmv_db(p=p, DS="load_saved_state", runmode="interpolate_boost")
-    } else {
-      cor_boost0 = p$stmv_range_correlation_boostdata
-      for ( j in 1:length(cor_boost0) ) {
-        p$time_start_runmode = Sys.time()
-        p$stmv_range_correlation_boostdata = cor_boost0[j]
-        p$clusters = p$stmv_clusters[["interpolate_boost"]][j] # as ram reqeuirements increase drop cpus
-        p$runoption="interpolate_boost"
+      interp_runmode = paste("interpolate_", j, sep="")
+      if ( "restart_load" %in% runmode ) {
+        stmv_db(p=p, DS="load_saved_state", runmode=interp_runmode)
+      } else {
+        p$clusters = p$stmv_clusters[["interpolate"]][j] # as ram reqeuirements increase drop cpus
+        p$local_correlation = p$stmv_range_correlation[j]
         currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
-        parallel_run( stmv_interpolate, p=p,  runindex=list( locs=sample( currentstatus$todo )))
-        if ( "save_intermediate_results" %in% runmode ) stmv_db(p=p, DS="save_current_state", runoption="interpolate_boost")
+        parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) )
+        stmv_db(p=p, DS="save_current_state", runmode=interp_runmode)
+        message( paste( "Time used for <interpolate", j, ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
       }
     }
-    message( "||| Time used for <interpolate_boost>: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" )
   }
+
+
 
   # --------------------
 

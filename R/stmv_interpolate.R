@@ -9,7 +9,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) )
     ip = 1:p$nruns
     debugging=TRUE
-    p$runoption="default"
   }
 
   # ---------------------
@@ -86,8 +85,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
   i_sdSpatial = match("sdSpatial",   p$statsvars)
   i_sdObs = match("sdObs",   p$statsvars)
 
-  if (p$runoption=="interpolate") local_corel = p$stmv_range_correlation
-  if (p$runoption=="interpolate_boost") local_corel = p$stmv_range_correlation_boostdata
 
 ## drange = max( min( max(p$stmv_distance_scale )),  min(p$pres, p$stmv_distance_scale ))
       # global estimates
@@ -95,7 +92,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
   if ( global_nu < 0.01 | global_nu > 5) global_nu = 0.5
   global_phi = median( S[, i_phi], na.rm=TRUE )
-  global_range = matern_phi2distance( phi=global_phi, nu=global_nu, cor=local_corel )
+  global_range = matern_phi2distance( phi=global_phi, nu=global_nu, cor=p$local_correlation )
   distance_limits = range( c(p$pres*3,  p$stmv_distance_scale ) )   # for range estimate
   if ( global_range < distance_limits[1] | global_range > distance_limits[2] ) global_range = distance_limits[2]
 
@@ -146,7 +143,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
 
     # range checks
-    localrange =  matern_phi2distance( phi=phi, nu=nu, cor=local_corel )
+    localrange =  matern_phi2distance( phi=phi, nu=nu, cor=p$local_correlation )
     if ( !is.finite(localrange) )  {
       Sflag[Si] %in% E[["variogram_failure"]]
     } else {
@@ -170,7 +167,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
         if (p$stmv_rangecheck=="paranoid") {
           if ( Sflag[Si] %in% c( E[["variogram_range_limit"]], E[["variogram_failure"]]) ) {
             if (debugging) message("Error: stmv_rangecheck paranoid")
-            if (p$runoption == "interpolate" )  next()
+              next()
           }
         }
       }

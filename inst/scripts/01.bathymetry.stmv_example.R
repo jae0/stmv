@@ -45,9 +45,7 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_lowpass_nu = 0.1,
   stmv_lowpass_phi = 0.1,  # note: p$pres = 0.2
   stmv_variogram_method = "fft",
-  stmv_variogram_nbreaks = 64,
-  stmv_range_correlation=0.05,
-  stmv_range_correlation_boostdata = c(0.01, 0.001, 0.0001),
+  stmv_range_correlation = c(0.05, 0.01, 0.001),
   depth.filter = FALSE,  # need data above sea level to get coastline
   stmv_Y_transform =list(
     transf = function(x) {log10(x + 2500)} ,
@@ -55,14 +53,14 @@ p = aegis.bathymetry::bathymetry_parameters(
   ), # data range is from -1667 to 5467 m: make all positive valued
   stmv_rsquared_threshold = 0.01, # lower threshold  .. ignore
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
-  stmv_distance_scale = c(5, 10, 20, 30, 40, 50, 60), # km ... approx guesses of 95% AC range
+  stmv_distance_scale = c(5, 10, 20, 30, 40, 50), # km ... approx guesses of 95% AC range
   stmv_distance_prediction_fraction = 4/5, # i.e. 4/5 * 5 = 4 km .. relative to stats grid
   stmv_nmin = 100,  # min number of data points req before attempting to model in a localized space
   stmv_nmax = 800, # no real upper bound.. just speed /RAM
   stmv_clusters = list(
     scale=rep("localhost", scale_ncpus),
-    interpolate=rep("localhost", interpolate_ncpus),
-    interpolate_boost = list(
+    interpolate = list(
+        default = rep("localhost", interpolate_ncpus),
         cor_0.01 = rep("localhost", max(1, interpolate_ncpus-1)),
         cor_0.001 = rep("localhost", max(1, interpolate_ncpus-2)),
         cor_0.0001 = rep("localhost", max(1, interpolate_ncpus-2))
