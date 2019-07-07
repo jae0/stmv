@@ -126,16 +126,15 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     # range checks
     if ( !is.finite(localrange) )  {
       Sflag[Si] %in% E[["variogram_failure"]]
+      localrange = global_range
     } else {
       if ( (localrange < distance_limits[1] ) | (localrange > distance_limits[2]) )  {
         Sflag[Si] %in% E[["variogram_range_limit"]]
       }
     }
 
-    if ( !is.finite(localrange) localrange = global_range
     if ( localrange < distance_limits[1] )  localrange = distance_limits[1]
     if ( localrange > distance_limits[2] )  localrange = distance_limits[2]
-
 
     ii = NULL
     ii = which(
