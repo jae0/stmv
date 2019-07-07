@@ -87,7 +87,7 @@ stmv_parameters = function( p=list(), ... ) {
   p = stmv_variablelist(p)
 
   # require knowledge of size of stats output which varies with a given type of analysis
-  p$statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "phi", "nu" )
+  p$statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "phi", "nu", "localrange" )
   if (exists("TIME", p$variables) )  p$statsvars = c( p$statsvars, "ar_timerange", "ar_1" )
   if (p$stmv_local_modelengine == "userdefined" ) {
     if (exists("stmv_local_modelengine", p) ) {
@@ -144,14 +144,6 @@ stmv_parameters = function( p=list(), ... ) {
   if (exists("local_cov", p$variables)) p$nloccov = length(p$variables$local_cov)
 
   if ( !exists("stmv_distance_prediction_fraction", p)) p$stmv_distance_prediction_fraction = 1  # fraction of statsgrid (below)
-
-  if ( !exists("stmv_distance_prediction", p)) {
-    # this is a half window km
-    p$stmv_distance_prediction = p$stmv_distance_statsgrid * p$stmv_distance_prediction_fraction
-  }
-
-  # construct prediction/output grid area ('pa')
-  if ( !exists("windowsize.half", p)) p$windowsize.half = floor(p$stmv_distance_prediction/p$pres) # convert distance to discretized increments of row/col indices; stmv_distance_prediction = 0.75* stmv_distance_statsgrid (unless overridden)
 
   if ( !exists("stmv_force_complete_method", p)) p$stmv_force_complete_method = "linear"
 

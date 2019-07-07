@@ -124,6 +124,7 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
     autocorrelation_function="matern",
     nu =NA,
     phi=NA,
+    localrange = NA,
     varSpatial=NA,
     varObs=NA ,
     phi_ok = FALSE,
@@ -134,6 +135,7 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
    if ( fit$convergence==0 ) {
       fit$summary$nu = ifelse( !is.null(nu), nu, fit$par[["nu"]] )
       fit$summary$phi=fit$par[["phi"]] * stmv_internal_scale
+      fit$summary$localrange =matern_phi2distance( phi=fit$summary$phi, nu=fit$summary$nu, cor=cor )
       fit$summary$varSpatial = fit$par[["total.var"]] * fit$par[["sigma.sq.fraction"]]  * vgm_var_max
       fit$summary$varObs = fit$par[["total.var"]] * (1- fit$par[["sigma.sq.fraction"]]) * vgm_var_max
       fit$summary$phi_ok = ifelse( fit$summary$phi < fit$summary$vgm_dist_max*0.99, TRUE, FALSE )
@@ -157,8 +159,7 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
     abline( v=0 ,lwd=1, col="lightgrey" )
     abline( h=fit$summary$varObs, lty="dashed", col="grey" )
     abline( h=fit$summary$varObs + fit$summary$varSpatial, lty="dashed", col="grey" )
-    localrange = matern_phi2distance( phi=fit$summary$phi, nu=fit$summary$nu, cor=cor )
-    abline( v=localrange, lty="dashed", col="grey")
+    abline( v=fit$summary$localrange, lty="dashed", col="grey")
   }
 
   return(fit)

@@ -23,6 +23,8 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
   if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
 
 
+
+
   #---------------------
   # data for modelling
   S = stmv_attach( p$storage.backend, p$ptr$S )
@@ -84,6 +86,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
   i_ndata = match( "ndata", p$statsvars )
   i_rsquared = match("rsquared", p$statsvars )
+  i_localrange = match("localrange", p$statsvars )
   i_nu = match("nu",   p$statsvars)
   i_phi = match("phi",   p$statsvars)
   i_sdSpatial = match("sdSpatial",   p$statsvars)
@@ -96,7 +99,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
   if ( global_nu < 0.01 | global_nu > 5) global_nu = 0.5
   global_phi = median( S[, i_phi], na.rm=TRUE )
-  global_range = matern_phi2distance( phi=global_phi, nu=global_nu, cor=p$local_correlation )
+  global_range = median( S[, i_localrange], na.rm=TRUE )
   distance_limits = range( c(p$pres*3,  p$stmv_distance_scale ) )   # for range estimate
   if ( global_range < distance_limits[1] | global_range > distance_limits[2] ) global_range = distance_limits[2]
 
@@ -113,6 +116,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
     nu    = S[Si, i_nu]
     phi   = S[Si, i_phi]
+    localrange = S[Si, i_localrange]
 
     ii = NULL
     ii = which(
@@ -147,7 +151,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
 
     # range checks
-    localrange =  matern_phi2distance( phi=phi, nu=nu, cor=p$local_correlation )
     if ( !is.finite(localrange) )  {
       Sflag[Si] %in% E[["variogram_failure"]]
     } else {
@@ -155,12 +158,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
         Sflag[Si] %in% E[["variogram_range_limit"]]
       }
     }
-    # if ( !is.finite(localrange) | (localrange < distance_limits[1] ) | (localrange > distance_limits[2]) ) {
-    #   if (length(ii) > 0) {
-    #     local_phi = median( S[ii, i_phi) ], na.rm=TRUE )
-    #     localrange = matern_phi2distance(
-    #   }
-    # }
+
     if ( !is.finite(localrange) | (localrange < distance_limits[1] ) | (localrange > distance_limits[2]) ) localrange = global_range
     if ( !is.finite(localrange) | (localrange < distance_limits[1] ) | (localrange > distance_limits[2]) ) localrange = distance_limits[2]
 
@@ -190,7 +188,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
     # if here then there is something to do
     # NOTE:: yi are the indices of locally useful data
-    # p$stmv_distance_prediction determines the data entering into local model construction
 
     # prep dependent data
     # reconstruct data for modelling (dat)
@@ -217,8 +214,12 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       points( Sloc[Si,2] ~ Sloc[Si,1], pch=20, cex=5, col="blue" )
     }
 
+    stmv_distance_prediction = localrange * p$stmv_distance_prediction_fraction # this is a half window km
+    # construct prediction/output grid area ('pa')
+    windowsize.half = floor(stmv_distance_prediction/p$pres) # convert distance to discretized increments of row/col indices; stmv_distance_prediction = 0.75* stmv_distance_statsgrid (unless overridden)
+
     # construct data (including covariates) for prediction locations (pa)
-    pa = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=p$windowsize.half ) )
+    pa = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=windowsize.half ) )
     if (is.null(pa)) {
       Sflag[Si] = E[["prediction_area"]]
       if (debugging) message( Si )
@@ -314,12 +315,15 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     }
 
 
-    # update to rsquared and "range" in stats
-    if ( exists("rsquared", res$stmv_stats ) ) {
-      if (is.finite(res$stmv_stats$rsquared)) S[Si, i_rsquared] = res$stmv_stats$rsquared
-    }
-    res$stmv_stats = NULL # reduce memory usage
+    # update in stats .. if there are updates
+    if ( exists("nu", res$stmv_stats ) ) if (is.finite(res$stmv_stats$nu)) S[Si, i_nu] = res$stmv_stats$nu
+    if ( exists("phi", res$stmv_stats ) ) if (is.finite(res$stmv_stats$phi)) S[Si, i_phi] = res$stmv_stats$phi
+    if ( exists("localrange", res$stmv_stats ) ) if (is.finite(res$stmv_stats$localrange)) S[Si, i_localrange] = res$stmv_stats$localrange
+    if ( exists("rsquared", res$stmv_stats ) ) if (is.finite(res$stmv_stats$rsquared)) S[Si, i_rsquared] = res$stmv_stats$rsquared
+    if ( exists("sdSpatial", res$stmv_stats ) ) if (is.finite(res$stmv_stats$sdSpatial)) S[Si, i_sdSpatial] = res$stmv_stats$sdSpatial
+    if ( exists("sdObs", res$stmv_stats ) ) if (is.finite(res$stmv_stats$sdObs)) S[Si, i_sdObs] = res$stmv_stats$sdObs
 
+    res$stmv_stats = NULL # reduce memory usage
 
     sf = try( stmv_predictions_update(p=p, preds=res$predictions ) )
     res = NULL
@@ -379,7 +383,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       dev.new()
       tst = cbind( res$predictions$plon,  res$predictions$plat,  res$predictions$mean )
       tst = na.omit(tst)
-      mba.int <- mba.surf( tst, p$windowsize.half *2, p$windowsize.half *2, extend=TRUE)$xyz.est
+      mba.int <- mba.surf( tst, windowsize.half *2, windowsize.half *2, extend=TRUE)$xyz.est
       image(mba.int, xaxs="r", yaxs="r")
 
       # kernel-based

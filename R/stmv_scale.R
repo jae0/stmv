@@ -107,9 +107,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", eps = 1
       methods=p$stmv_variogram_method,
       distance_cutoff=stmv_distance_cur,
       discretized_n = stmv_distance_cur / p$pres,
-      nbreaks=p$stmv_variogram_nbreaks,
-#      plotdata=T,
-      range_correlation=p$stmv_range_correlation # ,  plotdata=TRUE
+      nbreaks=p$stmv_variogram_nbreaks
     ) )
     yi = NULL
     gc()
@@ -137,6 +135,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", eps = 1
       sdObs = sqrt(om$varObs),
       phi = om$phi,
       nu = om$nu,
+      localrange = matern_phi2distance( phi=om$phi, nu=om$nu, cor=p$stmv_range_correlation ),
       ndata=ndata
     )
     S[Si,match( names(statvars_scale), p$statsvars )] = statvars_scale

@@ -280,8 +280,10 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
       sdObs = sqrt(om$varObs),
       phi = om$phi,
       nu = om$nu,
+      localrange = matern_phi2distance( phi=om$phi, nu=om$nu, cor=p$stmv_range_correlation ),
       ndata=ndata
     )
+
     S[Si,match( names(statvars_scale), p$statsvars )] = statvars_scale
 
 
@@ -428,6 +430,7 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
       sdObs = sqrt(om$varObs),
       phi = om$phi,
       nu = om$nu,
+      localrange = matern_phi2distance( phi=om$phi, nu=om$nu, cor=p$stmv_range_correlation ),
       ndata=ndata
     )
     S[Si,match( names(statvars_scale), p$statsvars )] = statvars_scale
@@ -569,7 +572,8 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
 
     # if here then there is something to do
     # NOTE:: U are the indices of locally useful data
-    # p$stmv_distance_prediction determines the data entering into local model construction
+
+
 
     # prep dependent data
     # reconstruct data for modelling (dat)
@@ -600,8 +604,14 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
     #   points( Sloc[Si,2] ~ Sloc[Si,1], pch=20, cex=5, col="blue" )
     # }
 
+
+    stmv_distance_prediction = localrange * p$stmv_distance_prediction_fraction # this is a half window km
+    # construct prediction/output grid area ('pa')
+    windowsize.half = floor(stmv_distance_prediction/p$pres) # convert distance to discretized increments of row/col indices; stmv_distance_prediction = 0.75* stmv_distance_statsgrid (unless overridden)
+
+
     # construct data (including covariates) for prediction locations (pa)
-    pa = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=p$windowsize.half ) )
+    pa = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=windowsize.half ) )
     if (is.null(pa)) {
       Sflag[Si] = E[["prediction_area"]]
       # if (debugging) message( Si )

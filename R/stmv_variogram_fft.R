@@ -143,6 +143,7 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
 
     phi = fit$summary$phi
     nu = fit$summary$nu
+    # localrange = localrange = matern_phi2distance( phi=phi, nu=nu, cor=stmv_range_correlation )
 
     grid.list = list((1:nr2) * dr, (1:nc2) * dc)
     # dgrid = as.matrix(expand.grid(grid.list))  # a bit slower

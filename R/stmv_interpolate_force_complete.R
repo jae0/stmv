@@ -10,9 +10,6 @@ stmv_interpolate_force_complete = function( ip=NULL, p, qn = c(0.005, 0.995) ) {
 
   S = stmv_attach( p$storage.backend, p$ptr$S )
 
-  # do this here as the Stats are from the most reliable estimates
-  nu  = median( S[,which( p$statsvars=="nu"  )], na.rm=TRUE )
-  phi = median( S[,which( p$statsvars=="phi" )], na.rm=TRUE )
 
   P = stmv_attach( p$storage.backend, p$ptr$P )
   Psd = stmv_attach( p$storage.backend, p$ptr$Psd )
@@ -38,6 +35,11 @@ stmv_interpolate_force_complete = function( ip=NULL, p, qn = c(0.005, 0.995) ) {
 
     nr2 = 2 * nr
     nc2 = 2 * nc
+
+    # do this here as the Stats are from the most reliable estimates
+    nu  = median( S[,which( p$statsvars=="nu"  )], na.rm=TRUE )
+    phi = median( S[,which( p$statsvars=="phi" )], na.rm=TRUE )
+
 
     # spatial autocorrelation filter
     mC = matrix(0, nrow = nr2, ncol = nc2)
