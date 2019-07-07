@@ -38,14 +38,14 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_global_modelformula = "none",  # only marginally useful .. consider removing it and use "none",
   stmv_global_family ="none",
   stmv_local_modelengine="fft",
-  # stmv_fft_filter = "matern_tapered", #  matern with taper
-  stmv_fft_filter = "lowpass_matern_tapered", #  act as a low pass filter first before matern with taper .. depth has enough data for this. Otherwise, use:
+  stmv_fft_filter = "matern_tapered", #  matern with taper
+  # stmv_fft_filter = "lowpass_matern_tapered", #  act as a low pass filter first before matern with taper .. depth has enough data for this. Otherwise, use:
   stmv_fft_taper_fraction = 0.5,  # in local smoothing convolutions taper to this areal expansion factor sqrt( r=0.5 ) ~ 70% of variance in variogram
   stmv_fft_taper_correlation = 0,  # benchmark from which to taper
   stmv_lowpass_nu = 0.1,
   stmv_lowpass_phi = 0.1,  # note: p$pres = 0.2
   stmv_variogram_method = "fft",
-  stmv_range_correlation = c(0.05, 0.01, 0.001),
+  stmv_range_correlation = c(0.1, 0.05, 0.01, 0.001),
   depth.filter = FALSE,  # need data above sea level to get coastline
   stmv_Y_transform =list(
     transf = function(x) {log10(x + 2500)} ,
@@ -53,17 +53,17 @@ p = aegis.bathymetry::bathymetry_parameters(
   ), # data range is from -1667 to 5467 m: make all positive valued
   stmv_rsquared_threshold = 0.01, # lower threshold  .. ignore
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
-  stmv_distance_scale = c(5, 10, 20, 30, 40, 50), # km ... approx guesses of 95% AC range
-  stmv_distance_prediction_fraction = 4/5, # i.e. 4/5 * 5 = 4 km .. relative to stats grid
+  stmv_distance_scale = c( 10, 20, 30, 40, 50 ), # km ... approx guesses of 95% AC range
+  stmv_distance_prediction_fraction = 0.9, # i.e. 4/5 * 5 = 4 km .. relative to stats grid
   stmv_nmin = 100,  # min number of data points req before attempting to model in a localized space
-  stmv_nmax = 800, # no real upper bound.. just speed /RAM
+  stmv_nmax = 600, # no real upper bound.. just speed /RAM
   stmv_clusters = list(
     scale=rep("localhost", scale_ncpus),
     interpolate = list(
-        default = rep("localhost", interpolate_ncpus),
-        cor_0.01 = rep("localhost", max(1, interpolate_ncpus-1)),
-        cor_0.001 = rep("localhost", max(1, interpolate_ncpus-2)),
-        cor_0.0001 = rep("localhost", max(1, interpolate_ncpus-2))
+        cor_0.1 = rep("localhost", interpolate_ncpus),
+        cor_0.05 = rep("localhost", max(1, interpolate_ncpus-1)),
+        cor_0.01 = rep("localhost", max(1, interpolate_ncpus-2)),
+        cor_0.001 = rep("localhost", max(1, interpolate_ncpus-3))
       )  # ncpus for each runmode
     )  # ncpus for each runmode
   )
@@ -74,11 +74,11 @@ p$spatial.domain.subareas =NULL
   dev.new(); surface( as.image( Z=DATA$input$z, x=DATA$input[, c("plon", "plat")], nx=p$nplons, ny=p$nplats, na.rm=TRUE) )
 
 
-# runmode=c( "globalmodel", "scale", "interpolate", "interpolate_boost", "interpolate_force_complete", "save_completed_data")
+# runmode=c( "globalmodel", "scale", "interpolate",  "interpolate_force_complete", "save_completed_data")
 runmode=c( "globalmodel", "scale", "interpolate", "save_completed_data")
 runmode=c(  "interpolate", "save_completed_data")
-runmode=c( "interpolate", "interpolate_boost", "save_completed_data")
-# runmode=c( "interpolate", "interpolate_boost", "interpolate_force_complete", "save_completed_data")
+runmode=c( "interpolate",  "save_completed_data")
+runmode=c(  "globalmodel", "interpolate",  "interpolate_force_complete", "save_completed_data")
 
 stmv( p=p, runmode=runmode )  # This will take from 40-70 hrs, depending upon system
 

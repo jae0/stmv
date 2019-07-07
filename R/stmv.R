@@ -825,7 +825,7 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
       if ( "restart_load" %in% runmode ) {
         stmv_db(p=p, DS="load_saved_state", runmode=interp_runmode)
       } else {
-        p$clusters = p$stmv_clusters[["interpolate"]][j] # as ram reqeuirements increase drop cpus
+        p$clusters = p$stmv_clusters[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
         p$local_correlation = p$stmv_range_correlation[j]
         currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
         if ( length(currentstatus$todo) > 1) {
