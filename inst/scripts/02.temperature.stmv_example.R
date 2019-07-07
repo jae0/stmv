@@ -59,8 +59,8 @@
   stmv_lowpass_phi = 0.1,  # note: p$pres = 0.2
   stmv_variogram_method = "fft",
   stmv_variogram_nbreaks = 50,
-  stmv_range_correlation=0.1,
-  stmv_range_correlation_boostdata = c(0.01, 0.001, 0.0001),
+  stmv_localrange_correlation=0.1,
+  stmv_interpolation_correlation = c(0.01, 0.001, 0.0001),
       stmv_local_model_distanceweighted = TRUE,
       stmv_rsquared_threshold = 0, # lower threshold .. not used if twostep method
       stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )

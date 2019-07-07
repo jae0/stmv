@@ -212,7 +212,7 @@
     # constainer for spatial filters
       uu = which( (vgm$distances < dmax ) & is.finite(vgm$sv) )  # dmax ~ Nyquist freq
       fit = try( stmv_variogram_optimization( vx=vgm$distances[uu], vg=vgm$sv[uu], plotvgm=FALSE,
-        stmv_internal_scale=dmax*0.75, cor=p$stmv_range_correlation ))
+        stmv_internal_scale=dmax*0.75, cor=p$stmv_localrange_correlation ))
       # out$fit = fit
 
       local_phi = phi
@@ -282,7 +282,7 @@
 
 
       if (p$stmv_fft_filter == "normal_kernel") {
-        theta = matern_phi2distance( phi=local_phi, nu=local_nu, cor=p$stmv_range_correlation )
+        theta = matern_phi2distance( phi=local_phi, nu=local_nu, cor=p$stmv_localrange_correlation )
         xseq = seq(-(nr - 1), nr, 1) * dx / theta
         yseq = seq(-(nc - 1), nc, 1) * dy / theta
         dd = ((matrix(xseq, nr2, nc2)^2 + matrix(yseq, nr2, nc2, byrow = TRUE)^2))  # squared distances

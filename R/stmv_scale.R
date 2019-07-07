@@ -75,7 +75,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", eps = 1
 
     for ( ntarget in stmv_ntarget ) {
       for ( stmv_distance_cur in stmv_distances )  {
-        print(stmv_distance_cur)
+        # print(stmv_distance_cur)
         yi = NULL
         yi = stmv_select_data( p=p, Si=Si, localrange=stmv_distance_cur )
         if ( is.null( yi ) ) next()
@@ -135,7 +135,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", eps = 1
       sdObs = sqrt(om$varObs),
       phi = om$phi,
       nu = om$nu,
-      localrange = matern_phi2distance( phi=om$phi, nu=om$nu, cor=p$stmv_range_correlation ),
+      localrange = matern_phi2distance( phi=om$phi, nu=om$nu, cor=p$stmv_localrange_correlation ),
       ndata=ndata
     )
     S[Si,match( names(statvars_scale), p$statsvars )] = statvars_scale

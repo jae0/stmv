@@ -100,8 +100,8 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
   if ( global_nu < 0.01 | global_nu > 5) global_nu = 0.5
   global_phi = median( S[, i_phi], na.rm=TRUE )
   global_range = median( S[, i_localrange], na.rm=TRUE )
-  distance_limits = range( c(p$pres*3,  p$stmv_distance_scale ) )   # for range estimate
-  if ( global_range < distance_limits[1] | global_range > distance_limits[2] ) global_range = distance_limits[2]
+  distance_limits = range( p$stmv_distance_scale )    # for range estimate
+  if ( global_range < distance_limits[1] | global_range > distance_limits[2] ) global_range = median(distance_limits)
 
 
 # main loop over each output location in S (stats output locations)
@@ -116,7 +116,12 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
     nu    = S[Si, i_nu]
     phi   = S[Si, i_phi]
-    localrange = S[Si, i_localrange]
+
+    if ( p$local_interpolation_correlation == p$stmv_localrange_correlation ) {
+      localrange = S[Si, i_localrange]
+    } else {
+      localrange = matern_phi2distance( phi=om$phi, nu=om$nu, cor=p$local_interpolation_correlation ),
+    }
 
     ii = NULL
     ii = which(
@@ -159,8 +164,9 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       }
     }
 
-    if ( !is.finite(localrange) | (localrange < distance_limits[1] ) | (localrange > distance_limits[2]) ) localrange = global_range
-    if ( !is.finite(localrange) | (localrange < distance_limits[1] ) | (localrange > distance_limits[2]) ) localrange = distance_limits[2]
+    if ( !is.finite(localrange) localrange = global_range
+    if ( localrange < distance_limits[1] )  localrange = distance_limits[1]
+    if ( localrange > distance_limits[2] )  localrange = distance_limits[2]
 
     ii = NULL
 
@@ -213,6 +219,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       points( Yloc[yi,], pch=20, cex=1, col="yellow" )
       points( Sloc[Si,2] ~ Sloc[Si,1], pch=20, cex=5, col="blue" )
     }
+
 
     stmv_distance_prediction = localrange * p$stmv_distance_prediction_fraction # this is a half window km
     # construct prediction/output grid area ('pa')

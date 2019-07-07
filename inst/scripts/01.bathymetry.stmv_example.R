@@ -45,7 +45,8 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_lowpass_nu = 0.1,
   stmv_lowpass_phi = 0.1,  # note: p$pres = 0.2
   stmv_variogram_method = "fft",
-  stmv_range_correlation = c(0.1, 0.05, 0.01, 0.001),
+  stmv_localrange_correlation = 0.1,
+  stmv_interpolation_correlation = c(0.1, 0.05, 0.01, 0.001),
   depth.filter = FALSE,  # need data above sea level to get coastline
   stmv_Y_transform =list(
     transf = function(x) {log10(x + 2500)} ,
@@ -78,7 +79,7 @@ p$spatial.domain.subareas =NULL
 runmode=c( "globalmodel", "scale", "interpolate", "save_completed_data")
 runmode=c(  "interpolate", "save_completed_data")
 runmode=c( "interpolate",  "save_completed_data")
-runmode=c(  "globalmodel", "interpolate",  "interpolate_force_complete", "save_completed_data")
+runmode=c(  "globalmodel", "scale", "interpolate",  "interpolate_force_complete", "save_completed_data")
 
 stmv( p=p, runmode=runmode )  # This will take from 40-70 hrs, depending upon system
 

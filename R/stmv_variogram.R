@@ -359,6 +359,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
     names(XYZ) =  c("plon", "plat", "z" ) # arbitrary
 
     VGM = stmv_variogram_fft( xyz=XYZ, nx=discretized_n, ny=discretized_n, nbreaks=nbreaks, stmv_fft_taper_correlation=stmv_fft_taper_correlation, stmv_fft_taper_fraction=stmv_fft_taper_fraction )  # empirical variogram by fftw2d
+    out$vgm = VGM
     uu = which( (VGM$vgm$distances < 0.9*max(VGM$vgm$distances) ) & is.finite(VGM$vgm$sv) )
     fit = try( stmv_variogram_optimization( vx=VGM$vgm$distances[uu], vg=VGM$vgm$sv[uu], plotvgm=plotdata,
       stmv_internal_scale=out$stmv_internal_scale, cor=range_correlation  ))
@@ -405,10 +406,12 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
     require( RandomFields )
     VGM = RFvariogram( data=RFspatialPointsDataFrame( coords=XYZ[,c(1,2)], data=XYZ[,3], RFparams=list(vdim=1, n=1) ) )
     # remove the (0,0) point -- force intercept
+
     todrop = which( !is.finite(VGM@empirical )) # occasionally NaN's are created!
     todrop = unique( c(1, todrop) )
     vg = VGM@empirical[-todrop]
     vx = VGM@centers[-todrop]
+    out$vgm = VGM
     fit = try( stmv_variogram_optimization( vx=vx, vg=vg, nu=0.5, plotvgm=plotdata, stmv_internal_scale=out$stmv_internal_scale, cor=range_correlation ))
     if ( !inherits(fit, "try-error") ) {
       out$optim = fit$summary

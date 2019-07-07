@@ -819,14 +819,14 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
 
   if ("interpolate" %in% runmode ) {
     message( "\n||| Entering <interpolate> stage: ", format(Sys.time()) , "\n" )
-    for ( j in 1:length(p$stmv_range_correlation) ) {
+    for ( j in 1:length(p$stmv_interpolation_correlation) ) {
       p$time_start_runmode = Sys.time()
       interp_runmode = paste("interpolate_", j, sep="")
       if ( "restart_load" %in% runmode ) {
         stmv_db(p=p, DS="load_saved_state", runmode=interp_runmode)
       } else {
         p$clusters = p$stmv_clusters[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
-        p$local_correlation = p$stmv_range_correlation[j]
+        p$local_interpolation_correlation = p$stmv_interpolation_correlation[j]
         currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
         if ( length(currentstatus$todo) > 1) {
           parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) )
