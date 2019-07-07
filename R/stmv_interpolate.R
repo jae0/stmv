@@ -120,14 +120,29 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     if ( p$local_interpolation_correlation == p$stmv_localrange_correlation ) {
       localrange = S[Si, i_localrange]
     } else {
-      localrange = matern_phi2distance( phi=om$phi, nu=om$nu, cor=p$local_interpolation_correlation ),
+      localrange = matern_phi2distance( phi=phi, nu=nu, cor=p$local_interpolation_correlation ),
     }
+
+    # range checks
+    if ( !is.finite(localrange) )  {
+      Sflag[Si] %in% E[["variogram_failure"]]
+    } else {
+      if ( (localrange < distance_limits[1] ) | (localrange > distance_limits[2]) )  {
+        Sflag[Si] %in% E[["variogram_range_limit"]]
+      }
+    }
+
+    if ( !is.finite(localrange) localrange = global_range
+    if ( localrange < distance_limits[1] )  localrange = distance_limits[1]
+    if ( localrange > distance_limits[2] )  localrange = distance_limits[2]
+
 
     ii = NULL
     ii = which(
-      {abs( Sloc[Si,1] - Sloc[,1] ) <= distance_limits[2]} &
-      {abs( Sloc[Si,2] - Sloc[,2] ) <= distance_limits[2]}
+      {abs( Sloc[Si,1] - Sloc[,1] ) <= localrange} &
+      {abs( Sloc[Si,2] - Sloc[,2] ) <= localrange}
     )
+
 
     # nu checks
     if ( !is.finite(nu) ) {
@@ -142,7 +157,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     if ( !is.finite(nu) | (nu < 0.01) | (nu > 5) ) nu = 0.5
 
     # phi checks
-    phi_lim = distance_limits / sqrt(8*nu)  # inla-approximation
+    phi_lim = localrange / sqrt(8*nu)  # inla-approximation
     if ( !is.finite(phi) ) {
       Sflag[Si] %in% E[["variogram_failure"]]
     } else {
@@ -154,19 +169,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     if ( !is.finite(phi) | (phi < phi_lim[1]) | (phi > phi_lim[2]) )  phi = global_phi
     if ( !is.finite(phi) | (phi < phi_lim[1]) | (phi > phi_lim[2]) )  phi = phi_lim[2]
 
-
-    # range checks
-    if ( !is.finite(localrange) )  {
-      Sflag[Si] %in% E[["variogram_failure"]]
-    } else {
-      if ( (localrange < distance_limits[1] ) | (localrange > distance_limits[2]) )  {
-        Sflag[Si] %in% E[["variogram_range_limit"]]
-      }
-    }
-
-    if ( !is.finite(localrange) localrange = global_range
-    if ( localrange < distance_limits[1] )  localrange = distance_limits[1]
-    if ( localrange > distance_limits[2] )  localrange = distance_limits[2]
 
     ii = NULL
 
