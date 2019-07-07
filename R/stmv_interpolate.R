@@ -120,7 +120,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     if ( p$local_interpolation_correlation == p$stmv_localrange_correlation ) {
       localrange = S[Si, i_localrange]
     } else {
-      localrange = matern_phi2distance( phi=phi, nu=nu, cor=p$local_interpolation_correlation ),
+      localrange = matern_phi2distance( phi=phi, nu=nu, cor=p$local_interpolation_correlation )
     }
 
     # range checks
