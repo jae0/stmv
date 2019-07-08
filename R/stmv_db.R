@@ -574,6 +574,7 @@
 
 
     if (DS %in% c("load_saved_state") ) {
+      returnflag = FALSE
 
       # named differently to avoid collisions
       P = stmv_attach( p$storage.backend, p$ptr$P )
@@ -595,11 +596,34 @@
       sS = matrix( NaN, nrow=nrow(S), ncol=ncol(S) )
       sSflag = matrix( NaN, nrow=nrow(Sflag), ncol=ncol(Sflag) )
 
-      if (file.exists(paste( p$saved_state_fn$P, runmode, sep="."))) load( paste( p$saved_state_fn$P, runmode, sep=".") )
-      if (file.exists(paste( p$saved_state_fn$Pn, runmode, sep="."))) load( paste( p$saved_state_fn$Pn, runmode, sep=".") )
-      if (file.exists(paste( p$saved_state_fn$Psd, runmode, sep="."))) load( paste( p$saved_state_fn$Psd, runmode, sep=".") )
-      if (file.exists(paste( p$saved_state_fn$stats, runmode, sep="."))) load( paste( p$saved_state_fn$stats, runmode, sep=".") )
-      if (file.exists(paste( p$saved_state_fn$sflag, runmode, sep="."))) load( paste( p$saved_state_fn$sflag, runmode, sep=".") )
+      if (file.exists(paste( p$saved_state_fn$P, runmode, sep="."))) {
+        load( paste( p$saved_state_fn$P, runmode, sep=".") )
+      } else {
+        returnflag = FALSE
+      }
+      if (file.exists(paste( p$saved_state_fn$Pn, runmode, sep="."))) {
+        load( paste( p$saved_state_fn$Pn, runmode, sep=".") )
+      } else {
+        returnflag = FALSE
+      }
+
+      if (file.exists(paste( p$saved_state_fn$Psd, runmode, sep="."))) {
+        load( paste( p$saved_state_fn$Psd, runmode, sep=".") )
+      } else {
+        returnflag = FALSE
+      }
+
+      if (file.exists(paste( p$saved_state_fn$stats, runmode, sep="."))) {
+        load( paste( p$saved_state_fn$stats, runmode, sep=".") )
+      } else {
+        returnflag = FALSE
+      }
+
+      if (file.exists(paste( p$saved_state_fn$sflag, runmode, sep="."))) {
+        load( paste( p$saved_state_fn$sflag, runmode, sep=".") )
+      } else {
+        returnflag = FALSE
+      }
 
       P[] = sP[]
       Pn[] = sPn[]
@@ -614,13 +638,23 @@
         if (p$stmv_global_modelengine !="none" ) {
           sP0 = matrix( NaN, nrow=nrow(P0), ncol=ncol(P0) )
           sP0sd = matrix( NaN, nrow=nrow(P0sd), ncol=ncol(P0sd) )
-          if (file.exists(paste( p$saved_state_fn$P0, runmode, sep="."))) load( paste( p$saved_state_fn$P0, runmode, sep=".") )
-          if (file.exists(paste( p$saved_state_fn$P0sd, runmode, sep="."))) load( paste( p$saved_state_fn$P0sd, runmode, sep=".") )
+          if (file.exists(paste( p$saved_state_fn$P0, runmode, sep="."))) {
+            load( paste( p$saved_state_fn$P0, runmode, sep=".") )
+          } else {
+            returnflag = FALSE
+          }
+          if (file.exists(paste( p$saved_state_fn$P0sd, runmode, sep="."))) {
+            load( paste( p$saved_state_fn$P0sd, runmode, sep=".") )
+          } else {
+            returnflag = FALSE
+          }
+
           P0[] = sP0[]
           P0sd[] = sP0sd[]
           sP0 = sP0sd = NULL
         }
       }
+      return( flag )
     }
 
 
