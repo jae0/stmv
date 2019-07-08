@@ -1,5 +1,5 @@
 
-stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist=FALSE, eps=1e-9, ... ) {
+stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist=FALSE, distance=NULL, eps=1e-9, ... ) {
 
   #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
   #\\ note: time is not being modelled and treated independently
@@ -38,6 +38,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     sloc = Sloc[Si,]
     distance = localrange
     eps = 1e-9
+
+
   }
 
   if (variablelist)  return( c() )
@@ -190,57 +192,60 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     local_phi = phi
     local_nu = nu
 
-    # create time-specific variograms
-    # fY * Conj(fY) == power spectra
-    acY = Re( fftwtools::fftw2d( fY * Conj(fY), inverse=TRUE)  ) # autocorrelation (amplitude)
-    acN = Re( fftwtools::fftw2d( fN * Conj(fN), inverse=TRUE)  ) # autocorrelation (amplitude) correction
-    X = ifelse(( acN > eps), (acY / acN), NA) # autocorrelation (amplitude)
-    acY = acN = NULL
-    # fftshift
-    X = rbind( X[((nr+1):nr2), (1:nc2)], X[(1:nr), (1:nc2)] )  # swap_up_down
-    X = cbind( X[1:nr2, ((nc+1):nc2)], X[1:nr2, 1:nc])  # swap_left_right
-    # zz (distance breaks) precomputed outside of loop
 
-    vgm = as.data.frame.table(tapply( X=X, INDEX=zz, FUN=mean, na.rm=TRUE ))
-    names(vgm) = c("distances", "ac")
-    vgm$distances = as.numeric(vgm$distances)
-    X = NULL
+    if (p$stmv_fft_taper_method == "empirical") {
+      # create time-specific variograms
+      # fY * Conj(fY) == power spectra
+      acY = Re( fftwtools::fftw2d( fY * Conj(fY), inverse=TRUE)  ) # autocorrelation (amplitude)
+      acN = Re( fftwtools::fftw2d( fN * Conj(fN), inverse=TRUE)  ) # autocorrelation (amplitude) correction
+      X = ifelse(( acN > eps), (acY / acN), NA) # autocorrelation (amplitude)
+      acY = acN = NULL
+      # fftshift
+      X = rbind( X[((nr+1):nr2), (1:nc2)], X[(1:nr), (1:nc2)] )  # swap_up_down
+      X = cbind( X[1:nr2, ((nc+1):nc2)], X[1:nr2, 1:nc])  # swap_left_right
+      # zz (distance breaks) precomputed outside of loop
 
-    theta.Taper = vgm$distances[ find_intersection( vgm$ac, threshold=p$stmv_fft_taper_correlation ) ]
-    theta.Taper = theta.Taper * p$stmv_fft_taper_fraction # fraction of the distance to 0 correlation; sqrt(0.5) = ~ 70% of the variability (associated with correlation = 0.5)
+      vgm = as.data.frame.table(tapply( X=X, INDEX=zz, FUN=mean, na.rm=TRUE ))
+      names(vgm) = c("distances", "ac")
+      vgm$distances = as.numeric(vgm$distances)
+      X = NULL
 
-    vgm$distances = as.numeric( as.character(vgm$distances))
-    vgm$sv =  zvar * (1-vgm$ac^2) # each sv are truly orthogonal
+      theta.Taper = vgm$distances[ find_intersection( vgm$ac, threshold=p$stmv_fft_taper_correlation ) ]
+      theta.Taper = theta.Taper * p$stmv_fft_taper_fraction # fraction of the distance to 0 correlation; sqrt(0.5) = ~ 70% of the variability (associated with correlation = 0.5)
 
-  # plot(ac ~ distances, data=vgm   )
-  # plot(sv ~ distances, data=vgm   )
+      vgm$distances = as.numeric( as.character(vgm$distances))
+      vgm$sv =  zvar * (1-vgm$ac^2) # each sv are truly orthogonal
 
-    uu = which( (vgm$distances < dmax ) & is.finite(vgm$sv) )  # dmax ~ Nyquist freq
-    fit = try( stmv_variogram_optimization( vx=vgm$distances[uu], vg=vgm$sv[uu], plotvgm=FALSE,
-      stmv_internal_scale=dmax*0.75, cor=p$stmv_localrange_correlation ))
-    uu = NULL
-    vgm = NULL
-    # out$fit = fit
+    # plot(ac ~ distances, data=vgm   )
+    # plot(sv ~ distances, data=vgm   )
 
-    if ( !inherits(fit, "try-error") ) {
-      if (exists("summary", fit)) {
-        if ( exists("nu", fit$summary )) {
-          if ( is.finite( c(fit$summary$nu)) ) {
-            local_nu = fit$summary$nu
+      uu = which( (vgm$distances < dmax ) & is.finite(vgm$sv) )  # dmax ~ Nyquist freq
+      fit = try( stmv_variogram_optimization( vx=vgm$distances[uu], vg=vgm$sv[uu], plotvgm=FALSE,
+        stmv_internal_scale=dmax*0.75, cor=p$stmv_localrange_correlation ))
+      uu = NULL
+      vgm = NULL
+      # out$fit = fit
+
+      if ( !inherits(fit, "try-error") ) {
+        if (exists("summary", fit)) {
+          if ( exists("nu", fit$summary )) {
+            if ( is.finite( c(fit$summary$nu)) ) {
+              local_nu = fit$summary$nu
+            }
           }
-        }
-        if ( exists("phi", fit$summary )) {
-          if ( is.finite( c(fit$summary$phi)) ) {
-            local_phi = fit$summary$phi
+          if ( exists("phi", fit$summary )) {
+            if ( is.finite( c(fit$summary$phi)) ) {
+              local_phi = fit$summary$phi
+            }
           }
         }
       }
+
+      fit = NULL
+      gc()
+    } else if (p$stmv_fft_taper_method == "modelled") {
+      theta.Taper = matern_phi2distance( phi=local_phi, nu=local_nu, cor=p$stmv_fft_taper_correlation )
     }
-
-    fit = NULL
-
-
-    gc()
 
     if ( p$stmv_fft_filter == "lowpass") {
       theta = p$stmv_lowpass_phi
@@ -266,7 +271,6 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     }
 
     if (p$stmv_fft_filter == "matern_tapered") {
-
       sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=local_phi, smoothness=local_nu,
         Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
       sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
@@ -276,7 +280,6 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     if (p$stmv_fft_filter == "lowpass_matern_tapered") {
       sp.covar.lowpass = stationary.cov( dgrid, center, Covariance="Matern", theta=p$stmv_lowpass_phi, smoothness=p$stmv_lowpass_nu )
       sp.covar.lowpass = as.surface(dgrid, c(sp.covar.lowpass))$z / (nr2*nc2)
-
       sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=local_phi, smoothness=local_nu,
         Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
       sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)

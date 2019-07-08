@@ -156,8 +156,13 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
     mC[nr, nc] = 1  # equal weights
     center = matrix(c((dr * nr), (dc * nc)), nrow = 1, ncol = 2)
 
-    theta.Taper = vgm$distances[ find_intersection( vgm$ac, threshold=stmv_fft_taper_correlation ) ]
-    theta.Taper = theta.Taper * stmv_fft_taper_fraction # fraction of the distance to 0 correlation; sqrt(0.5) = ~ 70% of the variability (associated with correlation = 0.5)
+
+    if (p$stmv_fft_taper_method == "empirical") {
+      theta.Taper = vgm$distances[ find_intersection( vgm$ac, threshold=stmv_fft_taper_correlation ) ]
+      theta.Taper = theta.Taper * stmv_fft_taper_fraction # fraction of the distance to 0 correlation; sqrt(0.5) = ~ 70% of the variability (associated with correlation = 0.5)
+    } else if (p$stmv_fft_taper_method == "modelled") {
+      theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=stmv_fft_taper_correlation )
+    }
 
     sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
       Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)

@@ -1,6 +1,6 @@
 
 
-stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpolate_boost", "interpolate_force_complete", "save_completed_data", "save_intermediate_results"),
+stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpolate_force_complete", "save_completed_data", "save_intermediate_results"),
   DATA=NULL, variogram_source ="saved_state",
   use_saved_state=NULL, nlogs=200,
   debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE, robustify_quantiles=c(0.0005, 0.9995), ... ) {
@@ -753,7 +753,7 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
     # reload main data to continue
 
     message( "||| Scale estimation surface complete." )
-    message( "||| Time used for <interpolate_boost>: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n"  )
+    message( "||| Time used : ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n"  )
     message( "||| Stats temporarily saved to (for restarts): ", p$saved_state_fn$stats )
 
   } else {
