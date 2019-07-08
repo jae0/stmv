@@ -57,7 +57,7 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
   stmv_distance_scale = c( 10, 20, 30, 40, 50 ), # km ... approx guesses of 95% AC range
   stmv_distance_prediction_fraction = 0.8, # i.e. 4/5 * 5 = 4 km .. relative to stats grid
-  stmv_nmin = 200,  # min number of data points req before attempting to model in a localized space
+  stmv_nmin = 400,  # min number of data points req before attempting to model in a localized space
   stmv_nmax = 600, # no real upper bound.. just speed /RAM
   stmv_clusters = list(
     scale=rep("localhost", scale_ncpus),
@@ -71,6 +71,20 @@ p = aegis.bathymetry::bathymetry_parameters(
   )
 
 p$spatial.domain.subareas =NULL
+
+if (0) {
+   p$stmv_clusters = list(
+    # scale=rep("localhost", scale_ncpus),
+    interpolate = list(
+        cor_0.05 = rep("localhost", 1),
+        cor_0.01 = rep("localhost", 1),
+        cor_0.005 = rep("localhost", 1),
+        cor_0.001 = rep("localhost", 1)
+      )  # ncpus for each runmode
+   )
+  runmode=c(   "interpolate",  "interpolate_force_complete", "save_completed_data")
+
+}
 
 # quick look of data
   dev.new(); surface( as.image( Z=DATA$input$z, x=DATA$input[, c("plon", "plat")], nx=p$nplons, ny=p$nplats, na.rm=TRUE) )
