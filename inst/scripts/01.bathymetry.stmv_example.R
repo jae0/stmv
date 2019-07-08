@@ -41,7 +41,7 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_fft_filter = "matern_tapered", #  matern with taper
   # stmv_fft_filter = "lowpass_matern_tapered", #  act as a low pass filter first before matern with taper .. depth has enough data for this. Otherwise, use:
   stmv_fft_taper_method = "modelled",  # vs "empirical"
-  stmv_fft_taper_fraction = sqrt(0.5),  # if empirical: in local smoothing convolutions taper to this areal expansion factor sqrt( r=0.5 ) ~ 70% of variance in variogram
+  # stmv_fft_taper_fraction = sqrt(0.5),  # if empirical: in local smoothing convolutions taper to this areal expansion factor sqrt( r=0.5 ) ~ 70% of variance in variogram
   stmv_fft_taper_correlation = 0.2,  # benchmark from which to taper
   stmv_lowpass_nu = 0.1,
   stmv_lowpass_phi = 0.1,  # note: p$pres = 0.2
@@ -56,8 +56,8 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_rsquared_threshold = 0.01, # lower threshold  .. ignore
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
   stmv_distance_scale = c( 10, 20, 30, 40, 50 ), # km ... approx guesses of 95% AC range
-  stmv_distance_prediction_fraction = 0.9, # i.e. 4/5 * 5 = 4 km .. relative to stats grid
-  stmv_nmin = 400,  # min number of data points req before attempting to model in a localized space
+  stmv_distance_prediction_fraction = 0.8, # i.e. 4/5 * 5 = 4 km .. relative to stats grid
+  stmv_nmin = 200,  # min number of data points req before attempting to model in a localized space
   stmv_nmax = 600, # no real upper bound.. just speed /RAM
   stmv_clusters = list(
     scale=rep("localhost", scale_ncpus),

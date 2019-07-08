@@ -121,11 +121,11 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
     # range checks
     if ( !is.finite(localrange) )  {
-      Sflag[Si] = E[["variogram_failure"]]
+      Sflag[Si] %in% E[["variogram_failure"]]
       localrange = global_range
     } else {
       if ( (localrange < distance_limits[1] ) | (localrange > distance_limits[2]) )  {
-        Sflag[Si] = E[["variogram_range_limit"]]
+        Sflag[Si] %in% E[["variogram_range_limit"]]
       }
     }
 
@@ -152,7 +152,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     if ( !is.finite(nu) | (nu < 0.01) | (nu > 5) ) nu = 0.5
 
     # phi checks
-    phi_lim = distance_limits / sqrt(8*nu)  # inla-approximation
+    phi_lim = localrange / sqrt(8*nu)  # inla-approximation
     if ( !is.finite(phi) ) {
       Sflag[Si] %in% E[["variogram_failure"]]
     } else {
