@@ -41,7 +41,7 @@ p = aegis.bathymetry::bathymetry_parameters(
   #stmv_fft_filter = "matern_tapered", #  matern with taper
   stmv_fft_filter = "lowpass_matern_tapered", #  act as a low pass filter first before matern with taper .. depth has enough data for this. Otherwise, use:
   stmv_fft_taper_method = "modelled",  # vs "empirical"
-  stmv_fft_taper_fraction = sqrt(0.5),  # in local smoothing convolutions taper to this areal expansion factor sqrt( r=0.5 ) ~ 70% of variance in variogram
+  stmv_fft_taper_fraction = sqrt(0.5),  # if empirical: in local smoothing convolutions taper to this areal expansion factor sqrt( r=0.5 ) ~ 70% of variance in variogram
   stmv_fft_taper_correlation = 0.1,  # benchmark from which to taper
   stmv_lowpass_nu = 0.1,
   stmv_lowpass_phi = 0.1,  # note: p$pres = 0.2

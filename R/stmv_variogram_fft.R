@@ -1,6 +1,6 @@
 
 stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE, eps=1e-9, add.interpolation=FALSE,
-  stmv_localrange_correlation=0.1, stmv_fft_taper_correlation=0, stmv_fft_taper_fraction=sqrt(0.5) ) {
+  stmv_fft_taper_method="modelled", stmv_localrange_correlation=0.1, stmv_fft_taper_correlation=0, stmv_fft_taper_fraction=sqrt(0.5) ) {
 
   if (0) {
     require(fields)
@@ -157,10 +157,10 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
     center = matrix(c((dr * nr), (dc * nc)), nrow = 1, ncol = 2)
 
 
-    if (p$stmv_fft_taper_method == "empirical") {
+    if (stmv_fft_taper_method == "empirical") {
       theta.Taper = vgm$distances[ find_intersection( vgm$ac, threshold=stmv_fft_taper_correlation ) ]
       theta.Taper = theta.Taper * stmv_fft_taper_fraction # fraction of the distance to 0 correlation; sqrt(0.5) = ~ 70% of the variability (associated with correlation = 0.5)
-    } else if (p$stmv_fft_taper_method == "modelled") {
+    } else if (stmv_fft_taper_method == "modelled") {
       theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=stmv_fft_taper_correlation )
     }
 
@@ -207,8 +207,11 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
       XYZ$z = residuals( mm)
       XYZ=XYZ[c("x","y","z")]
       x11()
-      oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=nx, plotdata=TRUE, add.interpolation=TRUE, stmv_fft_taper_correlation=0, stmv_fft_taper_fraction=0.75 )
+      oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=nx, plotdata=TRUE, add.interpolation=TRUE,
+        stmv_fft_taper_method="modelled", stmv_fft_taper_correlation=0, stmv_fft_taper_fraction=0.75 )
       gr = stmv_variogram( XYZ[, c("x", "y")], XYZ[,"z"], methods="fft", plotdata=TRUE ) # fft/nl least squares
+      oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=nx, plotdata=TRUE, add.interpolation=TRUE,
+        stmv_fft_taper_method="empirical", stmv_fft_taper_correlation=0, stmv_fft_taper_fraction=0.75 )
     }
 
 
