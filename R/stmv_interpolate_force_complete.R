@@ -5,6 +5,14 @@ stmv_interpolate_force_complete = function( ip=NULL, p, qn = c(0.005, 0.995) ) {
   #// for the sake of speed and parallelization, the kernel density method via fft is written out again .. it is taken from fields::smooth.2d
   #// the spatial interpolation is smoother than what is expected from a kriging covariance but faster
 
+  if (0) {
+    # for debugging  runs ..
+    currentstatus = stmv_statistics_status( p=p )
+    p = parallel_run( p=p, runindex=list( time_index=1:p$nt )  )
+    ip = 1:p$nruns
+    debugging=TRUE
+  }
+
   if (exists( "libs", p)) RLibrary( p$libs )
   if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
 

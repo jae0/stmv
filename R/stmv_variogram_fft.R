@@ -208,10 +208,12 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
       XYZ=XYZ[c("x","y","z")]
       x11()
       oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=nx, plotdata=TRUE, add.interpolation=TRUE,
-        stmv_fft_taper_method="modelled", stmv_fft_taper_correlation=0, stmv_fft_taper_fraction=0.75 )
-      gr = stmv_variogram( XYZ[, c("x", "y")], XYZ[,"z"], methods="fft", plotdata=TRUE ) # fft/nl least squares
+        stmv_fft_taper_method="modelled", stmv_fft_taper_correlation=0.05 )
+
       oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=nx, plotdata=TRUE, add.interpolation=TRUE,
-        stmv_fft_taper_method="empirical", stmv_fft_taper_correlation=0, stmv_fft_taper_fraction=0.75 )
+        stmv_fft_taper_method="empirical", stmv_fft_taper_correlation=0.1, stmv_fft_taper_fraction=0.75 )
+
+      gr = stmv_variogram( XYZ[, c("x", "y")], XYZ[,"z"], methods="fft", plotdata=TRUE ) # fft/nl least squares
     }
 
 
@@ -220,7 +222,12 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
       XYZ$z = log(XYZ$elev)
       XYZ=XYZ[, c("x","y","z") ]
       x11()
-      oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=nx, plotdata=TRUE,  add.interpolation=TRUE, stmv_fft_taper_correlation=0, stmv_fft_taper_fraction=sqrt(.5) )
+      oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=nx, plotdata=TRUE,  add.interpolation=TRUE,
+        stmv_fft_taper_method="modelled", stmv_fft_taper_correlation=0.25  )
+
+      oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=nx, plotdata=TRUE,  add.interpolation=TRUE,
+        stmv_fft_taper_method="empirical",  stmv_fft_taper_correlation=0.1, stmv_fft_taper_fraction=0.5 )
+
       gr = stmv_variogram( XYZ[, c("x", "y")], XYZ[,"z"], methods="fft", plotdata=TRUE )
     }
 
@@ -232,7 +239,12 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
 
       XYZ = as.data.frame( cbind( RMprecip$x, RMprecip$y ) )
       names(XYZ) =c( "x","y","z")
-      oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=nx, plotdata=TRUE,  add.interpolation=TRUE, stmv_fft_taper_correlation=0, stmv_fft_taper_fraction=sqrt(.5) )
+      oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=nx, plotdata=TRUE,  add.interpolation=TRUE,
+          stmv_fft_taper_method="modelled", stmv_fft_taper_correlation=0.2  )
+
+      oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=nx, plotdata=TRUE,  add.interpolation=TRUE,
+          stmv_fft_taper_method="empirical",  stmv_fft_taper_correlation=0.1, stmv_fft_taper_fraction=sqrt(.5) )
+
       gr = stmv_variogram( XYZ[, c("x", "y")], XYZ[,"z"], methods="fft", plotdata=TRUE )
     }
 
