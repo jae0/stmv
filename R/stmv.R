@@ -30,6 +30,7 @@ stmv = function( p, runmode=NULL,
     s_runmode = s_runmode[test]
     runmode = intersect(s_runmode, c( "globalmodel", "scale", "interpolate", "interpolate_force_complete", "save_completed_data", "save_intermediate_results") )
   }
+  message( "Runmodes: ", runmode  )
 
   p$nlogs = nlogs
 
@@ -824,24 +825,26 @@ stmv = function( p, runmode=NULL,
 
 
   if ("interpolate" %in% runmode ) {
+    p0 = p
     for ( j in 1:length(p$stmv_interpolation_correlation) ) {
-      p0 = p
-      p0$time_start_runmode = Sys.time()
+      p = p0 #reset
+      p$time_start_runmode = Sys.time()
       interp_runmode = paste("interpolate_", j, sep="")
       message( "\n||| Entering <", interp_runmode, "> stage: ", format(Sys.time()) , "\n" )
       success = FALSE
-      if ( "restart_load" %in% runmode ) success = stmv_db(p=p0, DS="load_saved_state", runmode=interp_runmode)
+      if ( "restart_load" %in% runmode ) success = stmv_db(p=p, DS="load_saved_state", runmode=interp_runmode)
       if (success) next()
-      p0$clusters = p0$stmv_runmode[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
-      p0$local_interpolation_correlation = p0$stmv_interpolation_correlation[j]
+      p$clusters = p$stmv_runmode[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
+      p$local_interpolation_correlation = p$stmv_interpolation_correlation[j]
       browser()
-      currentstatus = stmv_statistics_status( p=p0, reset="incomplete" )
-      if ( length(currentstatus$todo) < length(p0$clusters)) break()
-      parallel_run( stmv_interpolate, p=p0, runindex=list( locs=sample( currentstatus$todo ))  )# as ram reqeuirements increase drop cpus )
+      currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
+      if ( length(currentstatus$todo) < length(p$clusters)) break()
+      parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  )# as ram reqeuirements increase drop cpus )
       browser()
-      stmv_db(p=p0, DS="save_current_state", runmode=interp_runmode)
+      stmv_db(p=p, DS="save_current_state", runmode=interp_runmode)
       message( paste( "Time used for <interpolate", j, ">: ", format(difftime(  Sys.time(), p0$time_start_runmode )), "\n" ) )
     }
+    p = p0
   }
 
 
