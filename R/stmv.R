@@ -831,6 +831,7 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
       currentstatus = stmv_statistics_status( p=p0, reset="incomplete" )
       if ( length(currentstatus$todo) < length(p0$clusters)) break()
       parallel_run( stmv_interpolate, p=p0, runindex=list( locs=sample( currentstatus$todo ))  )# as ram reqeuirements increase drop cpus )
+      browser()
       stmv_db(p=p0, DS="save_current_state", runmode=interp_runmode)
       message( paste( "Time used for <interpolate", j, ">: ", format(difftime(  Sys.time(), p0$time_start_runmode )), "\n" ) )
     }
