@@ -750,7 +750,7 @@ stmv = function( p, runmode=NULL,
     message ( "\n", "||| Entering spatial scale (variogram) determination: ", format(Sys.time()) , "\n" )
     p$time_start_runmode = Sys.time()
     currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
-    p$clusters = p$stmv_clusters[["scale"]] # as ram reqeuirements increase drop cpus
+    p$clusters = p$stmv_runmode[["scale"]] # as ram reqeuirements increase drop cpus
     parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
 
     # temp save to disk
@@ -811,7 +811,7 @@ stmv = function( p, runmode=NULL,
     success = FALSE
     if ( "restart_load" %in% runmode ) success = stmv_db(p=p, DS="load_saved_state", runmode="singlepass_fft")
     if ( success) next()
-    p$clusters = p$stmv_clusters[["singlepass_fft"]] # as ram reqeuirements increase drop cpus
+    p$clusters = p$stmv_runmode[["singlepass_fft"]] # as ram reqeuirements increase drop cpus
     p$time_start_runmode = Sys.time()
     currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
     parallel_run( stmv_singlepass_fft, p=p, runindex=list( locs=sample( currentstatus$todo )) )
@@ -832,7 +832,7 @@ stmv = function( p, runmode=NULL,
       success = FALSE
       if ( "restart_load" %in% runmode ) success = stmv_db(p=p0, DS="load_saved_state", runmode=interp_runmode)
       if (success) next()
-      p0$clusters = p0$stmv_clusters[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
+      p0$clusters = p0$stmv_runmode[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
       p0$local_interpolation_correlation = p0$stmv_interpolation_correlation[j]
       browser()
       currentstatus = stmv_statistics_status( p=p0, reset="incomplete" )
@@ -857,7 +857,7 @@ stmv = function( p, runmode=NULL,
     success = FALSE
     if ( "restart_load" %in% runmode )  success = stmv_db(p=p, DS="load_saved_state", runmode="interpolate_force_complete")
     if (success) next()
-    p$clusters = p$stmv_clusters[["interpolate_force_complete"]] # as ram reqeuirements increase drop cpus
+    p$clusters = p$stmv_runmode[["interpolate_force_complete"]] # as ram reqeuirements increase drop cpus
     p$stmv_local_modelengine = "linear"
     p$time_start_runmode = Sys.time()
     currentstatus = stmv_statistics_status( p=p, reset="incomplete" )

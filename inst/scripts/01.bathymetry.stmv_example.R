@@ -93,15 +93,6 @@ if (0) {
   dev.new(); surface( as.image( Z=DATA$input$z, x=DATA$input[, c("plon", "plat")], nx=p$nplons, ny=p$nplats, na.rm=TRUE) )
 
 
-# runmode=c( "globalmodel", "scale", "interpolate",  "interpolate_force_complete", "save_completed_data")
-runmode=c( "globalmodel", "scale", "interpolate", "save_completed_data")
-runmode=c(  "interpolate", "save_completed_data")
-runmode=c( "interpolate",  "save_completed_data")
-runmode=c(  "globalmodel", "scale", "interpolate",  "interpolate_force_complete", "save_completed_data")
-
-runmode=c(   "interpolate",  "interpolate_force_complete", "save_completed_data")
-
-
 stmv( p=p  )  # This will take from 40-70 hrs, depending upon system
 
 

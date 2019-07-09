@@ -24,15 +24,6 @@ stmv_parameters = function( p=list(), ... ) {
     stop()
   }
 
-  if (!exists("stmv_clusters", p)) {
-    if (exists( "clusters", p)) {
-      p$stmv_clusters = p$clusters
-    } else {
-      warning( "p$stmv_clusters not specified, using 1 core only" )
-      p$stmv_clusters = "localhost"
-    }
-  }
-
 
   if( !exists( "storage.backend", p))  p$storage.backend="bigmemory.ram"
 
