@@ -803,13 +803,12 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
     message( "\n||| Entering <singlepass_fft> stage: ", format(Sys.time()) , "\n" )
     success = FALSE
     if ( "restart_load" %in% runmode ) success = stmv_db(p=p, DS="load_saved_state", runmode="singlepass_fft")
-    if (!success) {
-      p$clusters = p$stmv_clusters[["singlepass_fft"]] # as ram reqeuirements increase drop cpus
-      p$time_start_runmode = Sys.time()
-      currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
-      parallel_run( stmv_singlepass_fft, p=p, runindex=list( locs=sample( currentstatus$todo )) )
-      if ( "save_intermediate_results" %in% runmode )  stmv_db(p=p, DS="save_current_state", runmode="singlepass_fft")
-    }
+    if ( success) next()
+    p$clusters = p$stmv_clusters[["singlepass_fft"]] # as ram reqeuirements increase drop cpus
+    p$time_start_runmode = Sys.time()
+    currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
+    parallel_run( stmv_singlepass_fft, p=p, runindex=list( locs=sample( currentstatus$todo )) )
+    if ( "save_intermediate_results" %in% runmode )  stmv_db(p=p, DS="save_current_state", runmode="singlepass_fft")
     message( paste( "Time used for <singlepass_fft>: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
   }
 
@@ -825,14 +824,15 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
       success = FALSE
       if ( "restart_load" %in% runmode ) success = stmv_db(p=p, DS="load_saved_state", runmode=interp_runmode)
       if (success) next()
-      p$clusters = p$stmv_clusters[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
-      p$local_interpolation_correlation = p$stmv_interpolation_correlation[j]
+      # p$clusters = p$stmv_clusters[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
+      #p$local_interpolation_correlation = p$stmv_interpolation_correlation[j]
       currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
-      if ( length(currentstatus$todo) > length(p$clusters)) {
-        parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) )
-        stmv_db(p=p, DS="save_current_state", runmode=interp_runmode)
-        message( paste( "Time used for <interpolate", j, ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
-      }
+      if ( length(currentstatus$todo) < length(p$clusters)) break()
+      parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )),
+        local_interpolation_correlation = p$stmv_interpolation_correlation[j],
+        clusters = p$stmv_clusters[["interpolate"]][[j]] )# as ram reqeuirements increase drop cpus )
+      stmv_db(p=p, DS="save_current_state", runmode=interp_runmode)
+      message( paste( "Time used for <interpolate", j, ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
     }
   }
 
@@ -853,10 +853,10 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
     p$stmv_local_modelengine = "linear"
     p$time_start_runmode = Sys.time()
     currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
-    if ( length(currentstatus$todo) > 1) {
-      parallel_run( stmv_interpolate_force_complete, p=p, runindex=list( time_index=1:p$nt ))
-      stmv_db(p=p, DS="save_current_state", runmode="interpolate_force_complete")
-    }
+    if ( length(currentstatus$todo) < length(p$clusters)) break()
+    parallel_run( stmv_interpolate_force_complete, p=p, runindex=list( time_index=1:p$nt ))
+    stmv_db(p=p, DS="save_current_state", runmode="interpolate_force_complete")
+
     message( "||| Time used for <interpolate_force_complete>: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" )
   }
 

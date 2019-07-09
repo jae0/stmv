@@ -42,12 +42,12 @@ p = aegis.bathymetry::bathymetry_parameters(
   # stmv_fft_filter = "lowpass_matern_tapered", #  act as a low pass filter first before matern with taper .. depth has enough data for this. Otherwise, use:
   stmv_fft_taper_method = "modelled",  # vs "empirical"
   # stmv_fft_taper_fraction = sqrt(0.5),  # if empirical: in local smoothing convolutions taper to this areal expansion factor sqrt( r=0.5 ) ~ 70% of variance in variogram
-  stmv_fft_taper_correlation = 0.2,  # benchmark from which to taper
+  stmv_fft_taper_correlation = 0.5,  # benchmark from which to taper
   stmv_lowpass_nu = 0.1,
   stmv_lowpass_phi = 0.1,  # note: p$pres = 0.2
   stmv_variogram_method = "fft",
   stmv_localrange_correlation = 0.1,
-  stmv_interpolation_correlation = c(0.1, 0.05, 0.01, 0.001),
+  stmv_interpolation_correlation = c(0.25, 0.1, 0.05, 0.01),
   depth.filter = FALSE,  # need data above sea level to get coastline
   stmv_Y_transform =list(
     transf = function(x) {log10(x + 2500)} ,
@@ -56,16 +56,16 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_rsquared_threshold = 0.01, # lower threshold  .. ignore
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
   stmv_distance_scale = c( 10, 20, 30, 40, 50 ), # km ... approx guesses of 95% AC range
-  stmv_distance_prediction_fraction = 0.8, # i.e. 4/5 * 5 = 4 km .. relative to stats grid
+  stmv_distance_prediction_fraction = 0.9, # i.e. 4/5 * 5 = 4 km .. relative to stats grid
   stmv_nmin = 400,  # min number of data points req before attempting to model in a localized space
-  stmv_nmax = 600, # no real upper bound.. just speed /RAM
+  stmv_nmax = 800, # no real upper bound.. just speed /RAM
   stmv_clusters = list(
     scale=rep("localhost", scale_ncpus),
     interpolate = list(
-        cor_0.05 = rep("localhost", interpolate_ncpus),
-        cor_0.01 = rep("localhost", max(1, interpolate_ncpus-1)),
-        cor_0.005 = rep("localhost", max(1, interpolate_ncpus-2)),
-        cor_0.001 = rep("localhost", max(1, interpolate_ncpus-3))
+        cor_0.5 = rep("localhost", interpolate_ncpus),
+        cor_0.1 = rep("localhost", interpolate_ncpus),
+        cor_0.05 = rep("localhost", max(1, interpolate_ncpus-1)),
+        cor_0.01 = rep("localhost", max(1, interpolate_ncpus-2))
       )  # ncpus for each runmode
     )  # ncpus for each runmode
   )
@@ -76,10 +76,10 @@ if (0) {
    p$stmv_clusters = list(
     # scale=rep("localhost", scale_ncpus),
     interpolate = list(
+        cor_0.5 = rep("localhost", 1),
+        cor_0.1 = rep("localhost", 1),
         cor_0.05 = rep("localhost", 1),
-        cor_0.01 = rep("localhost", 1),
-        cor_0.005 = rep("localhost", 1),
-        cor_0.001 = rep("localhost", 1)
+        cor_0.01 = rep("localhost", 1)
       )  # ncpus for each runmode
    )
   runmode=c(   "interpolate",  "interpolate_force_complete", "save_completed_data")
