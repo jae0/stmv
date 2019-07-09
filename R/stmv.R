@@ -1,6 +1,6 @@
 
 
-stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpolate_force_complete", "save_completed_data", "save_intermediate_results"),
+stmv = function( p, runmode=NULL,
   DATA=NULL, variogram_source ="saved_state",
   use_saved_state=NULL, nlogs=200,
   debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE, robustify_quantiles=c(0.0005, 0.9995), ... ) {
@@ -23,6 +23,13 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
 
   if (!exists("time_start", p) ) p$time_start = Sys.time()
 
+  # if runmode is passed, it overrides everything ..
+  if (is.null(runmode)) {
+    s_runmode = names(p$stmv_runmode)
+    test = c( sapply(p$stmv_runmode, function(x) { ifelse(length(x)==1, x, TRUE ) }))
+    s_runmode = s_runmode[test]
+    runmode = intersect(runmode, c( "globalmodel", "scale", "interpolate", "interpolate_force_complete", "save_completed_data", "save_intermediate_results") )
+  }
 
   p$nlogs = nlogs
 

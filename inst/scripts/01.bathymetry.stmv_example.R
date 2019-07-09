@@ -59,7 +59,6 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_distance_prediction_fraction = 0.9, # i.e. 4/5 * 5 = 4 km .. relative to stats grid
   stmv_nmin = 400,  # min number of data points req before attempting to model in a localized space
   stmv_nmax = 800, # no real upper bound.. just speed /RAM
-
   stmv_runmode = list(
     scale = rep("localhost", scale_ncpus),
     interpolate = list(
@@ -69,9 +68,11 @@ p = aegis.bathymetry::bathymetry_parameters(
         cor_0.01 = rep("localhost", max(1, interpolate_ncpus-2))
       ),  # ncpus for each runmode
     interpolate_force_complete = rep("localhost", max(1, interpolate_ncpus-2)),
+    globalmodel = TRUE,
+    save_intermediate_results = FALSE,
     save_completed_data = TRUE # just a dummy variable with the correct name
-    )  # ncpus for each runmode
-  )
+  )  # ncpus for each runmode
+)
 
 p$spatial.domain.subareas =NULL
 
@@ -98,10 +99,10 @@ runmode=c(  "interpolate", "save_completed_data")
 runmode=c( "interpolate",  "save_completed_data")
 runmode=c(  "globalmodel", "scale", "interpolate",  "interpolate_force_complete", "save_completed_data")
 
-  runmode=c(   "interpolate",  "interpolate_force_complete", "save_completed_data")
+runmode=c(   "interpolate",  "interpolate_force_complete", "save_completed_data")
 
 
-stmv( p=p, runmode=names(p$stmv_runmode) )  # This will take from 40-70 hrs, depending upon system
+stmv( p=p  )  # This will take from 40-70 hrs, depending upon system
 
 
 predictions = stmv_db( p=p, DS="stmv.prediction", ret="mean" )
