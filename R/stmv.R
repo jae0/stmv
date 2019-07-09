@@ -28,7 +28,7 @@ stmv = function( p, runmode=NULL,
     s_runmode = names(p$stmv_runmode)
     test = c( sapply(p$stmv_runmode, function(x) { ifelse(length(x)==1, x, TRUE ) }))
     s_runmode = s_runmode[test]
-    runmode = intersect(runmode, c( "globalmodel", "scale", "interpolate", "interpolate_force_complete", "save_completed_data", "save_intermediate_results") )
+    runmode = intersect(s_runmode, c( "globalmodel", "scale", "interpolate", "interpolate_force_complete", "save_completed_data", "save_intermediate_results") )
   }
 
   p$nlogs = nlogs

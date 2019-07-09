@@ -78,13 +78,17 @@ p$spatial.domain.subareas =NULL
 
 if (0) {
    p$stmv_runmode = list(
-    # scale=rep("localhost", scale_ncpus),
+    scale=rep("localhost", scale_ncpus),
     interpolate = list(
         cor_0.5 = rep("localhost", 1),
         cor_0.1 = rep("localhost", 1),
         cor_0.05 = rep("localhost", 1),
         cor_0.01 = rep("localhost", 1)
-      )  # ncpus for each runmode
+    ),  # ncpus for each runmode
+    interpolate_force_complete = rep("localhost", max(1, interpolate_ncpus-2)),
+    globalmodel = FALSE,
+    save_intermediate_results = FALSE,
+    save_completed_data = TRUE # just a dummy variable with the correct name
    )
 
 }
