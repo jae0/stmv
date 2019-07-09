@@ -827,7 +827,7 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
       if (success) next()
       p0$clusters = p0$stmv_clusters[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
       p0$local_interpolation_correlation = p0$stmv_interpolation_correlation[j]
-      if (j==2) browser()
+      browser()
       currentstatus = stmv_statistics_status( p=p0, reset="incomplete" )
       if ( length(currentstatus$todo) < length(p0$clusters)) break()
       parallel_run( stmv_interpolate, p=p0, runindex=list( locs=sample( currentstatus$todo ))  )# as ram reqeuirements increase drop cpus )
@@ -849,7 +849,7 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
     success = FALSE
     if ( "restart_load" %in% runmode )  success = stmv_db(p=p, DS="load_saved_state", runmode="interpolate_force_complete")
     if (success) next()
-    p$clusters = p$stmv_clusters[["interpolate"]][[1]] # as ram reqeuirements increase drop cpus
+    p$clusters = p$stmv_clusters[["interpolate_force_complete"]] # as ram reqeuirements increase drop cpus
     p$stmv_local_modelengine = "linear"
     p$time_start_runmode = Sys.time()
     currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
