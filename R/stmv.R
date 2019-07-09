@@ -819,20 +819,19 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
   if ("interpolate" %in% runmode ) {
     message( "\n||| Entering <interpolate> stage: ", format(Sys.time()) , "\n" )
     for ( j in 1:length(p$stmv_interpolation_correlation) ) {
-      p$time_start_runmode = Sys.time()
+      p0 = p
+      p0$time_start_runmode = Sys.time()
       interp_runmode = paste("interpolate_", j, sep="")
       success = FALSE
-      if ( "restart_load" %in% runmode ) success = stmv_db(p=p, DS="load_saved_state", runmode=interp_runmode)
+      if ( "restart_load" %in% runmode ) success = stmv_db(p=p0, DS="load_saved_state", runmode=interp_runmode)
       if (success) next()
-      # p$clusters = p$stmv_clusters[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
-      #p$local_interpolation_correlation = p$stmv_interpolation_correlation[j]
-      currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
-      if ( length(currentstatus$todo) < length(p$clusters)) break()
-      parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )),
-        local_interpolation_correlation = p$stmv_interpolation_correlation[j],
-        clusters = p$stmv_clusters[["interpolate"]][[j]] )# as ram reqeuirements increase drop cpus )
-      stmv_db(p=p, DS="save_current_state", runmode=interp_runmode)
-      message( paste( "Time used for <interpolate", j, ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
+      p0$clusters = p0$stmv_clusters[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
+      p0$local_interpolation_correlation = p0$stmv_interpolation_correlation[j]
+      currentstatus = stmv_statistics_status( p=p0, reset="incomplete" )
+      if ( length(currentstatus$todo) < length(p0$clusters)) break()
+      parallel_run( stmv_interpolate, p=p0, runindex=list( locs=sample( currentstatus$todo ))  )# as ram reqeuirements increase drop cpus )
+      stmv_db(p=p0, DS="save_current_state", runmode=interp_runmode)
+      message( paste( "Time used for <interpolate", j, ">: ", format(difftime(  Sys.time(), p0$time_start_runmode )), "\n" ) )
     }
   }
 
