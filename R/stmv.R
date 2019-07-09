@@ -817,11 +817,11 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
 
 
   if ("interpolate" %in% runmode ) {
-    message( "\n||| Entering <interpolate> stage: ", format(Sys.time()) , "\n" )
     for ( j in 1:length(p$stmv_interpolation_correlation) ) {
       p0 = p
       p0$time_start_runmode = Sys.time()
       interp_runmode = paste("interpolate_", j, sep="")
+      message( "\n||| Entering <", interp_runmode, "> stage: ", format(Sys.time()) , "\n" )
       success = FALSE
       if ( "restart_load" %in% runmode ) success = stmv_db(p=p0, DS="load_saved_state", runmode=interp_runmode)
       if (success) next()
@@ -849,7 +849,7 @@ stmv = function( p, runmode=c( "globalmodel", "scale", "interpolate", "interpola
     success = FALSE
     if ( "restart_load" %in% runmode )  success = stmv_db(p=p, DS="load_saved_state", runmode="interpolate_force_complete")
     if (success) next()
-    p$clusters = p$stmv_clusters[["interpolate"]] # as ram reqeuirements increase drop cpus
+    p$clusters = p$stmv_clusters[["interpolate"]][[1]] # as ram reqeuirements increase drop cpus
     p$stmv_local_modelengine = "linear"
     p$time_start_runmode = Sys.time()
     currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
