@@ -824,7 +824,7 @@ stmv = function( p, runmode=NULL,
 
 
 
-  if ("interpolate0" %in% runmode ) {
+  if ("interpolate" %in% runmode ) {
     p0 = p
     for ( j in 1:length(p$stmv_interpolation_correlation) ) {
       p = p0 #reset
@@ -847,68 +847,6 @@ stmv = function( p, runmode=NULL,
     p = p0
   }
 
-  if ("interpolate" %in% runmode ) {
-      p0 = p
-
-      j = 1
-      p = p0 #reset
-      p$time_start_runmode = Sys.time()
-      interp_runmode = paste("interpolate_", j, sep="")
-      message( "\n||| Entering <", interp_runmode, "> stage: ", format(Sys.time()) , "\n" )
-      success = FALSE
-      if ( "restart_load" %in% runmode ) success = stmv_db(p=p, DS="load_saved_state", runmode=interp_runmode)
-      if (success) next()
-      p$clusters = p$stmv_runmode[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
-      p$local_interpolation_correlation = p$stmv_interpolation_correlation[j]
-
-      currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
-      if ( length(currentstatus$todo) < length(p$clusters)) break()
-      parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  )# as ram reqeuirements increase drop cpus )
-      stmv_db(p=p, DS="save_current_state", runmode=interp_runmode)
-      message( paste( "Time used for <interpolate", j, ">: ", format(difftime(  Sys.time(), p0$time_start_runmode )), "\n" ) )
-
-
-      j = 2
-      p = p0 #reset
-      p$time_start_runmode = Sys.time()
-      interp_runmode = paste("interpolate_", j, sep="")
-      message( "\n||| Entering <", interp_runmode, "> stage: ", format(Sys.time()) , "\n" )
-      success = FALSE
-      if ( "restart_load" %in% runmode ) success = stmv_db(p=p, DS="load_saved_state", runmode=interp_runmode)
-      if (success) next()
-      p$clusters = p$stmv_runmode[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
-      p$local_interpolation_correlation = p$stmv_interpolation_correlation[j]
-
-      currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
-      if ( length(currentstatus$todo) < length(p$clusters)) break()
-      parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  )# as ram reqeuirements increase drop cpus )
-      stmv_db(p=p, DS="save_current_state", runmode=interp_runmode)
-      message( paste( "Time used for <interpolate", j, ">: ", format(difftime(  Sys.time(), p0$time_start_runmode )), "\n" ) )
-
-
-
-      j = 3
-      p = p0 #reset
-      p$time_start_runmode = Sys.time()
-      interp_runmode = paste("interpolate_", j, sep="")
-      message( "\n||| Entering <", interp_runmode, "> stage: ", format(Sys.time()) , "\n" )
-      success = FALSE
-      if ( "restart_load" %in% runmode ) success = stmv_db(p=p, DS="load_saved_state", runmode=interp_runmode)
-      if (success) next()
-      p$clusters = p$stmv_runmode[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
-      p$local_interpolation_correlation = p$stmv_interpolation_correlation[j]
-
-      currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
-      if ( length(currentstatus$todo) < length(p$clusters)) break()
-      parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  )# as ram reqeuirements increase drop cpus )
-      stmv_db(p=p, DS="save_current_state", runmode=interp_runmode)
-      message( paste( "Time used for <interpolate", j, ">: ", format(difftime(  Sys.time(), p0$time_start_runmode )), "\n" ) )
-
-
-
-    }
-    p = p0
-  }
 
 
   # --------------------
