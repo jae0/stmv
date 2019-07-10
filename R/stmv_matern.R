@@ -21,22 +21,38 @@ stmv_matern= function( distance=NULL, mRange, mSmooth=0.5, parameterization="stm
 
   if (mSmooth==0.5) {
     # simplifies to exponential:
-    covariance = exp( -r )
+    mat = exp( -r )
   } else if (mSmooth==1.5) {
     u = sqrt(3)*r
-    covariance = (1+u) * exp(-u)
+    mat = (1+u) * exp(-u)
   } else if (mSmooth==2.5) {
     u = sqrt(5)*r
-    covariance = (1+u+{u^2}/3) * exp(-u)
+    mat = (1+u+{u^2}/3) * exp(-u)
   } else {
     u = sqrt(2*mSmooth)*r
-    covariance = 2^(1-mSmooth) / (gamma(mSmooth)) * u^mSmooth * besselK(u, mSmooth)
+    mat = 2^(1-mSmooth) / (gamma(mSmooth)) * u^mSmooth * besselK(u, mSmooth)
   }
   zerodist = which( distance == 0 )
-  if (length(zerodist) > 0 ) covariance[zerodist] = 1
+  if (length(zerodist) > 0 ) mat[zerodist] = 1
 
-  if (returntype=="covariance") return(covariance)
-  if (returntype=="autocorrelation") return(1 - covariance)
+  if (returntype=="covariance") return(1-mat)
+  if (returntype=="autocorrelation") return(mat)
+
+
+  if (0) {
+    loadfunctions("stmv")
+    dis = 100
+    nu = 1
+    cor = 0.05
+    diss = 0:200
+    phi = 10
+    nu=1
+    ac = stmv_matern( diss, mRange=phi, mSmooth=nu )
+
+    (o = matern_distance2phi( dis, nu, cor))
+    (r = matern_phi2distance( o, nu, cor))
+
+  }
 
 }
 

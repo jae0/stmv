@@ -1,5 +1,5 @@
 
-matern_phi2distance = function( phi, nu=0.5, cor=0.1, dmax=phi*121, nX=5000, eps=1e-6 ) {
+matern_phi2distance = function( phi, nu=0.5, cor=0.05, dmax=phi*121, nX=5000, eps=1e-6 ) {
 
   #\\ estimate distance at which spatial (matern) correlations drops to a given threshold cor
   #\\ NOTE:: the default parameterization is Wikipedia's paramterization:
@@ -8,13 +8,14 @@ matern_phi2distance = function( phi, nu=0.5, cor=0.1, dmax=phi*121, nX=5000, eps
   #\\   where K_{nu} is the Bessel function with smooth nu and phi is known as the range parameter
   # -------------------------
 
-    phi = max( eps, phi, na.rm=TRUE )
-    nu  = max( eps, nu, na.rm=TRUE )
-    dmax = max( eps, dmax, na.rm=TRUE )
-    u = matrix(0, ncol=2, nrow=nX )
-    u[,2] = seq(0, dmax, length.out=nX )
-    u[,1] = stmv_matern( u[,2], mRange=phi, mSmooth=nu ) # autocorrelation
-    distance = approx( u, xout=cor )$y
-    return(distance)
+  phi = max( eps, phi, na.rm=TRUE )
+  nu  = max( eps, nu, na.rm=TRUE )
+  dmax = max( eps, dmax, na.rm=TRUE )
+  u = matrix(0, ncol=2, nrow=nX )
+  u[,2] = seq(0, dmax, length.out=nX )
+  u[,1] = stmv_matern( u[,2], mRange=phi, mSmooth=nu ) # autocorrelation
+  distance = approx( u, xout=cor )$y
+  return(distance)
+
 }
 

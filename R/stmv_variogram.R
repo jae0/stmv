@@ -1517,7 +1517,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
         phi = parm[Data$pos$phi]= LaplacesDemonCpp::interval(parm[Data$pos$phi], Data$eps, 10 )
         nu = parm[Data$pos$nu] = LaplacesDemonCpp::interval(parm[Data$pos$nu], 0.01, 10 )
 
-        S = sigmasq * stmv_matern( Data$DIST, mRange=phi, mSmooth=nu )   # spatial covariance
+        S = sigmasq * (1-stmv_matern( Data$DIST, mRange=phi, mSmooth=nu ) )  # spatial covariance
         diag(S) = diag(S) + tausq + Data$eps
         if ( !is.positive.definite(S)) {
         #   cat("correlation matrix is not positive definite, adding a bit of noise ...\n")
