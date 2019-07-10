@@ -44,7 +44,7 @@ p = aegis.bathymetry::bathymetry_parameters(
   # stmv_fft_taper_fraction = 0.5,  # if empirical: in local smoothing convolutions taper to this areal expansion factor sqrt( r=0.5 ) ~ 70% of variance in variogram
   stmv_autocorrelation_fft_taper = 0.5,  # benchmark from which to taper
   stmv_lowpass_nu = 0.1,
-  stmv_lowpass_phi = matern_distance2phi( distance=0.1, nu=0.1, cor=0.1 ),  # note: p$pres = 0.2
+  stmv_lowpass_phi = stmv::matern_distance2phi( distance=0.1, nu=0.1, cor=0.1 ),  # note: p$pres = 0.2
   stmv_variogram_method = "fft",
   stmv_autocorrelation_localrange = 0.1,
   stmv_autocorrelation_interpolation = c(0.25, 0.1, 0.05, 0.01),
@@ -57,7 +57,7 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
   stmv_distance_scale = c( 10, 20, 30, 40, 50  ), # km ... approx guesses of 95% AC range
   stmv_distance_prediction_fraction = 0.95, # i.e. 4/5 * 5 = 4 km .. relative to stats grid
-  stmv_nmin = 200,  # min number of data points5 req before attempting to model in a localized space
+  stmv_nmin = 200,  # min number of data points req before attempting to model in a localized space
   stmv_nmax = 500, # no real upper bound.. just speed /RAM
   stmv_runmode = list(
     # scale = rep("localhost", scale_ncpus),

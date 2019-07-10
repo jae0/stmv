@@ -1,5 +1,5 @@
 
-matern_phi2distance = function( phi, nu=0.5, cor=0.1, dmax=phi*13, nX=5000, eps=1e-6 ) {
+matern_phi2distance = function( phi, nu=0.5, cor=0.1, dmax=phi*121, nX=5000, eps=1e-6 ) {
 
   #\\ estimate distance at which spatial (matern) correlations drops to a given threshold cor
   #\\ NOTE:: the default parameterization is Wikipedia's paramterization:
