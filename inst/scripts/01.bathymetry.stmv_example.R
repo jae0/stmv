@@ -42,9 +42,9 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_fft_filter = "lowpass_matern_tapered", #  act as a low pass filter first before matern with taper .. depth has enough data for this. Otherwise, use:
   stmv_fft_taper_method = "modelled",  # vs "empirical"
   # stmv_fft_taper_fraction = 0.5,  # if empirical: in local smoothing convolutions taper to this areal expansion factor sqrt( r=0.5 ) ~ 70% of variance in variogram
-  stmv_autocorrelation_fft_taper = 0.3,  # benchmark from which to taper
+  stmv_autocorrelation_fft_taper = 0.5,  # benchmark from which to taper
   stmv_lowpass_nu = 0.1,
-  stmv_lowpass_phi = matern_distance2phi( distance=0.2, nu=0.1 ),  # note: p$pres = 0.2
+  stmv_lowpass_phi = matern_distance2phi( distance=0.1, nu=0.1, cor=0.1 ),  # note: p$pres = 0.2
   stmv_variogram_method = "fft",
   stmv_autocorrelation_localrange = 0.1,
   stmv_autocorrelation_interpolation = c(0.25, 0.1, 0.05, 0.01),
@@ -53,12 +53,12 @@ p = aegis.bathymetry::bathymetry_parameters(
     transf = function(x) {log10(x + 2500)} ,
     invers = function(x) {10^(x) - 2500}
   ), # data range is from -1667 to 5467 m: make all positive valued
-  stmv_rsquared_threshold = 0.01, # lower threshold  .. ignore
+  stmv_rsquared_threshold = 0.01, # lower threshold  .. i.e., ignore
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
-  stmv_distance_scale = c( 10, 20, 30, 40, 50 ), # km ... approx guesses of 95% AC range
-  stmv_distance_prediction_fraction = 0.9, # i.e. 4/5 * 5 = 4 km .. relative to stats grid
-  stmv_nmin = 200,  # min number of data points req before attempting to model in a localized space
-  stmv_nmax = 400, # no real upper bound.. just speed /RAM
+  stmv_distance_scale = c( 10, 20, 30, 40, 50  ), # km ... approx guesses of 95% AC range
+  stmv_distance_prediction_fraction = 0.95, # i.e. 4/5 * 5 = 4 km .. relative to stats grid
+  stmv_nmin = 200,  # min number of data points5 req before attempting to model in a localized space
+  stmv_nmax = 500, # no real upper bound.. just speed /RAM
   stmv_runmode = list(
     # scale = rep("localhost", scale_ncpus),
     interpolate = list(
