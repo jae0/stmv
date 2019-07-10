@@ -1,6 +1,6 @@
 
 
-matern_distance2phi = function( distance, nu=0.5, cor=0.05, nX=1000, eps=1e-6 ) {
+matern_distance2phi = function( distance, nu=0.5, cor=0.05, nX=2000, eps=1e-6, plotdata=FALSE ) {
 
   #\\ NOTE:: the default parameterization is Wikipedia's paramterization:
   #\\ == Rasmussen, Carl Edward (2006) Gaussian Processes for Machine Learning
@@ -10,11 +10,17 @@ matern_distance2phi = function( distance, nu=0.5, cor=0.05, nX=1000, eps=1e-6 ) 
 
   #\\ estimate phi from a range (matern) correlations drops to a given threshold cor
   nu  = max( eps, nu, na.rm=TRUE )
-  phi_max = max( eps, 100*distance/sqrt(2*nu), na.rm=TRUE )
-  u = matrix(0, ncol=2, nrow=nX )
-  u[,2] = seq(0, phi_max, length.out=nX )  # distances
+  phi_max = max( eps, distance*100000, na.rm=TRUE )
+  u = matrix(0, ncol=2, nrow=2*nX )
+  u[,2] = c(seq(0, 1, length.out=nX ), exp(seq( 1+eps, log(phi_max), length.out=nX )))   # distances
   u[,1] = stmv_matern( distance, mRange=u[,2], mSmooth=nu ) # autocorrel
   phi = approx( u, xout=cor, ties=mean )$y
+
+  if(plotdata) {
+    plot( u[,1] ~ u[,2], xlim = c(0, phi*1.25))
+    abline( v=phi )
+  }
+
   return(phi)
 
   if (0) {
@@ -22,7 +28,14 @@ matern_distance2phi = function( distance, nu=0.5, cor=0.05, nX=1000, eps=1e-6 ) 
     dis = 100
     nu = 1
     cor = 0.05
-    matern_distance2phi( dis, nu, cor)
+
+    dis = 0.2
+    nu=0.11
+    cor=0.1
+
+    matern_distance2phi( dis, nu, cor, plotdata=TRUE)
+
+
   }
 }
 
