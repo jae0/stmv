@@ -841,7 +841,7 @@ stmv = function( p, runmode=NULL,
       if ( length(currentstatus$todo) < length(p$clusters)) break()
       parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  )# as ram reqeuirements increase drop cpus )
       stmv_db(p=p, DS="save_current_state", runmode=interp_runmode)
-      message( paste( "Time used for <interpolate", j, ">: ", format(difftime(  Sys.time(), p0$time_start_runmode )), "\n" ) )
+      message( paste( "Time used for <interpolate", j, ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
 
     }
     p = p0
