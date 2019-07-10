@@ -6,6 +6,7 @@ stmv = function( p, runmode=NULL,
   debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE, robustify_quantiles=c(0.0005, 0.9995), ... ) {
 
   if (0) {
+    runmode = NULL
     nlogs = 25
     use_saved_state=NULL # or "disk"
     DATA=NULL
@@ -26,8 +27,10 @@ stmv = function( p, runmode=NULL,
   # if runmode is passed, it overrides everything ..
   if (is.null(runmode)) {
     s_runmode = names(p$stmv_runmode)
-    test = c( sapply(p$stmv_runmode, function(x) { ifelse(length(x)==1, x, TRUE ) }))
-    s_runmode = s_runmode[test]
+    o = rep(TRUE, length(p$stmv_runmode))
+    TF = c( sapply(p$stmv_runmode, is.logical ))
+    o[TF] = p$stmv_runmode[TF]
+    s_runmode = s_runmode[ unlist(o) ]
     runmode = intersect(s_runmode, c( "globalmodel", "scale", "interpolate", "interpolate_force_complete", "save_completed_data", "save_intermediate_results") )
   }
   message( "Runmodes: ", runmode  )
