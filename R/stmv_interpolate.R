@@ -69,17 +69,11 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
   nip = length(ip)
   if (nip < 100) {
-    nlogs = max(1, floor(nip / 10) )
-    logpoints = sample(ip, nlogs) ]
+    nlogs = 3
+  } else {
+    nlogs = p$nlogs
   }
-   else {
-    if ( (p$nlogs / nip) > 0.1  ) {
-      nlogs = trunc( p$nlogs * 0.1 )
-    } else {
-      nlogs = p$nlogs
-    }
-    logpoints  = ip[ floor( seq( from=10, to=(nip-10), length.out=nlogs ) ) ]
-  }
+  logpoints  = ip[ floor( seq( from=10, to=(nip-10), length.out=nlogs ) ) ]
 
   if (debugging) {
     nsavepoints = 3
