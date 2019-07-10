@@ -210,7 +210,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
       vgm$distances = as.numeric(vgm$distances)
       X = NULL
 
-      theta.Taper = vgm$distances[ find_intersection( vgm$ac, threshold=p$stmv_fft_taper_correlation ) ]
+      theta.Taper = vgm$distances[ find_intersection( vgm$ac, threshold=p$stmv_autocorrelation_fft_taper ) ]
       theta.Taper = theta.Taper * p$stmv_fft_taper_fraction # fraction of the distance to 0 correlation; sqrt(0.5) = ~ 70% of the variability (associated with correlation = 0.5)
 
       vgm$distances = as.numeric( as.character(vgm$distances))
@@ -221,7 +221,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
 
       uu = which( (vgm$distances < dmax ) & is.finite(vgm$sv) )  # dmax ~ Nyquist freq
       fit = try( stmv_variogram_optimization( vx=vgm$distances[uu], vg=vgm$sv[uu], plotvgm=FALSE,
-        stmv_internal_scale=dmax*0.75, cor=p$stmv_localrange_correlation ))
+        stmv_internal_scale=dmax*0.75, cor=p$stmv_autocorrelation_localrange ))
       uu = NULL
       vgm = NULL
       # out$fit = fit
@@ -244,7 +244,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
       fit = NULL
       gc()
     } else if (p$stmv_fft_taper_method == "modelled") {
-      theta.Taper = matern_phi2distance( phi=local_phi, nu=local_nu, cor=p$stmv_fft_taper_correlation )
+      theta.Taper = matern_phi2distance( phi=local_phi, nu=local_nu, cor=p$stmv_autocorrelation_fft_taper )
     }
 
     if ( p$stmv_fft_filter == "lowpass") {
@@ -289,7 +289,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
 
 
     if (p$stmv_fft_filter == "normal_kernel") {
-      theta = matern_phi2distance( phi=local_phi, nu=local_nu, cor=p$stmv_localrange_correlation )
+      theta = matern_phi2distance( phi=local_phi, nu=local_nu, cor=p$stmv_autocorrelation_localrange )
       xseq = seq(-(nr - 1), nr, 1) * dx / theta
       yseq = seq(-(nc - 1), nc, 1) * dy / theta
       dd = ((matrix(xseq, nr2, nc2)^2 + matrix(yseq, nr2, nc2, byrow = TRUE)^2))  # squared distances

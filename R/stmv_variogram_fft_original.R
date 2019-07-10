@@ -1,5 +1,5 @@
     stmv_variogram_fft_original = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE, eps=1e-9, add.interpolation=FALSE,
-      stmv_localrange_correlation=0.1, stmv_fft_taper_factor=5 ) {
+      stmv_autocorrelation_localrange=0.1, stmv_fft_taper_factor=5 ) {
 
     ## This is a copy that is easier to follow .. but uses more RAM
 
@@ -11,7 +11,7 @@
         plotdata=FALSE
         eps=1e-9
         add.interpolation=FALSE
-        stmv_localrange_correlation=0.1
+        stmv_autocorrelation_localrange=0.1
         stmv_fft_taper_factor=5  # multiplier
       }
 
@@ -119,7 +119,7 @@
       # constainer for spatial filters
         uu = which( (vgm$distances < dmax ) & is.finite(vgm$sv) )  # dmax ~ Nyquist freq
         fit = try( stmv_variogram_optimization( vx=vgm$distances[uu], vg=vgm$sv[uu], plotvgm=plotdata,
-          stmv_internal_scale=dmax*0.75, cor=stmv_localrange_correlation ))
+          stmv_internal_scale=dmax*0.75, cor=stmv_autocorrelation_localrange ))
         out$fit = fit
 
         if (any(!is.finite( c(fit$summary$phi, fit$summary$nu) ))) return(out)

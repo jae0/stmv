@@ -135,7 +135,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, runoption="default", eps = 1
       sdObs = sqrt(om$varObs),
       phi = om$phi,
       nu = om$nu,
-      localrange = matern_phi2distance( phi=om$phi, nu=om$nu, cor=p$stmv_localrange_correlation ),
+      localrange = matern_phi2distance( phi=om$phi, nu=om$nu, cor=p$stmv_autocorrelation_localrange ),
       ndata=ndata
     )
     S[Si,match( names(statvars_scale), p$statsvars )] = statvars_scale

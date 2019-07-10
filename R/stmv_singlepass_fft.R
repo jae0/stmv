@@ -196,7 +196,7 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
     distance_cutoff=stmv_distance_cur
     discretized_n = stmv_distance_cur / p$pres
     nbreaks=p$stmv_variogram_nbreaks
-    range_correlation=p$stmv_localrange_correlation
+    range_correlation=p$stmv_autocorrelation_localrange
 
     out = list()
 
@@ -205,7 +205,7 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
 
     # reduce scale of distances to reduce large number effects
     out$range_crude = sqrt( diff(range(xy[,1]))^2 + diff(range(xy[,2]))^2) / 4  #initial scaling distance
-    out$stmv_internal_scale = matern_distance2phi( out$range_crude, nu=0.5 )  # the presumed scaling distance to make calcs use smaller numbers
+    out$stmv_internal_scale = matern_distance2phi( distance=out$range_crude, nu=0.5 )  # the presumed scaling distance to make calcs use smaller numbers
 
     # if max dist not given, make a sensible choice using exponential variogram as a first estimate
     if ( is.na(distance_cutoff) ) {
@@ -280,7 +280,7 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
       sdObs = sqrt(om$varObs),
       phi = om$phi,
       nu = om$nu,
-      localrange = matern_phi2distance( phi=om$phi, nu=om$nu, cor=p$stmv_localrange_correlation ),
+      localrange = matern_phi2distance( phi=om$phi, nu=om$nu, cor=p$stmv_autocorrelation_localrange ),
       ndata=ndata
     )
 
@@ -430,7 +430,7 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
       sdObs = sqrt(om$varObs),
       phi = om$phi,
       nu = om$nu,
-      localrange = matern_phi2distance( phi=om$phi, nu=om$nu, cor=p$stmv_localrange_correlation ),
+      localrange = matern_phi2distance( phi=om$phi, nu=om$nu, cor=p$stmv_autocorrelation_localrange ),
       ndata=ndata
     )
     S[Si,match( names(statvars_scale), p$statsvars )] = statvars_scale
@@ -450,7 +450,7 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
 
     # as range is now set, the following becomes fixed
     if (is.null(ii)) {
-      localrange = matern_phi2distance( phi=vg$phi, nu=vg$nu, cor=p$stmv_localrange_correlation )
+      localrange = matern_phi2distance( phi=vg$phi, nu=vg$nu, cor=p$stmv_autocorrelation_localrange )
       ii = which(
         {abs( Sloc[Si,1] - Sloc[,1] ) <= localrange} &
         {abs( Sloc[Si,2] - Sloc[,2] ) <= localrange}
@@ -819,7 +819,7 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
   d_length = sqrt( d_sa/pi )  # sa = pi*l^2  # characteristic length scale
 
 
-  theta.Taper = vgm$distances[ find_intersection( vgm$ac, threshold=p$stmv_fft_taper_correlation ) ]
+  theta.Taper = vgm$distances[ find_intersection( vgm$ac, threshold=p$stmv_autocorrelation_fft_taper ) ]
     theta.Taper = theta.Taper * p$stmv_fft_taper_fraction # fraction of the distance to 0 correlation; sqrt(0.5) = ~ 70% of the variability (associated with correlation = 0.5)
 
 
@@ -885,7 +885,7 @@ stmv_singlepass_fft = function( ip=NULL, p, debugging=FALSE, runoption="default"
 
 
   if (p$stmv_fft_filter == "normal_kernel") {
-      theta = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_localrange_correlation )
+      theta = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_autocorrelation_localrange )
       xi = seq(-(nr - 1), nr, 1) * dx / theta
       yi = seq(-(nc - 1), nc, 1) * dy / theta
       dd = ((matrix(xi, nr2, nc2)^2 + matrix(yi, nr2, nc2, byrow = TRUE)^2))  # squared distances

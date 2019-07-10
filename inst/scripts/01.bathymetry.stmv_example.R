@@ -11,7 +11,7 @@ scale_ram_required_per_process  = 1 # twostep / fft /fields vario ..  (mostly 0.
 scale_ncpus = min( parallel::detectCores(), floor( (ram_local()- scale_ram_required_main_process) / scale_ram_required_per_process ) )
 
 interpolate_ram_required_main_process = 1 # GB twostep / fft
-interpolate_ram_required_per_process  = 1 # twostep / fft /fields vario ..
+interpolate_ram_required_per_process  = 1.5 # twostep / fft /fields vario ..
 interpolate_ncpus = min( parallel::detectCores(), floor( (ram_local()- interpolate_ram_required_main_process) / interpolate_ram_required_per_process ) )
 
 
@@ -38,16 +38,16 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_global_modelformula = "none",  # only marginally useful .. consider removing it and use "none",
   stmv_global_family ="none",
   stmv_local_modelengine="fft",
-  stmv_fft_filter = "matern_tapered", #  matern with taper
-  # stmv_fft_filter = "lowpass_matern_tapered", #  act as a low pass filter first before matern with taper .. depth has enough data for this. Otherwise, use:
+  # stmv_fft_filter = "matern_tapered", #  matern with taper
+  stmv_fft_filter = "lowpass_matern_tapered", #  act as a low pass filter first before matern with taper .. depth has enough data for this. Otherwise, use:
   stmv_fft_taper_method = "modelled",  # vs "empirical"
-  # stmv_fft_taper_fraction = sqrt(0.5),  # if empirical: in local smoothing convolutions taper to this areal expansion factor sqrt( r=0.5 ) ~ 70% of variance in variogram
-  stmv_fft_taper_correlation = 0.5,  # benchmark from which to taper
+  # stmv_fft_taper_fraction = 0.5,  # if empirical: in local smoothing convolutions taper to this areal expansion factor sqrt( r=0.5 ) ~ 70% of variance in variogram
+  stmv_autocorrelation_fft_taper = 0.3,  # benchmark from which to taper
   stmv_lowpass_nu = 0.1,
-  stmv_lowpass_phi = 0.1,  # note: p$pres = 0.2
+  stmv_lowpass_phi = matern_distance2phi( distance=0.2, nu=0.1 ),  # note: p$pres = 0.2
   stmv_variogram_method = "fft",
-  stmv_localrange_correlation = 0.1,
-  stmv_interpolation_correlation = c(0.25, 0.1, 0.05, 0.01),
+  stmv_autocorrelation_localrange = 0.1,
+  stmv_autocorrelation_interpolation = c(0.25, 0.1, 0.05, 0.01),
   depth.filter = FALSE,  # need data above sea level to get coastline
   stmv_Y_transform =list(
     transf = function(x) {log10(x + 2500)} ,
@@ -60,7 +60,7 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_nmin = 200,  # min number of data points req before attempting to model in a localized space
   stmv_nmax = 400, # no real upper bound.. just speed /RAM
   stmv_runmode = list(
-    scale = rep("localhost", scale_ncpus),
+    # scale = rep("localhost", scale_ncpus),
     interpolate = list(
         cor_0.5 = rep("localhost", interpolate_ncpus),
         cor_0.1 = rep("localhost", interpolate_ncpus),

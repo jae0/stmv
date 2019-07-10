@@ -20,7 +20,7 @@ stmv__gaussianprocess2Dt = function(p=NULL, dat=NULL, pa=NULL, variablelist=FALS
   pa$sd = NA
 
 
-  localrange = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_localrange_correlation )
+  localrange = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_autocorrelation_localrange )
   phi.grid = p$phi.grid * localrange
 
   for ( ti in 1:p$nt ) {

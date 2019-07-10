@@ -826,7 +826,7 @@ stmv = function( p, runmode=NULL,
 
   if ("interpolate" %in% runmode ) {
     p0 = p
-    for ( j in 1:length(p$stmv_interpolation_correlation) ) {
+    for ( j in 1:length(p$stmv_autocorrelation_interpolation) ) {
       p = p0 #reset
       p$time_start_runmode = Sys.time()
       interp_runmode = paste("interpolate_", j, sep="")
@@ -835,7 +835,7 @@ stmv = function( p, runmode=NULL,
       if ( "restart_load" %in% runmode ) success = stmv_db(p=p, DS="load_saved_state", runmode=interp_runmode)
       if (success) next()
       p$clusters = p$stmv_runmode[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
-      p$local_interpolation_correlation = p$stmv_interpolation_correlation[j]
+      p$local_interpolation_correlation = p$stmv_autocorrelation_interpolation[j]
 
       currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
       if ( length(currentstatus$todo) < length(p$clusters)) break()

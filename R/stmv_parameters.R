@@ -30,11 +30,11 @@ stmv_parameters = function( p=list(), ... ) {
   if( !exists( "stmv_variogram_method", p)) p$stmv_variogram_method = "fft"   # note GP methods are slow when there is too much data
   if( !exists( "stmv_variogram_nbreaks", p)) p$stmv_variogram_nbreaks = 52
 
-  if( !exists( "stmv_localrange_correlation", p)) p$stmv_localrange_correlation = 0.1   # auto-correlation at which to compute range distance
-  if( !exists( "stmv_localrange_correlation_expanding", p)) p$stmv_localrange_correlation_expanding = c(0.1, 0.01, 0.001)   # auto-correlation at which to compute range distance
+  if( !exists( "stmv_autocorrelation_localrange", p)) p$stmv_autocorrelation_localrange = 0.1   # auto-correlation at which to compute range distance
+  if( !exists( "stmv_autocorrelation_localrange_expanding", p)) p$stmv_autocorrelation_localrange_expanding = c(0.1, 0.01, 0.001)   # auto-correlation at which to compute range distance
 
   if( !exists( "stmv_fft_taper_fraction", p)) p$stmv_fft_taper_fraction = sqrt(0.5)
-  if( !exists( "stmv_fft_taper_correlation", p)) p$stmv_fft_taper_correlation = 0   # scale at which to mark tapering
+  if( !exists( "stmv_autocorrelation_fft_taper", p)) p$stmv_autocorrelation_fft_taper = 0   # scale at which to mark tapering
 
   if (!exists( "stmv_global_family", p)) p$stmv_global_family = gaussian(link = "identity")
 
