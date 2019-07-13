@@ -16,6 +16,7 @@ interpolate_ncpus = min( parallel::detectCores(), floor( (ram_local()- interpola
 
 
 p0 = aegis::spatial_parameters( spatial.domain="bathymetry_example", internal.crs="+proj=utm +ellps=WGS84 +zone=20 +units=km", dres=1/60/4, pres=0.5, lon0=-64, lon1=-62, lat0=44, lat1=45, psignif=2 )
+# or:  p0 = stmv_test_data( "aegis.test.paramaters")
 
 DATA = list(
   input = stmv::stmv_test_data( datasource="aegis.space", p=p0),
@@ -26,7 +27,7 @@ DATA$input = lonlat2planar( DATA$input, p0$internal.crs )
 DATA$input = DATA$input[, c("plon", "plat", "z")]
 
 p = aegis.bathymetry::bathymetry_parameters(
-  p=p0,
+  p=p0,  # start with spatial settings of input data
   project.mode="stmv",
   data_root = file.path(work_root, "bathymetry_example"),
   DATA = DATA,
@@ -42,10 +43,10 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_fft_filter = "lowpass_matern_tapered", #  act as a low pass filter first before matern with taper .. depth has enough data for this. Otherwise, use:
   stmv_fft_taper_method = "modelled",  # vs "empirical"
   # stmv_fft_taper_fraction = 0.5,  # if empirical: in local smoothing convolutions taper to this areal expansion factor sqrt( r=0.5 ) ~ 70% of variance in variogram
-  stmv_autocorrelation_fft_taper = 0.5,  # benchmark from which to taper
   stmv_lowpass_nu = 0.1,
-  stmv_lowpass_phi = stmv::matern_distance2phi( distance=0.1, nu=0.1, cor=0.1 ),  # note: p$pres = 0.2
+  stmv_lowpass_phi = stmv::matern_distance2phi( distance=0.2, nu=0.1, cor=0.5 ),  # note: p$pres = 0.2
   stmv_variogram_method = "fft",
+  stmv_autocorrelation_fft_taper = 0.5,  # benchmark from which to taper
   stmv_autocorrelation_localrange = 0.1,
   stmv_autocorrelation_interpolation = c(0.25, 0.1, 0.05, 0.01),
   depth.filter = FALSE,  # need data above sea level to get coastline
@@ -107,9 +108,10 @@ locations   = spatial_grid( p )
 
 
 # comparison
-  dev.new(); surface( as.image( Z=predictions, x=locations, nx=p$nplons, ny=p$nplats, na.rm=TRUE) )
+dev.new(); surface( as.image( Z=predictions, x=locations, nx=p$nplons, ny=p$nplats, na.rm=TRUE) )
 
-  dev.new(); levelplot( predictions ~ locations[,1] + locations[,2], aspect="iso" )
-  dev.new(); levelplot( statistics[,7]  ~ locations[,1] + locations[,2], aspect="iso" ) # nu
-  dev.new(); levelplot( statistics[,1]  ~ locations[,1] + locations[,2], aspect="iso" ) #sd total
-  dev.new(); levelplot( statistics[,8]  ~ locations[,1] + locations[,2], aspect="iso" ) #range
+(p$statsvars)
+dev.new(); levelplot( predictions[,1] ~ locations[,1] + locations[,2], aspect="iso" )
+dev.new(); levelplot( statistics[,match("nu", p$statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) # nu
+dev.new(); levelplot( statistics[,match("sdTot", p$statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) #sd total
+dev.new(); levelplot( statistics[,match("localrange", p$statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) #localrange
