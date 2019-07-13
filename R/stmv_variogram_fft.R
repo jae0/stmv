@@ -135,15 +135,13 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
     uu = which( (vgm$distances < dmax ) & is.finite(vgm$sv) )  # dmax ~ Nyquist freq
 
     if (plotdata) dev.new()
-    fit = try( stmv_variogram_optimization( vx=vgm$distances[uu], vg=vgm$sv[uu], plotvgm=plotdata,
-      stmv_internal_scale=dmax*0.75, cor=stmv_autocorrelation_localrange ))
-    out$fit = fit
+    out$fit = try( stmv_variogram_optimization( vx=vgm$distances[uu], vg=vgm$sv[uu], plotvgm=plotdata,
+      stmv_internal_scale=dmax*0.75, cor=stmv_autocorrelation_localrange ) )
 
-    if (any(!is.finite( c(fit$summary$phi, fit$summary$nu) ))) return(out)
+    if (any(!is.finite( c(out$fit$summary$phi, out$fit$summary$nu) ))) return(out)
 
-    phi = fit$summary$phi
-    nu = fit$summary$nu
-    # localrange = localrange = matern_phi2distance( phi=phi, nu=nu, cor=stmv_autocorrelation_localrange )
+    phi = out$fit$summary$phi
+    nu = out$fit$summary$nu
 
     grid.list = list((1:nr2) * dr, (1:nc2) * dc)
     # dgrid = as.matrix(expand.grid(grid.list))  # a bit slower

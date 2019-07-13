@@ -282,8 +282,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
         phi=phi,
         varObs = S[Si, i_sdObs]^2,
         varSpatial = S[Si, i_sdSpatial]^2,
-        sloc = Sloc[Si,],
-        distance = localrange
+        sloc = Sloc[Si,]
       )
     )
 
