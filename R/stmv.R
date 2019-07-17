@@ -113,96 +113,82 @@ stmv = function( p, runmode=NULL,
   #   }
   # }
 
-  if (exists("stmv_Y_transform", p)) {
-    DATA$input[, p$variables$Y ] = p$stmv_Y_transform$transf(DATA$input[, p$variables$Y ] )
+
+  # Ypreds = NULL
+  Ydata = as.matrix( DATA$input[, p$variables$Y ] )
+  if (exists("stmv_Y_transform", p)) Ydata = p$stmv_Y_transform$transf( Ydata )
+  if (p$storage.backend == "bigmemory.ram" ) {
+    tmp_Y = big.matrix( nrow=nrow(Ydata), ncol=1, type="double"  )
+    tmp_Y[] = Ydata[]
+    p$ptr$Y  = bigmemory::describe( tmp_Y )
+  }
+  if (p$storage.backend == "bigmemory.filebacked" ) {
+    p$ptr$Y  = p$cache$Y
+    bigmemory::as.big.matrix( Ydata, type="double", backingfile=basename(p$bm$Y), descriptorfile=basename(p$cache$Y), backingpath=p$stmvSaveDir )
+  }
+  if (p$storage.backend == "ff" ) {
+    p$ptr$Y = ff( Ydata, dim=dim(Ydata), file=p$cache$Y, overwrite=TRUE )
   }
 
 
   if ( any(grepl("globalmodel", runmode) ) ) {
     if ( exists("stmv_global_modelengine", p) ) {
       if ( p$stmv_global_modelengine !="none" ) {
-        if ( p$stmv_global_modelformula !="none" ) {
-        # to add global covariate model (hierarchical)
-        # .. simplistic this way but faster ~ kriging with external drift
-          stmv_db( p=p, DS="global_model.redo", B=DATA$input )
-          if (any(grepl("globalmodel.only", runmode))) {
-            o = stmv_db( p=p, DS="global_model" )
-            return( o )
+        if ( p$stmv_global_modelformula !="none" ) stmv_db( p=p, DS="global_model.redo", B=DATA$input )
+        if ( any(grepl("globalmodel.only", runmode)))  return( stmv_db( p=p, DS="global_model" ) )
+        if ( p$stmv_global_modelengine == "userdefined") {
+          covmodel = stmv_db( p=p, DS="global_model")
+          # TODO MUST find a generic form as below
+          # # Ypreds = predict(covmodel, type="link", se.fit=FALSE )  ## TODO .. keep track of the SE
+          if (!exists("predict", p$stmv_global_model)) {
+            message( "||| p$stmv_global_model$predict =' " )
+            message( "|||   predict( global_model, newdata=pa, type='link', se.fit=TRUE )' " )
+            message( "||| where 'global_model', newdata=pa' are required " )
+            stop()
           }
+          preds = try( eval(parse(text=pp$stmv_global_model$predict )) )
+          preds = p$stmv_global_model$predict( covmodel )  # needs to be tested. .. JC
+          Ydata  = Ydata - preds # ie. internal (link) scale
+          Yq = quantile( Ydata, probs=robustify_quantiles )
+        } else {
+          # at present only those that have a predict and residuals methods ...
+          covmodel = stmv_db( p=p, DS="global_model")
+          Ydata  = residuals(covmodel, type="working") # ie. internal (link) scale
+          Yq = quantile( Ydata, probs=c(0.0005, 0.9995) )  # extreme data can make convergence slow and erratic 99.9%CI
         }
+        Ydata[ Ydata < Yq[1] ] = Yq[1]
+        Ydata[ Ydata > Yq[2] ] = Yq[2]
+        covmodel =NULL
+        Yq = NULL
+
       }
     }
   }
 
-  # NOTE:: must not sink the following memory allocation steps into a deeper function as
-  # NOTE:: bigmemory RAM seems to lose the pointers if they are not made simultaneously ?
-
-
-  # data to be worked upon .. either the raw data or covariate-residuals
-  Ydata = as.matrix(DATA$input[, p$variables$Y ])
-  if (exists("stmv_global_modelengine", p)) {
-    if (p$stmv_global_modelengine !="none" ) {
-      if (p$stmv_global_modelengine == "userdefined") {
-        covmodel = stmv_db( p=p, DS="global_model")
-        # TODO MUST find a generic form as below
-        # # Ypreds = predict(covmodel, type="link", se.fit=FALSE )  ## TODO .. keep track of the SE
-        if (!exists("predict", p$stmv_global_model)) {
-          message( "||| p$stmv_global_model$predict =' " )
-          message( "|||   predict( global_model, newdata=pa, type='link', se.fit=TRUE )' " )
-          message( "||| where 'global_model', newdata=pa' are required " )
-          stop()
-        }
-        preds = try( eval(parse(text=pp$stmv_global_model$predict )) )
-        preds = p$stmv_global_model$predict( covmodel )  # needs to be tested. .. JC
-        Ydata  = preds - Ydata # ie. i`nternal (link) scale
-        Yq = quantile( Ydata, probs=robustify_quantiles )
-        Ydata[ Ydata < Yq[1] ] = Yq[1]
-        Ydata[ Ydata > Yq[2] ] = Yq[2]
-        covmodel =NULL
-
-      } else {
-        # at present only those that have a predict and residuals methods ...
-        covmodel = stmv_db( p=p, DS="global_model")
-        Ydata  = residuals(covmodel, type="working") # ie. internal (link) scale
-        Yq = quantile( Ydata, probs=c(0.0005, 0.9995) )  # extreme data can make convergence slow and erratic 99.9%CI
-        Ydata[ Ydata < Yq[1] ] = Yq[1]
-        Ydata[ Ydata > Yq[2] ] = Yq[2]
-        covmodel =NULL
-      }
-    }
-  }
-  # Ypreds = NULL
-  Ydata = as.matrix( Ydata )
-    if (p$storage.backend == "bigmemory.ram" ) {
-      tmp_Y = big.matrix( nrow=nrow(Ydata), ncol=1, type="double"  )
-      tmp_Y[] = Ydata[]
-      p$ptr$Y  = bigmemory::describe( tmp_Y )
-    }
-    if (p$storage.backend == "bigmemory.filebacked" ) {
-      p$ptr$Y  = p$cache$Y
-      bigmemory::as.big.matrix( Ydata, type="double", backingfile=basename(p$bm$Y), descriptorfile=basename(p$cache$Y), backingpath=p$stmvSaveDir )
-    }
-    if (p$storage.backend == "ff" ) {
-      p$ptr$Y = ff( Ydata, dim=dim(Ydata), file=p$cache$Y, overwrite=TRUE )
-    }
+  Y = stmv_attach( p$storage.backend, p$ptr$Y )
+  Y[] = Ydata[]  # update Ydata ...
   Ydata = NULL
 
-  # Y = stmv_attach( p$storage.backend, p$ptr$Y )
+  gc()
+
+
+
+
 
   # data coordinates
   Yloc = as.matrix( DATA$input[, p$variables$LOCS ])
-    if (p$storage.backend == "bigmemory.ram" ) {
-      tmp_Yloc = big.matrix( nrow=nrow(Yloc), ncol=ncol(Yloc), type="double" )
-      tmp_Yloc[] = Yloc[]
-      p$ptr$Yloc = bigmemory::describe( tmp_Yloc )
-    }
-    if (p$storage.backend == "bigmemory.filebacked" ) {
-      p$ptr$Yloc  = p$cache$Yloc
-      bigmemory::as.big.matrix( Yloc, type="double", backingfile=basename(p$bm$Yloc), descriptorfile=basename(p$cache$Yloc), backingpath=p$stmvSaveDir )
-    }
-    if (p$storage.backend == "ff" ) {
-      p$ptr$Yloc = ff( Yloc, dim=dim(Yloc), file=p$cache$Yloc, overwrite=TRUE )
-    }
+  if (p$storage.backend == "bigmemory.ram" ) {
+    tmp_Yloc = big.matrix( nrow=nrow(Yloc), ncol=ncol(Yloc), type="double" )
+    tmp_Yloc[] = Yloc[]
+    p$ptr$Yloc = bigmemory::describe( tmp_Yloc )
+  }
+  if (p$storage.backend == "bigmemory.filebacked" ) {
+    p$ptr$Yloc  = p$cache$Yloc
+    bigmemory::as.big.matrix( Yloc, type="double", backingfile=basename(p$bm$Yloc), descriptorfile=basename(p$cache$Yloc), backingpath=p$stmvSaveDir )
+  }
+  if (p$storage.backend == "ff" ) {
+    p$ptr$Yloc = ff( Yloc, dim=dim(Yloc), file=p$cache$Yloc, overwrite=TRUE )
+  }
   Yloc = NULL
 
   # independent variables/ covariate
@@ -228,22 +214,20 @@ stmv = function( p, runmode=NULL,
   # data times
   if ( exists("TIME", p$variables) ) {
     Ytime = as.matrix(  DATA$input[, p$variables$TIME ] )
-      if (p$storage.backend == "bigmemory.ram" ) {
-        tmp_Ytime = big.matrix( nrow=nrow(Ytime), ncol=ncol(Ytime), type="double"  )
-        tmp_Ytime[] = Ytime[]
-        p$ptr$Ytime  = bigmemory::describe( tmp_Ytime )
-      }
-      if (p$storage.backend == "bigmemory.filebacked" ) {
-        p$ptr$Ytime  = p$cache$Ytime
-        bigmemory::as.big.matrix( Ytime, type="double", backingfile=basename(p$bm$Ytime), descriptorfile=basename(p$cache$Ytime), backingpath=p$stmvSaveDir )
-      }
-      if (p$storage.backend == "ff" ) {
-        p$ptr$Ytime = ff( Ytime, dim=dim(Ytime), file=p$cache$Ytime, overwrite=TRUE )
-      }
+    if (p$storage.backend == "bigmemory.ram" ) {
+      tmp_Ytime = big.matrix( nrow=nrow(Ytime), ncol=ncol(Ytime), type="double"  )
+      tmp_Ytime[] = Ytime[]
+      p$ptr$Ytime  = bigmemory::describe( tmp_Ytime )
+    }
+    if (p$storage.backend == "bigmemory.filebacked" ) {
+      p$ptr$Ytime  = p$cache$Ytime
+      bigmemory::as.big.matrix( Ytime, type="double", backingfile=basename(p$bm$Ytime), descriptorfile=basename(p$cache$Ytime), backingpath=p$stmvSaveDir )
+    }
+    if (p$storage.backend == "ff" ) {
+      p$ptr$Ytime = ff( Ytime, dim=dim(Ytime), file=p$cache$Ytime, overwrite=TRUE )
+    }
     Ytime =NULL;
-
   }
-
 
 
   Y = stmv_attach( p$storage.backend, p$ptr$Y )
@@ -280,18 +264,18 @@ stmv = function( p, runmode=NULL,
   bad = NULL
 
   Yi = as.matrix(Yi)
-    if (p$storage.backend == "bigmemory.ram" ) {
-      tmp_Yi = big.matrix( nrow=nrow(Yi), ncol=ncol(Yi), type="double" )
-      tmp_Yi[] = Yi[]
-      p$ptr$Yi  = bigmemory::describe( tmp_Yi )
-    }
-    if (p$storage.backend == "bigmemory.filebacked" ) {
-      p$ptr$Yi  = p$cache$Yi
-      bigmemory::as.big.matrix( Yi, type="double", backingfile=basename(p$bm$Yi), descriptorfile=basename(p$cache$Yi), backingpath=p$stmvSaveDir )
-    }
-    if (p$storage.backend == "ff" ) {
-      p$ptr$Yi = ff( Yi, dim=dim(Yi), file=p$cache$Yi, overwrite=TRUE )
-    }
+  if (p$storage.backend == "bigmemory.ram" ) {
+    tmp_Yi = big.matrix( nrow=nrow(Yi), ncol=ncol(Yi), type="double" )
+    tmp_Yi[] = Yi[]
+    p$ptr$Yi  = bigmemory::describe( tmp_Yi )
+  }
+  if (p$storage.backend == "bigmemory.filebacked" ) {
+    p$ptr$Yi  = p$cache$Yi
+    bigmemory::as.big.matrix( Yi, type="double", backingfile=basename(p$bm$Yi), descriptorfile=basename(p$cache$Yi), backingpath=p$stmvSaveDir )
+  }
+  if (p$storage.backend == "ff" ) {
+    p$ptr$Yi = ff( Yi, dim=dim(Yi), file=p$cache$Yi, overwrite=TRUE )
+  }
   Yi=NULL
 
 
@@ -341,26 +325,22 @@ stmv = function( p, runmode=NULL,
 
 
   sSflag = matrix( stmv_error_codes()[["todo"]], nrow=nSloc, ncol=1 )
-  if (!is.null(sSflag)) {
-    if (p$storage.backend == "bigmemory.ram" ) {
-      tmp_Sflag = big.matrix(nrow=length(sSflag), ncol=1, type="double" )
-      tmp_Sflag[] = sSflag[]
-      p$ptr$Sflag  = bigmemory::describe( tmp_Sflag )
-    }
-    if (p$storage.backend == "bigmemory.filebacked" ) {
-      p$ptr$Sflag  = p$cache$Sflag
-      bigmemory::as.big.matrix( sSflag, type="double", backingfile=basename(p$bm$Sflag), descriptorfile=basename(p$cache$Sflag), backingpath=p$stmvSaveDir )
-    }
-    if (p$storage.backend == "ff" ) {
-      p$ptr$Sflag = ff( sSflag, dim=dim(sSflag), file=p$cache$Sflag, overwrite=TRUE )
-    }
-    sSflag = NULL
+  if (p$storage.backend == "bigmemory.ram" ) {
+    tmp_Sflag = big.matrix(nrow=length(sSflag), ncol=1, type="double" )
+    tmp_Sflag[] = sSflag[]
+    p$ptr$Sflag  = bigmemory::describe( tmp_Sflag )
   }
+  if (p$storage.backend == "bigmemory.filebacked" ) {
+    p$ptr$Sflag  = p$cache$Sflag
+    bigmemory::as.big.matrix( sSflag, type="double", backingfile=basename(p$bm$Sflag), descriptorfile=basename(p$cache$Sflag), backingpath=p$stmvSaveDir )
+  }
+  if (p$storage.backend == "ff" ) {
+    p$ptr$Sflag = ff( sSflag, dim=dim(sSflag), file=p$cache$Sflag, overwrite=TRUE )
+  }
+  sSflag = NULL
+
 
   nPloc = nrow(DATA$output$LOCS)
-
-
-
 
   if (exists("COV", p$variables)) {
     if (length(p$variables$COV) > 0) {
@@ -404,59 +384,53 @@ stmv = function( p, runmode=NULL,
 
   # predictions and associated stats
   sP = matrix( NaN, nrow=nPloc, ncol=p$nt )
-  if (!is.null(sP)) {
-    if (p$storage.backend == "bigmemory.ram" ) {
-      tmp_P = big.matrix( nrow=nrow(sP), ncol=ncol(sP), type="double" )
-      tmp_P[] = sP[]
-      p$ptr$P  = bigmemory::describe( tmp_P )
-    }
-    if (p$storage.backend == "bigmemory.filebacked" ) {
-      p$ptr$P  = p$cache$P
-      bigmemory::as.big.matrix( sP, type="double", backingfile=basename(p$bm$P), descriptorfile=basename(p$cache$P), backingpath=p$stmvSaveDir )
-    }
-    if (p$storage.backend == "ff" ) {
-      p$ptr$P = ff( sP, dim=dim(sP), file=p$cache$P, overwrite=TRUE )
-    }
-    sP = NULL
+  if (p$storage.backend == "bigmemory.ram" ) {
+    tmp_P = big.matrix( nrow=nrow(sP), ncol=ncol(sP), type="double" )
+    tmp_P[] = sP[]
+    p$ptr$P  = bigmemory::describe( tmp_P )
   }
+  if (p$storage.backend == "bigmemory.filebacked" ) {
+    p$ptr$P  = p$cache$P
+    bigmemory::as.big.matrix( sP, type="double", backingfile=basename(p$bm$P), descriptorfile=basename(p$cache$P), backingpath=p$stmvSaveDir )
+  }
+  if (p$storage.backend == "ff" ) {
+    p$ptr$P = ff( sP, dim=dim(sP), file=p$cache$P, overwrite=TRUE )
+  }
+  sP = NULL
 
 
   # count of prediction estimates
   sPn = matrix( NaN, nrow=nPloc, ncol=p$nt )
-  if (!is.null(sPn)) {
-   if (p$storage.backend == "bigmemory.ram" ) {
-      tmp_Pn = big.matrix( nrow=nrow(sPn), ncol=ncol(sPn), type="double" )
-      tmp_Pn[] = sPn[]
-      p$ptr$Pn = bigmemory::describe( tmp_Pn )
-    }
-    if (p$storage.backend == "bigmemory.filebacked" ) {
-      p$ptr$Pn  = p$cache$Pn
-      bigmemory::as.big.matrix( sPn, type="double", backingfile=basename(p$bm$Pn), descriptorfile=basename(p$cache$Pn), backingpath=p$stmvSaveDir )
-    }
-    if (p$storage.backend == "ff" ) {
-      p$ptr$Pn = ff( sPn, dim=dim(sPn), file=p$cache$Pn, overwrite=TRUE )
-    }
-    sPn = NULL
+  if (p$storage.backend == "bigmemory.ram" ) {
+    tmp_Pn = big.matrix( nrow=nrow(sPn), ncol=ncol(sPn), type="double" )
+    tmp_Pn[] = sPn[]
+    p$ptr$Pn = bigmemory::describe( tmp_Pn )
   }
-
+  if (p$storage.backend == "bigmemory.filebacked" ) {
+    p$ptr$Pn  = p$cache$Pn
+    bigmemory::as.big.matrix( sPn, type="double", backingfile=basename(p$bm$Pn), descriptorfile=basename(p$cache$Pn), backingpath=p$stmvSaveDir )
+  }
+  if (p$storage.backend == "ff" ) {
+    p$ptr$Pn = ff( sPn, dim=dim(sPn), file=p$cache$Pn, overwrite=TRUE )
+  }
+  sPn = NULL
 
   # sd of prediction estimates
   sPsd = matrix( NaN, nrow=nPloc, ncol=p$nt )
-  if (!is.null(sPsd)) {
-    if (p$storage.backend == "bigmemory.ram" ) {
-      tmp_Psd = big.matrix( nrow=nrow(sPsd), ncol=ncol(sPsd), type="double" )
-      tmp_Psd[] = sPsd[]
-      p$ptr$Psd =bigmemory::describe( tmp_Psd )
-    }
-    if (p$storage.backend == "bigmemory.filebacked" ) {
-      p$ptr$Psd  = p$cache$Psd
-      bigmemory::as.big.matrix( sPsd, type="double", backingfile=basename(p$bm$Psd), descriptorfile=basename(p$cache$Psd), backingpath=p$stmvSaveDir )
-    }
-    if (p$storage.backend == "ff" ) {
-      p$ptr$Psd = ff( sPsd, dim=dim(sPsd), file=p$cache$Psd, overwrite=TRUE )
-    }
-    sPsd = NULL
+  if (p$storage.backend == "bigmemory.ram" ) {
+    tmp_Psd = big.matrix( nrow=nrow(sPsd), ncol=ncol(sPsd), type="double" )
+    tmp_Psd[] = sPsd[]
+    p$ptr$Psd =bigmemory::describe( tmp_Psd )
   }
+  if (p$storage.backend == "bigmemory.filebacked" ) {
+    p$ptr$Psd  = p$cache$Psd
+    bigmemory::as.big.matrix( sPsd, type="double", backingfile=basename(p$bm$Psd), descriptorfile=basename(p$cache$Psd), backingpath=p$stmvSaveDir )
+  }
+  if (p$storage.backend == "ff" ) {
+    p$ptr$Psd = ff( sPsd, dim=dim(sPsd), file=p$cache$Psd, overwrite=TRUE )
+  }
+  sPsd = NULL
+
 
   # prediction coordinates
   Ploc = as.matrix( DATA$output$LOCS )
@@ -473,6 +447,7 @@ stmv = function( p, runmode=NULL,
   if (p$storage.backend == "ff" ) {
     p$ptr$Ploc = ff( Ploc, dim=dim(Ploc), file=p$cache$Ploc, overwrite=TRUE )
   }
+  Ploc = NULL;
 
 
 
@@ -522,7 +497,6 @@ stmv = function( p, runmode=NULL,
   # completed data structures .. save params and clear up RAM
 
   DATA = NULL;
-  Ploc = NULL;
   if (!is.character(p$DATA)) p$DATA = NULL  # where data was sent, remove it to free RAM
   file.create( p$stmv_current_status, showWarnings=FALSE )
   p <<- p  # force copy to parent (calling) environment (to remove "p$DATA" )
@@ -533,6 +507,7 @@ stmv = function( p, runmode=NULL,
   # --------------------------------
   # analysis begins
   # check if resetimation is required
+
   niterations = 1  # default .. no global model nor no covariates
   if ( exists("COV", p$variables )) {
     if (length(p$variables$COV) > 0) {
@@ -548,6 +523,10 @@ stmv = function( p, runmode=NULL,
   iYP = stmv_index_predictions_to_observations(p)
   iYP_nomatch = which(!is.finite(iYP))
 
+  # NOTE:: must not sink the following memory allocation steps into a deeper function as
+  # NOTE:: bigmemory RAM seems to lose the pointers if they are not made simultaneously ?
+
+  # data to be worked upon .. either the raw data or covariate-residuals
   for ( nn in 1:niterations ) {
     message( "Iteration ", nn, " of ", niterations, "\n" )
 
