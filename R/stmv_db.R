@@ -1,5 +1,5 @@
 
-  stmv_db = function( DS, p, B=NULL, yr=NULL, ret="mean", runmode=NULL ) {
+  stmv_db = function( DS, p, B=NULL, yr=NULL, ret="mean", runmode=NULL, saveresults=TRUE ) {
     #// usage: low level function to convert data into file-based data obects to permit parallel
     #// data access and manipulation and deletes/updates
     #// B is the xyz or xytz data or the function to get the data to work upon
@@ -297,9 +297,13 @@
       if ( "try-error" %in% class(global_model) ) stop( "The covariate model was problematic" )
       print( summary( global_model ) )
 
-      save( global_model, file= fn.global_model, compress=TRUE )
-      global_model = NULL
-      return()
+      if (saveresults) {
+        save( global_model, file= fn.global_model, compress=TRUE )
+        global_model = NULL
+        return()
+      } else {
+        return( global_model )
+      }
     }
 
 

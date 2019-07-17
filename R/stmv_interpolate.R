@@ -328,12 +328,25 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
 
     # update in stats .. if there are updates
-    if ( exists("nu", res$stmv_stats ) ) if (is.finite(res$stmv_stats$nu)) S[Si, i_nu] = res$stmv_stats$nu
-    if ( exists("phi", res$stmv_stats ) ) if (is.finite(res$stmv_stats$phi)) S[Si, i_phi] = res$stmv_stats$phi
-    if ( exists("localrange", res$stmv_stats ) ) if (is.finite(res$stmv_stats$localrange)) S[Si, i_localrange] = res$stmv_stats$localrange
-    if ( exists("rsquared", res$stmv_stats ) ) if (is.finite(res$stmv_stats$rsquared)) S[Si, i_rsquared] = res$stmv_stats$rsquared
-    if ( exists("sdSpatial", res$stmv_stats ) ) if (is.finite(res$stmv_stats$sdSpatial)) S[Si, i_sdSpatial] = res$stmv_stats$sdSpatial
-    if ( exists("sdObs", res$stmv_stats ) ) if (is.finite(res$stmv_stats$sdObs)) S[Si, i_sdObs] = res$stmv_stats$sdObs
+    if ( exists( "stmv_localstats", res)) {
+      lss = colMeans( res$stmv_localstats, na.rm=TRUE )
+      names(lss) = p$statvars
+      if (is.finite(lss[["nu"]])) S[Si, i_nu] = lss[["nu"]]
+      if (is.finite(lss[["phi"]])) S[Si, i_phi] = lss[["phi"]]
+      if (is.finite(lss[["localrange"]])) S[Si, i_localrange] = lss[["localrange"]]
+      if (is.finite(lss[["rsquared"]])) S[Si, i_rsquared] = lss[["rsquared"]]
+      if (is.finite(lss[["sdSpatial"]])) S[Si, i_sdSpatial] = lss[["sdSpatial"]]
+      if (is.finite(lss[["sdObs"]])) S[Si, i_sdObs] = lss[["sdObs"]]
+      if (is.finite(lss[["ndata"]])) S[Si, i_ndata] = lss[["ndata"]]
+    } else {
+      if ( exists("nu", res$stmv_stats ) ) if (is.finite(res$stmv_stats$nu)) S[Si, i_nu] = res$stmv_stats$nu
+      if ( exists("phi", res$stmv_stats ) ) if (is.finite(res$stmv_stats$phi)) S[Si, i_phi] = res$stmv_stats$phi
+      if ( exists("localrange", res$stmv_stats ) ) if (is.finite(res$stmv_stats$localrange)) S[Si, i_localrange] = res$stmv_stats$localrange
+      if ( exists("rsquared", res$stmv_stats ) ) if (is.finite(res$stmv_stats$rsquared)) S[Si, i_rsquared] = res$stmv_stats$rsquared
+      if ( exists("sdSpatial", res$stmv_stats ) ) if (is.finite(res$stmv_stats$sdSpatial)) S[Si, i_sdSpatial] = res$stmv_stats$sdSpatial
+      if ( exists("sdObs", res$stmv_stats ) ) if (is.finite(res$stmv_stats$sdObs)) S[Si, i_sdObs] = res$stmv_stats$sdObs
+      if ( exists("ndata", res$stmv_stats ) ) if (is.finite(res$stmv_stats$ndata)) S[Si, i_ndata] = res$stmv_stats$ndata
+    }
 
     res$stmv_stats = NULL # reduce memory usage
 

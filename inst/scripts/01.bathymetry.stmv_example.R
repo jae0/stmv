@@ -111,7 +111,16 @@ locations   = spatial_grid( p )
 dev.new(); surface( as.image( Z=predictions, x=locations, nx=p$nplons, ny=p$nplats, na.rm=TRUE) )
 
 (p$statsvars)
+# p$statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "phi", "nu", "localrange" )
 dev.new(); levelplot( predictions[,1] ~ locations[,1] + locations[,2], aspect="iso" )
 dev.new(); levelplot( statistics[,match("nu", p$statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) # nu
 dev.new(); levelplot( statistics[,match("sdTot", p$statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) #sd total
 dev.new(); levelplot( statistics[,match("localrange", p$statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) #localrange
+
+
+
+
+global_model = stmv_db( p=p, DS="global_model")
+iYP = stmv_index_predictions_to_observations(p)
+iYPkeep = which(is.finite(iYP))
+cor(global_model$data[, p$variables$Y ], predictions[ iYP ], use="complete.obs" ) # P aer spatial/spatio-temporal random effects

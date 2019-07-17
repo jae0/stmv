@@ -343,7 +343,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
 
   # lattice::levelplot( mean ~ plon + plat, data=pa, col.regions=heat.colors(100), scale=list(draw=TRUE) , aspect="iso" )
 
-  return( list( predictions=pa, stmv_stats=stmv_stats ) )
+  return( list( predictions=pa, stmv_stats=stmv_stats, stmv_localstats=OT ) )
 
 
 }

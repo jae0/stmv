@@ -100,6 +100,7 @@ dev.new(); surface( as.image( Z=rowMeans(predictions), x=locations, nx=p$nplons,
 
 # stats
 (p$statsvars)
+# p$statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "phi", "nu", "localrange" )
 dev.new(); levelplot( predictions[,1] ~ locations[,1] + locations[,2], aspect="iso" )
 dev.new(); levelplot( statistics[,match("nu", p$statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) # nu
 dev.new(); levelplot( statistics[,match("sdTot", p$statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) #sd total
