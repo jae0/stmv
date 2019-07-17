@@ -1,5 +1,5 @@
 
-  stmv_db = function( DS, p, B=NULL, yr=NULL, ret="mean", runmode=NULL, saveresults=TRUE ) {
+  stmv_db = function( DS, p, B=NULL, yr=NULL, ret="mean", runmode=NULL, saveresults=TRUE, datasubset="all" ) {
     #// usage: low level function to convert data into file-based data obects to permit parallel
     #// data access and manipulation and deletes/updates
     #// B is the xyz or xytz data or the function to get the data to work upon
@@ -541,124 +541,188 @@
 
     if (DS %in% c("save_current_state") ) {
 
+      if (datasubset == "all") datasubset = c( "P", "Psd", "Pn", "S", "Sflag" )
+      if (datasubset == "predictions") datasubset = c( "P", "Psd", "Pn"  )
+      if (datasubset == "statistics") datasubset = c( "S", "Sflag" )
+
       # named differently to avoid collisions
-      sP = stmv_attach( p$storage.backend, p$ptr$P )[]
-      sPn = stmv_attach( p$storage.backend, p$ptr$Pn )[]
-      sPsd = stmv_attach( p$storage.backend, p$ptr$Psd )[]
-      sS = stmv_attach( p$storage.backend, p$ptr$S )[]
-      sSflag = stmv_attach( p$storage.backend, p$ptr$Sflag )[]
-
-      if (exists("stmv_global_modelengine", p)) {
-        if (p$stmv_global_modelengine !="none" ) {
-          sP0 = stmv_attach( p$storage.backend, p$ptr$P0 )[]
-          sP0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )[]
+      if ( "P" %in% datasubset ) {
+        sP = stmv_attach( p$storage.backend, p$ptr$P )[]
+        save( sP, file=paste(p$saved_state_fn$P, runmode, sep="."), compress=TRUE )
+        sP = NULL
+        if (exists("stmv_global_modelengine", p)) {
+          if (p$stmv_global_modelengine !="none" ) {
+            sP0 = stmv_attach( p$storage.backend, p$ptr$P0 )[]
+            save( sP0,   file=paste(p$saved_state_fn$P0, runmode, sep="."),   compress=TRUE )
+            sP0 = NULL
+          }
         }
       }
 
-      save( sP, file=paste(p$saved_state_fn$P, runmode, sep="."), compress=TRUE )
-      save( sPn, file=paste(p$saved_state_fn$Pn, runmode, sep="."), compress=TRUE )
-      save( sPsd, file=paste(p$saved_state_fn$Psd, runmode, sep="."), compress=TRUE )
-      save( sS, file=paste(p$saved_state_fn$stats, runmode, sep="."), compress=TRUE )
-      save( sSflag, file=paste(p$saved_state_fn$sflag, runmode, sep="."), compress=TRUE )
-
-      if (exists("stmv_global_modelengine", p)) {
-        if (p$stmv_global_modelengine !="none" ) {
-          save( sP0,   file=paste(p$saved_state_fn$P0, runmode, sep="."),   compress=TRUE )
-          save( sP0sd, file=paste(p$saved_state_fn$P0sd, runmode, sep="."), compress=TRUE )
+      if ( "Psd" %in% datasubset ) {
+        sPsd = stmv_attach( p$storage.backend, p$ptr$Psd )[]
+        save( sPsd, file=paste(p$saved_state_fn$Psd, runmode, sep="."), compress=TRUE )
+        sPsd = NULL
+        if (exists("stmv_global_modelengine", p)) {
+          if (p$stmv_global_modelengine !="none" ) {
+            sP0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )[]
+            save( sP0sd, file=paste(p$saved_state_fn$P0sd, runmode, sep="."),   compress=TRUE )
+            sP0sd = NULL
+          }
         }
       }
-      sP = sPsd = sPn = NULL
-      sS = sSflag = NULL
-      sP0 = sP0sd = NULL
 
+      if ( "Pn" %in% datasubset ) {
+        sPn = stmv_attach( p$storage.backend, p$ptr$Pn )[]
+        save( sPn, file=paste(p$saved_state_fn$Pn, runmode, sep="."), compress=TRUE )
+        sPn = NULL
+      }
+
+      if ( "S" %in% datasubset ) {
+        sS = stmv_attach( p$storage.backend, p$ptr$S )[]
+        save( sS, file=paste(p$saved_state_fn$stats, runmode, sep="."), compress=TRUE )
+        sS = NULL
+      }
+
+      if ( "Sflag" %in% datasubset ) {
+        sSflag = stmv_attach( p$storage.backend, p$ptr$Sflag )[]
+        save( sSflag, file=paste(p$saved_state_fn$sflag, runmode, sep="."), compress=TRUE )
+        sSflag = NULL
+      }
+      gc()
+      return(NULL)
     }
 
 
     # =--------------------
 
-
     if (DS %in% c("load_saved_state") ) {
       returnflag = FALSE
 
+      if (datasubset == "all") datasubset = c( "P", "Psd", "Pn", "S", "Sflag" )
+      if (datasubset == "predictions") datasubset = c( "P", "Psd", "Pn"  )
+      if (datasubset == "statistics") datasubset = c( "S", "Sflag" )
+
       # named differently to avoid collisions
-      P = stmv_attach( p$storage.backend, p$ptr$P )
-      Pn = stmv_attach( p$storage.backend, p$ptr$Pn )
-      Psd = stmv_attach( p$storage.backend, p$ptr$Psd )
-      S = stmv_attach( p$storage.backend, p$ptr$S )
-      Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-
-      if (exists("stmv_global_modelengine", p)) {
-        if (p$stmv_global_modelengine !="none" ) {
-          P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
-          P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )
-        }
-      }
-
-      sP = matrix( NaN, nrow=nrow(P), ncol=ncol(P) )
-      sPn = matrix( NaN, nrow=nrow(Pn), ncol=ncol(Pn) )
-      sPsd = matrix( NaN, nrow=nrow(Psd), ncol=ncol(Psd) )
-      sS = matrix( NaN, nrow=nrow(S), ncol=ncol(S) )
-      sSflag = matrix( NaN, nrow=nrow(Sflag), ncol=ncol(Sflag) )
-
-      if (file.exists(paste( p$saved_state_fn$P, runmode, sep="."))) {
-        load( paste( p$saved_state_fn$P, runmode, sep=".") )
-      } else {
-        returnflag = FALSE
-      }
-      if (file.exists(paste( p$saved_state_fn$Pn, runmode, sep="."))) {
-        load( paste( p$saved_state_fn$Pn, runmode, sep=".") )
-      } else {
-        returnflag = FALSE
-      }
-
-      if (file.exists(paste( p$saved_state_fn$Psd, runmode, sep="."))) {
-        load( paste( p$saved_state_fn$Psd, runmode, sep=".") )
-      } else {
-        returnflag = FALSE
-      }
-
-      if (file.exists(paste( p$saved_state_fn$stats, runmode, sep="."))) {
-        load( paste( p$saved_state_fn$stats, runmode, sep=".") )
-      } else {
-        returnflag = FALSE
-      }
-
-      if (file.exists(paste( p$saved_state_fn$sflag, runmode, sep="."))) {
-        load( paste( p$saved_state_fn$sflag, runmode, sep=".") )
-      } else {
-        returnflag = FALSE
-      }
-
-      P[] = sP[]
-      Pn[] = sPn[]
-      Psd[] = sPsd[]
-      sP = sPsd = sPn = NULL
-
-      S[] = sS[]
-      Sflag[] = sSflag[]
-      sS = sSflag = NULL
-
-      if (exists("stmv_global_modelengine", p)) {
-        if (p$stmv_global_modelengine !="none" ) {
-          sP0 = matrix( NaN, nrow=nrow(P0), ncol=ncol(P0) )
-          sP0sd = matrix( NaN, nrow=nrow(P0sd), ncol=ncol(P0sd) )
-          if (file.exists(paste( p$saved_state_fn$P0, runmode, sep="."))) {
-            load( paste( p$saved_state_fn$P0, runmode, sep=".") )
-          } else {
-            returnflag = FALSE
+      if ( "P" %in% datasubset ) {
+        P = stmv_attach( p$storage.backend, p$ptr$P )
+        if (exists("stmv_global_modelengine", p)) {
+          if (p$stmv_global_modelengine !="none" ) {
+            P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
           }
-          if (file.exists(paste( p$saved_state_fn$P0sd, runmode, sep="."))) {
-            load( paste( p$saved_state_fn$P0sd, runmode, sep=".") )
-          } else {
-            returnflag = FALSE
-          }
-
-          P0[] = sP0[]
-          P0sd[] = sP0sd[]
-          sP0 = sP0sd = NULL
         }
+        sP = matrix( NaN, nrow=nrow(P), ncol=ncol(P) )
+        if (file.exists(paste( p$saved_state_fn$P, runmode, sep="."))) {
+          load( paste( p$saved_state_fn$P, runmode, sep=".") )
+        } else {
+          returnflag = FALSE
+        }
+        if (is.vector(sP))   sP=as.matrix(sP, nrow=nrow(P), ncol=1) # big matrix does not like vectors
+        P[] = sP[]
+        if (exists("stmv_global_modelengine", p)) {
+          if (p$stmv_global_modelengine !="none" ) {
+            sP0 = matrix( NaN, nrow=nrow(P0), ncol=ncol(P0) )
+            if (file.exists(paste( p$saved_state_fn$P0, runmode, sep="."))) {
+              load( paste( p$saved_state_fn$P0, runmode, sep=".") )
+            } else {
+              returnflag = FALSE
+            }
+            P0[] = sP0[]
+            sP0 = NULL
+          }
+        }
+        sP = NULL
       }
-      return( flag )
+
+
+      if ( "Psd" %in% datasubset ) {
+        Psd = stmv_attach( p$storage.backend, p$ptr$Psd )
+        if (exists("stmv_global_modelengine", p)) {
+          if (p$stmv_global_modelengine !="none" ) {
+            P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )
+          }
+        }
+        sPsd = matrix( NaN, nrow=nrow(Psd), ncol=ncol(Psd) )
+        if (file.exists(paste( p$saved_state_fn$Psd, runmode, sep="."))) {
+          load( paste( p$saved_state_fn$Psd, runmode, sep=".") )
+        } else {
+          returnflag = FALSE
+        }
+        if (is.vector(sPsd)) sPsd=as.matrix(sPsd, nrow=nrow(Psd), ncol=1)  # big matrix does not like vectors
+        Psd[] = sPsd[]
+        if (exists("stmv_global_modelengine", p)) {
+          if (p$stmv_global_modelengine !="none" ) {
+            sP0sd = matrix( NaN, nrow=nrow(P0sd), ncol=ncol(P0sd) )
+            if (file.exists(paste( p$saved_state_fn$P0sd, runmode, sep="."))) {
+              load( paste( p$saved_state_fn$P0sd, runmode, sep=".") )
+            } else {
+              returnflag = FALSE
+            }
+            P0sd[] = sP0sd[]
+            sP0sd = NULL
+          }
+        }
+        sPsd = NULL
+      }
+
+      if ( "Pn" %in% datasubset ) {
+        Pn = stmv_attach( p$storage.backend, p$ptr$Pn )
+        sPn = matrix( NaN, nrow=nrow(Pn), ncol=ncol(Pn) )
+        if (file.exists(paste( p$saved_state_fn$Pn, runmode, sep="."))) {
+          load( paste( p$saved_state_fn$Pn, runmode, sep=".") )
+        } else {
+          returnflag = FALSE
+        }
+        if (is.vector(sPn)) sPn=as.matrix(sPn, nrow=nrow(Pn), ncol=1)  # big matrix does not like vectors
+        Pn[] = sPn[]
+        sPn = NULL
+      }
+
+
+      if ( "S" %in% datasubset ) {
+        S = stmv_attach( p$storage.backend, p$ptr$S )
+        sS = matrix( NaN, nrow=nrow(S), ncol=ncol(S) )
+        if (file.exists(paste( p$saved_state_fn$stats, runmode, sep="."))) {
+          load( paste( p$saved_state_fn$stats, runmode, sep=".") )
+        } else {
+          fn = file.path( p$stmvSaveDir, paste( "stmv.statistics", "rdata", sep=".") )
+          if (!file.exists(fn)) stop( "stmv.stats not found")
+          stats = NULL
+          load(fn)
+          if (is.null(stats)) stop ("stmv.stats empty")
+          Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
+          Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+          nx = length(seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ))
+          ny = length(seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ) )
+          if (nx*ny != nrow(S) ) stop( "stmv.statistics has the wrong dimensionality/size" )
+          for ( i in 1:length( p$statsvars ) ) {
+            # linear interpolation
+            u = as.image( stats[,i], x=Ploc[,], na.rm=TRUE, nx=nx, ny=ny )
+            S[,i] = as.vector( fields::interp.surface( u, loc=Sloc[] ) ) # linear interpolation
+          }
+          nx = ny = u = stats = NULL
+          returnflag = FALSE
+        }
+        if (is.vector(sS)) sS=as.matrix(sS, nrow=nrow(S), ncol=1)  # big matrix does not like vectors
+        S[] = sS[]
+        sS = NULL
+      }
+
+      if ( "Sflag" %in% datasubset ) {
+        Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
+        sSflag = matrix( NaN, nrow=nrow(Sflag), ncol=ncol(Sflag) )
+        if (file.exists(paste( p$saved_state_fn$sflag, runmode, sep="."))) {
+          load( paste( p$saved_state_fn$sflag, runmode, sep=".") )
+        } else {
+          returnflag = FALSE
+        }
+        if (is.vector(sSflag)) sSflag=as.matrix(sSflag, nrow=nrow(Sflag), ncol=1)  # big matrix does not like vectors
+        Sflag[] = sSflag[]
+        sSflag = NULL
+        currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
+      }
+
+      return( returnflag )
     }
 
 

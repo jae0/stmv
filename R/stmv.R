@@ -1,7 +1,7 @@
 
 
 stmv = function( p, runmode=NULL,
-  DATA=NULL, variogram_source ="saved_state",
+  DATA=NULL,
   use_saved_state=NULL, nlogs=200, niter=5,
   debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE, robustify_quantiles=c(0.0005, 0.9995), ... ) {
 
@@ -12,7 +12,6 @@ stmv = function( p, runmode=NULL,
     niter = 1
     use_saved_state=NULL # or "disk"
     DATA=NULL
-    variogram_source ="saved_state"
     debug_plot_variable_index=1
     robustify_quantiles=c(0.0005, 0.9995)
     # runmode=c("interpolate", "globalmodel")
@@ -22,7 +21,7 @@ stmv = function( p, runmode=NULL,
   #\\ localized modelling of space and time data to predict/interpolate upon a grid
   #\\ speed ratings: bigmemory.ram (1), ff (2), bigmemory.filebacked (3)
 
-  # -----------------------------------------------------
+  # ------------------use_saved_state-----------------------------------
 
   if (!exists("time_start", p) ) p$time_start = Sys.time()
 
@@ -302,69 +301,46 @@ stmv = function( p, runmode=NULL,
   # init output data objects
   # statistics storage matrix ( aggregation window, coords ) .. no inputs required
   sbox = Sloc = NULL
-    sbox = list(
-      plats = seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ),
-      plons = seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ) )
-    # statistics coordinates
-    Sloc = as.matrix( expand_grid_fast( sbox$plons, sbox$plats ))
-    nSloc = nrow(Sloc)
-      if (p$storage.backend == "bigmemory.ram" ) {
-        tmp_Sloc = big.matrix(nrow=nSloc, ncol=ncol(Sloc), type="double"  )
-        tmp_Sloc[] = Sloc[]
-        p$ptr$Sloc  = bigmemory::describe( tmp_Sloc  )
-      }
-      if (p$storage.backend == "bigmemory.filebacked" ) {
-        p$ptr$Sloc  = p$cache$Sloc
-        bigmemory::as.big.matrix( Sloc, type="double", backingfile=basename(p$bm$Sloc), descriptorfile=basename(p$cache$Sloc), backingpath=p$stmvSaveDir )
-      }
-      if (p$storage.backend == "ff" ) {
-        p$ptr$Sloc = ff( Sloc, dim=dim(Sloc), file=p$cache$Sloc, overwrite=TRUE )
-      }
-      Sloc = NULL
+  sbox = list(
+    plats = seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ),
+    plons = seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ) )
+  # statistics coordinates
+  Sloc = as.matrix( expand_grid_fast( sbox$plons, sbox$plats ))
+  nSloc = nrow(Sloc)
+
+  if (p$storage.backend == "bigmemory.ram" ) {
+    tmp_Sloc = big.matrix(nrow=nSloc, ncol=ncol(Sloc), type="double"  )
+    tmp_Sloc[] = Sloc[]
+    p$ptr$Sloc  = bigmemory::describe( tmp_Sloc  )
+  }
+  if (p$storage.backend == "bigmemory.filebacked" ) {
+    p$ptr$Sloc  = p$cache$Sloc
+    bigmemory::as.big.matrix( Sloc, type="double", backingfile=basename(p$bm$Sloc), descriptorfile=basename(p$cache$Sloc), backingpath=p$stmvSaveDir )
+  }
+  if (p$storage.backend == "ff" ) {
+    p$ptr$Sloc = ff( Sloc, dim=dim(Sloc), file=p$cache$Sloc, overwrite=TRUE )
+  }
+  Sloc = NULL
   sbox = NULL
 
 
+  sS = matrix( NaN, nrow=nSloc, ncol=length( p$statsvars ) ) # NA forces into logical
+  if (p$storage.backend == "bigmemory.ram" ) {
+    tmp_S = big.matrix(nrow=nSloc, ncol=length( p$statsvars ), type="double"  )
+    tmp_S[] = sS[]
+    p$ptr$S  = bigmemory::describe( tmp_S )
+  }
+  if (p$storage.backend == "bigmemory.filebacked" ) {
+    p$ptr$S  = p$cache$S
+    bigmemory::as.big.matrix( sS, type="double", backingfile=basename(p$bm$S), descriptorfile=basename(p$cache$S), backingpath=p$stmvSaveDir )
+  }
+  if (p$storage.backend == "ff" ) {
+    p$ptr$S = ff( sS, dim=dim(sS), file=p$cache$S, overwrite=TRUE )
+  }
   sS = NULL
-  if (!is.null(use_saved_state)) {
-    if (use_saved_state=="ram") {
-      # nothing needs to be done as pointers are already set up and pointed to the data
-    }
-    if (use_saved_state=="disk") {
-      if (file.exists(p$saved_state_fn$stats)) load( p$saved_state_fn$stats )
-      if (is.vector(sS)) sS = as.matrix(sS, nrow=nSloc, ncol=1)
-    }
-  } else {
-    sS = matrix( NaN, nrow=nSloc, ncol=length( p$statsvars ) ) # NA forces into logical
-  }
-  if (!is.null(sS)) {
-    if (p$storage.backend == "bigmemory.ram" ) {
-      tmp_S = big.matrix(nrow=nSloc, ncol=length( p$statsvars ), type="double"  )
-      tmp_S[] = sS[]
-      p$ptr$S  = bigmemory::describe( tmp_S )
-    }
-    if (p$storage.backend == "bigmemory.filebacked" ) {
-      p$ptr$S  = p$cache$S
-      bigmemory::as.big.matrix( sS, type="double", backingfile=basename(p$bm$S), descriptorfile=basename(p$cache$S), backingpath=p$stmvSaveDir )
-    }
-    if (p$storage.backend == "ff" ) {
-      p$ptr$S = ff( sS, dim=dim(sS), file=p$cache$S, overwrite=TRUE )
-    }
-    sS = NULL
-  }
 
 
-  sSflag = NULL
-  if (!is.null(use_saved_state)) {
-    if (use_saved_state=="ram") {
-      # nothing needs to be done as pointers are already set up and pointed to the data
-    }
-    if (use_saved_state=="disk") {
-      if (file.exists(p$saved_state_fn$sflag)) load( p$saved_state_fn$sflag )
-      if (is.vector(sSflag)) sSflag = as.matrix(sSflag, nrow=nSloc, ncol=1)
-    }
-  } else {
-    sSflag = matrix( stmv_error_codes()[["todo"]], nrow=nSloc, ncol=1 )
-  }
+  sSflag = matrix( stmv_error_codes()[["todo"]], nrow=nSloc, ncol=1 )
   if (!is.null(sSflag)) {
     if (p$storage.backend == "bigmemory.ram" ) {
       tmp_Sflag = big.matrix(nrow=length(sSflag), ncol=1, type="double" )
@@ -383,13 +359,18 @@ stmv = function( p, runmode=NULL,
 
   nPloc = nrow(DATA$output$LOCS)
 
+
+
+
   if (exists("COV", p$variables)) {
     if (length(p$variables$COV) > 0) {
       # this needs to be done as Prediction covars need to be structured as lists
       p$ptr$Pcov = list()
       tmp_Pcov = list()
+      nc_cov =NULL
       for ( covname in p$variables$COV ) {
         Pcovdata = as.matrix( DATA$output$COV[[covname]] )
+        nc_cov = c( nc_cov,  ncol(Pcovdata) )  # test no. cols
         nPcovloc = nrow(Pcovdata)
         if (nPcovloc != nPloc) {
           message( "||| Inconsistency between number of prediction locations and prediction covariates: input data needs to be checked:")
@@ -413,54 +394,35 @@ stmv = function( p, runmode=NULL,
         }
         Pcovdata = NULL
       }
+      p$all.covars.static = ifelse( any(nc_cov > 1),  FALSE, TRUE )
+      nc_cov = NULL
+    } else {
+      p$all.covars.static = TRUE # degenerate case where the model is an intercept-only model (to remove mean effects)
     }
   }
-
 
 
   # predictions and associated stats
-  sP = NULL
-  if (!is.null(use_saved_state)) {
-    if (use_saved_state=="ram") {
-      # nothing needs to be done as pointers are already set up and pointed to the data
-    }
-    if (use_saved_state=="disk") {
-      if (file.exists(p$saved_state_fn$P)) load( p$saved_state_fn$P )
-      if (is.vector(sP)) sP=as.matrix(sP, nrow=nPloc, ncol=1)
-    }
-  } else {
-     sP = matrix( NaN, nrow=nPloc, ncol=p$nt )
-  }
+  sP = matrix( NaN, nrow=nPloc, ncol=p$nt )
   if (!is.null(sP)) {
-      if (p$storage.backend == "bigmemory.ram" ) {
-        tmp_P = big.matrix( nrow=nrow(sP), ncol=ncol(sP), type="double" )
-        tmp_P[] = sP[]
-        p$ptr$P  = bigmemory::describe( tmp_P )
-      }
-      if (p$storage.backend == "bigmemory.filebacked" ) {
-        p$ptr$P  = p$cache$P
-        bigmemory::as.big.matrix( sP, type="double", backingfile=basename(p$bm$P), descriptorfile=basename(p$cache$P), backingpath=p$stmvSaveDir )
-      }
-      if (p$storage.backend == "ff" ) {
-        p$ptr$P = ff( sP, dim=dim(sP), file=p$cache$P, overwrite=TRUE )
-      }
+    if (p$storage.backend == "bigmemory.ram" ) {
+      tmp_P = big.matrix( nrow=nrow(sP), ncol=ncol(sP), type="double" )
+      tmp_P[] = sP[]
+      p$ptr$P  = bigmemory::describe( tmp_P )
+    }
+    if (p$storage.backend == "bigmemory.filebacked" ) {
+      p$ptr$P  = p$cache$P
+      bigmemory::as.big.matrix( sP, type="double", backingfile=basename(p$bm$P), descriptorfile=basename(p$cache$P), backingpath=p$stmvSaveDir )
+    }
+    if (p$storage.backend == "ff" ) {
+      p$ptr$P = ff( sP, dim=dim(sP), file=p$cache$P, overwrite=TRUE )
+    }
     sP = NULL
   }
 
 
   # count of prediction estimates
-  sPn = NULL
-  if (!is.null(use_saved_state)) {
-    if (use_saved_state=="ram") {
-      # nothing needs to be done as pointers are already set up and pointed to the data
-    }
-    if (use_saved_state=="disk") {
-      if (file.exists(p$saved_state_fn$Pn)) load( p$saved_state_fn$Pn )
-      if (is.vector(sPn)) sPn = as.matrix(sPn, nrow=nPloc, ncol=1)
-    }
-  } else {
-    sPn = matrix( NaN, nrow=nPloc, ncol=p$nt )
-  }
+  sPn = matrix( NaN, nrow=nPloc, ncol=p$nt )
   if (!is.null(sPn)) {
    if (p$storage.backend == "bigmemory.ram" ) {
       tmp_Pn = big.matrix( nrow=nrow(sPn), ncol=ncol(sPn), type="double" )
@@ -479,18 +441,7 @@ stmv = function( p, runmode=NULL,
 
 
   # sd of prediction estimates
-  sPsd = NULL
-  if (!is.null(use_saved_state)) {
-    if (use_saved_state=="ram") {
-      # nothing needs to be done as pointers are already set up and pointed to the data
-    }
-    if (use_saved_state=="disk") {
-      if (file.exists(p$saved_state_fn$Psd)) load( p$saved_state_fn$Psd )
-      if (is.vector(sPsd)) sPsd = as.matrix(sPsd, nrow=nPloc, ncol=1)
-    }
-  } else {
-    sPsd = matrix( NaN, nrow=nPloc, ncol=p$nt )
-  }
+  sPsd = matrix( NaN, nrow=nPloc, ncol=p$nt )
   if (!is.null(sPsd)) {
     if (p$storage.backend == "bigmemory.ram" ) {
       tmp_Psd = big.matrix( nrow=nrow(sPsd), ncol=ncol(sPsd), type="double" )
@@ -530,18 +481,7 @@ stmv = function( p, runmode=NULL,
 
   if (exists("stmv_global_modelengine", p) ) {
     if (p$stmv_global_modelengine !="none" ) {
-      sP0 = NULL
-      if (!is.null(use_saved_state)) {
-        if (use_saved_state=="ram") {
-          # nothing needs to be done as pointers are already set up and pointed to the data
-        }
-        if (use_saved_state=="disk") {
-          if (file.exists(p$saved_state_fn$P0)) load( p$saved_state_fn$P0 )
-          if (is.vector(sP0)) sP0 = as.matrix(sP0, nrow=nPloc, ncol=1)
-        }
-      } else {
-        sP0 = matrix( NaN, nrow=nPloc, ncol=p$nt )
-      }
+      sP0 = matrix( NaN, nrow=nPloc, ncol=p$nt )
       if (!is.null(sP0)) {
         if (p$storage.backend == "bigmemory.ram" ) {
           tmp_P0= big.matrix( nrow=nrow(sP0), ncol=ncol(sP0) , type="double" )
@@ -558,18 +498,7 @@ stmv = function( p, runmode=NULL,
         sP0 = NULL
       }
 
-      sP0sd = NULL
-      if (!is.null(use_saved_state)) {
-        if (use_saved_state=="ram") {
-          # nothing needs to be done as pointers are already set up and pointed to the data
-        }
-        if (use_saved_state=="disk") {
-          if (file.exists(p$saved_state_fn$P0sd)) load( p$saved_state_fn$P0sd )
-          if (is.vector(sP0sd)) sP0sd = as.matrix(sP0sd, nrow=nPloc, ncol=1)
-        }
-      } else {
-        sP0sd = matrix( NaN, nrow=nPloc, ncol=p$nt )
-      }
+      sP0sd = matrix( NaN, nrow=nPloc, ncol=p$nt )
       if (!is.null(sP0sd)) {
         if (p$storage.backend == "bigmemory.ram" ) {
           tmp_P0sd= big.matrix( nrow=nrow(sP0sd), ncol=ncol(sP0sd) , type="double" )
@@ -584,26 +513,6 @@ stmv = function( p, runmode=NULL,
           p$ptr$P0sd = ff( sP0sd, dim=dim(sP0sd), file=p$cache$P0sd, overwrite=TRUE )
         }
         sP0sd=NULL;
-      }
-    }
-  }
-
-
-
-  if (exists("stmv_global_modelengine", p) ) {
-    if (p$stmv_global_modelengine !="none" ) {
-      if (exists("COV", p$variables)) {
-        if (length(p$variables$COV) > 0) {
-          nc_cov =NULL
-          for (i in p$variables$COV ) {
-            pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[i]] )
-            nc_cov = c( nc_cov,  ncol(pu) )
-          }
-          p$all.covars.static = ifelse( any(nc_cov > 1),  FALSE, TRUE )
-          nc_cov = NULL
-        } else {
-          p$all.covars.static = TRUE # degenerate case where the model is an intercept-only model (to remove mean effects)
-        }
       }
     }
   }
@@ -683,57 +592,17 @@ stmv = function( p, runmode=NULL,
       }
     }
 
+
     # -----------------------------------------------------
     if ( "scale" %in% runmode ) {
-      # must be done in 2-passes .. the first in paranoid mode to fill with estimates that are reliable,
-      # then a second pass to borrow from neighbouring estimate where possible
       message ( "\n", "||| Entering spatial scale (variogram) determination: ", format(Sys.time()) , "\n" )
       p$time_start_runmode = Sys.time()
+      if ( "restart_load" %in% runmode ) success = stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" )
       currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
       p$clusters = p$stmv_runmode[["scale"]] # as ram reqeuirements increase drop cpus
       parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
-      # temp save to disk
-      sS = stmv_attach( p$storage.backend, p$ptr$S )[]
-      save( sS, file=p$saved_state_fn$stats, compress=TRUE );
-      sS = NULL
-      # reload main data to continue
-      message( "||| Scale estimation surface complete." )
-      message( "||| Time used : ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n"  )
-      message( "||| Stats temporarily saved to (for restarts): ", p$saved_state_fn$stats )
-    } else {
-      if ( any( grepl( "interpolate", runmode) ) ) {
-        S = stmv_attach( p$storage.backend, p$ptr$S )
-        if (length( which (is.finite(S[]))) == 0 ) {
-          if (variogram_source =="saved_state") {
-            if (!file.exists(p$saved_state_fn$stats)) stop( "Variogram stats not found.")
-            sS = NULL
-            load(p$saved_state_fn$stats)
-            if (is.null(sS)) stop( "Variogram stats empty.")
-            S[] = sS[]
-            sS = NULL
-          }
-        }
-        if (length( which (is.finite(S[]))) == 0 ) {
-          if (variogram_source =="stmv.statistics") {
-            fn = file.path( p$stmvSaveDir, paste( "stmv.statistics", "rdata", sep=".") )
-            if (!file.exists(fn)) stop( "stmv.stats not found")
-            stats = NULL
-            load(fn)
-            if (is.null(stats)) stop ("stmv.stats empty")
-            Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
-            Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
-            nx = length(seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ))
-            ny = length(seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ) )
-            if (nx*ny != nrow(S) ) stop( "stmv.statistics has the wrong dimensionality/size" )
-            for ( i in 1:length( p$statsvars ) ) {
-              # linear interpolation
-              u = as.image( stats[,i], x=Ploc[,], na.rm=TRUE, nx=nx, ny=ny )
-              S[,i] = as.vector( fields::interp.surface( u, loc=Sloc[] ) ) # linear interpolation
-            }
-            nx = ny = u = stats = NULL
-          }
-        }
-      }
+      stmv_db(p=p, DS="save_current_state", runmode="scale", datasubset="statistics") # temp save to disk
+      message( "||| Time used for scale estimation: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n"  )
     }
 
     # -----------------------------------------------------
@@ -745,17 +614,16 @@ stmv = function( p, runmode=NULL,
         interp_runmode = paste("interpolate_", j, sep="")
         message( "\n||| Entering <", interp_runmode, "> stage: ", format(Sys.time()) , "\n" )
         success = FALSE
-        if ( "restart_load" %in% runmode ) success = stmv_db(p=p, DS="load_saved_state", runmode=interp_runmode)
-        if (success) next()
-        p$clusters = p$stmv_runmode[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
-        p$local_interpolation_correlation = p$stmv_autocorrelation_interpolation[j]
-
-        currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
-        if ( length(currentstatus$todo) < length(p$clusters)) break()
-        parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  )
-        stmv_db(p=p, DS="save_current_state", runmode=interp_runmode)
-        message( paste( "Time used for <interpolate", j, ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
-
+        if ( "restart_load" %in% runmode ) success = stmv_db(p=p, DS="load_saved_state", runmode=interp_runmode, datasubset="predictions" )
+        if (!success) {
+          p$clusters = p$stmv_runmode[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
+          p$local_interpolation_correlation = p$stmv_autocorrelation_interpolation[j]
+          currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
+          if ( length(currentstatus$todo) < length(p$clusters)) break()
+          parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  )
+          stmv_db(p=p, DS="save_current_state", runmode=interp_runmode, datasubset="predictions")
+          message( paste( "Time used for <interpolate", j, ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
+        }
       }
       p = p0
     }
@@ -765,18 +633,19 @@ stmv = function( p, runmode=NULL,
       message( "\n||| Entering <interpolate force complete> stage: ", format(Sys.time()),  "\n" )
       # finalize all interpolations where there are missing data/predictions using
       # interpolation based on data and augmented by previous predictions
-      # NOTE:: no covariates are used .. only mba
+      # NOTE:: no covariates are used ... linear interpolation is safe and fast as majority of data should have been predicted cleanly
       success = FALSE
-      if ( "restart_load" %in% runmode )  success = stmv_db(p=p, DS="load_saved_state", runmode="interpolate_force_complete")
-      if (success) next()
-      p$clusters = p$stmv_runmode[["interpolate_force_complete"]] # as ram reqeuirements increase drop cpus
-      p$stmv_local_modelengine = "linear"
-      p$time_start_runmode = Sys.time()
-      currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
-      if ( length(currentstatus$todo) < length(p$clusters)) break()
-      parallel_run( stmv_interpolate_force_complete, p=p, runindex=list( time_index=1:p$nt ))
-      stmv_db(p=p, DS="save_current_state", runmode="interpolate_force_complete")
-      message( "||| Time used for <interpolate_force_complete>: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" )
+      if ( "restart_load" %in% runmode )  success = stmv_db(p=p, DS="load_saved_state", runmode="interpolate_force_complete", datasubset="predictions")
+      if (!success) {
+        p$clusters = p$stmv_runmode[["interpolate_force_complete"]] # as ram reqeuirements increase drop cpus
+        p$stmv_local_modelengine = "linear"
+        p$time_start_runmode = Sys.time()
+        currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
+        if ( length(currentstatus$todo) < length(p$clusters)) break()
+        parallel_run( stmv_interpolate_force_complete, p=p, runindex=list( time_index=1:p$nt ))
+        stmv_db(p=p, DS="save_current_state", runmode="interpolate_force_complete", datasubset="predictions")
+        message( "||| Time used for <interpolate_force_complete>: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" )
+      }
     }
 
   }
