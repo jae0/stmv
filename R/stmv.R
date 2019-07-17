@@ -134,12 +134,15 @@ stmv = function( p, runmode=NULL,
   if ( any(grepl("globalmodel", runmode) ) ) {
     if ( exists("stmv_global_modelengine", p) ) {
       if ( p$stmv_global_modelengine !="none" ) {
-        if ( p$stmv_global_modelformula !="none" ) stmv_db( p=p, DS="global_model.redo", B=DATA$input )
+        if ( p$stmv_global_modelformula !="none" ) {
+          stmv_db( p=p, DS="global_model.redo", B=DATA$input )
+        }
         if ( any(grepl("globalmodel.only", runmode)))  return( stmv_db( p=p, DS="global_model" ) )
+        # model complete .. now predict to get residuals
         if ( p$stmv_global_modelengine == "userdefined") {
-          covmodel = stmv_db( p=p, DS="global_model")
+          global_model = stmv_db( p=p, DS="global_model")
           # TODO MUST find a generic form as below
-          # # Ypreds = predict(covmodel, type="link", se.fit=FALSE )  ## TODO .. keep track of the SE
+          # # Ypreds = predict(global_model, type="link", se.fit=FALSE )  ## TODO .. keep track of the SE
           if (!exists("predict", p$stmv_global_model)) {
             message( "||| p$stmv_global_model$predict =' " )
             message( "|||   predict( global_model, newdata=pa, type='link', se.fit=TRUE )' " )
@@ -147,20 +150,18 @@ stmv = function( p, runmode=NULL,
             stop()
           }
           preds = try( eval(parse(text=pp$stmv_global_model$predict )) )
-          preds = p$stmv_global_model$predict( covmodel )  # needs to be tested. .. JC
-          Ydata  = Ydata - preds # ie. internal (link) scale
+          preds = p$stmv_global_model$predict( global_model )  # needs to be tested. .. JC
+          Ydata  = Ydata - preds # ie. internalR (link) scale
           Yq = quantile( Ydata, probs=robustify_quantiles )
         } else {
           # at present only those that have a predict and residuals methods ...
-          covmodel = stmv_db( p=p, DS="global_model")
-          Ydata  = residuals(covmodel, type="working") # ie. internal (link) scale
+          global_model = stmv_db( p=p, DS="global_model")
+          Ydata  = residuals(global_model, type="working") # ie. internal (link) scale
           Yq = quantile( Ydata, probs=c(0.0005, 0.9995) )  # extreme data can make convergence slow and erratic 99.9%CI
         }
         Ydata[ Ydata < Yq[1] ] = Yq[1]
         Ydata[ Ydata > Yq[2] ] = Yq[2]
-        covmodel =NULL
-        Yq = NULL
-
+        global_model =NULL
       }
     }
   }
@@ -551,20 +552,20 @@ stmv = function( p, runmode=NULL,
               if (exists("linkinv", p$stmv_global_family)) inputdata = p$stmv_global_family$linkinv( inputdata )
             }
           }
-          if (exists("stmv_Y_transform", p)) inputdata = p$stmv_Y_transform$invers( inputdata )
-          inputdata = global_model$data - inputdata
+          global_model$data[, p$variables$Y ] = global_model$data[, p$variables$Y ] - inputdata  # update to current estimate of fixed effects
+          inputdata = global_model$data
           global_model = NULL
           gc()
-          global_model = stmv_db( p=p, DS="global_model.redo", B=inputdata, savedata=FALSE )  # do not overwrite initial model
+          global_model = stmv_db( p=p, DS="global_model.redo", B=inputdata,  savedata=FALSE )  # do not overwrite initial model
           inputdata = NULL
         }
         devold = dev
-        YYY = predict( global_model, type="link", se.fit=TRUE )  # determine bounds from data
         global_model$data = NULL  # reduce file size/RAM
-        Yq = quantile( YYY$fit, probs=robustify_quantiles )  ## 99.9% CI
-        YYY = NULL
         gc()
         parallel_run( FUNC=stmv_predict_globalmodel, p=p, runindex=list( pnt=1:p$nt ), Yq=Yq, global_model=global_model )
+        Ydata  = residuals(global_model, type="working") # ie. internal (link) scale
+        Y = stmv_attach( p$storage.backend, p$ptr$Y )
+        Y[] = Ydata[]  # update Ydata ...
         global_model = NULL
         p$time_covariates = round(difftime( Sys.time(), p$time_covariates_0 , units="hours"), 3)
         message( paste( "||| Time taken to predict covariate surface (hours):", p$time_covariates ) )
