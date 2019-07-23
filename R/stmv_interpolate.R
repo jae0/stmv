@@ -148,10 +148,10 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
     # nu checks
     if ( !is.finite(nu) ) {
-      Sflag[Si] %in% E[["variogram_failure"]]
+      Sflag[Si] = E[["variogram_failure"]]
     } else {
       if ( (nu < 0.01 ) | (nu > 5) ) {
-        Sflag[Si] %in% E[["variogram_range_limit"]]
+        Sflag[Si] = E[["variogram_range_limit"]]
       }
     }
 
@@ -229,7 +229,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
     stmv_distance_prediction = localrange * p$stmv_distance_prediction_fraction # this is a half window km
     # construct prediction/output grid area ('pa')
-    windowsize.half = floor(stmv_distance_prediction/p$pres) # convert distance to discretized increments of row/col indices; stmv_distance_prediction = 0.75* stmv_distance_statsgrid (unless overridden)
+    windowsize.half = floor(stmv_distance_prediction/p$pres) + 1L  # convert distance to discretized increments of row/col indices; stmv_distance_prediction = 0.75* stmv_distance_statsgrid (unless overridden)
 
     # construct data (including covariates) for prediction locations (pa)
     pa = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=windowsize.half ) )

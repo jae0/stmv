@@ -864,7 +864,7 @@ stmv = function( p, runmode=NULL,
     if ( "restart_load" %in% runmode )  success = stmv_db(p=p, DS="load_saved_state", runmode="interpolate_force_complete")
     if (success) next()
     p$clusters = p$stmv_runmode[["interpolate_force_complete"]] # as ram reqeuirements increase drop cpus
-    p$stmv_local_modelengine = "linear"
+    p$stmv_force_complete_method = "linear"
     p$time_start_runmode = Sys.time()
     currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
     if ( length(currentstatus$todo) < length(p$clusters)) break()

@@ -74,13 +74,13 @@ stmv_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvarso
     names(datgridded)[which(names(datgridded)=="mean")] = p$variables$Y
     names(datgridded)[which(names(datgridded)=="sd")] = paste(p$variables$Y, "sd", sep=".")
 
-    windowsize.half = floor(distance/p$pres)
+    windowsize.half = floor(distance/p$pres) + 1L
     pa_w = -windowsize.half : windowsize.half # default window size
     # pa_w = pa_w[ -length(pa_w)] # must be even
     pa_w_n = length(pa_w)
     adims = c(p$nt, pa_w_n, pa_w_n )
     datgridded$id = array_map( "3->1",
-      coords = round( cbind(
+      coords = trunc( cbind(
         ( (datgridded[,p$variables$TIME ] - p$prediction.ts[1] ) / p$tres) + 1 ,
         ( windowsize.half + (datgridded[,p$variables$LOCS[1]] - sloc[1]) / p$pres) + 1,
         ( windowsize.half + (datgridded[,p$variables$LOCS[2]] - sloc[2]) / p$pres) + 1)),
