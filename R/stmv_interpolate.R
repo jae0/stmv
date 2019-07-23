@@ -123,11 +123,15 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     if (is.finite(nu+phi)) localrange = matern_phi2distance( phi=phi, nu=nu, cor=p$local_interpolation_correlation )
 
     # range checks
-    if ( !is.finite(localrange) )  {
+    if ( length(localrange)==0 )  {
       Sflag[Si] %in% E[["variogram_failure"]]
       localrange = global_range
     }
 
+    if ( !is.finite(localrange) )  {
+      Sflag[Si] %in% E[["variogram_failure"]]
+      localrange = global_range
+    }
 
     if ( localrange < distance_limits[1] ) {
       Sflag[Si] %in% E[["variogram_range_limit"]]
