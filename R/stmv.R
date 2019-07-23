@@ -608,25 +608,26 @@ stmv = function( p, runmode=NULL,
       p = p0
     }
 
-    # --------------------
-    if ("interpolate_force_complete" %in% runmode) {
-      message( "\n||| Entering <interpolate force complete> stage: ", format(Sys.time()),  "\n" )
-      # finalize all interpolations where there are missing data/predictions using
-      # interpolation based on data and augmented by previous predictions
-      # NOTE:: no covariates are used ... linear interpolation is safe and fast as majority of data should have been predicted cleanly
-      success = FALSE
-      if ( "restart_load" %in% runmode )  success = stmv_db(p=p, DS="load_saved_state", runmode="interpolate_force_complete", datasubset="predictions")
-      if (!success) {
-        p$clusters = p$stmv_runmode[["interpolate_force_complete"]] # as ram reqeuirements increase drop cpus
-        p$stmv_local_modelengine = "linear"
-        p$time_start_runmode = Sys.time()
-        currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
-        if ( length(currentstatus$todo) < length(p$clusters)) break()
-        parallel_run( stmv_interpolate_force_complete, p=p, runindex=list( time_index=1:p$nt ))
-        stmv_db(p=p, DS="save_current_state", runmode="interpolate_force_complete", datasubset="predictions")
-        message( "||| Time used for <interpolate_force_complete>: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" )
-      }
-    }
+
+
+  # --------------------
+
+
+  if ("interpolate_force_complete" %in% runmode) {
+    message( "\n||| Entering <interpolate force complete> stage: ", format(Sys.time()),  "\n" )
+    # finalize all interpolations where there are missing data/predictions using
+    # interpolation based on data and augmented by previous predictions
+    # NOTE:: no covariates are used .. only mba
+    success = FALSE
+    if ( "restart_load" %in% runmode )  success = stmv_db(p=p, DS="load_saved_state", runmode="interpolate_force_complete")
+    if (success) next()
+    p$clusters = p$stmv_runmode[["interpolate_force_complete"]] # as ram reqeuirements increase drop cpus
+    p$stmv_force_complete_method = "linear"
+    p$time_start_runmode = Sys.time()
+    currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
+    if ( length(currentstatus$todo) < length(p$clusters)) break()
+    parallel_run( stmv_interpolate_force_complete, p=p, runindex=list( time_index=1:p$nt ))
+    stmv_db(p=p, DS="save_current_state", runmode="interpolate_force_complete")
 
   }
 

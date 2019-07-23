@@ -489,8 +489,8 @@
       S = stmv_attach( p$storage.backend, p$ptr$S )
       Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
 
-      Sloc_nplat = ceiling( diff( p$corners$plat) / p$stmv_distance_statsgrid)
-      Sloc_nplon = ceiling( diff( p$corners$plon) / p$stmv_distance_statsgrid)
+      Sloc_nplat = floor( diff( p$corners$plat) / p$stmv_distance_statsgrid ) + 1L
+      Sloc_nplon = floor( diff( p$corners$plon) / p$stmv_distance_statsgrid ) + 1L
 
       stats = matrix( NaN, ncol=length( p$statsvars ), nrow=nrow( Ploc) )  # output data .. ff does not handle NA's .. using NaN for now
       colnames(stats) = p$statsvars

@@ -1,5 +1,5 @@
 
-stmv_interpolate_force_complete = function( ip=NULL, p, qn = c(0.005, 0.995) ) {
+stmv_interpolate_force_complete = function( ip=NULL, p, qn = c(0.005, 0.995), eps=1e-9 ) {
 
   #// designed to be called from stmv
   #// for the sake of speed and parallelization, the kernel density method via fft is written out again .. it is taken from fields::smooth.2d
@@ -10,6 +10,7 @@ stmv_interpolate_force_complete = function( ip=NULL, p, qn = c(0.005, 0.995) ) {
     currentstatus = stmv_statistics_status( p=p )
     p = parallel_run( p=p, runindex=list( time_index=1:p$nt )  )
     ip = 1:p$nruns
+    eps=1e-9
     debugging=TRUE
   }
 
@@ -31,11 +32,15 @@ stmv_interpolate_force_complete = function( ip=NULL, p, qn = c(0.005, 0.995) ) {
   nc = p$nplats
 
 
+
   if (p$stmv_force_complete_method=="fft") {
 
     tol = 1e-9
     x_r = range(Ploc[,1])
     x_c = range(Ploc[,2])
+
+    dr = dx
+    dc = dy
 
     # dr = ( diff(x_r) + diff(x_c) ) / 2  # system size in user units
     # nr = floor( diff(x_r)/p$pres ) + 1
@@ -44,29 +49,50 @@ stmv_interpolate_force_complete = function( ip=NULL, p, qn = c(0.005, 0.995) ) {
     nr2 = 2 * nr
     nc2 = 2 * nc
 
-    # do this here as the Stats are from the most reliable estimates
-    nu  = median( S[,which( p$statsvars=="nu"  )], na.rm=TRUE )
-    phi = median( S[,which( p$statsvars=="phi" )], na.rm=TRUE )
+    range_95 = median( S[,which( p$statsvars=="localrange" )], na.rm=TRUE  )
+    nu  = 0.5 ; #    --- exponential
 
+    phi = matern_distance2phi( distance=range_95, nu=nu  )
+
+  # constainer for spatial filters
+    grid.list = list((1:nr2) * dx, (1:nc2) * dy)
+    # dgrid = as.matrix(expand.grid(grid.list))  # a bit slower
+    dgrid = expand_grid_fast(  grid.list[[1]],  grid.list[[2]] )
+    dimnames(dgrid) = list(NULL, names(grid.list))
+    attr(dgrid, "grid.list") = grid.list
+    grid.list = NULL
+
+    center = matrix(c((dx * nr), (dy * nc)), nrow = 1, ncol = 2)
 
     # spatial autocorrelation filter
     mC = matrix(0, nrow = nr2, ncol = nc2)
-    mC[nr, nc] = 1  # center
+    mC[nr, nc] = 1
+    mC_fft = 1 / fftwtools::fftw2d(mC)  # multiplication is faster than division
+    mC = NULL
 
-    dgrid = make.surface.grid(list((1:nr2) * dx, (1:nc2) * dy))
-    center = matrix(c((dx * nr2)/2, (dy * nc2)/2), nrow = 1, ncol = 2)
+    vgm = NA
 
-  vgm = NA
+    origin = c(x_r[1], x_c[1])
+    resolution = c(dx, dy)
 
-  theta.Taper = vgm$distances[ find_intersection( vgm$ac, threshold=p$stmv_autocorrelation_fft_taper ) ]
-    theta.Taper = theta.Taper * p$stmv_fft_taper_fraction # fraction of the distance to 0 correlation; sqrt(0.5) = ~ 70% of the variability (associated with correlation = 0.5)
+    # precompute a few things that are used repeatedly for time-specific variograms
+    xy = expand_grid_fast( c(-(nr-1):0, 0:(nr-1)) * dr,  c(-(nc-1):0, 0:(nc-1)) * dc )
+    distances = sqrt(xy[,1]^2 + xy[,2]^2)
+    dmax = max(distances, na.rm=TRUE ) * 0.4  # approx nyquist distance (<0.5 as corners exist)
+    breaks = seq( 0, dmax, length.out=nr)
+    db = breaks[2] - breaks[1]
+    # angles = atan2( xy[,2], xy[,1])  # not used
+    zz = cut( distances, breaks=c(breaks, max(breaks)+db), label=breaks+(db/2) )
+    xy = NULL
+    distances = NULL
+    breaks = NULL
 
-    sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=phi, smoothness=nu,
-      Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
-    sp.covar = as.surface(dgrid, c(sp.covar))$z
-    sp.covar.kernel = fft(sp.covar) / {fft(mC) * nr2 * nc2}  # covar centered on middle of matrix
+    fY = matrix(0, nrow = nr2, ncol = nc2)
+    fN = matrix(0, nrow = nr2, ncol = nc2)
 
-    dgrid = sp.covar = mC = NULL
+    sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=phi, smoothness=nu )
+    sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
+    sp.covar = fftwtools::fftw2d(sp.covar) * mC_fft
 
     for ( iip in ip ) {
 
@@ -76,33 +102,45 @@ stmv_interpolate_force_complete = function( ip=NULL, p, qn = c(0.005, 0.995) ) {
       if (length( tofill) > 0 ) {
 
         rY = range( P[,ww], na.rm=TRUE )
+        fY = fN = matrix(0, nrow = nr2, ncol = nc2 ) # density
 
-        mY = mN = matrix(0, nrow = nr2, ncol = nc2 ) # density
+    # bounds check: make sure predictions exist
+        zmean = mean(P[,ww], na.rm=TRUE)
+        zsd = sd(P[,ww], na.rm=TRUE)
+        zvar = zsd^2
 
-        mY[1:nr,1:nc] = P[,ww] # fill with data in correct locations
-        mY[!is.finite(mY)] = 0
+        fY[1:nr,1:nc] = (P[,ww] - zmean) / zsd # zscore -- making it mean 0 removes the DC component,  # fill with data in correct locations
+        fY[!is.finite(fY)] = 0
 
-        mN[1:nr,1:nc] = ifelse( is.finite( mY[1:nr,1:nc] ), 1, 0)  # locations with data
-        mN[!is.finite(mN)] = 0
+        fN[1:nr,1:nc] = ifelse( is.finite( fY[1:nr,1:nc] ), 1, 0)  # locations with data
+        fN[!is.finite(fN)] = 0
 
-        # estimates based upon a global nu,phi .. they will fit to the immediate area near data and so retain their structure
-        fN = Re(fft(fft(mN) * sp.covar.kernel, inverse = TRUE))[1:nr,1:nc]
-        fY = Re(fft(fft(mY) * sp.covar.kernel, inverse = TRUE))[1:nr,1:nc]
-        Z = ifelse((fN > tol), (fY/fN), NA)
-        fY = fN = mN = mY = NULL
+        fY = fftwtools::fftw2d(fY)
+        fN = fftwtools::fftw2d(fN)
 
-        iZ = which( !is.finite( Z))
-        if (length(iZ) > 0) Z[iZ] = NA
+        fY = Re( fftwtools::fftw2d( sp.covar * fY, inverse = TRUE))[1:nr, 1:nc]
+        fN = Re( fftwtools::fftw2d( sp.covar * fN, inverse = TRUE))[1:nr, 1:nc]
 
-        lb = which( Z < rY[1] )
-        if (length(lb) > 0) Z[lb] = NA
-        ub = which( Z > rY[2] )
-        if (length(ub) > 0) Z[ub] = NA
+        X = ifelse((fN > eps), (fY/fN), NA)
+        X[!is.finite(X)] = NA
+        X = X * zsd + zmean # revert to input scale
+        if (0) {
+          dev.new()
+          surface(list(x=c(1:nr)*dr, y=c(1:nc)*dc, z=X), xaxs="r", yaxs="r")
+        }
 
-        # image(Z)
-        Z[ Z > P_qn[2] ]=NA
-        Z[ Z < P_qn[1] ]=NA
-        P[,ww][tofill] = Z[tofill]
+        iX = which( !is.finite( X))
+        if (length(iX) > 0) X[iX] = NA
+
+        lb = which( X < rY[1] )
+        if (length(lb) > 0) X[lb] = rY[1]
+        ub = which( X > rY[2] )
+        if (length(ub) > 0) X[ub] = rY[2]
+
+        # image(X)
+        X[ X > P_qn[2] ]=P_qn[2]
+        X[ X < P_qn[1] ]=P_qn[1]
+        P[,ww][tofill] = X[tofill]
       }
 
 
@@ -110,32 +148,47 @@ stmv_interpolate_force_complete = function( ip=NULL, p, qn = c(0.005, 0.995) ) {
       tofill = which( ! is.finite( Psd[,ww] ) )
       if (length( tofill) > 0 ) {
 
+        fY = fN = matrix(0, nrow = nr2, ncol = nc2 ) # density
+
+    # bounds check: make sure predictions exist
         rY = range( Psd[,ww], na.rm=TRUE )
+        zmean = mean(Psd[,ww], na.rm=TRUE)
+        zsd = sd(Psd[,ww], na.rm=TRUE)
+        zvar = zsd^2
 
-        # counts
-        mY = matrix(0, nrow = nr2, ncol = nc2 ) # density
-        mY[1:nr,1:nc] = Psd[,ww] # fill with data in correct locations
-        mN = ifelse( is.finite( mY ), 1, 0)  # locations with data
-        mY[!is.finite(mY)] = 0  # this must come after the above
+        fY[1:nr,1:nc] = (Psd[,ww] - zmean) / zsd # zscore -- making it mean 0 removes the DC component, fill with data in correct locations
+        fY[!is.finite(fY)] = 0
 
-        # estimates based upon a global nu,phi .. they will fit to the immediate area near data and so retain their structure
-        fN = Re(fft(fft(mN) * sp.covar.kernel, inverse = TRUE))[1:nr,1:nc]
-        fY = Re(fft(fft(mY) * sp.covar.kernel, inverse = TRUE))[1:nr,1:nc]
-        Z = ifelse((fN > tol), (fY/fN), NA)
-        fY = fN = mN = mY = NULL
+        fN[1:nr,1:nc] = ifelse( is.finite( fY[1:nr,1:nc] ), 1, 0)  # locations with data
+        fN[!is.finite(fN)] = 0
 
-        iZ = which( !is.finite( Z))
-        if (length(iZ) > 0) Z[iZ] = NA
+        fY = fftwtools::fftw2d(fY)
+        fN = fftwtools::fftw2d(fN)
 
-        lb = which( Z < 0 )
-        if (length(lb) > 0) Z[lb] = NA
-        ub = which( Z > rY[2] )
-        if (length(ub) > 0) Z[ub] = NA
-        # image(Z)
+        fY = Re( fftwtools::fftw2d( sp.covar * fY, inverse = TRUE))[1:nr, 1:nc]
+        fN = Re( fftwtools::fftw2d( sp.covar * fN, inverse = TRUE))[1:nr, 1:nc]
 
-        Z[ Z > Psd_qn[2] ]=NA
-        Z[ Z < 0 ]=NA
-        Psd[,ww][tofill] = Z[ tofill]
+        X = ifelse((fN > eps), (fY/fN), NA)
+        X[!is.finite(X)] = NA
+        X = X * zsd + zmean # revert to input scale
+        if (0) {
+          dev.new()
+          surface(list(x=c(1:nr)*dr, y=c(1:nc)*dc, z=X), xaxs="r", yaxs="r")
+        }
+
+
+        iX = which( !is.finite( X))
+        if (length(iX) > 0) X[iX] = NA
+
+        lb = which( X < 0 )
+        if (length(lb) > 0) X[lb] = NA
+        ub = which( X > rY[2] )
+        if (length(ub) > 0) X[ub] = NA
+        # image(X)
+
+        X[ X > Psd_qn[2] ]=NA
+        X[ X < 0 ]=NA
+        Psd[,ww][tofill] = X[ tofill]
       }
 
     }
@@ -157,20 +210,20 @@ stmv_interpolate_force_complete = function( ip=NULL, p, qn = c(0.005, 0.995) ) {
         # counts
         rY = range( P[,ww], na.rm=TRUE )
 
-        Z = mba.surf(cbind(Ploc[,], P[,ww]) , no.X=nr, no.Y=nc, extend=TRUE)$xyz.est$z
+        X = mba.surf(cbind(Ploc[,], P[,ww]) , no.X=nr, no.Y=nc, extend=TRUE)$xyz.est$z
 
-        iZ = which( !is.finite( Z))
-        if (length(iZ) > 0) Z[iZ] = NA
+        iX = which( !is.finite( X))
+        if (length(iX) > 0) X[iX] = NA
 
-        lb = which( Z < rY[1] )
-        if (length(lb) > 0) Z[lb] = NA
-        ub = which( Z > rY[2] )
-        if (length(ub) > 0) Z[ub] = NA
+        lb = which( X < rY[1] )
+        if (length(lb) > 0) X[lb] = NA
+        ub = which( X > rY[2] )
+        if (length(ub) > 0) X[ub] = NA
 
-        # image(Z)
-        Z[ Z > P_qn[2] ]=NA
-        Z[ Z < P_qn[1] ]=NA
-        P[,ww][tofill] = Z[tofill]
+        # image(X)
+        X[ X > P_qn[2] ]=NA
+        X[ X < P_qn[1] ]=NA
+        P[,ww][tofill] = X[tofill]
       }
 
       ## SD estimates
@@ -179,20 +232,20 @@ stmv_interpolate_force_complete = function( ip=NULL, p, qn = c(0.005, 0.995) ) {
 
         rY = range( Psd[,ww], na.rm=TRUE )
 
-        Z = mba.surf( cbind(Ploc[], Psd[,ww]) , no.X=nr, no.Y=nc, extend=TRUE)$z
+        X = mba.surf( cbind(Ploc[], Psd[,ww]) , no.X=nr, no.Y=nc, extend=TRUE)$z
 
-        iZ = which( !is.finite( Z))
-        if (length(iZ) > 0) Z[iZ] = NA
+        iX = which( !is.finite( X))
+        if (length(iX) > 0) X[iX] = NA
 
-        lb = which( Z < 0 )
-        if (length(lb) > 0) Z[lb] = NA
-        ub = which( Z > rY[2] )
-        if (length(ub) > 0) Z[ub] = NA
-        # image(Z)
+        lb = which( X < 0 )
+        if (length(lb) > 0) X[lb] = NA
+        ub = which( X > rY[2] )
+        if (length(ub) > 0) X[ub] = NA
+        # image(X)
 
-        Z[ Z > Psd_qn[2] ]=NA
-        Z[ Z < 0 ]=NA
-        Psd[,ww][tofill] = Z[ tofill]
+        X[ X > Psd_qn[2] ]=NA
+        X[ X < 0 ]=NA
+        Psd[,ww][tofill] = X[ tofill]
 
       }
     }
@@ -215,20 +268,20 @@ stmv_interpolate_force_complete = function( ip=NULL, p, qn = c(0.005, 0.995) ) {
         rY = range( P[,ww], na.rm=TRUE )
 
         u = as.image( P[,ww], x=Ploc[,], na.rm=TRUE, nx=nr, ny=nc )
-        Z = as.vector( fields::interp.surface( u, loc=Ploc[,] ) ) # linear interpolation
+        X = as.vector( fields::interp.surface( u, loc=Ploc[,] ) ) # linear interpolation
         u = NULL
 
-        iZ = which( !is.finite( Z))
-        if (length(iZ) > 0) Z[iZ] = NA
-        lb = which( Z < rY[1] )
-        if (length(lb) > 0) Z[lb] = NA
-        ub = which( Z > rY[2] )
-        if (length(ub) > 0) Z[ub] = NA
+        iX = which( !is.finite( X))
+        if (length(iX) > 0) X[iX] = NA
+        lb = which( X < rY[1] )
+        if (length(lb) > 0) X[lb] = NA
+        ub = which( X > rY[2] )
+        if (length(ub) > 0) X[ub] = NA
 
-        # image(Z)
-        Z[ Z > P_qn[2] ]=NA
-        Z[ Z < P_qn[1] ]=NA
-        P[,ww][tofill] = Z[ tofill]
+        # image(X)
+        X[ X > P_qn[2] ]=NA
+        X[ X < P_qn[1] ]=NA
+        P[,ww][tofill] = X[ tofill]
       }
 
       ## SD estimates
@@ -238,20 +291,20 @@ stmv_interpolate_force_complete = function( ip=NULL, p, qn = c(0.005, 0.995) ) {
         rY = range( Psd[,ww], na.rm=TRUE )
 
         u = as.image( Psd[,ww], x=Ploc[,], na.rm=TRUE, nx=nr, ny=nc )
-        Z = as.vector( fields::interp.surface( u, loc=Ploc[,] ) ) # linear interpolation
+        X = as.vector( fields::interp.surface( u, loc=Ploc[,] ) ) # linear interpolation
         u = NULL
 
-        iZ = which( !is.finite( Z))
-        if (length(iZ) > 0) Z[iZ] = NA
-        lb = which( Z < 0 )
-        if (length(lb) > 0) Z[lb] = NA
-        ub = which( Z > rY[2] )
-        if (length(ub) > 0) Z[ub] = NA
-        # image(Z)
+        iX = which( !is.finite( X))
+        if (length(iX) > 0) X[iX] = NA
+        lb = which( X < 0 )
+        if (length(lb) > 0) X[lb] = NA
+        ub = which( X > rY[2] )
+        if (length(ub) > 0) X[ub] = NA
+        # image(X)
 
-        Z[ Z > Psd_qn[2] ]=NA
-        Z[ Z < 0 ]=NA
-        Psd[,ww][tofill] = Z[ tofill]
+        X[ X > Psd_qn[2] ]=NA
+        X[ X < 0 ]=NA
+        Psd[,ww][tofill] = X[ tofill]
 
       }
     }

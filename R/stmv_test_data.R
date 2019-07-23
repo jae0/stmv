@@ -107,16 +107,16 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
     S = lonlat2planar( S, proj.type=p$internal.crs )
     S$lon = NULL
     S$lat = NULL
-    S$plon = floor(S$plon/discret) * discret
-    S$plat = floor(S$plat/discret) * discret
+    S$plon = floor(S$plon/discret +1L )* discret
+    S$plat = floor(S$plat/discret +1L) * discret
     dups = which(duplicated( paste( S$plon, S$plat) ) )
     if (length(dups) > 0 ) S = S[ -dups , ]
 
     B = lonlat2planar( B, proj.type=p$internal.crs )
     B$lon = NULL
     B$lat = NULL
-    B$plon = floor(B$plon/discret) * discret
-    B$plat = floor(B$plat/discret) * discret
+    B$plon = floor(B$plon/discret + 1L) * discret
+    B$plat = floor(B$plat/discret + 1L) * discret
     dups = which( duplicated( paste( B$plon, B$plat) ) )
     if (length(dups) > 0 ) B = B[ -dups , ]
 
