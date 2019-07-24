@@ -608,6 +608,7 @@ stmv = function( p, runmode=NULL,
       p = p0
     }
 
+  }
 
 
   # --------------------
