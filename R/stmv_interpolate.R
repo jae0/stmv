@@ -102,7 +102,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
   if ( global_nu < 0.01 | global_nu > 5) global_nu = 0.5
   global_phi = median( S[, i_phi], na.rm=TRUE )
   global_range = median( S[, i_localrange], na.rm=TRUE )
-  distance_limits = range( p$stmv_distance_scale )    # for range estimate
+  distance_limits = range( c(p$stmv_distance_scale, p$stmv_distance_statsgrid/10) )    # for range estimate
   if ( global_range < distance_limits[1] | global_range > distance_limits[2] ) global_range = median(distance_limits)
 
 

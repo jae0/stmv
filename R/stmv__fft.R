@@ -192,68 +192,69 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     local_phi = phi
     local_nu = nu
 
-    if (p$stmv_variogram_resolve_time) {
-      # create time-specific variograms
-      # fY * Conj(fY) == power spectra
-      acY = Re( fftwtools::fftw2d( fY * Conj(fY), inverse=TRUE)  ) # autocorrelation (amplitude)
-      acN = Re( fftwtools::fftw2d( fN * Conj(fN), inverse=TRUE)  ) # autocorrelation (amplitude) correction
-      X = ifelse(( acN > eps), (acY / acN), NA) # autocorrelation (amplitude)
-      acY = acN = NULL
-      # fftshift
-      X = rbind( X[((nr+1):nr2), (1:nc2)], X[(1:nr), (1:nc2)] )  # swap_up_down
-      X = cbind( X[1:nr2, ((nc+1):nc2)], X[1:nr2, 1:nc])  # swap_left_right
-      # zz (distance breaks) precomputed outside of loop
+    if(exists("stmv_variogram_resolve_time", p)) {
+      if (p$stmv_variogram_resolve_time) {
+        # create time-specific variograms
+        # fY * Conj(fY) == power spectra
+        acY = Re( fftwtools::fftw2d( fY * Conj(fY), inverse=TRUE)  ) # autocorrelation (amplitude)
+        acN = Re( fftwtools::fftw2d( fN * Conj(fN), inverse=TRUE)  ) # autocorrelation (amplitude) correction
+        X = ifelse(( acN > eps), (acY / acN), NA) # autocorrelation (amplitude)
+        acY = acN = NULL
+        # fftshift
+        X = rbind( X[((nr+1):nr2), (1:nc2)], X[(1:nr), (1:nc2)] )  # swap_up_down
+        X = cbind( X[1:nr2, ((nc+1):nc2)], X[1:nr2, 1:nc])  # swap_left_right
+        # zz (distance breaks) precomputed outside of loop
 
-      vgm = as.data.frame.table(tapply( X=X, INDEX=zz, FUN=mean, na.rm=TRUE ))
-      names(vgm) = c("distances", "ac")
-      vgm$distances = as.numeric(vgm$distances)
-      X = NULL
-      vgm$distances = as.numeric( as.character(vgm$distances))
-      vgm$sv =  zvar * (1-vgm$ac^2) # each sv are truly orthogonal
+        vgm = as.data.frame.table(tapply( X=X, INDEX=zz, FUN=mean, na.rm=TRUE ))
+        names(vgm) = c("distances", "ac")
+        vgm$distances = as.numeric(vgm$distances)
+        X = NULL
+        vgm$distances = as.numeric( as.character(vgm$distances))
+        vgm$sv =  zvar * (1-vgm$ac^2) # each sv are truly orthogonal
 
-    # plot(ac ~ distances, data=vgm   )
-    # plot(sv ~ distances, data=vgm   )
+      # plot(ac ~ distances, data=vgm   )
+      # plot(sv ~ distances, data=vgm   )
 
-      uu = which( (vgm$distances < dmax ) & is.finite(vgm$sv) )  # dmax ~ Nyquist freq
-      fit = try( stmv_variogram_optimization( vx=vgm$distances[uu], vg=vgm$sv[uu], plotvgm=FALSE,
-        stmv_internal_scale=dmax*0.75, cor=p$stmv_autocorrelation_localrange ))
+        uu = which( (vgm$distances < dmax ) & is.finite(vgm$sv) )  # dmax ~ Nyquist freq
+        fit = try( stmv_variogram_optimization( vx=vgm$distances[uu], vg=vgm$sv[uu], plotvgm=FALSE,
+          stmv_internal_scale=dmax*0.75, cor=p$stmv_autocorrelation_localrange ))
 
-      statvars_scale = c(
-        sdTotal = sd(dat[xi, p$variable$Y], na.rm=T),
-        sdSpatial = sqrt(fit$summary$varSpatial) ,
-        sdObs = sqrt(fit$summary$varObs),
-        phi = fit$summary$phi,
-        nu = fit$summary$nu,
-        localrange = fit$summary$localrange,
-        ndata=length(xi)
-      )
-      OT[ti, match( names(statvars_scale), p$statsvars )] = statvars_scale
-      uu = NULL
+        statvars_scale = c(
+          sdTotal = sd(dat[xi, p$variable$Y], na.rm=T),
+          sdSpatial = sqrt(fit$summary$varSpatial) ,
+          sdObs = sqrt(fit$summary$varObs),
+          phi = fit$summary$phi,
+          nu = fit$summary$nu,
+          localrange = fit$summary$localrange,
+          ndata=length(xi)
+        )
+        OT[ti, match( names(statvars_scale), p$statsvars )] = statvars_scale
+        uu = NULL
 
-      if ( !inherits(fit, "try-error") ) {
-        if (exists("summary", fit)) {
-          if ( exists("nu", fit$summary )) {
-            if ( is.finite( c(fit$summary$nu)) ) {
-              local_nu = fit$summary$nu
+        if ( !inherits(fit, "try-error") ) {
+          if (exists("summary", fit)) {
+            if ( exists("nu", fit$summary )) {
+              if ( is.finite( c(fit$summary$nu)) ) {
+                local_nu = fit$summary$nu
+              }
             }
-          }
-          if ( exists("phi", fit$summary )) {
-            if ( is.finite( c(fit$summary$phi)) ) {
-              local_phi = fit$summary$phi
+            if ( exists("phi", fit$summary )) {
+              if ( is.finite( c(fit$summary$phi)) ) {
+                local_phi = fit$summary$phi
+              }
             }
           }
         }
-      }
 
-      if (p$stmv_fft_taper_method == "empirical") {
-        theta.Taper = vgm$distances[ find_intersection( vgm$ac, threshold=p$stmv_autocorrelation_fft_taper ) ]
-        theta.Taper = theta.Taper * p$stmv_fft_taper_fraction # fraction of the distance to 0 correlation; sqrt(0.5) = ~ 70% of the variability (associated with correlation = 0.5)
+        if (p$stmv_fft_taper_method == "empirical") {
+          theta.Taper = vgm$distances[ find_intersection( vgm$ac, threshold=p$stmv_autocorrelation_fft_taper ) ]
+          theta.Taper = theta.Taper * p$stmv_fft_taper_fraction # fraction of the distance to 0 correlation; sqrt(0.5) = ~ 70% of the variability (associated with correlation = 0.5)
+        }
+        vgm = NULL
+        fit = NULL
+        gc()
       }
-      vgm = NULL
-      fit = NULL
-      gc()
     }
-
 
     if (p$stmv_fft_taper_method == "modelled") theta.Taper = matern_phi2distance( phi=local_phi, nu=local_nu, cor=p$stmv_autocorrelation_fft_taper )
     if (is.null(theta.Taper)) theta.Taper = theta.Taper_global
@@ -343,7 +344,14 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
 
   # lattice::levelplot( mean ~ plon + plat, data=pa, col.regions=heat.colors(100), scale=list(draw=TRUE) , aspect="iso" )
 
-  return( list( predictions=pa, stmv_stats=stmv_stats, stmv_localstats=OT ) )
+
+  if(exists("stmv_variogram_resolve_time", p)) {
+    if (p$stmv_variogram_resolve_time) {
+      return( list( predictions=pa, stmv_stats=stmv_stats, stmv_localstats=OT ) )
+    }
+  }
+
+  return( list( predictions=pa, stmv_stats=stmv_stats, stmv_localstats=NULL ) )
 
 
 }

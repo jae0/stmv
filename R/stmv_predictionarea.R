@@ -8,8 +8,8 @@ stmv_predictionarea = function(p, sloc, windowsize.half ) {
   pa_w_n = length(pa_w)
 
   # determine prediction locations and time slices
-  iwplon = floor( (sloc[1]-p$origin[1]) /p$pres) + 1 + pa_w
-  iwplat = floor( (sloc[2]-p$origin[2]) /p$pres) + 1 + pa_w
+  iwplon = floor( (sloc[1]-p$origin[1]) /p$pres) + pa_w
+  iwplat = floor( (sloc[2]-p$origin[2]) /p$pres) + pa_w
 
   pa = data.frame( iplon = rep.int(iwplon, pa_w_n) ,
                    iplat = rep.int(iwplat, rep.int(pa_w_n, pa_w_n)) )
@@ -20,8 +20,12 @@ stmv_predictionarea = function(p, sloc, windowsize.half ) {
 
   Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
   ploc_ids = array_map( "xy->1", Ploc[], gridparams=p$gridparams )
+  pa_ids = array_map( "2->1", pa[, c("iplon", "iplat")], gridparams=p$gridparams )
 
-  pa$i = match( array_map( "2->1", pa[, c("iplon", "iplat")], gridparams=p$gridparams ), ploc_ids )
+  pa$i = match( pa_ids, ploc_ids )
+
+  ploc_ids = NULL
+  pa_ids = NULL
 
   tokeep = which( is.finite(pa$i) )
   if (length(tokeep) < 5 ) return(NULL)
