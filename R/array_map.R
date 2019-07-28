@@ -7,6 +7,7 @@
     # origin min coord values
     # res resolution (dx, dy)
 
+
     if ( !is.null(gridparams) ) {
       dims = gridparams$dims
       origin = gridparams$origin
@@ -14,24 +15,46 @@
     }
 
     if (method=="xy->2") {
-      return( floor( cbind( (coords[,1]-origin[1])/res[1], (coords[,2]-origin[2])/res[2] ) ) + 1L )
+      return( round( cbind( (coords[,1]-origin[1])/res[1] , (coords[,2]-origin[2])/res[2]) +1L )  ) # do NOT use floor FP issues cause error
     }
 
     if (method=="xy->1") {
-      ij = floor( cbind( (coords[,1]-origin[1])/res[1], (coords[,2]-origin[2])/res[2] ) ) + 1L  # same as "xy->2"
-      return( ij[,1] + (ij[,2]-1L)*dims[1] ) # same as 2->1
+      ij = round( cbind( (coords[,1]-origin[1])/res[1], (coords[,2]-origin[2])/res[2] ) )  # same as "xy->2"
+      return( ij[,1] + ij[,2]*dims[1] +1L) # same as 2->1
     }
 
+    if (method=="1->xy") {
+      j = coords-1 # -1 converts to C-indexing
+      x = j %%  dims[1]
+      j = j %/% dims[1]
+      y = j
+      x = x * res[1] + origin[1]
+      y = y * res[2] + origin[2]
+      return( cbind(x,y) )  # +1 returns to R-indexing
+    }
+
+
+    if (method=="2->xy") {
+      # -1 to go to c-indexing
+      x = (coords[,1] - 1L) * res[1] + origin[1]
+      y = (coords[,2] - 1L) * res[2] + origin[2]
+      return( cbind(x,y) ) # same as 2->1
+    }
+
+
     if (method=="2->1") {
-      return( coords[,1] + (coords[,2]-1L)*dims[1] )
+      coords = coords -1L
+      return( coords[,1] + coords[,2]*dims[1] + 1L)  #+1 to get r-indexing
     }
 
     if (method=="3->1") {
-      return( coords[,1] + (coords[,2]-1L)*dims[1] + (coords[,3]-1L)*dims[1]*dims[2] )
+      coords = coords -1L
+      return( coords[,1] + coords[,2]*dims[1] + coords[,3]*dims[1]*dims[2] +1L )
     }
 
     if (method=="4->1") {
-      return( coords[,1] + (coords[,2]-1L)*dims[1] + (coords[,3]-1L)*dims[1]*dims[2] + (coords[,4]-1L)*dims[1]*dims[2]*dims[3] )
+      coords = coords -1L
+      return( coords[,1] + coords[,2]*dims[1] + coords[,3]*dims[1]*dims[2] + coords[,4]*dims[1]*dims[2]*dims[3] + 1L)
     }
 
 

@@ -78,7 +78,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
   if ( inc_logs > (nip /10)   ) {
     logpoints = ip[1]
   } else {
-    logpoints  = ip[ floor( seq( from=inc_logs, to=(nip-inc_logs), length.out=nlogs ) ) ]
+    logpoints  = ip[ round( seq( from=inc_logs, to=(nip-inc_logs), length.out=nlogs ) ) ]
   }
 
   if (debugging) {
@@ -233,7 +233,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
     stmv_distance_prediction = localrange * p$stmv_distance_prediction_fraction # this is a half window km
     # construct prediction/output grid area ('pa')
-    windowsize.half = floor(stmv_distance_prediction/p$pres) + 1L  # convert distance to discretized increments of row/col indices; stmv_distance_prediction = 0.75* stmv_distance_statsgrid (unless overridden)
+    windowsize.half = round(stmv_distance_prediction/p$pres) + 1L  # convert distance to discretized increments of row/col indices; stmv_distance_prediction = 0.75* stmv_distance_statsgrid (unless overridden)
 
     # construct data (including covariates) for prediction locations (pa)
     pa = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=windowsize.half ) )
@@ -265,8 +265,8 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       points( Sloc[Si,2] ~ Sloc[Si,1], col="blue" ) # statistical locations
       # statistical output locations
       grids= spatial_grid(p, DS="planar.coords" )
-      points( grids$plat[floor( (Sloc[Si,2]-p$origin[2])/p$pres) + 1]
-            ~ grids$plon[floor( (Sloc[Si,1]-p$origin[1])/p$pres) + 1] , col="purple", pch=25, cex=5 )
+      points( grids$plat[round( (Sloc[Si,2]-p$origin[2])/p$pres) + 1]
+            ~ grids$plon[round( (Sloc[Si,1]-p$origin[1])/p$pres) + 1] , col="purple", pch=25, cex=5 )
       points( Ploc[pa$i,2] ~ Ploc[ pa$i, 1] , col="black", pch=6, cex=0.7 ) # check on pa$i indexing -- prediction locations
     }
 

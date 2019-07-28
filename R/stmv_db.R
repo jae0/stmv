@@ -145,8 +145,8 @@
 
       ii = na.omit(hasdata)
       Yloc = stmv_attach(  p$storage.backend, p$ptr$Yloc )
-      yplon = floor( ( Yloc[ii,1] - p$origin[1] )/p$pres) + 1
-      yplat = floor( ( Yloc[ii,2] - p$origin[2] )/p$pres) + 1
+      yplon = round( ( Yloc[ii,1] - p$origin[1] )/p$pres) + 1
+      yplat = round( ( Yloc[ii,2] - p$origin[2] )/p$pres) + 1
       uu = unique( array_map( "2->1", cbind(yplon, yplat), c(p$nplons, p$nplats) ) )
       vv = array_map( "1->2", uu, c(p$nplons, p$nplats) )
 
@@ -489,8 +489,8 @@
       S = stmv_attach( p$storage.backend, p$ptr$S )
       Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
 
-      Sloc_nplat = floor( diff( p$corners$plat) / p$stmv_distance_statsgrid ) + 1L
-      Sloc_nplon = floor( diff( p$corners$plon) / p$stmv_distance_statsgrid ) + 1L
+      Sloc_nplat = round( diff( p$corners$plat) / p$stmv_distance_statsgrid ) + 1L
+      Sloc_nplon = round( diff( p$corners$plon) / p$stmv_distance_statsgrid ) + 1L
 
       stats = matrix( NaN, ncol=length( p$statsvars ), nrow=nrow( Ploc) )  # output data .. ff does not handle NA's .. using NaN for now
       colnames(stats) = p$statsvars
@@ -597,11 +597,11 @@
     # =--------------------
 
     if (DS %in% c("load_saved_state") ) {
-      returnflag = FALSE
+      returnflag = TRUE
 
-      if (datasubset == "all") datasubset = c( "P", "Psd", "Pn", "S", "Sflag" )
-      if (datasubset == "predictions") datasubset = c( "P", "Psd", "Pn"  )
-      if (datasubset == "statistics") datasubset = c( "S", "Sflag" )
+      if ("all" %in% datasubset) datasubset = c( "P", "Psd", "Pn", "S", "Sflag" )
+      if ("predictions" %in% datasubset) datasubset = c( "P", "Psd", "Pn"  )
+      if ("statistics" %in% datasubset) datasubset = c( "S", "Sflag" )
 
       # named differently to avoid collisions
       if ( "P" %in% datasubset ) {

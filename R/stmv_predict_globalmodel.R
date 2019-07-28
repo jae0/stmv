@@ -39,7 +39,7 @@ stmv_predict_globalmodel = function( ip=NULL, p, Yq=NULL, global_model=NULL ) {
         } else if ( nc == p$nt & nc == p$ny) {
           pa = cbind( pa, pu[,it] ) # ie. same time dimension as predictive data (space.annual.seasonal)
         } else if ( nc == p$ny & p$nt > p$ny)  {
-          iy = floor( (it-1) / p$nw ) + 1
+          iy = round( (it-1) / p$nw ) + 1
           pa = cbind( pa, pu[,iy] ) # ie., annual data (space.annual)
         } else if ( nc == p$nt & p$nt > p$ny) {
           pa = cbind( pa, pu[,it] ) # ie. same time dimension as predictive data (space.annual.seasonal)

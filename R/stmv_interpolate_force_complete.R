@@ -43,8 +43,8 @@ stmv_interpolate_force_complete = function( ip=NULL, p, qn = c(0.005, 0.995), ep
     dc = dy
 
     # dr = ( diff(x_r) + diff(x_c) ) / 2  # system size in user units
-    # nr = floor( diff(x_r)/p$pres ) + 1
-    # nc = floor( diff(x_c)/p$pres ) + 1
+    # nr = round( diff(x_r)/p$pres ) + 1
+    # nc = round( diff(x_c)/p$pres ) + 1
 
     nr2 = 2 * nr
     nc2 = 2 * nc

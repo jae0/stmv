@@ -14,8 +14,8 @@ stmv__mba = function( p=NULL, dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) {
   x_r = range(dat[,p$variables$LOCS[1]])
   x_c = range(dat[,p$variables$LOCS[2]])
 
-  nr = floor( diff(x_r)/p$pres +1 )
-  nc = floor( diff(x_c)/p$pres +1 )
+  nr = round( diff(x_r)/p$pres +1 )
+  nc = round( diff(x_c)/p$pres +1 )
 
   # final output grid
   # x_locs = expand_grid_fast(

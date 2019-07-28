@@ -4,8 +4,8 @@
     Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
     Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
     coo = Yloc[]
-    coo[,1] = floor( coo[,1] / p$pres  ) * p$pres
-    coo[,2] = floor( coo[,2] / p$pres  ) * p$pres
+    coo[,1] = round( coo[,1] / p$pres  ) * p$pres
+    coo[,2] = round( coo[,2] / p$pres  ) * p$pres
 
     iYP = match(
       stmv::array_map( "xy->1", coo[], gridparams=p$gridparams ),

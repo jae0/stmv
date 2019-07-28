@@ -63,8 +63,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   rr = diff(x_r)
   rc = diff(x_c)
 
-  nr = floor( rr/dx ) + 1
-  nc = floor( rc/dy ) + 1
+  nr = round( rr/dx ) + 1
+  nc = round( rc/dy ) + 1
 
   dr = rr/(nr-1)
   dc = rc/(nc-1)

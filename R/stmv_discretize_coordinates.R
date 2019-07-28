@@ -42,7 +42,7 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=N
         minresolution = diff(xr) / discretized_n
       }
 
-      coo = floor( coo  / minresolution + 1) * minresolution
+      coo = round( coo  / minresolution + 1) * minresolution
 
       if ( method=="default" ) {
         # basic discretization in 1D
@@ -104,8 +104,8 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=N
       minresolution = rep( dmin / discretized_n, 2)
     }
 
-    coo[,1] = floor( coo[,1] / minresolution[1] + 1) * minresolution[1]
-    coo[,2] = floor( coo[,2] / minresolution[2] + 1) * minresolution[2]
+    coo[,1] = round( coo[,1] / minresolution[1] + 1) * minresolution[1]
+    coo[,2] = round( coo[,2] / minresolution[2] + 1) * minresolution[2]
 
     if ( method=="default" ) {
       # basic discretization in 2D
@@ -172,9 +172,9 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=N
         minresolution = c( dmin / discretized_n, dmin / discretized_n, tmin/discretized_n )
       }
 
-      coo[,1] = floor( coo[,1] / minresolution[1] +1 ) * minresolution[1]
-      coo[,2] = floor( coo[,2] / minresolution[2] +1 ) * minresolution[2]
-      coo[,3] = floor( coo[,3] / minresolution[3] +1 ) * minresolution[3]
+      coo[,1] = round( coo[,1] / minresolution[1] +1 ) * minresolution[1]
+      coo[,2] = round( coo[,2] / minresolution[2] +1 ) * minresolution[2]
+      coo[,3] = round( coo[,3] / minresolution[3] +1 ) * minresolution[3]
 
       if ( method=="default" ) {
         # basic discretization in 2D
