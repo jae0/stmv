@@ -32,7 +32,7 @@ stmv = function( p, runmode=NULL,
     TF = c( sapply(p$stmv_runmode, is.logical ))
     o[TF] = p$stmv_runmode[TF]
     s_runmode = s_runmode[ unlist(o) ]
-    runmode = intersect(s_runmode, c( "globalmodel", "scale", "interpolate", "interpolate_force_complete", "save_completed_data", "save_intermediate_results") )
+    runmode = intersect(s_runmode, c( "globalmodel", "scale", "interpolate", "interpolate_force_complete", "save_completed_data", "save_intermediate_results", "restart_load") )
   }
   message( "Runmodes: ", runmode  )
 
