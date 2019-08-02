@@ -199,6 +199,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
     if (ndata < p$stmv_nmin) {
       yi=NULL;
+      Sflag[Si] = E[["insufficient_data"]]
       next()
     }
 
@@ -332,7 +333,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
 
     # update in stats .. if there are updates
-    if ( exists( "stmv_localstats", res)) {
+    if (!is.null( res$stmv_localstats )) {
       lss = colMeans( res$stmv_localstats, na.rm=TRUE )
       names(lss) = p$statvars
       if (is.finite(lss[["nu"]])) S[Si, i_nu] = lss[["nu"]]
