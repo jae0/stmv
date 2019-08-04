@@ -57,8 +57,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   #nr = nx
   #nc = ny
 
-  x_r = range(dat[,p$variables$LOCS[1]])
-  x_c = range(dat[,p$variables$LOCS[2]])
+  x_r = range(pa[,p$variables$LOCS[1]])
+  x_c = range(pa[,p$variables$LOCS[2]])
 
   rr = diff(x_r)
   rc = diff(x_c)
@@ -324,14 +324,23 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
       surface(list(x=c(1:nr)*dr, y=c(1:nc)*dc, z=X), xaxs="r", yaxs="r")
     }
 
-    X_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=resolution )
-    tokeep = which( X_i[,1] >= 1 & X_i[,2] >= 1  & X_i[,1] <= nr & X_i[,2] <= nc )
-    if (length(tokeep) < 1) next()
-    X_i = X_i[tokeep,]
 
-    pa$mean[pa_i[tokeep]] = X[X_i]
+
+    # X_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=resolution )
+    # tokeep = which( X_i[,1] >= 1 & X_i[,2] >= 1  & X_i[,1] <= nr & X_i[,2] <= nc )
+    # if (length(tokeep) < 1) next()
+    # X_i = X_i[tokeep,]
+
+    # pa$mean[pa_i[tokeep]] = X[X_i]
       # pa$sd[pa_i] = NA  ## fix as NA
-    X = X_i = NULL
+
+    dat[ xi, p$variable$LOCS ] = round( dat[ xi, p$variable$LOCS ] / p$pres  ) * p$pres
+    iYP = match(
+      stmv::array_map( "xy->1", dat[ xi, p$variable$LOCS ], gridparams=p$gridparams ),
+      stmv::array_map( "xy->1", pa[ pa_i , p$variable$LOCS ], gridparams=p$gridparams )
+    )
+    dat$mean[xi] = pa$mean[pa_i][iYP]
+
   }
 
   # dat_i = array_map( "xy->2", coords=dat[, p$variables$LOCS], origin=origin, res=resolution )
@@ -340,10 +349,17 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   # rsquared = summary(ss)$r.squared
   # if (rsquared < p$stmv_rsquared_threshold ) return(NULL)
 
-  stmv_stats = list( sdTotal=sdTotal, rsquared=NA, ndata=nrow(dat) ) # must be same order as p$statsvars
+  ss = lm( dat$mean ~ dat[,p$variables$Y], na.action=na.omit)
+  rsquared = ifelse( "try-error" %in% class( ss ), NA,  summary(ss)$r.squared )
+
+  if (exists("stmv_rsquared_threshold", p)) {
+    if (! is.finite(rsquared) ) return(NULL)
+    if (rsquared < p$stmv_rsquared_threshold ) return(NULL)
+  }
+
+  stmv_stats = list( sdTotal=sdTotal, rsquared=rsquared, ndata=nrow(dat) ) # must be same order as p$statsvars
 
   # lattice::levelplot( mean ~ plon + plat, data=pa, col.regions=heat.colors(100), scale=list(draw=TRUE) , aspect="iso" )
-
 
   if(exists("stmv_variogram_resolve_time", p)) {
     if (p$stmv_variogram_resolve_time) {

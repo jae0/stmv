@@ -11,8 +11,8 @@ stmv__mba = function( p=NULL, dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) {
 
   sdTotal = sd(dat[,p$variable$Y], na.rm=T)
 
-  x_r = range(dat[,p$variables$LOCS[1]])
-  x_c = range(dat[,p$variables$LOCS[2]])
+  x_r = range(pa[,p$variables$LOCS[1]])
+  x_c = range(pa[,p$variables$LOCS[2]])
 
   nr = round( diff(x_r)/p$pres +1 )
   nc = round( diff(x_c)/p$pres +1 )
@@ -54,18 +54,28 @@ stmv__mba = function( p=NULL, dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) {
     #   ny=nc
     # )
 
-    Z = mba.surf(dat[xi, c(p$variables$LOCS, p$variables$Y)], no.X=nr, no.Y=nc, extend=TRUE)$xyz.est$z
+    # Z = mba.surf(dat[xi, c(p$variables$LOCS, p$variables$Y)], no.X=nr, no.Y=nc, extend=TRUE)$xyz.est$z
 
-    # bounds check: make sure predictions exist
-    Z_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=res )
-    tokeep = which( Z_i[,1] >= 1 & Z_i[,2] >= 1  & Z_i[,1] <= nr & Z_i[,2] <= nc )
-    if (length(tokeep) < 1) next()
-    Z_i = Z_i[tokeep,]
+    # # bounds check: make sure predictions exist
+    # Z_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=res )
+    # tokeep = which( Z_i[,1] >= 1 & Z_i[,2] >= 1  & Z_i[,1] <= nr & Z_i[,2] <= nc )
+    # if (length(tokeep) < 1) next()
+    # Z_i = Z_i[tokeep,]
 
-    pa$mean[pa_i[tokeep]] = Z[Z_i]
+    # pa$mean[pa_i[tokeep]] = Z[Z_i]
+
+    # # pa$sd[pa_i] = NA  ## fix as NA
+    # Z = Z_i = Z_i_test = NULL
+
+    pa$mean[pa_i] = mba.surf(dat[xi, c(p$variables$LOCS, p$variables$Y)], no.X=nr, no.Y=nc, extend=TRUE)$xyz.est$z
 
     # pa$sd[pa_i] = NA  ## fix as NA
-    Z = Z_i = Z_i_test = NULL
+    dat[ xi, p$variable$LOCS ] = round( dat[ xi, p$variable$LOCS ] / p$pres  ) * p$pres
+    iYP = match(
+      stmv::array_map( "xy->1", dat[ xi, p$variable$LOCS ], gridparams=p$gridparams ),
+      stmv::array_map( "xy->1", pa[ pa_i , p$variable$LOCS ], gridparams=p$gridparams )
+    )
+    dat$mean[xi] = pa$mean[pa_i][iYP]
 
   }
 

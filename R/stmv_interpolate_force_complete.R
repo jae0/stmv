@@ -2,8 +2,6 @@
 stmv_interpolate_force_complete = function( ip=NULL, p, qn = c(0.005, 0.995), eps=1e-9 ) {
 
   #// designed to be called from stmv
-  #// for the sake of speed and parallelization, the kernel density method via fft is written out again .. it is taken from fields::smooth.2d
-  #// the spatial interpolation is smoother than what is expected from a kriging covariance but faster
 
   if (0) {
     # for debugging  runs ..
@@ -11,6 +9,7 @@ stmv_interpolate_force_complete = function( ip=NULL, p, qn = c(0.005, 0.995), ep
     p = parallel_run( p=p, runindex=list( time_index=1:p$nt )  )
     ip = 1:p$nruns
     eps=1e-9
+    qn = c(0.005, 0.995)
     debugging=TRUE
   }
 
@@ -19,23 +18,52 @@ stmv_interpolate_force_complete = function( ip=NULL, p, qn = c(0.005, 0.995), ep
 
   S = stmv_attach( p$storage.backend, p$ptr$S )
 
-
   P = stmv_attach( p$storage.backend, p$ptr$P )
   Psd = stmv_attach( p$storage.backend, p$ptr$Psd )
   Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
-
-  P_qn = quantile(P[], probs=qn, na.rm = TRUE )
-  Psd_qn = quantile(Psd[], probs=qn, na.rm = TRUE )
 
   dx = dy = p$pres
   nr = p$nplons
   nc = p$nplats
 
+  if (p$stmv_force_complete_method=="akima") {
+    # basic cubic interpolation, but using all predicted fields rather than only data
+    require(akima)
+    for ( iip in ip ) {
+      ww = p$runs[ iip, "time_index" ]
+      # means
+      tofill = which( ! is.finite( P[,ww] ) )
+      withdata = which( is.finite( P[,ww] ) )
+      if (length( tofill) > 0 ) {
+        rY = range( P[,ww], na.rm=TRUE )
+        X = interp( x=Ploc[withdata,1], y=Ploc[withdata,2], z=P[withdata,ww],
+          xo=p$plons, yo=p$plats, linear=FALSE, extrap=TRUE, duplicate="mean" )$z  # cannot extrapolate with linear, using cubic spline
+        P[,ww][tofill] = X[ tofill]
+      }
+
+      ## SD estimates
+      tofill = which( ! is.finite( Psd[,ww] ) )
+      withdata = which( is.finite( P[,ww] ) )
+      if (length( tofill) > 0 ) {
+        rY = range( Psd[,ww], na.rm=TRUE )
+        X = interp( x=Ploc[withdata,1], y=Ploc[withdata,2], z=Psd[withdata,ww],
+          xo=p$plons, yo=p$plats, linear=FALSE, extrap=TRUE, duplicate="mean" )$z  # cannot extrapolate with linear, using cubic spline
+        Psd[,ww][tofill] = X[ tofill]
+      }
+    }
+    return( "complete" )
+  }
+
 
 
   if (p$stmv_force_complete_method=="fft") {
+    #// for the sake of speed and parallelization, the kernel density method via fft is written out again .. it is taken from fields::smooth.2d
+    #// the spatial interpolation is smoother than what is expected from a kriging covariance but faster
 
     tol = 1e-9
+    P_qn = quantile(P[], probs=qn, na.rm = TRUE )
+    Psd_qn = quantile(Psd[], probs=qn, na.rm = TRUE )
+
     x_r = range(Ploc[,1])
     x_c = range(Ploc[,2])
 
@@ -200,10 +228,11 @@ stmv_interpolate_force_complete = function( ip=NULL, p, qn = c(0.005, 0.995), ep
 
   if (p$stmv_force_complete_method=="mba") {  # cubic basis splines
 
+    P_qn = quantile(P[], probs=qn, na.rm = TRUE )
+    Psd_qn = quantile(Psd[], probs=qn, na.rm = TRUE )
+
     for ( iip in ip ) {
-
       ww = p$runs[ iip, "time_index" ]
-
       # means
       tofill = which( ! is.finite( P[,ww] ) )
       if (length( tofill) > 0 ) {
@@ -229,11 +258,8 @@ stmv_interpolate_force_complete = function( ip=NULL, p, qn = c(0.005, 0.995), ep
       ## SD estimates
       tofill = which( ! is.finite( Psd[,ww] ) )
       if (length( tofill) > 0 ) {
-
         rY = range( Psd[,ww], na.rm=TRUE )
-
         X = mba.surf( cbind(Ploc[], Psd[,ww]) , no.X=nr, no.Y=nc, extend=TRUE)$z
-
         iX = which( !is.finite( X))
         if (length(iX) > 0) X[iX] = NA
 
@@ -253,62 +279,5 @@ stmv_interpolate_force_complete = function( ip=NULL, p, qn = c(0.005, 0.995), ep
   }
 
   # ----------------
-
-  if (p$stmv_force_complete_method=="linear") {
-
-
-    for ( iip in ip ) {
-
-      ww = p$runs[ iip, "time_index" ]
-
-      # means
-      tofill = which( ! is.finite( P[,ww] ) )
-      if (length( tofill) > 0 ) {
-        # counts
-        rY = range( P[,ww], na.rm=TRUE )
-
-        u = as.image( P[,ww], x=Ploc[,], na.rm=TRUE, nx=nr, ny=nc )
-        X = as.vector( fields::interp.surface( u, loc=Ploc[,] ) ) # linear interpolation
-        u = NULL
-
-        iX = which( !is.finite( X))
-        if (length(iX) > 0) X[iX] = NA
-        lb = which( X < rY[1] )
-        if (length(lb) > 0) X[lb] = NA
-        ub = which( X > rY[2] )
-        if (length(ub) > 0) X[ub] = NA
-
-        # image(X)
-        X[ X > P_qn[2] ]=NA
-        X[ X < P_qn[1] ]=NA
-        P[,ww][tofill] = X[ tofill]
-      }
-
-      ## SD estimates
-      tofill = which( ! is.finite( Psd[,ww] ) )
-      if (length( tofill) > 0 ) {
-
-        rY = range( Psd[,ww], na.rm=TRUE )
-
-        u = as.image( Psd[,ww], x=Ploc[,], na.rm=TRUE, nx=nr, ny=nc )
-        X = as.vector( fields::interp.surface( u, loc=Ploc[,] ) ) # linear interpolation
-        u = NULL
-
-        iX = which( !is.finite( X))
-        if (length(iX) > 0) X[iX] = NA
-        lb = which( X < 0 )
-        if (length(lb) > 0) X[lb] = NA
-        ub = which( X > rY[2] )
-        if (length(ub) > 0) X[ub] = NA
-        # image(X)
-
-        X[ X > Psd_qn[2] ]=NA
-        X[ X < 0 ]=NA
-        Psd[,ww][tofill] = X[ tofill]
-
-      }
-    }
-    return( "complete" )
-  }
 
 }
