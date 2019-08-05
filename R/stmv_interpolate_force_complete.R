@@ -26,8 +26,51 @@ stmv_interpolate_force_complete = function( ip=NULL, p, qn = c(0.005, 0.995), ep
   nr = p$nplons
   nc = p$nplats
 
+
+  if (p$stmv_force_complete_method=="linear") {
+    # fastest
+    for ( iip in ip ) {
+      ww = p$runs[ iip, "time_index" ]
+      # means
+      tofill = which( ! is.finite( P[,ww] ) )
+      if (length( tofill) > 0 ) {
+        rY = range( P[,ww], na.rm=TRUE )
+        X = as.image( P[,ww], x=Ploc[,], na.rm=TRUE, nx=nr, ny=nc )
+        # image(X)
+        X = as.vector( fields::interp.surface( X, loc=Ploc[,] ) ) # linear interpolation
+        lb = which( X < rY[1] )
+        if (length(lb) > 0) X[lb] = rY[1]
+        lb = NULL
+        ub = which( X > rY[2] )
+        if (length(ub) > 0) X[ub] = rY[2]
+        ub = NULL
+        P[,ww][tofill] = X[ tofill]
+      }
+
+      ## SD
+      tofill = which( ! is.finite( Psd[,ww] ) )
+      if (length( tofill) > 0 ) {
+        rY = range( Psd[,ww], na.rm=TRUE )
+        X = as.image( Psd[,ww], x=Ploc[,], na.rm=TRUE, nx=nr, ny=nc )
+        X = as.vector( fields::interp.surface( X, loc=Ploc[,] ) ) # linear interpolation
+        # image(X)
+        lb = which( X < rY[1] )
+        if (length(lb) > 0) X[lb] = rY[1]
+        lb = NULL
+        ub = which( X > rY[2] )
+        if (length(ub) > 0) X[ub] = rY[2]
+        ub = NULL
+        Psd[,ww][tofill] = X[ tofill]
+      }
+    }
+    return( "complete" )
+  }
+
+
+
   if (p$stmv_force_complete_method=="akima") {
     # basic cubic interpolation, but using all predicted fields rather than only data
+    # slow .. esp on large problems
     require(akima)
     for ( iip in ip ) {
       ww = p$runs[ iip, "time_index" ]
@@ -38,17 +81,37 @@ stmv_interpolate_force_complete = function( ip=NULL, p, qn = c(0.005, 0.995), ep
         rY = range( P[,ww], na.rm=TRUE )
         X = interp( x=Ploc[withdata,1], y=Ploc[withdata,2], z=P[withdata,ww],
           xo=p$plons, yo=p$plats, linear=FALSE, extrap=TRUE, duplicate="mean" )$z  # cannot extrapolate with linear, using cubic spline
+        withdata = NULL
+        lb = which( X < rY[1] )
+        if (length(lb) > 0) X[lb] = rY[1]
+        lb = NULL
+        ub = which( X > rY[2] )
+        if (length(ub) > 0) X[ub] = rY[2]
+        ub = NULL
         P[,ww][tofill] = X[ tofill]
+        X = NULL
+        tofill = NULL
+        gc()
       }
 
       ## SD estimates
       tofill = which( ! is.finite( Psd[,ww] ) )
-      withdata = which( is.finite( P[,ww] ) )
+      withdata = which( is.finite( Psd[,ww] ) )
       if (length( tofill) > 0 ) {
         rY = range( Psd[,ww], na.rm=TRUE )
         X = interp( x=Ploc[withdata,1], y=Ploc[withdata,2], z=Psd[withdata,ww],
           xo=p$plons, yo=p$plats, linear=FALSE, extrap=TRUE, duplicate="mean" )$z  # cannot extrapolate with linear, using cubic spline
+        withdata = NULL
+        lb = which( X < rY[1] )
+        if (length(lb) > 0) X[lb] = rY[1]
+        lb = NULL
+        ub = which( X > rY[2] )
+        if (length(ub) > 0) X[ub] = rY[2]
+        ub = NULL
         Psd[,ww][tofill] = X[ tofill]
+        X = NULL
+        tofill = NULL
+        gc()
       }
     }
     return( "complete" )

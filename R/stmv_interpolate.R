@@ -112,7 +112,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     if ( iip %in% logpoints )  currentstatus = stmv_logfile(p=p, flag= paste("Interpolation", p$runoption) )
     Si = p$runs[ iip, "locs" ]
 
-    # print( paste("index =", iip, ";  Si = ", Si ) )
     if (debugging) print( paste("index =", iip, ";  Si = ", Si ) )
     if ( Sflag[Si] == E[["complete"]] ) next()
 
