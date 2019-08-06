@@ -19,6 +19,7 @@ stmv__akima = function( p=NULL,  dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) 
 
   dat$mean = NA
   pa$mean = NA
+  pa$sd = NA
 
   sdTotal = sd(dat[,p$variable$Y], na.rm=T)
 

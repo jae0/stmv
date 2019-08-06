@@ -19,6 +19,8 @@ stmv__constant = function( p=NULL,  dat=NULL, pa=NULL,  variablelist=FALSE, ... 
 
   dat$mean = NA
   pa$mean = NA
+  pa$sd = NA
+
 
   for ( ti in 1:p$nt ) {
 

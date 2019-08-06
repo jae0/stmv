@@ -4,8 +4,6 @@ stmv__linear = function( p=NULL,  dat=NULL, pa=NULL,  variablelist=FALSE, ...  )
   #\\ note: time is not being modelled and treated independently
   #\\      .. you had better have enough data in each time slice ..  essentially this is cubic b-splines interpolation
 
-  library(akima)
-
   if (variablelist)  return( c() )
 
   sdTotal = sd(dat[,p$variable$Y], na.rm=T)
@@ -21,6 +19,7 @@ stmv__linear = function( p=NULL,  dat=NULL, pa=NULL,  variablelist=FALSE, ...  )
 
   dat$mean = NA
   pa$mean = NA
+  pa$sd = NA
 
   for ( ti in 1:p$nt ) {
 

@@ -25,6 +25,73 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
   nr = p$nplons
   nc = p$nplats
 
+  x_r = range(Ploc[,1])
+  x_c = range(Ploc[,2])
+
+  origin=c(x_r[1], x_c[1])
+  res=c(p$pres, p$pres)
+
+
+  if (p$stmv_force_complete_method=="kernel") {
+    # essentially gaussian
+
+    wght = setup.image.smooth( nrow=nr, ncol=nc,  dx=p$pres, dy=p$pres, theta=p$stmv_distance_statsgrid, xwidth=p$pres, ywidth=p$pres)
+
+    for ( iip in ip ) {
+      ww = p$runs[ iip, "time_index" ]
+      # means
+      tofill = which( ! is.finite( P[,ww] ) )
+      if (length( tofill) > 0 ) {
+        rY = range( P[,ww], na.rm=TRUE )
+        X = as.image(
+          P[,ww],
+          ind=as.matrix(array_map( "xy->2", coords=Ploc[], origin=origin, res=res )),
+          na.rm=TRUE,
+          nx=nr,
+          ny=nc
+        )
+
+        X = fields::image.smooth( X, dx=dx, dy=dy, wght )
+        # image(X)
+        X = X$z
+
+        lb = which( X < rY[1] )
+        if (length(lb) > 0) X[lb] = rY[1]
+        lb = NULL
+        ub = which( X > rY[2] )
+        if (length(ub) > 0) X[ub] = rY[2]
+        ub = NULL
+        P[,ww][tofill] = X[ tofill]
+      }
+
+      ## SD
+      tofill = which( ! is.finite( Psd[,ww] ) )
+      if (length( tofill) > 0 ) {
+        rY = range( Psd[,ww], na.rm=TRUE )
+        X = as.image(
+          Psd[,ww],
+          ind=as.matrix(array_map( "xy->2", coords=Ploc[], origin=origin, res=res )),
+          na.rm=TRUE,
+          nx=nr,
+          ny=nc
+        )
+
+        X = fields::image.smooth( X, dx=dx, dy=dy, wght )
+        # image(X)
+        X = X$z
+
+        lb = which( X < rY[1] )
+        if (length(lb) > 0) X[lb] = rY[1]
+        lb = NULL
+        ub = which( X > rY[2] )
+        if (length(ub) > 0) X[ub] = rY[2]
+        ub = NULL
+        Psd[,ww][tofill] = X[ tofill]
+      }
+    }
+    return( "complete" )
+  }
+
 
   if (p$stmv_force_complete_method=="linear") {
     # fastest

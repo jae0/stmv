@@ -10,7 +10,7 @@ stmv__tps = function( p=NULL, dat=NULL, pa=NULL, lambda=NULL, variablelist=FALSE
 
   dat$mean = NA
   pa$mean = NA
-  pa$sd = sdTotal  # leave as this as sd estimation is too expensive
+  pa$sd = NA
 
   for ( ti in 1:p$nt ) {
 
@@ -34,7 +34,9 @@ stmv__tps = function( p=NULL, dat=NULL, pa=NULL, lambda=NULL, variablelist=FALSE
     rsquared = summary(ss)$r.squared
     if (rsquared < p$stmv_rsquared_threshold ) next()
     pa$mean[pa_i] = predict(ftpsmodel, x=pa[pa_i, p$variables$LOCS] )
+
     pa$sd[pa_i]   = predictSE(ftpsmodel, x=pa[pa_i, p$variables$LOCS] ) # SE estimates are slooow
+    # pa$sd[pa_i] = sd( dat[xi,p$variable$Y], na.rm=T)   ## fix as NA
 
     if ( 0 ){
       # debugging plots

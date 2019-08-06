@@ -1,11 +1,10 @@
 
-stmv__mba = function( p=NULL, dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) {
+stmv__kernel = function( p=NULL, dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) {
   #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
-  # \ as a 2D gaussian process (basically, simple krigimg or TPS -- time is treated as being independent)
   #\\ note: time is not being modelled and treated independently
   #\\      .. you had better have enough data in each time slice ..  essentially this is cubic b-splines interpolation
 
-  library(MBA)
+  library(fields)
 
   if (variablelist)  return( c() )
 
@@ -19,7 +18,7 @@ stmv__mba = function( p=NULL, dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) {
 
   dat$mean = NA
   pa$mean = NA
-  pa$sd = sdTotal  # this is ignored with fft
+  pa$sd = NA  # this is ignored with fft
 
   origin=c(x_r[1], x_c[1])
   res=c(p$pres, p$pres)
@@ -39,8 +38,8 @@ stmv__mba = function( p=NULL, dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) {
     }
 
     pa$mean[pa_i] = mba.surf(dat[xi, c(p$variables$LOCS, p$variables$Y)], no.X=nr, no.Y=nc, extend=TRUE)$xyz.est$z
+    pa$sd[pa_i] = sd( dat[xi,p$variable$Y], na.rm=T)   ## fix as NA
 
-    # pa$sd[pa_i] = NA  ## fix as NA
     dat[ xi, p$variable$LOCS ] = round( dat[ xi, p$variable$LOCS ] / p$pres  ) * p$pres
     iYP = match(
       stmv::array_map( "xy->1", dat[ xi, p$variable$LOCS ], gridparams=p$gridparams ),

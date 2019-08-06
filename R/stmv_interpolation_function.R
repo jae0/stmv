@@ -13,6 +13,7 @@ stmv_interpolation_function = function( modelengine ) {
     glm = stmv__glm,
     gstat = stmv__gstat,
     krige = stmv__krige,
+    kernel = stmv__kernel,
     linear = stmv__linear,
     tps = stmv__tps,
     twostep = stmv__twostep
