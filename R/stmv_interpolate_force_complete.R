@@ -35,7 +35,7 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
   if (p$stmv_force_complete_method=="kernel") {
     # essentially gaussian
 
-    wght = setup.image.smooth( nrow=nr, ncol=nc,  dx=p$pres, dy=p$pres, theta=p$stmv_distance_statsgrid, xwidth=p$pres, ywidth=p$pres)
+    wght = setup.image.smooth( nrow=nr, ncol=nc,  dx=p$pres, dy=p$pres, theta=p$pres*5, xwidth=p$pres, ywidth=p$pres)
 
     for ( iip in ip ) {
       ww = p$runs[ iip, "time_index" ]
