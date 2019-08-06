@@ -599,7 +599,7 @@ stmv = function( p, runmode=NULL,
         if (!success) {
           p$clusters = p$stmv_runmode[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
           p$local_interpolation_correlation = p$stmv_autocorrelation_interpolation[j]
-          #currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
+          # currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
           currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
           if ( length(currentstatus$todo) < length(p$clusters)) break()
           parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  )
@@ -620,38 +620,38 @@ stmv = function( p, runmode=NULL,
     message( "\n||| Entering <interpolate force complete> stage: ", format(Sys.time()),  "\n" )
     # finalize all interpolations where there are missing data/predictions using
     # interpolation based on data
-    # NOTE:: no covariates are used .. only akima's cubic splines
-    # p0 = p
-    # stmv_autocorrelation_interpolation_force_complete = c(0.01, 0.001)
-    # for ( j in 1:length(stmv_autocorrelation_interpolation_force_complete) ) {
-    #   p = p0 #reset
-    #   p$time_start_runmode = Sys.time()
-    #   p$runmode = paste("interpolate_force_complete_", j, sep="")
-    #   message( "\n||| Entering <", p$runmode, "> stage: ", format(Sys.time()) , "\n" )
-    #   success = FALSE
-    #   if ( "restart_load" %in% runmode ) success = stmv_db(p=p, DS="load_saved_state", runmode=p$runmode, datasubset="predictions" )
-    #   if (!success) {
-    #     p$clusters = p$stmv_runmode[["interpolate_force_complete"]] # as ram reqeuirements increase drop cpus
-    #     p$local_interpolation_correlation = stmv_autocorrelation_interpolation_force_complete[j]
-    #     p$stmv_local_modelengine = "akima"  # override
-    #     currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
-    #     # currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
-    #     if ( length(currentstatus$todo) < length(p$clusters)) break()
-    #     parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  )
-    #     message( paste( "Time used for <interpolate_force_complete", j, ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
-    #   }
-    # }
-    # stmv_db(p=p, DS="save_current_state", runmode="interpolate_force_complete")
-    # final pass .. global run using predicetd surface, rather than input data
-    p = p0
-    p$clusters = p$stmv_runmode[["interpolate_force_complete"]] # as ram reqeuirements increase drop cpus
-    p$stmv_force_complete_method = "linear"  # cubic interpolation permits extrapolation
-    p$time_start_runmode = Sys.time()
-    currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
-    if ( length(currentstatus$todo) > 0 ) {
-      p = parallel_run( p=p, runindex=list( time_index=1:p$nt )  )  # set up dimensionality
-      stmv_interpolate_force_complete( p=p )
+    # NOTE:: no covariates are used
+    p0 = p
+    for ( j in 1:length(p$stmv_autocorrelation_interpolation) ) {
+      p = p0 #reset
+      p$time_start_runmode = Sys.time()
+      p$runmode = paste("interpolate_force_complete_", j, sep="")
+      message( "\n||| Entering <", p$runmode, "> stage: ", format(Sys.time()) , "\n" )
+      success = FALSE
+      if ( "restart_load" %in% runmode ) success = stmv_db(p=p, DS="load_saved_state", runmode=p$runmode, datasubset="predictions" )
+      if (!success) {
+        p$clusters = p$stmv_runmode[["interpolate"]] # as ram reqeuirements increase drop cpus
+        p$local_interpolation_correlation = p$stmv_autocorrelation_interpolation[j]
+        p$stmv_local_modelengine = "constant"  # override -- no covariates, basic moving window average (weighted by inverse variance)
+        p$stmv_nmin = floor(p$stmv_nmin /2)
+        currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
+        # currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
+        if ( length(currentstatus$todo) < length(p$clusters)) break()
+        parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  )
+        message( paste( "Time used for <interpolate_force_complete", j, ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
+      }
     }
+
+    ## stmv_db(p=p, DS="load_saved_state", runmode="interpolate_force_complete" )
+    ## stmv_db(p=p, DS="save_current_state", runmode="interpolate_force_complete")
+
+    # final pass .. global run using predicetd surface, rather than input data
+    # p = p0
+    # p$clusters = p$stmv_runmode[["interpolate_force_complete"]] # as ram reqeuirements increase drop cpus
+    # p$stmv_force_complete_method = "linear"  # cubic interpolation permits extrapolation
+    # p$time_start_runmode = Sys.time()
+    currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
+    if ( length(currentstatus$todo) > 0 ) stmv_interpolate_force_complete( p=p )
   }
 
   # -----------------------------------------------------

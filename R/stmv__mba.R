@@ -17,14 +17,6 @@ stmv__mba = function( p=NULL, dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) {
   nr = round( diff(x_r)/p$pres +1 )
   nc = round( diff(x_c)/p$pres +1 )
 
-  # final output grid
-  # x_locs = expand_grid_fast(
-  #   seq( x_r[1], x_r[2], length.out=nr ),
-  #   seq( x_c[1], x_c[2], length.out=nc )
-  # )
-  # attr( x_locs , "out.attrs") = NULL
-  # names( x_locs ) = p$variables$LOCS
-
   dat$mean = NA
   pa$mean = NA
   pa$sd = sdTotal  # this is ignored with fft
@@ -45,27 +37,6 @@ stmv__mba = function( p=NULL, dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) {
       xi   = 1:nrow(dat) # all data as p$nt==1
       pa_i = 1:nrow(pa)
     }
-
-    # u = as.image(
-    #   dat[xi, p$variables$Y],
-    #   ind=as.matrix(array_map( "xy->2", coords=dat[xi,p$variables$LOCS], origin=origin, res=res )),
-    #   na.rm=TRUE,
-    #   nx=nr,
-    #   ny=nc
-    # )
-
-    # Z = mba.surf(dat[xi, c(p$variables$LOCS, p$variables$Y)], no.X=nr, no.Y=nc, extend=TRUE)$xyz.est$z
-
-    # # bounds check: make sure predictions exist
-    # Z_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=res )
-    # tokeep = which( Z_i[,1] >= 1 & Z_i[,2] >= 1  & Z_i[,1] <= nr & Z_i[,2] <= nc )
-    # if (length(tokeep) < 1) next()
-    # Z_i = Z_i[tokeep,]
-
-    # pa$mean[pa_i[tokeep]] = Z[Z_i]
-
-    # # pa$sd[pa_i] = NA  ## fix as NA
-    # Z = Z_i = Z_i_test = NULL
 
     pa$mean[pa_i] = mba.surf(dat[xi, c(p$variables$LOCS, p$variables$Y)], no.X=nr, no.Y=nc, extend=TRUE)$xyz.est$z
 

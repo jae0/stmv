@@ -137,7 +137,7 @@ stmv_parameters = function( p=list(), ... ) {
 
   if ( !exists("stmv_distance_prediction_fraction", p)) p$stmv_distance_prediction_fraction = 1  # fraction of statsgrid (below)
 
-  if ( !exists("stmv_force_complete_method", p)) p$stmv_force_complete_method = "akima"
+  if ( !exists("stmv_force_complete_method", p)) p$stmv_force_complete_method = "constant"  # moving average
 
   return(p)
 }

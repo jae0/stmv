@@ -6,12 +6,14 @@ stmv_interpolation_function = function( modelengine ) {
   local_fn = switch( modelengine,
     akima = stmv__akima,
     bayesx = stmv__bayesx,
+    constant = stmv__constant,
+    fft = stmv__fft,
     gaussianprocess2Dt = stmv__gaussianprocess2Dt,
     gam = stmv__gam,
     glm = stmv__glm,
     gstat = stmv__gstat,
     krige = stmv__krige,
-    fft = stmv__fft,
+    linear = stmv__linear,
     tps = stmv__tps,
     twostep = stmv__twostep
   )

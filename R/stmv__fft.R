@@ -45,17 +45,15 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
 
   sdTotal = sd(dat[,p$variable$Y], na.rm=T)
 
-  # nr .. x/plon
-  # nc .. y/plat
-  # pa_r = range(pa[,p$variables$LOCS[1]])
-  # pa_c = range(pa[,p$variables$LOCS[2]])
-
-  dx = p$pres
-  dy = p$pres
-
   # system size
   #nr = nx
   #nc = ny
+
+  # nr .. x/plon
+  # nc .. y/plat
+
+  dx = p$pres
+  dy = p$pres
 
   x_r = range(pa[,p$variables$LOCS[1]])
   x_c = range(pa[,p$variables$LOCS[2]])
@@ -324,15 +322,9 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
       surface(list(x=c(1:nr)*dr, y=c(1:nc)*dc, z=X), xaxs="r", yaxs="r")
     }
 
-
-
-    # X_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=resolution )
-    # tokeep = which( X_i[,1] >= 1 & X_i[,2] >= 1  & X_i[,1] <= nr & X_i[,2] <= nc )
-    # if (length(tokeep) < 1) next()
-    # X_i = X_i[tokeep,]
-
-    # pa$mean[pa_i[tokeep]] = X[X_i]
-      # pa$sd[pa_i] = NA  ## fix as NA
+    pa$mean[pa_i] = X
+    # pa$sd[pa_i] = NA  ## fix as NA
+    X = NULL
 
     dat[ xi, p$variable$LOCS ] = round( dat[ xi, p$variable$LOCS ] / p$pres  ) * p$pres
     iYP = match(
@@ -342,12 +334,6 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     dat$mean[xi] = pa$mean[pa_i][iYP]
 
   }
-
-  # dat_i = array_map( "xy->2", coords=dat[, p$variables$LOCS], origin=origin, res=resolution )
-  # ss = lm( pa$mean[dat_i] ~ dat[,p$variables$Y], na.action=na.omit)
-  # if ( "try-error" %in% class( ss ) ) return( NULL )
-  # rsquared = summary(ss)$r.squared
-  # if (rsquared < p$stmv_rsquared_threshold ) return(NULL)
 
   ss = lm( dat$mean ~ dat[,p$variables$Y], na.action=na.omit)
   rsquared = ifelse( "try-error" %in% class( ss ), NA,  summary(ss)$r.squared )

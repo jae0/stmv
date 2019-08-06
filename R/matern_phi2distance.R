@@ -15,7 +15,9 @@ matern_phi2distance = function( phi, nu=0.5, cor=0.05, dmax=phi*100000, nX=2000,
   u = matrix(0, ncol=2, nrow=nX*2 )
   u[,2] = c(seq(0, 1, length.out=nX ), exp(seq( 1+eps, log(dmax), length.out=nX )) )  # distances
   u[,1] = stmv_matern( u[,2], mRange=phi, mSmooth=nu ) # autocorrelation
-  distance = approx( u, xout=cor )$y
+  v = which(duplicated(u[,1]))
+  if (length(v) > 0) u=u[-v,]
+  distance = approx( u, xout=cor, rule=2 )$y
 
   if(plotdata) {
     plot( u[,1] ~ (u[,2]), xlim = c(0, distance*1.25) )

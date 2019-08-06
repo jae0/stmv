@@ -1,15 +1,12 @@
 
 stmv__akima = function( p=NULL,  dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) {
   #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
-  # \ as a 2D gaussian process (basically, simple krigimg or TPS -- time is treated as being independent)
   #\\ note: time is not being modelled and treated independently
   #\\      .. you had better have enough data in each time slice ..  essentially this is cubic b-splines interpolation
 
-  library(akima)
+  library(akima)  ### slow
 
   if (variablelist)  return( c() )
-
-  sdTotal = sd(dat[,p$variable$Y], na.rm=T)
 
   x_r = range(pa[,p$variables$LOCS[1]])
   x_c = range(pa[,p$variables$LOCS[2]])
@@ -20,20 +17,10 @@ stmv__akima = function( p=NULL,  dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) 
   xo = seq(x_r[1], x_r[2], length.out = nr )
   yo = seq(x_c[1], x_c[2], length.out = nc )
 
-  # final output grid
-  # x_locs = expand_grid_fast(
-  #   seq( x_r[1], x_r[2], length.out=nr ),
-  #   seq( x_c[1], x_c[2], length.out=nc )
-  # )
-  # attr( x_locs , "out.attrs") = NULL
-  # names( x_locs ) = p$variables$LOCS
-
   dat$mean = NA
   pa$mean = NA
-  pa$sd = sdTotal  # this is ignored with fft
 
-  # origin=c(x_r[1], x_c[1])
-  # res = c(p$pres, p$pres)
+  sdTotal = sd(dat[,p$variable$Y], na.rm=T)
 
   for ( ti in 1:p$nt ) {
 
@@ -49,30 +36,24 @@ stmv__akima = function( p=NULL,  dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) 
       pa_i = 1:nrow(pa)
     }
 
-    # u = as.image(
-    #   dat[xi, p$variables$Y],
-    #   ind=as.matrix(array_map( "xy->2", coords=dat[xi,p$variables$LOCS], origin=origin, res=res )),
-    #   na.rm=TRUE,
-    #   nx=nr,
-    #   ny=nc
-    # )
-
-    pa$mean[pa_i] = interp( x=dat[xi, p$variables$LOCS[1] ], y=dat[xi, p$variables$LOCS[2]], z=dat[xi, p$variables$Y],
-      xo=xo, yo=yo, linear=FALSE, extrap=TRUE, duplicate="mean" )$z  # cannot extrapolate with linear, using cubic spline
-
-    # bounds check: make sure predictions exist .. not needed any more ...
-    # bounds_check = FALSE
-    # if (bounds_check) {
-    #   Z_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=res )
-    #   tokeep = which( Z_i[,1] >= 1 & Z_i[,2] >= 1  & Z_i[,1] <= nr & Z_i[,2] <= nc )
-    #   if (length(tokeep) < 1) next()
-    #   Z_i = Z_i[tokeep,]
-    #   pa$mean[pa_i[tokeep]] = Z[Z_i]
-    #   Z_i = Z_i_test = NULL
-    #   Z = NULL
-    # }
-
+    X = interp( x=dat[xi, p$variables$LOCS[1] ], y=dat[xi, p$variables$LOCS[2]], z=dat[xi, p$variables$Y],
+      xo=xo, yo=yo, linear=TRUE, extrap=FLASE, duplicate="mean" )$z  # cannot extrapolate with linear
     # pa$sd[pa_i] = NA  ## fix as NA
+
+    rY = range( dat[ xi, p$variables$Y ], na.rm=TRUE )
+    lb = which( X < rY[1] )
+    if (length(lb) > 0) X[lb] = rY[1]
+    lb = NULL
+    ub = which( X > rY[2] )
+    if (length(ub) > 0) X[ub] = rY[2]
+    ub = NULL
+
+    pa$mean[pa_i] = X
+
+    pa$sd[pa_i] = sd(dat[ xi, p$variable$Y ], na.rm=TRUE)  # timeslice guess
+
+    X = NULL
+
     dat[ xi, p$variable$LOCS ] = round( dat[ xi, p$variable$LOCS ] / p$pres  ) * p$pres
     iYP = match(
       stmv::array_map( "xy->1", dat[ xi, p$variable$LOCS ], gridparams=p$gridparams ),

@@ -22,11 +22,11 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL  ) {
         Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
         uS = array_map( "2->1", round( cbind(Sloc[,1]-p$origin[1], Sloc[,2]-p$origin[2])/p$stmv_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
         toreset = array_map( "2->1", round( cbind(Ploc[noP,1]-p$origin[1], Ploc[noP,2]-p$origin[2])/p$stmv_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
+        toreset = unique(toreset)
         Sloc_nplon = Sloc_nplat = noP = NULL
         inrange = which( (toreset >= min(uS, na.rm=TRUE)) & (toreset <= max(uS, na.rm=TRUE)) )
         uS = NULL
         if (length( inrange) > 0) toreset = toreset[inrange]
-        toreset = unique(toreset)
         if ( !is.null(toreset) && length(toreset) > 0) {
           E_not_to_alter =  E[ c("outside_bounds", "too_shallow") ]
           ignore = which( Sflag[] %in% unlist(E_not_to_alter) )

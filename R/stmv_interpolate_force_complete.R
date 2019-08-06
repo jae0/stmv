@@ -1,20 +1,19 @@
 
-stmv_interpolate_force_complete = function( ip=NULL, p, qn = c(0.005, 0.995), eps=1e-9 ) {
+stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) {
 
   #// designed to be called from stmv
 
   if (0) {
     # for debugging  runs ..
-    currentstatus = stmv_statistics_status( p=p )
-    p = parallel_run( p=p, runindex=list( time_index=1:p$nt )  )
-    ip = 1:p$nruns
     eps=1e-9
     qn = c(0.005, 0.995)
     debugging=TRUE
   }
 
   if (exists( "libs", p)) RLibrary( p$libs )
-  if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
+
+  p = parallel_run( p=p, runindex=list( time_index=1:p$nt )  )
+  ip = 1:p$nruns
 
   S = stmv_attach( p$storage.backend, p$ptr$S )
 
