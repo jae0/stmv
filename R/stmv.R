@@ -588,6 +588,7 @@ stmv = function( p, runmode=NULL,
 
     # -----------------------------------------------------
     if ("interpolate" %in% runmode ) {
+      stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" )
       p0 = p
       for ( j in 1:length(p$stmv_autocorrelation_interpolation) ) {
         p = p0 #reset

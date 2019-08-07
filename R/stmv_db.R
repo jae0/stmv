@@ -498,7 +498,8 @@
       for ( i in 1:length( p$statsvars ) ) {
         print(i)
         # linear interpolation
-        u = as.image( S[,i], x=Sloc[,], na.rm=TRUE, nx=Sloc_nplon, ny=Sloc_nplat )
+        u =
+        as.image( S[,i], x=Sloc[,], nx=Sloc_nplon, ny=Sloc_nplat )  # do NOT use na.rm=TRUE .. causes zero-filling sometimes
         stats[,i] = as.vector( fields::interp.surface( u, loc=Ploc[] ) ) # linear interpolation
       }
 
@@ -541,9 +542,9 @@
 
     if (DS %in% c("save_current_state") ) {
 
-      if (datasubset == "all") datasubset = c( "P", "Psd", "Pn", "S", "Sflag" )
-      if (datasubset == "predictions") datasubset = c( "P", "Psd", "Pn"  )
-      if (datasubset == "statistics") datasubset = c( "S", "Sflag" )
+      if ("all" %in% datasubset ) datasubset = unique( c( datasubset, "P", "Psd", "Pn", "S", "Sflag" ) )
+      if ("predictions" %in% datasubset ) datasubset = unique( c( datasubset, "P", "Psd", "Pn" ) )
+      if ("statistics" %in% datasubset ) datasubset = unique( c( datasubset, "S", "Sflag" ) )
 
       # named differently to avoid collisions
       if ( "P" %in% datasubset ) {
@@ -599,9 +600,9 @@
     if (DS %in% c("load_saved_state") ) {
       returnflag = TRUE
 
-      if ("all" %in% datasubset) datasubset = c( "P", "Psd", "Pn", "S", "Sflag" )
-      if ("predictions" %in% datasubset) datasubset = c( "P", "Psd", "Pn"  )
-      if ("statistics" %in% datasubset) datasubset = c( "S", "Sflag" )
+      if ("all" %in% datasubset ) datasubset = unique( c( datasubset, "P", "Psd", "Pn", "S", "Sflag" ) )
+      if ("predictions" %in% datasubset ) datasubset = unique( c( datasubset, "P", "Psd", "Pn" ) )
+      if ("statistics" %in% datasubset ) datasubset = unique( c( datasubset, "S", "Sflag" ) )
 
       # named differently to avoid collisions
       if ( "P" %in% datasubset ) {
@@ -695,9 +696,10 @@
           nx = length(seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ))
           ny = length(seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ) )
           if (nx*ny != nrow(S) ) stop( "stmv.statistics has the wrong dimensionality/size" )
+
           for ( i in 1:length( p$statsvars ) ) {
             # linear interpolation
-            u = as.image( stats[,i], x=Ploc[,], na.rm=TRUE, nx=nx, ny=ny )
+            u = as.image( stats[,i], x=Ploc[,], nx=nx, ny=ny )
             S[,i] = as.vector( fields::interp.surface( u, loc=Sloc[] ) ) # linear interpolation
           }
           nx = ny = u = stats = NULL
