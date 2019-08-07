@@ -584,6 +584,18 @@ stmv = function( p, runmode=NULL,
       parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
       stmv_db(p=p, DS="save_current_state", datasubset="statistics") # temp save to disk
       message( "||| Time used for scale estimation: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n"  )
+
+      if (0) {
+        # stats
+        # p$statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "phi", "nu", "localrange" )
+        sbox = list(
+          plats = seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ),
+          plons = seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ) )
+        # statistics coordinates
+        locations = as.matrix( expand_grid_fast( sbox$plons, sbox$plats ))
+        levelplot(S[,1]~ locations[,1]+locations[,2])
+      }
+
     }
 
     # -----------------------------------------------------
