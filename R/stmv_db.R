@@ -498,8 +498,7 @@
       for ( i in 1:length( p$statsvars ) ) {
         print(i)
         # linear interpolation
-        u =
-        as.image( S[,i], x=Sloc[,], nx=Sloc_nplon, ny=Sloc_nplat )  # do NOT use na.rm=TRUE .. causes zero-filling sometimes
+        u = as.image( S[,i], x=Sloc[,], nx=Sloc_nplon, ny=Sloc_nplat )  # do NOT use na.rm=TRUE .. causes zero-filling sometimes
         stats[,i] = as.vector( fields::interp.surface( u, loc=Ploc[] ) ) # linear interpolation
       }
 
