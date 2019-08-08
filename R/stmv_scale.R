@@ -106,7 +106,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps = 1e-6, ... ) {
       z=Y[yi,],
       methods=p$stmv_variogram_method,
       distance_cutoff=stmv_distance_cur,
-      discretized_n = stmv_distance_cur / p$pres,
+      discretized_n = round(stmv_distance_cur / p$pres),
       nbreaks=p$stmv_variogram_nbreaks
     ) )
     yi = NULL
