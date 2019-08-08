@@ -630,7 +630,7 @@ stmv = function( p, runmode=NULL,
         }
       }
       # drop to serial mode to finish the rest
-      currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
+      currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
       p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) )
       stmv_interpolate( p=p )
       message( paste( "Time used for <interpolate", j, ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
@@ -676,6 +676,7 @@ stmv = function( p, runmode=NULL,
     # p = p0
     # p$clusters = p$stmv_runmode[["interpolate_force_complete"]] # as ram reqeuirements increase drop cpus
     # p$time_start_runmode = Sys.time()
+    currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
     currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
     p$stmv_force_complete_method = "kernel"  # cubic interpolation permits extrapolation
     if ( length(currentstatus$todo) > 0 ) stmv_interpolate_force_complete( p=p )
