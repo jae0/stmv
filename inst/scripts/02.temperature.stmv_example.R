@@ -52,12 +52,11 @@ p = aegis.temperature::temperature_parameters(
     ) ),
   stmv_twostep_time = "gam",
   stmv_twostep_space = "fft",  # everything else is too slow ...
-  stmv_fft_filter="lowpass_matern_tapered",  #  matern, krige (very slow), lowpass, lowpass_matern
+  stmv_fft_filter="matern_tapered",  #  matern, krige (very slow), lowpass, lowpass_matern
   # stmv_fft_taper_fraction = sqrt(0.5),  # in local smoothing convolutions taper to this areal expansion factor sqrt( r=0.5 ) ~ 70% of variance in variogram
-  stmv_lowpass_nu = 0.5,
-  stmv_lowpass_phi = 0.1,  # note: p$pres = 0.2
+  # stmv_lowpass_nu = 0.5,
+  # stmv_lowpass_phi = 0.1,  # note: p$pres = 0.2
   stmv_variogram_method = "fft",
-  stmv_variogram_nbreaks = 50,
   stmv_autocorrelation_fft_taper = 0.5,  # benchmark from which to taper
   stmv_autocorrelation_localrange=0.1,
   stmv_autocorrelation_interpolation = c(0.5, 0.1, 0.05, 0.01),

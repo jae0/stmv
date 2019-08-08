@@ -578,29 +578,40 @@ stmv = function( p, runmode=NULL,
       message ( "\n", "||| Entering spatial scale (variogram) determination: ", format(Sys.time()) , "\n" )
       p$time_start_runmode = Sys.time()
       p$runmode = "scale"
-      if ( "restart_load" %in% runmode ) success = stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" )
-      currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
       p$clusters = p$stmv_runmode[["scale"]] # as ram reqeuirements increase drop cpus
-      parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
-      stmv_db(p=p, DS="save_current_state", datasubset="statistics") # temp save to disk
-      message( "||| Time used for scale estimation: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n"  )
-
-      if (0) {
-        # stats
-        # p$statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "phi", "nu", "localrange" )
-        sbox = list(
-          plats = seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ),
-          plons = seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ) )
-        # statistics coordinates
-        locations = as.matrix( expand_grid_fast( sbox$plons, sbox$plats ))
-        levelplot(S[,1]~ locations[,1]+locations[,2])
+      if ( "restart_load" %in% runmode ) success = stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" )
+      p0 = p
+      for ( ss in 1:length(p$stmv_variogram_nbreaks_totry) ) {
+        p = p0
+        if (ss > 1) p$stmv_variogram_nbreaks = p$stmv_variogram_nbreaks_totry[ss]
+        currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
+        if ( length(currentstatus$todo) < length(p$clusters)) break()
+        parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
+        stmv_db(p=p, DS="save_current_state", datasubset="statistics") # temp save to disk
       }
+      # drop to serial mode to finish the rest
+      currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
+      p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) )
+      stmv_scale( p=p  )
+      message( "||| Time used for scale estimation: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n"  )
+      p = p0
+      # if (0) {
+      #   # stats
+      #   # p$statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "phi", "nu", "localrange" )
+      #   sbox = list(
+      #     plats = seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ),
+      #     plons = seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ) )
+      #   # statistics coordinates
+      #   locations = as.matrix( expand_grid_fast( sbox$plons, sbox$plats ))
+      #   levelplot(S[,1]~ locations[,1]+locations[,2])
+      # }
 
     }
 
     # -----------------------------------------------------
     if ("interpolate" %in% runmode ) {
       stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" )
+      currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
       p0 = p
       for ( j in 1:length(p$stmv_autocorrelation_interpolation) ) {
         p = p0 #reset
@@ -612,14 +623,17 @@ stmv = function( p, runmode=NULL,
         if (!success) {
           p$clusters = p$stmv_runmode[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
           p$local_interpolation_correlation = p$stmv_autocorrelation_interpolation[j]
-          # currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
-          currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
+          currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
           if ( length(currentstatus$todo) < length(p$clusters)) break()
           parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  )
-          stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="predictions")
-          message( paste( "Time used for <interpolate", j, ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
+          stmv_db(p=p, DS="save_current_state", runmode="interpolate", datasubset="predictions")
         }
       }
+      # drop to serial mode to finish the rest
+      currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
+      p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) )
+      stmv_interpolate( p=p )
+      message( paste( "Time used for <interpolate", j, ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
       p = p0
     }
 
