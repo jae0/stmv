@@ -3,6 +3,11 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL  ) {
   E = stmv_error_codes()
   Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
 
+  # catch strange missing values ..
+  S = stmv_attach( p$storage.backend, p$ptr$S  )
+  ii = which( !is.finite(S[, match("localrange", p$statsvars ) ]) )
+  if ( length(ii) > 0 ) Sflag[ii] = E[["unknown"]]
+
   out = list()
 
   if (!is.null(reset)) {

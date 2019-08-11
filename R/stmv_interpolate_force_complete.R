@@ -32,51 +32,11 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
   res=c(p$pres, p$pres)
   ind = as.matrix(array_map( "xy->2", coords=Ploc[], origin=origin, res=res ))
 
-  if (p$stmv_force_complete_method=="boost") {
-
-    for ( iip in ip ) {
-      ww = p$runs[ iip, "time_index" ]
-      # means
-      tofill = which( ! is.finite( P[,ww] ) )
-      if (length( tofill) > 0 ) {
-        rY = range( P[,ww], na.rm=TRUE )
-        X = matrix(NA, ncol=nc, nrow=nr )
-        X[ind] = P[,ww]
-        X = fields::image.smooth( X, dx=dx, dy=dy, wght )$z
-        # image(X)
-        lb = which( X < rY[1] )
-        if (length(lb) > 0) X[lb] = rY[1]
-        lb = NULL
-        ub = which( X > rY[2] )
-        if (length(ub) > 0) X[ub] = rY[2]
-        ub = NULL
-        P[,ww][tofill] = X[ tofill]
-      }
-
-      ## SD
-      tofill = which( ! is.finite( Psd[,ww] ) )
-      if (length( tofill) > 0 ) {
-        rY = range( Psd[,ww], na.rm=TRUE )
-        X = matrix(NA, ncol=nc, nrow=nr )
-        X[ind] = Psd[,ww]
-        X = fields::image.smooth( X, dx=dx, dy=dy, wght )$z
-        lb = which( X < rY[1] )
-        if (length(lb) > 0) X[lb] = rY[1]
-        lb = NULL
-        ub = which( X > rY[2] )
-        if (length(ub) > 0) X[ub] = rY[2]
-        ub = NULL
-        Psd[,ww][tofill] = X[ tofill]
-      }
-    }
-    return( "complete" )
-  }
-
 
   if (p$stmv_force_complete_method=="kernel") {
     # essentially gaussian
 
-    wght = setup.image.smooth( nrow=nr, ncol=nc,  dx=p$pres, dy=p$pres, theta=p$pres*5, xwidth=p$pres, ywidth=p$pres)
+    wght = setup.image.smooth( nrow=nr, ncol=nc,  dx=p$pres, dy=p$pres, theta=p$stmv_force_complete_method_kernal_theta, xwidth=p$pres, ywidth=p$pres)
 
     for ( iip in ip ) {
       ww = p$runs[ iip, "time_index" ]

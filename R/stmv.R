@@ -591,21 +591,13 @@ stmv = function( p, runmode=NULL,
       }
       # drop to serial mode to finish the rest
       currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
-      p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) )
-      stmv_scale( p=p  )
+      if ( length(currentstatus$todo ) > 0 ) {
+        p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) )
+        stmv_scale( p=p  )
+        stmv_db(p=p, DS="save_current_state", datasubset="statistics") # temp save to disk
+      }
       message( "||| Time used for scale estimation: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n"  )
       p = p0
-      # if (0) {
-      #   # stats
-      #   # p$statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "phi", "nu", "localrange" )
-      #   sbox = list(
-      #     plats = seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ),
-      #     plons = seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ) )
-      #   # statistics coordinates
-      #   locations = as.matrix( expand_grid_fast( sbox$plons, sbox$plats ))
-      #   levelplot(S[,1]~ locations[,1]+locations[,2])
-      # }
-
     }
 
     # -----------------------------------------------------
@@ -619,9 +611,10 @@ stmv = function( p, runmode=NULL,
         p$runmode = paste("interpolate_", j, sep="")
         message( "\n||| Entering <", p$runmode, "> stage: ", format(Sys.time()) , "\n" )
         success = FALSE
-        if ( "restart_load" %in% runmode ) success = stmv_db(p=p, DS="load_saved_state", runmode=p$runmode, datasubset="predictions" )
+        if ( "restart_load" %in% runmode ) success = stmv_db(p=p, DS="load_saved_state", runmode="interpolate", datasubset="predictions" )
         if (!success) {
           p$clusters = p$stmv_runmode[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
+          j=3
           p$local_interpolation_correlation = p$stmv_autocorrelation_interpolation[j]
           currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
           if ( length(currentstatus$todo) < length(p$clusters)) break()
@@ -631,12 +624,57 @@ stmv = function( p, runmode=NULL,
       }
       # drop to serial mode to finish the rest
       currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
-      p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) )
-      stmv_interpolate( p=p )
+      if ( length(currentstatus$todo ) > 0 ) {
+        p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) )
+        stmv_interpolate( p=p )
+      }
       message( paste( "Time used for <interpolate", j, ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
       p = p0
     }
+    # stmv_db(p=p, DS="load_saved_state", runmode="interpolate" )
+    # stmv_db(p=p, DS="save_current_state", runmode="interpolate")
+  }
 
+
+  # --------------------
+
+
+  if ("interpolate_hybrid_boost" %in% runmode) {
+    message ( "not complete .. placeholder")
+    message( "\n||| Entering <interpolate_hybrid_boost> stage: ", format(Sys.time()),  "\n" )
+    # finalize all interpolations where there are missing data/predictions using
+    # interpolation based on data
+    # NOTE:: no covariates are used
+    p0 = p
+    for ( j in 1:length(p$stmv_autocorrelation_interpolation) ) {
+      p = p0 #reset
+      p$time_start_runmode = Sys.time()
+      p$runmode = paste("interpolate_hybrid_boost_", j, sep="")
+      message( "\n||| Entering <", p$runmode, "> stage: ", format(Sys.time()) , "\n" )
+      success = FALSE
+      if ( "restart_load" %in% runmode ) success = stmv_db(p=p, DS="load_saved_state", runmode="interpolate_hybrid_boost", datasubset="predictions" )
+      if (!success) {
+        p$clusters = p$stmv_runmode[["interpolate_hybrid_boost"]] # as ram reqeuirements increase drop cpus
+        p$local_interpolation_correlation = p$stmv_autocorrelation_interpolation[j]
+        p$stmv_local_modelengine = "kernel"  # override -- no covariates, basic moving window average (weighted by inverse variance)
+        currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
+        if ( length(currentstatus$todo) < length(p$clusters)) break()
+        parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  )
+        stmv_db(p=p, DS="save_current_state", runmode="interpolate_hybrid_boost", datasubset="predictions")
+        message( paste( "Time used for <interpolate_hybrid_boost", j, ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
+      }
+    }
+    # final pass .. global run using predicetd surface, rather than input data
+     # drop to serial mode to finish the rest
+    currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
+    if ( length(currentstatus$todo ) > 0 ) {
+      p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) )
+      stmv_interpolate( p=p )
+    }
+    message( paste( "Time used for <interpolate_hybrid_boost", j, ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
+    p = p0
+    # stmv_db(p=p, DS="load_saved_state", runmode="interpolate_hybrid_boost" )
+    # stmv_db(p=p, DS="save_current_state", runmode="interpolate_hybrid_boost")
   }
 
 
@@ -645,41 +683,11 @@ stmv = function( p, runmode=NULL,
 
   if ("interpolate_force_complete" %in% runmode) {
     message( "\n||| Entering <interpolate force complete> stage: ", format(Sys.time()),  "\n" )
-    # finalize all interpolations where there are missing data/predictions using
-    # interpolation based on data
-    # NOTE:: no covariates are used
-    # p0 = p
-    # for ( j in 1:length(p$stmv_autocorrelation_interpolation) ) {
-    #   p = p0 #reset
-    #   p$time_start_runmode = Sys.time()
-    #   p$runmode = paste("interpolate_force_complete_", j, sep="")
-    #   message( "\n||| Entering <", p$runmode, "> stage: ", format(Sys.time()) , "\n" )
-    #   success = FALSE
-    #   if ( "restart_load" %in% runmode ) success = stmv_db(p=p, DS="load_saved_state", runmode=p$runmode, datasubset="predictions" )
-    #   if (!success) {
-    #     p$clusters = p$stmv_runmode[["interpolate"]] # as ram reqeuirements increase drop cpus
-    #     p$local_interpolation_correlation = p$stmv_autocorrelation_interpolation[j]
-    #     p$stmv_local_modelengine = "kernel"  # override -- no covariates, basic moving window average (weighted by inverse variance)
-    #     # p$stmv_nmin = floor(p$stmv_nmin /2)
-    #     currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
-    #     # currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
-    #     if ( length(currentstatus$todo) < length(p$clusters)) break()
-    #     parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  )
-    #     message( paste( "Time used for <interpolate_force_complete", j, ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
-    #   }
-    # }
-
-    ## stmv_db(p=p, DS="load_saved_state", runmode="interpolate_force_complete" )
-    ## stmv_db(p=p, DS="save_current_state", runmode="interpolate_force_complete")
-
-    # final pass .. global run using predicetd surface, rather than input data
-    # p = p0
-    # p$clusters = p$stmv_runmode[["interpolate_force_complete"]] # as ram reqeuirements increase drop cpus
-    # p$time_start_runmode = Sys.time()
     currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
-    currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
-    p$stmv_force_complete_method = "kernel"  # cubic interpolation permits extrapolation
+    p$stmv_force_complete_method = "kernel"
+    p$stmv_force_complete_method_kernal_theta = p$pres * 5  # distance for kernal -based smoothing (bandwidth for 1 SD in gaussiaN SMOOTH)
     if ( length(currentstatus$todo) > 0 ) stmv_interpolate_force_complete( p=p )
+    stmv_db(p=p, DS="save_current_state", runmode="interpolate_force_complete", datasubset="predictions")  # not needed as this is a terminal step .. but to be consistent
   }
 
   # -----------------------------------------------------

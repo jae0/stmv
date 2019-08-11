@@ -125,6 +125,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   fY = matrix(0, nrow = nr2, ncol = nc2)
   fN = matrix(0, nrow = nr2, ncol = nc2)
 
+  coo = as.matrix(array_map( "xy->2", coords=dat[, p$variables$LOCS], origin=origin, res=resolution ))
+
   # default is no time, with time, updated in loop
   xi   = 1:nrow(dat) # all data as p$nt==1
   pa_i = 1:nrow(pa)
@@ -172,14 +174,18 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     # correlation spectroscopy. Journal of biomedical optics, 17(8), 080801. doi:10.1117/1.JBO.17.8.080801
     # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3414238/
 
-    coo = as.matrix(array_map( "xy->2", coords=dat[xi, p$variables$LOCS], origin=origin, res=resolution ))
-    yy = tapply( X=X, INDEX=list(coo[,1], coo[,2]), FUN = function(w) {mean(w, na.rm=TRUE)}, simplify=TRUE )
-    nn = tapply( X=X, INDEX=list(coo[,1], coo[,2]), FUN = function(w) {length(w)}, simplify=TRUE )
-    fY[as.numeric(dimnames(yy)[[1]]),as.numeric(dimnames(yy)[[2]])] = yy
-    fN[as.numeric(dimnames(nn)[[1]]),as.numeric(dimnames(nn)[[2]])] = nn
-    yy = nn = NULL
-    coo = NULL
+    yy = tapply( X=X, INDEX=list(coo[xi,1], coo[xi,2]), FUN = function(w) {mean(w, na.rm=TRUE)}, simplify=TRUE )
+    nn = tapply( X=X, INDEX=list(coo[xi,1], coo[xi,2]), FUN = function(w) {length(w)}, simplify=TRUE )
 
+    yy_nm = cbind( as.numeric(dimnames(yy)[[1]]),as.numeric(dimnames(yy)[[2]]) )
+    nn_nm = cbind( as.numeric(dimnames(nn)[[1]]),as.numeric(dimnames(nn)[[2]]) )
+
+    if (length (yy_nm) < 5 ) next()
+
+    fY[yy_nm] = yy
+    fN[nn_nm] = nn
+
+    yy = nn = yy_nm = nn_nm = NULL
 
     fY[!is.finite(fY)] = 0
     fN[!is.finite(fN)] = 0
@@ -332,7 +338,6 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
       stmv::array_map( "xy->1", pa[ pa_i , p$variable$LOCS ], gridparams=p$gridparams )
     )
     dat$mean[xi] = pa$mean[pa_i][iYP]
-
   }
 
   ss = lm( dat$mean ~ dat[,p$variables$Y], na.action=na.omit)
@@ -354,7 +359,6 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   }
 
   return( list( predictions=pa, stmv_stats=stmv_stats, stmv_localstats=NULL ) )
-
 
 }
 

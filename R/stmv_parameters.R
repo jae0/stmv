@@ -28,7 +28,7 @@ stmv_parameters = function( p=list(), ... ) {
   if( !exists( "storage.backend", p))  p$storage.backend="bigmemory.ram"
 
   if( !exists( "stmv_variogram_method", p)) p$stmv_variogram_method = "fft"   # note GP methods are slow when there is too much data
-  if( !exists( "stmv_variogram_nbreaks_totry", p)) p$stmv_variogram_nbreaks_totry = c( 49, 64, 48, 32, 16 )
+  if( !exists( "stmv_variogram_nbreaks_totry", p)) p$stmv_variogram_nbreaks_totry = c( 49, 63, 32, 16, 98 )
 
   if( !exists( "stmv_autocorrelation_localrange", p)) p$stmv_autocorrelation_localrange = 0.1   # auto-correlation at which to compute range distance
   if( !exists( "stmv_autocorrelation_localrange_expanding", p)) p$stmv_autocorrelation_localrange_expanding = c(0.1, 0.01, 0.001)   # auto-correlation at which to compute range distance

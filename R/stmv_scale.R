@@ -13,7 +13,6 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps = 1e-6, ... ) {
   }
 
 
-
   # ---------------------
   # deal with additional passed parameters
   p_add = list(...)
@@ -264,5 +263,23 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps = 1e-6, ... ) {
 
 
   return(NULL)
+
+      if (0) {
+        # stats
+        # p$statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "phi", "nu", "localrange" )
+        S = stmv_attach( p$storage.backend, p$ptr$S )
+        sbox = list(
+          plats = seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ),
+          plons = seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ) )
+        # statistics coordinates
+        locations = as.matrix( expand_grid_fast( sbox$plons, sbox$plats ))
+        levelplot(S[,match("localrange", p$statsvars )]~ locations[,1]+locations[,2])
+        levelplot(S[,match("nu", p$statsvars )]~ locations[,1]+locations[,2])
+        levelplot(S[,match("sdTotal", p$statsvars )]~ locations[,1]+locations[,2])
+        levelplot(S[,match("sdSpatial", p$statsvars )]~ locations[,1]+locations[,2])
+
+      }
+
+
 
 }
