@@ -24,6 +24,12 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
   dx = dy = p$pres
   nr = p$nplons
   nc = p$nplats
+ # system size
+  #nr = nx
+  #nc = ny
+
+  # nr .. x/plon
+  # nc .. y/plat
 
   x_r = range(Ploc[,1])
   x_c = range(Ploc[,2])
@@ -36,7 +42,9 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
   if (p$stmv_force_complete_method=="kernel") {
     # essentially gaussian
 
-    wght = setup.image.smooth( nrow=nr, ncol=nc,  dx=p$pres, dy=p$pres, theta=p$stmv_force_complete_method_kernal_theta, xwidth=p$pres, ywidth=p$pres)
+    wght = setup.image.smooth( nrow=nr, ncol=nc,  dx=p$pres, dy=p$pres, theta=p$stmv_distance_statsgrid/5, xwidth=p$pres*10, ywidth=p$pres*10)
+    # theta=p$stmv_distance_statsgrid/5 ensures that  1 unit of theta=p$stmv_distance_statsgrid contains almost all the variance
+    # x/y width = zero padding .. just a bit to reduce boundary effects
 
     for ( iip in ip ) {
       ww = p$runs[ iip, "time_index" ]
@@ -46,14 +54,14 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
         rY = range( P[,ww], na.rm=TRUE )
         X = matrix(NA, ncol=nc, nrow=nr )
         X[ind] = P[,ww]
-        X = fields::image.smooth( X, dx=dx, dy=dy, wght )$sz
+        X = fields::image.smooth( X, dx=dx, dy=dy, wght )$z
         lb = which( X < rY[1] )
         if (length(lb) > 0) X[lb] = rY[1]
         lb = NULL
         ub = which( X > rY[2] )
         if (length(ub) > 0) X[ub] = rY[2]
         ub = NULL
-        P[,ww][tofill] = X[ tofill]
+        P[tofill,ww] = X[ tofill]
       }
 
       ## SD
@@ -69,7 +77,7 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
         ub = which( X > rY[2] )
         if (length(ub) > 0) X[ub] = rY[2]
         ub = NULL
-        Psd[,ww][tofill] = X[ tofill]
+        Psd[tofill,ww] = X[ tofill]
       }
     }
     return( "complete" )

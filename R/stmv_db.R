@@ -108,6 +108,7 @@
       for (fn in unlist(p$cache) ) if (length(fn)>0) if (file.exists(fn)) file.remove(fn)
       for (fn in unlist(p$bm) ) if (length(fn)>0)  if (file.exists(fn)) file.remove(fn)
       for (fn in unlist( p$saved_state_fn) ) if (length(fn)>0) if (file.exists(fn)) file.remove(fn)
+
       return( NULL )
     }
 
@@ -488,21 +489,60 @@
       Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
       S = stmv_attach( p$storage.backend, p$ptr$S )
       Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
+      # system size
+      #nr = nx
+      #nc = ny
+      # nr .. x/plon
+      # nc .. y/plat
 
-      Sloc_nplat = round( diff( p$corners$plat) / p$stmv_distance_statsgrid ) + 1L
-      Sloc_nplon = round( diff( p$corners$plon) / p$stmv_distance_statsgrid ) + 1L
+      nr = p$nplons
+      nc = p$nplats
 
       stats = matrix( NaN, ncol=length( p$statsvars ), nrow=nrow( Ploc) )  # output data .. ff does not handle NA's .. using NaN for now
       colnames(stats) = p$statsvars
 
+      x_r = range(Ploc[,1])
+      x_c = range(Ploc[,2])
+      origin=c( x_r[1], x_c[1] )
+      res=c(p$pres, p$pres)
+      ind = as.matrix(array_map( "xy->2", coords=Sloc[], origin=origin, res=res ))  # map Stats Locs to Plocs
+
+      wght = setup.image.smooth( nrow=nr, ncol=nc, dx=res[1], dy=res[2], theta=p$stmv_distance_statsgrid/5, xwidth=res[1]*10, ywidth=res[2]*10)
+      # theta=p$stmv_distance_statsgrid/5 ensures that  1 unit of theta=p$stmv_distance_statsgrid contains almost all the variance
+      # xywidth = zero padding
       for ( i in 1:length( p$statsvars ) ) {
         print(i)
-        # linear interpolation
-        u = as.image( S[,i], x=Sloc[,], nx=Sloc_nplon, ny=Sloc_nplat )  # do NOT use na.rm=TRUE .. causes zero-filling sometimes
-        stats[,i] = as.vector( fields::interp.surface( u, loc=Ploc[] ) ) # linear interpolation
+        X = matrix(NA,  nrow=nr, ncol=nc )
+        X[ind] = S[,i]
+        rY = range( X, na.rm=TRUE )
+        if (!is.finite(prod(rY))) next()
+        tofill = which( ! is.finite( stats[,i] ) )
+        if (length( tofill) > 0 ) {
+          # first try guassian kernel interpolation
+          X = fields::image.smooth( X, dx=res[1], dy=res[2], wght )$z
+          lb = which( X < rY[1] )
+          if (length(lb) > 0) X[lb] = rY[1]
+          lb = NULL
+          ub = which( X > rY[2] )
+          if (length(ub) > 0) X[ub] = rY[2]
+          ub = NULL
+          stats[tofill,i] = X[tofill]
+        }
+        tofill = which( ! is.finite( stats[,i] ) )
+        if (length( tofill) > 0 ) {
+          # last resort .. linear interpolation
+          u = as.image( X,  nx=nr, ny=nc )  # do NOT use na.rm=TRUE .. causes zero-filling sometimes
+          stats[,i] = as.vector( fields::interp.surface( u, loc=Ploc[] ) ) # linear interpolation
+          X = fields::image.smooth( X, dx=res[1], dy=res[2], wght )$z
+          lb = which( X < rY[1] )
+          if (length(lb) > 0) X[lb] = rY[1]
+          lb = NULL
+          ub = which( X > rY[2] )
+          if (length(ub) > 0) X[ub] = rY[2]
+          ub = NULL
+          stats[tofill,i] = X[tofill]
+        }
       }
-
-
       # lattice::levelplot( stats[,1] ~ Ploc[,1]+Ploc[,2])
       boundary = try( stmv_db( p=p, DS="boundary" ) )
       if( !("try-error" %in% class(boundary) ) ) {
@@ -520,9 +560,12 @@
       save( stats, file=fn, compress=TRUE )
 
       if (0){
-        i = 1
-        ii = which (is.finite(stats[,i]))
-        lattice::levelplot( stats[ii,i] ~ Ploc[ii,1]+Ploc[ii,2])
+        #         p$statsvars
+        # [1] "sdTotal"    "rsquared"   "ndata"      "sdSpatial"  "sdObs"      "phi"        "nu"         "localrange"
+        i = 4
+        lattice::levelplot( stats[,i] ~ Ploc[,1]+Ploc[,2], aspect="iso")
+        # ii = which (is.finite(stats[,i]))
+        # lattice::levelplot( stats[ii,i] ~ Ploc[ii,1]+Ploc[ii,2])
       }
 
       if(0) {

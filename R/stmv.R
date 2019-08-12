@@ -2,7 +2,7 @@
 
 stmv = function( p, runmode=NULL,
   DATA=NULL,
-  use_saved_state=NULL, nlogs=200, niter=5,
+  use_saved_state=NULL, nlogs=200, niter=1,
   debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE, robustify_quantiles=c(0.0005, 0.9995), ... ) {
 
 
@@ -502,6 +502,7 @@ stmv = function( p, runmode=NULL,
   file.create( p$stmv_current_status, showWarnings=FALSE )
   p <<- p  # force copy to parent (calling) environment (to remove "p$DATA" )
   stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data
+  p0 = p  # copy
   gc()
 
 
@@ -580,21 +581,20 @@ stmv = function( p, runmode=NULL,
       p$runmode = "scale"
       p$clusters = p$stmv_runmode[["scale"]] # as ram reqeuirements increase drop cpus
       if ( "restart_load" %in% runmode ) success = stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" )
-      p0 = p
       for ( ss in 1:length(p$stmv_variogram_nbreaks_totry) ) {
         p = p0
         if (ss > 1) p$stmv_variogram_nbreaks = p$stmv_variogram_nbreaks_totry[ss]
         currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
         if ( length(currentstatus$todo) < length(p$clusters)) break()
         parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
-        stmv_db(p=p, DS="save_current_state", datasubset="statistics") # temp save to disk
+        stmv_db(p=p, DS="save_current_state", runmode="scale", datasubset="statistics") # temp save to disk
       }
       # drop to serial mode to finish the rest
       currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
       if ( length(currentstatus$todo ) > 0 ) {
         p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) )
         stmv_scale( p=p  )
-        stmv_db(p=p, DS="save_current_state", datasubset="statistics") # temp save to disk
+        stmv_db(p=p, DS="save_current_state", runmode="scale", datasubset="statistics") # temp save to disk
       }
       message( "||| Time used for scale estimation: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n"  )
       p = p0
@@ -604,7 +604,6 @@ stmv = function( p, runmode=NULL,
     if ("interpolate" %in% runmode ) {
       stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" )
       currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
-      p0 = p
       for ( j in 1:length(p$stmv_autocorrelation_interpolation) ) {
         p = p0 #reset
         p$time_start_runmode = Sys.time()
@@ -614,7 +613,6 @@ stmv = function( p, runmode=NULL,
         if ( "restart_load" %in% runmode ) success = stmv_db(p=p, DS="load_saved_state", runmode="interpolate", datasubset="predictions" )
         if (!success) {
           p$clusters = p$stmv_runmode[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
-          j=3
           p$local_interpolation_correlation = p$stmv_autocorrelation_interpolation[j]
           currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
           if ( length(currentstatus$todo) < length(p$clusters)) break()
@@ -645,7 +643,6 @@ stmv = function( p, runmode=NULL,
     # finalize all interpolations where there are missing data/predictions using
     # interpolation based on data
     # NOTE:: no covariates are used
-    p0 = p
     for ( j in 1:length(p$stmv_autocorrelation_interpolation) ) {
       p = p0 #reset
       p$time_start_runmode = Sys.time()
@@ -685,8 +682,8 @@ stmv = function( p, runmode=NULL,
     message( "\n||| Entering <interpolate force complete> stage: ", format(Sys.time()),  "\n" )
     currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
     p$stmv_force_complete_method = "kernel"
-    p$stmv_force_complete_method_kernal_theta = p$pres * 5  # distance for kernal -based smoothing (bandwidth for 1 SD in gaussiaN SMOOTH)
     if ( length(currentstatus$todo) > 0 ) stmv_interpolate_force_complete( p=p )
+    # stmv_db(p=p, DS="load_saved_state", runmode="interpolate_force_complete", datasubset="predictions")  # not needed as this is a terminal step .. but to be consistent
     stmv_db(p=p, DS="save_current_state", runmode="interpolate_force_complete", datasubset="predictions")  # not needed as this is a terminal step .. but to be consistent
   }
 

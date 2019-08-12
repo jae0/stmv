@@ -177,10 +177,10 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     yy = tapply( X=X, INDEX=list(coo[xi,1], coo[xi,2]), FUN = function(w) {mean(w, na.rm=TRUE)}, simplify=TRUE )
     nn = tapply( X=X, INDEX=list(coo[xi,1], coo[xi,2]), FUN = function(w) {length(w)}, simplify=TRUE )
 
+    if (length (dimnames(yy)[[1]]) < 5 ) next()
+
     yy_nm = cbind( as.numeric(dimnames(yy)[[1]]),as.numeric(dimnames(yy)[[2]]) )
     nn_nm = cbind( as.numeric(dimnames(nn)[[1]]),as.numeric(dimnames(nn)[[2]]) )
-
-    if (length (yy_nm) < 5 ) next()
 
     fY[yy_nm] = yy
     fN[nn_nm] = nn
