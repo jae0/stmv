@@ -3,16 +3,12 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL  ) {
   E = stmv_error_codes()
   Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
 
-  # catch strange missing values ..
-  S = stmv_attach( p$storage.backend, p$ptr$S  )
-  ii = which( !is.finite(S[, match("localrange", p$statsvars ) ]) )
-  if ( length(ii) > 0 ) Sflag[ii] = E[["unknown"]]
-
   out = list()
 
   if (!is.null(reset)) {
     if ("incomplete" %in% reset) {
       # statistics locations where estimations need to be redone
+
       P = stmv_attach( p$storage.backend, p$ptr$P )
       if (ncol(P) == 1 ) {
         noP = which( !is.finite( P[]) )
@@ -40,6 +36,12 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL  ) {
         }
         ignore = toreset = inrange = E_not_to_alter = NULL
         gc()
+
+        # # catch strange missing values ..
+        # S = stmv_attach( p$storage.backend, p$ptr$S  )
+        # ii = which( !is.finite(S[, match("localrange", p$statsvars ) ]) )
+        # if ( length(ii) > 0 ) Sflag[ii] = E[["unknown"]]
+
       }
 
     } else if ("features"  %in% reset) {
