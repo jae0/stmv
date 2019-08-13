@@ -109,7 +109,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
 
-    if ( iip %in% logpoints )  currentstatus = stmv_logfile(p=p, flag= paste("Interpolation", p$runoption) )
+    if ( iip %in% logpoints )  slog = stmv_logfile(p=p, flag= paste("Interpolation", p$runoption) )
     Si = p$runs[ iip, "locs" ]
 
      print( paste("index =", iip, ";  Si = ", Si ) )

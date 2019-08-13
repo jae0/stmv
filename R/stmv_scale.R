@@ -63,10 +63,12 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps = 1e-6, ... ) {
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
 
-    if ( iip %in% logpoints )  currentstatus = stmv_logfile(p=p, flag= paste("Scale determination", p$runmode) )
+
+    if ( iip %in% logpoints )  slog = stmv_logfile(p=p, flag= paste("Scale determination", p$runmode) )
     Si = p$runs[ iip, "locs" ]
     if ( Sflag[Si] != E[["todo"]] ) next()  # previously attempted .. skip
     if (debugging) print( paste("index =", iip, ";  Si = ", Si ) )
+    # print( paste( iip, names(E)[match(Sflag[Si], unlist(E) ) ] ) )
 
     # obtain indices of data locations withing a given spatial range, optimally determined via variogram
     # find data nearest Sloc[Si,] and with sufficient data

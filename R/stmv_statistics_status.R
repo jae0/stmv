@@ -80,7 +80,7 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL  ) {
         # assuming that there is depth information in Pcov, match Sloc's and filter out locations that fall on land
         if ( "z" %in% p$variables$COV ){
           z = stmv_attach( p$storage.backend, p$ptr$Pcov[["z"]] )[]
-          Pabove = which( z < p$depth.filter ) # negative = above land
+          Pabove = which( z < p$depth.filter ) # negative = above land:: depth = - height
           Pbelow = which( z >= p$depth.filter )
 
           Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
@@ -113,8 +113,6 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL  ) {
           }
         }
       }
-
-      return(NULL)  # done!
 
     } else {
       Eflags_reset = E[ reset ]

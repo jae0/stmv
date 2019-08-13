@@ -34,7 +34,7 @@ stmv = function( p, runmode=NULL,
     s_runmode = s_runmode[ unlist(o) ]
     runmode = intersect(s_runmode, c( "globalmodel", "scale", "interpolate", "interpolate_force_complete", "save_completed_data", "save_intermediate_results", "restart_load") )
   }
-  message( "Runmodes: ", runmode  )
+  message( "Runmodes: ", paste(runmode, ", ", sep=" ")  )
 
   p$nlogs = nlogs
 
@@ -502,7 +502,6 @@ stmv = function( p, runmode=NULL,
   file.create( p$stmv_current_status, showWarnings=FALSE )
   p <<- p  # force copy to parent (calling) environment (to remove "p$DATA" )
   stmv_db( p=p, DS="save.parameters" )  # save in case a restart is required .. mostly for the pointers to data
-  p0 = p  # copy
   gc()
 
 
@@ -542,7 +541,7 @@ stmv = function( p, runmode=NULL,
         global_model = stmv_db( p=p, DS="global_model")
         if (is.null(global_model)) stop("Global model not found.")
         dev = global_model$deviance
-        print(dev)
+        message("Model Deviance: ", dev)
         if (nn > 1) {
           if (abs(dev - devold)/(0.1 + abs(dev)) < eps ) break() # globalmodel_converged
           inputdata = P[ iYP ]  # P are the spatial/spatio-temporal random effects (on link scale)
@@ -563,6 +562,7 @@ stmv = function( p, runmode=NULL,
         devold = dev
         global_model$data = NULL  # reduce file size/RAM
         gc()
+        message("Creating fixed effects predictons")
         parallel_run( FUNC=stmv_predict_globalmodel, p=p, runindex=list( pnt=1:p$nt ), Yq=Yq, global_model=global_model )
         Ydata  = residuals(global_model, type="working") # ie. internal (link) scale
         Y = stmv_attach( p$storage.backend, p$ptr$Y )
@@ -580,10 +580,16 @@ stmv = function( p, runmode=NULL,
       p$time_start_runmode = Sys.time()
       p$runmode = "scale"
       p$clusters = p$stmv_runmode[["scale"]] # as ram reqeuirements increase drop cpus
+      currentstatus = stmv_statistics_status( p=p, reset=c("features") )
+      currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
+      # stmv_error_codes()[["todo"]], nrow=nSloc, ncol=1 )
       if ( "restart_load" %in% runmode ) success = stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" )
+      p0 = p
+
       for ( ss in 1:length(p$stmv_variogram_nbreaks_totry) ) {
         p = p0
-        if (ss > 1) p$stmv_variogram_nbreaks = p$stmv_variogram_nbreaks_totry[ss]
+        p$stmv_variogram_nbreaks = p$stmv_variogram_nbreaks_totry[ss]
+        #if (ss > 1)
         currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
         if ( length(currentstatus$todo) < length(p$clusters)) break()
         parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
@@ -604,9 +610,10 @@ stmv = function( p, runmode=NULL,
     if ("interpolate" %in% runmode ) {
       stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" )
       currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
+      p$time_start_runmode = Sys.time()
+      p0 = p
       for ( j in 1:length(p$stmv_autocorrelation_interpolation) ) {
         p = p0 #reset
-        p$time_start_runmode = Sys.time()
         p$runmode = paste("interpolate_", j, sep="")
         message( "\n||| Entering <", p$runmode, "> stage: ", format(Sys.time()) , "\n" )
         success = FALSE
@@ -643,9 +650,10 @@ stmv = function( p, runmode=NULL,
     # finalize all interpolations where there are missing data/predictions using
     # interpolation based on data
     # NOTE:: no covariates are used
+    p$time_start_runmode = Sys.time()
+    p0 = p
     for ( j in 1:length(p$stmv_autocorrelation_interpolation) ) {
       p = p0 #reset
-      p$time_start_runmode = Sys.time()
       p$runmode = paste("interpolate_hybrid_boost_", j, sep="")
       message( "\n||| Entering <", p$runmode, "> stage: ", format(Sys.time()) , "\n" )
       success = FALSE
