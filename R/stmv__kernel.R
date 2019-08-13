@@ -1,5 +1,5 @@
 
-stmv__kernel = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ...  ) {
+stmv__kernel = function( p=NULL, dat=NULL, pa=NULL, phi=NULL, nu=NULL, variablelist=FALSE, ...  ) {
   #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
   #\\ note: time is not being modelled and treated independently
   #\\      .. you had better have enough data in each time slice ..  essentially this is cubic b-splines interpolation
@@ -23,7 +23,9 @@ stmv__kernel = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ...  ) {
   origin=c(x_r[1], x_c[1])
   res=c(p$pres, p$pres)
 
-  wght = setup.image.smooth( nrow=nr, ncol=nc,  dx=p$pres, dy=p$pres, theta=p$stmv_distance_statsgrid, xwidth=p$pres, ywidth=p$pres)
+  theta = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_autocorrelation_localrange )
+
+  wght = setup.image.smooth( nrow=nr, ncol=nc,  dx=p$pres, dy=p$pres, theta=theta, xwidth=p$pres, ywidth=p$pres)
 
   for ( ti in 1:p$nt ) {
 

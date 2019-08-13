@@ -507,9 +507,12 @@
       res=c(p$pres, p$pres)
       ind = as.matrix(array_map( "xy->2", coords=Sloc[], origin=origin, res=res ))  # map Stats Locs to Plocs
 
-      wght = setup.image.smooth( nrow=nr, ncol=nc, dx=res[1], dy=res[2], theta=p$stmv_distance_statsgrid/5, xwidth=res[1]*10, ywidth=res[2]*10)
-      # theta=p$stmv_distance_statsgrid/5 ensures that  1 unit of theta=p$stmv_distance_statsgrid contains almost all the variance
+      wght = setup.image.smooth( nrow=nr, ncol=nc, dx=res[1], dy=res[2],
+        theta=p$stmv_distance_statsgrid/3, xwidth=res[1]*10, ywidth=res[2]*10)
+      # theta is used to upscale/warp a coarse grid that is dense (already interpolated), keeping it small retains texture
+      # theta=p$stmv_distance_statsgrid/3 ensures that 1 unit of theta=p$stmv_distance_statsgrid contains almost all the variance
       # xywidth = zero padding
+
       for ( i in 1:length( p$statsvars ) ) {
         print(i)
         X = matrix(NA,  nrow=nr, ncol=nc )
