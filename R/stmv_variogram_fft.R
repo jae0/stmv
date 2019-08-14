@@ -22,6 +22,8 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
 
   }
 
+  out = list()
+
   names(xyz) =c("x", "y", "z")
   zmean = mean(xyz$z, na.rm=TRUE)
   zsd = sd(xyz$z, na.rm=TRUE)
@@ -64,14 +66,18 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
     u = NULL
   }
 
-
-  origin = c(x_r[1], x_c[1])
-  resolution  = c(dr, dc)
+  out$nr = nr
+  out$nc = nc
+  out$origin = origin = c(x_r[1], x_c[1])
+  out$resolution  = resolution = c(dr, dc)
 
   #  Nadaraya/Watson normalization for missing values s
   coo = as.matrix(array_map( "xy->2", coords=xyz[,c("x", "y")], origin=origin, res=resolution ))
   yy = tapply( X=z, INDEX=list(coo[,1], coo[,2]),  FUN = function(w) {mean(w, na.rm=TRUE)}, simplify=TRUE )
   nn = tapply( X=z, INDEX=list(coo[,1], coo[,2]), FUN = function(w) {length(w)}, simplify=TRUE )
+
+  if (length (dimnames(yy)[[1]]) < 5 ) return( out )
+
   fY[as.numeric(dimnames(yy)[[1]]),as.numeric(dimnames(yy)[[2]])] = yy
   fN[as.numeric(dimnames(nn)[[1]]),as.numeric(dimnames(nn)[[2]])] = nn
   yy = nn = NULL
@@ -127,7 +133,7 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
   # plot(ac ~ distances, data=vgm   )
   # plot(sv ~ distances, data=vgm   )
 
-  out = list(vgm=vgm )
+  out$vgm = vgm
 
   if (add.interpolation) {
     # interpolated surface

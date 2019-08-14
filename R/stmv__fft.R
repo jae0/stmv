@@ -179,13 +179,10 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
 
     if (length (dimnames(yy)[[1]]) < 5 ) next()
 
-    yy_nm = cbind( as.numeric(dimnames(yy)[[1]]),as.numeric(dimnames(yy)[[2]]) )
-    nn_nm = cbind( as.numeric(dimnames(nn)[[1]]),as.numeric(dimnames(nn)[[2]]) )
+    fY[as.numeric(dimnames(yy)[[1]]),as.numeric(dimnames(yy)[[2]])] = yy
+    fN[as.numeric(dimnames(nn)[[1]]),as.numeric(dimnames(nn)[[2]])] = nn
 
-    fY[yy_nm] = yy
-    fN[nn_nm] = nn
-
-    yy = nn = yy_nm = nn_nm = NULL
+    yy = nn =  NULL
 
     fY[!is.finite(fY)] = 0
     fN[!is.finite(fN)] = 0
