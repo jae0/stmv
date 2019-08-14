@@ -484,7 +484,7 @@
       } # end if TIME
 
 
-      # prediction.stats
+      # prediction.stats .. warp to same resolution
 
       Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
       S = stmv_attach( p$storage.backend, p$ptr$S )
@@ -522,20 +522,6 @@
         tofill = which( ! is.finite( stats[,i] ) )
         if (length( tofill) > 0 ) {
           # first try guassian kernel interpolation
-          X = fields::image.smooth( X, dx=res[1], dy=res[2], wght )$z
-          lb = which( X < rY[1] )
-          if (length(lb) > 0) X[lb] = rY[1]
-          lb = NULL
-          ub = which( X > rY[2] )
-          if (length(ub) > 0) X[ub] = rY[2]
-          ub = NULL
-          stats[tofill,i] = X[tofill]
-        }
-        tofill = which( ! is.finite( stats[,i] ) )
-        if (length( tofill) > 0 ) {
-          # last resort .. linear interpolation
-          u = as.image( X,  nx=nr, ny=nc )  # do NOT use na.rm=TRUE .. causes zero-filling sometimes
-          stats[,i] = as.vector( fields::interp.surface( u, loc=Ploc[] ) ) # linear interpolation
           X = fields::image.smooth( X, dx=res[1], dy=res[2], wght )$z
           lb = which( X < rY[1] )
           if (length(lb) > 0) X[lb] = rY[1]
