@@ -577,13 +577,13 @@ stmv = function( p, runmode=NULL,
     # -----------------------------------------------------
     if ( "scale" %in% runmode ) {
       message ( "\n", "||| Entering spatial scale (variogram) determination: ", format(Sys.time()) , "\n" )
-      if ( "restart_load" %in% runmode ) success = stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" )
+      if ( "restart_load" %in% runmode ) {
+        success = stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" )
+        currentstatus = stmv_statistics_status( p=p)
+      }
       p$time_start_runmode = Sys.time()
       p$runmode = "scale"
       p$clusters = p$stmv_runmode[["scale"]] # as ram reqeuirements increase drop cpus
-      currentstatus = stmv_statistics_status( p=p, reset=c("features") )
-      currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
-      # stmv_error_codes()[["todo"]], nrow=nSloc, ncol=1 )
       p0 = p
       ncomplete = -1
       for ( ss in 1:length(p$stmv_variogram_nbreaks_totry) ) {
@@ -604,8 +604,10 @@ stmv = function( p, runmode=NULL,
     # -----------------------------------------------------
     if ("interpolate" %in% runmode ) {
       stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" )
-      if ( "restart_load" %in% runmode ) success = stmv_db(p=p, DS="load_saved_state", runmode="interpolate", datasubset="predictions" )
-      currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
+      if ( "restart_load" %in% runmode ) {
+        success = stmv_db(p=p, DS="load_saved_state", runmode="interpolate", datasubset="predictions" )
+        currentstatus = stmv_statistics_status( p=p)
+      }
       p$time_start_runmode = Sys.time()
       p0 = p
       ncomplete = -1
@@ -619,7 +621,7 @@ stmv = function( p, runmode=NULL,
         if ( ncomplete == currentstatus$n.complete ) break()
         ncomplete = currentstatus$n.complete
         if ( length(currentstatus$todo) == 0 ) break()
-        if ( length(currentstatus$todo) < length(p$clusters)) p$clusters = p$clusters[1] # drop to serial mode
+        if ( length(currentstatus$todo) < length(p$clusters)) p$clusters = p$clusters[1] # drop to serial mode .. otherwise negative indexing occurs
         parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  )
         stmv_db(p=p, DS="save_current_state", runmode="interpolate", datasubset="predictions")
       }
@@ -640,7 +642,10 @@ stmv = function( p, runmode=NULL,
     # finalize all interpolations where there are missing data/predictions using
     # interpolation based on data
     # NOTE:: no covariates are used
-    if ( "restart_load" %in% runmode ) success = stmv_db(p=p, DS="load_saved_state", runmode="interpolate_hybrid_boost", datasubset="predictions" )
+    if ( "restart_load" %in% runmode ) {
+      success = stmv_db(p=p, DS="load_saved_state", runmode="interpolate_hybrid_boost", datasubset="predictions" )
+      currentstatus = stmv_statistics_status( p=p)
+    }
     p$time_start_runmode = Sys.time()
     p0 = p
     ncomplete = -1
