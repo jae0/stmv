@@ -728,8 +728,10 @@
           ny = length(seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ) )
           if (nx*ny != nrow(S) ) stop( "stmv.statistics has the wrong dimensionality/size" )
 
+          # the saved state is a dense interpolated surface.
+          # Linear interpolation to get down scaling is sufficient
+          # .. could use fft, but no real value as it is already interpolated
           for ( i in 1:length( p$statsvars ) ) {
-            # linear interpolation
             u = as.image( stats[,i], x=Ploc[,], nx=nx, ny=ny )
             S[,i] = as.vector( fields::interp.surface( u, loc=Sloc[] ) ) # linear interpolation
           }

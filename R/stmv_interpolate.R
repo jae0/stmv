@@ -284,12 +284,14 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
         pa=pa,
         nu=nu,
         phi=phi,
-        localrange=localrange,
+        localrange=10,
         varObs = S[Si, i_sdObs]^2,
         varSpatial = S[Si, i_sdSpatial]^2,
         sloc = Sloc[Si,]
       )
     )
+
+    dat_range = range( dat[,iY], na.rm=TRUE )
 
     dat =  NULL
     pa  =  NULL
@@ -329,6 +331,19 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
         browser()
       }
       next()  # looks to be a faulty solution
+    }
+
+
+    tolimit = which( res$predictions$mean < dat_range[1])
+    if (length(tolimit) > 0 ) {
+      res$predictions$mean[tolimit] = dat_range[1]
+      res$predictions$sd[tolimit] = NA
+    }
+
+    tolimit = which( res$predictions$mean > dat_range[2])
+    if (length(tolimit) > 0 ) {
+      res$predictions$mean[tolimit] = dat_range[2]
+      res$predictions$sd[tolimit] = NA
     }
 
 

@@ -3,7 +3,7 @@
 stmv = function( p, runmode=NULL,
   DATA=NULL,
   use_saved_state=NULL, nlogs=200, niter=1,
-  debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE, robustify_quantiles=c(0.0005, 0.9995), ... ) {
+  debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE, robustify_quantiles=c(0.005, 0.995), ... ) {
 
 
   if (0) {
@@ -13,7 +13,7 @@ stmv = function( p, runmode=NULL,
     use_saved_state=NULL # or "disk"
     DATA=NULL
     debug_plot_variable_index=1
-    robustify_quantiles=c(0.0005, 0.9995)
+    robustify_quantiles=c(0.005, 0.995)
     # runmode=c("interpolate", "globalmodel")
     # runmode=c("interpolate")
   }
@@ -130,7 +130,6 @@ stmv = function( p, runmode=NULL,
     p$ptr$Y = ff( Ydata, dim=dim(Ydata), file=p$cache$Y, overwrite=TRUE )
   }
 
-
   if ( any(grepl("globalmodel", runmode) ) ) {
     if ( exists("stmv_global_modelengine", p) ) {
       if ( p$stmv_global_modelengine !="none" ) {
@@ -152,19 +151,19 @@ stmv = function( p, runmode=NULL,
           preds = try( eval(parse(text=pp$stmv_global_model$predict )) )
           preds = p$stmv_global_model$predict( global_model )  # needs to be tested. .. JC
           Ydata  = Ydata - preds # ie. internalR (link) scale
-          Yq = quantile( Ydata, probs=robustify_quantiles )
         } else {
           # at present only those that have a predict and residuals methods ...
           global_model = stmv_db( p=p, DS="global_model")
           Ydata  = residuals(global_model, type="working") # ie. internal (link) scale
-          Yq = quantile( Ydata, probs=c(0.0005, 0.9995) )  # extreme data can make convergence slow and erratic 99.9%CI
         }
-        Ydata[ Ydata < Yq[1] ] = Yq[1]
-        Ydata[ Ydata > Yq[2] ] = Yq[2]
         global_model =NULL
       }
     }
   }
+
+  Yq = quantile( Ydata, probs=robustify_quantiles )  # extreme data can make convergence slow and erratic 99.9%CI
+  Ydata[ Ydata < Yq[1] ] = Yq[1]
+  Ydata[ Ydata > Yq[2] ] = Yq[2]
 
   Y = stmv_attach( p$storage.backend, p$ptr$Y )
   Y[] = Ydata[]  # update Ydata ...
@@ -565,6 +564,7 @@ stmv = function( p, runmode=NULL,
         message("Creating fixed effects predictons")
         parallel_run( FUNC=stmv_predict_globalmodel, p=p, runindex=list( pnt=1:p$nt ), Yq=Yq, global_model=global_model )
         Ydata  = residuals(global_model, type="working") # ie. internal (link) scale
+
         Y = stmv_attach( p$storage.backend, p$ptr$Y )
         Y[] = Ydata[]  # update Ydata ...
         global_model = NULL
@@ -578,17 +578,18 @@ stmv = function( p, runmode=NULL,
     if ( "scale" %in% runmode ) {
       message ( "\n", "||| Entering spatial scale (variogram) determination: ", format(Sys.time()) , "\n" )
       if ( "restart_load" %in% runmode ) {
-        success = stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" )
+        stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" )
         currentstatus = stmv_statistics_status( p=p)
       }
       p$time_start_runmode = Sys.time()
-      p$runmode = "scale"
-      p$clusters = p$stmv_runmode[["scale"]] # as ram reqeuirements increase drop cpus
       p0 = p
       ncomplete = -1
       for ( ss in 1:length(p$stmv_variogram_nbreaks_totry) ) {
         p = p0
         p$stmv_variogram_nbreaks = p$stmv_variogram_nbreaks_totry[ss]
+        p$runmode = paste( "scale_", p$stmv_variogram_nbreaks, sep="" )
+        message( "\n||| Entering <", p$runmode, "> stage: ", format(Sys.time()) , "\n" )
+        p$clusters = p$stmv_runmode[["scale"]] # as ram reqeuirements increase drop cpus
         currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
         if ( ncomplete == currentstatus$n.complete ) break()
         ncomplete = currentstatus$n.complete
@@ -605,7 +606,7 @@ stmv = function( p, runmode=NULL,
     if ("interpolate" %in% runmode ) {
       stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" )
       if ( "restart_load" %in% runmode ) {
-        success = stmv_db(p=p, DS="load_saved_state", runmode="interpolate", datasubset="predictions" )
+        stmv_db(p=p, DS="load_saved_state", runmode="interpolate", datasubset="predictions" )
         currentstatus = stmv_statistics_status( p=p)
       }
       p$time_start_runmode = Sys.time()
@@ -613,10 +614,10 @@ stmv = function( p, runmode=NULL,
       ncomplete = -1
       for ( j in 1:length(p$stmv_autocorrelation_interpolation) ) {
         p = p0 #reset
-        p$runmode = paste("interpolate_", j, sep="")
+        p$local_interpolation_correlation = p$stmv_autocorrelation_interpolation[j]
+        p$runmode = paste("interpolate_", p$local_interpolation_correlation, sep="")
         message( "\n||| Entering <", p$runmode, "> stage: ", format(Sys.time()) , "\n" )
         p$clusters = p$stmv_runmode[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
-        p$local_interpolation_correlation = p$stmv_autocorrelation_interpolation[j]
         currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
         if ( ncomplete == currentstatus$n.complete ) break()
         ncomplete = currentstatus$n.complete
@@ -630,6 +631,10 @@ stmv = function( p, runmode=NULL,
     }
     # stmv_db(p=p, DS="load_saved_state", runmode="interpolate" )
     # stmv_db(p=p, DS="save_current_state", runmode="interpolate")
+    # P = stmv_attach( p$storage.backend, p$ptr$P )
+    # Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+    # lattice::levelplot( P[] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso" )
+
   }
 
 
@@ -643,7 +648,7 @@ stmv = function( p, runmode=NULL,
     # interpolation based on data
     # NOTE:: no covariates are used
     if ( "restart_load" %in% runmode ) {
-      success = stmv_db(p=p, DS="load_saved_state", runmode="interpolate_hybrid_boost", datasubset="predictions" )
+      stmv_db(p=p, DS="load_saved_state", runmode="interpolate_hybrid_boost", datasubset="predictions" )
       currentstatus = stmv_statistics_status( p=p)
     }
     p$time_start_runmode = Sys.time()
@@ -651,10 +656,10 @@ stmv = function( p, runmode=NULL,
     ncomplete = -1
     for ( j in 1:length(p$stmv_autocorrelation_interpolation) ) {
       p = p0 #reset
-      p$runmode = paste("interpolate_hybrid_boost_", j, sep="")
+      p$local_interpolation_correlation = p$stmv_autocorrelation_interpolation[j]
+      p$runmode = paste("interpolate_hybrid_boost_", p$local_interpolation_correlation, sep="")
       message( "\n||| Entering <", p$runmode, "> stage: ", format(Sys.time()) , "\n" )
       p$clusters = p$stmv_runmode[["interpolate_hybrid_boost"]] # as ram reqeuirements increase drop cpus
-      p$local_interpolation_correlation = p$stmv_autocorrelation_interpolation[j]
       p$stmv_local_modelengine = "kernel"  # override -- no covariates, basic moving window average (weighted by inverse variance)
       currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
       if ( ncomplete == currentstatus$n.complete ) break()

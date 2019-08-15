@@ -126,7 +126,11 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   fN = matrix(0, nrow = nr2, ncol = nc2)
 
   coo = as.matrix(array_map( "xy->2", coords=dat[, p$variables$LOCS], origin=origin, res=resolution ))
-
+  good = which(coo[,1] >= 1 & coo[,1] <= nr & coo[,2] >= 1  & coo[,2] )
+  if (length(good) > 0) {
+    coo = coo[good,]
+    dat = dat[good,]
+  }
   # default is no time, with time, updated in loop
   xi   = 1:nrow(dat) # all data as p$nt==1
   pa_i = 1:nrow(pa)

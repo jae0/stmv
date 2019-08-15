@@ -40,7 +40,7 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
 
 
   if (p$stmv_force_complete_method=="kernel") {
-    # essentially gaussian
+    # essentially gaussian fft
 
     wght = setup.image.smooth( nrow=nr, ncol=nc,  dx=p$pres, dy=p$pres, theta=p$stmv_distance_statsgrid*3, xwidth=p$pres*10, ywidth=p$pres*10)
     # theta=p$stmv_distance_statsgrid*3 ensures that smoothing occurs. in a dense matrix, pres/3 is good to keep the texture when eg warping a full matrix.
@@ -86,7 +86,7 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
 
 
   if (p$stmv_force_complete_method=="linear") {
-    # fastest
+    # fastest .. but extrapolation is not possible .. can cause very unexpected results
     for ( iip in ip ) {
       ww = p$runs[ iip, "time_index" ]
       # means
