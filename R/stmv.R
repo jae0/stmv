@@ -575,12 +575,12 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
       message ( "\n", "||| Entering spatial scale (variogram) determination: ", format(Sys.time()) , "\n" )
       if ( "restart_load" %in% runmode ) {
         stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" )
-        currentstatus = stmv_statistics_status( p=p)
       }
       p$time_start_runmode = Sys.time()
-      p$runmode = paste( "scale_", p$stmv_variogram_nbreaks, sep="" )
+      p$runmode = "scale"
       p$clusters = p$stmv_runmode[["scale"]] # as ram reqeuirements increase drop cpus
       message( "\n||| Entering <", p$runmode, "> stage: ", format(Sys.time()) , "\n" )
+      currentstatus = stmv_statistics_status( p=p)
       currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
       parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
       stmv_db(p=p, DS="save_current_state", runmode="scale", datasubset="statistics") # temp save to disk

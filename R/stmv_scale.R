@@ -111,14 +111,14 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps = 1e-6, ... ) {
         discretized_n = round(stmv_distance_cur / p$pres),
         nbreaks=p$stmv_variogram_nbreaks_totry[ss]
       ) )
-      yi = NULL
-      gc()
       if ( !is.null(o)) {
-        if ( inherits(o, "try-error")) {
-          if ( !exists(p$stmv_variogram_method, o)) break()
+        if ( !inherits(o, "try-error")) {
+          if ( exists(p$stmv_variogram_method, o)) break()
         }
       }
     }
+    yi = NULL
+    gc()
 
     if ( is.null(o)) {
       Sflag[Si] = E[["variogram_failure"]]
