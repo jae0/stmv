@@ -63,7 +63,6 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps = 1e-6, ... ) {
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
 
-
     if ( iip %in% logpoints )  slog = stmv_logfile(p=p, flag= paste("Scale determination", p$runmode) )
     Si = p$runs[ iip, "locs" ]
     if ( Sflag[Si] != E[["todo"]] ) next()  # previously attempted .. skip
@@ -102,16 +101,24 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps = 1e-6, ... ) {
 
     o = NULL
     gc()
-    o = try( stmv_variogram(
-      xy=Yloc[yi,],
-      z=Y[yi,],
-      methods=p$stmv_variogram_method,
-      distance_cutoff=stmv_distance_cur,
-      discretized_n = round(stmv_distance_cur / p$pres),
-      nbreaks=p$stmv_variogram_nbreaks
-    ) )
-    yi = NULL
-    gc()
+
+    for ( ss in 1:length(p$stmv_variogram_nbreaks_totry) ) {  # different number of breaks actually has an influence upon the stability of variograms
+      o = try( stmv_variogram(
+        xy=Yloc[yi,],
+        z=Y[yi,],
+        methods=p$stmv_variogram_method,
+        distance_cutoff=stmv_distance_cur,
+        discretized_n = round(stmv_distance_cur / p$pres),
+        nbreaks=p$stmv_variogram_nbreaks_totry[ss]
+      ) )
+      yi = NULL
+      gc()
+      if ( !is.null(o)) {
+        if ( inherits(o, "try-error")) {
+          if ( !exists(p$stmv_variogram_method, o)) break()
+        }
+      }
+    }
 
     if ( is.null(o)) {
       Sflag[Si] = E[["variogram_failure"]]

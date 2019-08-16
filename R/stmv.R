@@ -1,16 +1,12 @@
 
 
-stmv = function( p, runmode=NULL,
-  DATA=NULL,
-  use_saved_state=NULL, nlogs=200, niter=1,
+stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
   debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE, robustify_quantiles=c(0.005, 0.995), ... ) {
-
 
   if (0) {
     runmode = NULL
     nlogs = 25
     niter = 1
-    use_saved_state=NULL # or "disk"
     DATA=NULL
     debug_plot_variable_index=1
     robustify_quantiles=c(0.005, 0.995)
@@ -21,7 +17,7 @@ stmv = function( p, runmode=NULL,
   #\\ localized modelling of space and time data to predict/interpolate upon a grid
   #\\ speed ratings: bigmemory.ram (1), ff (2), bigmemory.filebacked (3)
 
-  # ------------------use_saved_state-----------------------------------
+  # -----------------------------------------------------
 
   if (!exists("time_start", p) ) p$time_start = Sys.time()
 
@@ -515,7 +511,7 @@ stmv = function( p, runmode=NULL,
     }
   }
 
-  if (is.null(use_saved_state)) stmv_statistics_status( p=p, reset="features" )  # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
+  stmv_statistics_status( p=p, reset="features" )  # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
 
   devold = Inf
   eps = 1e-9
@@ -582,24 +578,13 @@ stmv = function( p, runmode=NULL,
         currentstatus = stmv_statistics_status( p=p)
       }
       p$time_start_runmode = Sys.time()
-      p0 = p
-      ncomplete = -1
-      for ( ss in 1:length(p$stmv_variogram_nbreaks_totry) ) {
-        p = p0
-        p$stmv_variogram_nbreaks = p$stmv_variogram_nbreaks_totry[ss]
-        p$runmode = paste( "scale_", p$stmv_variogram_nbreaks, sep="" )
-        message( "\n||| Entering <", p$runmode, "> stage: ", format(Sys.time()) , "\n" )
-        p$clusters = p$stmv_runmode[["scale"]] # as ram reqeuirements increase drop cpus
-        currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
-        if ( ncomplete == currentstatus$n.complete ) break()
-        ncomplete = currentstatus$n.complete
-        if ( length(currentstatus$todo) == 0 ) break()
-        if ( length(currentstatus$todo) < length(p$clusters)) p$clusters = p$clusters[1] # drop to serial mode
-        parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
-        stmv_db(p=p, DS="save_current_state", runmode="scale", datasubset="statistics") # temp save to disk
-      }
+      p$runmode = paste( "scale_", p$stmv_variogram_nbreaks, sep="" )
+      p$clusters = p$stmv_runmode[["scale"]] # as ram reqeuirements increase drop cpus
+      message( "\n||| Entering <", p$runmode, "> stage: ", format(Sys.time()) , "\n" )
+      currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
+      parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
+      stmv_db(p=p, DS="save_current_state", runmode="scale", datasubset="statistics") # temp save to disk
       message( "||| Time used for scale estimation: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n"  )
-      p = p0
     }
 
     # -----------------------------------------------------
