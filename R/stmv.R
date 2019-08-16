@@ -144,9 +144,10 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
             message( "||| where 'global_model', newdata=pa' are required " )
             stop()
           }
-          preds = try( eval(parse(text=pp$stmv_global_model$predict )) )
-          preds = p$stmv_global_model$predict( global_model )  # needs to be tested. .. JC
-          Ydata  = Ydata - preds # ie. internalR (link) scale
+          Ypreds = try( eval(parse(text=pp$stmv_global_model$predict )) )
+          Ypreds = p$stmv_global_model$predict( global_model )  # needs to be tested. .. JC
+          Ydata  = Ydata - Ypreds # ie. internalR (link) scale
+          Ypreds = NULL
         } else {
           # at present only those that have a predict and residuals methods ...
           global_model = stmv_db( p=p, DS="global_model")
@@ -156,19 +157,14 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
       }
     }
   }
-
-  Yq = quantile( Ydata, probs=robustify_quantiles )  # extreme data can make convergence slow and erratic 99.9%CI
-  Ydata[ Ydata < Yq[1] ] = Yq[1]
-  Ydata[ Ydata > Yq[2] ] = Yq[2]
-
-  Y = stmv_attach( p$storage.backend, p$ptr$Y )
-  Y[] = Ydata[]  # update Ydata ...
+  Yq = quantile( Ydata, probs=robustify_quantiles )  # extreme data can make convergence slow and erratic .. this will be used later to limit 99.9%CI
+  lb = which( Ydata < Yq[1])
+  ub = which( Ydata > Yq[2])
+  if (length(lb) > 0) Ydata[lb] = Yq[1]
+  if (length(ub) > 0) Ydata[ub] = Yq[2]
+  Y[] = Ydata[]
   Ydata = NULL
-
   gc()
-
-
-
 
 
   # data coordinates
@@ -516,8 +512,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
   devold = Inf
   eps = 1e-9
 
-  iYP = stmv_index_predictions_to_observations(p)
-  iYP_nomatch = which(!is.finite(iYP))
 
   # NOTE:: must not sink the following memory allocation steps into a deeper function as
   # NOTE:: bigmemory RAM seems to lose the pointers if they are not made simultaneously ?
@@ -539,8 +533,12 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
         message("Model Deviance: ", dev)
         if (nn > 1) {
           if (abs(dev - devold)/(0.1 + abs(dev)) < eps ) break() # globalmodel_converged
+          iYP = stmv_index_predictions_to_observations(p)
           inputdata = P[ iYP ]  # P are the spatial/spatio-temporal random effects (on link scale)
+          iYP = NULL
+          iYP_nomatch = which(!is.finite(iYP))
           inputdata[ iYP_nomatch ] = 0  # E[RaneFF] = 0
+          iYP_nomatch = NULL
           # return to user scale (that of Y)
           if ( exists( "stmv_global_family", p)) {
             if (p$stmv_global_family != "none") {
@@ -555,14 +553,22 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
           inputdata = NULL
         }
         devold = dev
+        Ypreds = predict(  global_model, type="link", se.fit=FALSE )
+        Yq_preds = quantile( Ypreds, probs=robustify_quantiles ) # extreme data can make convergence slow and erratic .. this will be used later to limit 99.9%CI
+        Ypreds = NULL
         global_model$data = NULL  # reduce file size/RAM
         gc()
         message("Creating fixed effects predictons")
-        parallel_run( FUNC=stmv_predict_globalmodel, p=p, runindex=list( pnt=1:p$nt ), Yq=Yq, global_model=global_model )
+        parallel_run( FUNC=stmv_predict_globalmodel, p=p, runindex=list( pnt=1:p$nt ), Yq=Yq_preds, global_model=global_model )
         Ydata  = residuals(global_model, type="working") # ie. internal (link) scale
-
+        Yq = quantile( Ydata, probs=robustify_quantiles )  # extreme data can make convergence slow and erratic .. this will be used later to limit 99.9%CI
+        lb = which( Ydata < Yq[1])
+        ub = which( Ydata > Yq[2])
+        if (length(lb) > 0) Ydata[lb] = Yq[1]
+        if (length(ub) > 0) Ydata[ub] = Yq[2]
         Y = stmv_attach( p$storage.backend, p$ptr$Y )
-        Y[] = Ydata[]  # update Ydata ...
+        Y[] = Ydata[]  # update "Ydata" ... ( residuals)
+        Ydata = NULL
         global_model = NULL
         p$time_covariates = round(difftime( Sys.time(), p$time_covariates_0 , units="hours"), 3)
         message( paste( "||| Time taken to predict covariate surface (hours):", p$time_covariates ) )

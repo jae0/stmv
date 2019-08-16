@@ -100,8 +100,11 @@ stmv_predict_globalmodel = function( ip=NULL, p, Yq=NULL, global_model=NULL ) {
 
       if ( ! is.null(Pbaseline) ) {
         if (!is.null(Yq)) {
-          Pbaseline$fit[ Pbaseline$fit < Yq[1] ] = Yq[1]  # do not permit extrapolation
-          Pbaseline$fit[ Pbaseline$fit > Yq[2] ] = Yq[2]
+          # do not permit extrapolation
+          lb = which( Pbaseline$fit < Yq[1])
+          ub = which( Pbaseline$fit > Yq[2])
+          if (length(lb) > 0) Pbaseline$fit[lb] = Yq[1]
+          if (length(ub) > 0) Pbaseline$fit[ub] = Yq[2]
         }
         P0[,it] = Pbaseline$fit
         P0sd[,it] = Pbaseline$se.fit
@@ -114,8 +117,11 @@ stmv_predict_globalmodel = function( ip=NULL, p, Yq=NULL, global_model=NULL ) {
       pa = NULL
       if (!inherits(Pbaseline, "try-error")) {
         if (!is.null(Yq)) {
-          Pbaseline$fit[ Pbaseline$fit < Yq[1] ] = Yq[1]  # do not permit extrapolation
-          Pbaseline$fit[ Pbaseline$fit > Yq[2] ] = Yq[2]
+          # do not permit extrapolation
+          lb = which( Pbaseline$fit < Yq[1])
+          ub = which( Pbaseline$fit > Yq[2])
+          if (length(lb) > 0) Pbaseline$fit[lb] = Yq[1]
+          if (length(ub) > 0) Pbaseline$fit[ub] = Yq[2]
         }
         P0[,it] = Pbaseline$fit
         P0sd[,it] = Pbaseline$se.fit
