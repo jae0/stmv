@@ -1,7 +1,7 @@
 
 stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
   plotdata=FALSE, methods=c("geoR"), discretized_n=64, nbreaks = 32,
-  distance_cutoff=NA, family="gaussian", stanmodel=NULL, range_correlation=0.1, stmv_autocorrelation_fft_taper=0, stmv_fft_taper_fraction=sqrt(0.5),
+  distance_cutoff=NA, family=gaussian(link="identity"), stanmodel=NULL, range_correlation=0.1, stmv_autocorrelation_fft_taper=0, stmv_fft_taper_fraction=sqrt(0.5),
   modus_operandi="easygoing" ) {
 
   #\\ estimate empirical variograms (actually correlation functions)
@@ -31,7 +31,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
         plotdata=TRUE
         nbreaks = 15
         distance_cutoff=NA
-        family="gaussian"
+        family=gaussian(link="identity")
         range_correlation=0.1
 
 
@@ -248,7 +248,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
 
         # $bayesx$model
         # Call:
-        # bayesx(formula = z ~ sx(plon, plat, bs = "kr"), data = xys, family = family,
+        # bayesx(formula = z ~ sx(plon, plat, bs = "kr"), data = xys, family = family$family,
         #     method = "REML")
         # Summary:
         # N = 100  df = 9.725  AIC = 0.547  BIC = 25.882
@@ -321,11 +321,6 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
 
   # ----- start -----
 
-
-  if (family !="gaussian" )  {
-    if ( !c("inla", "bayesx") %in% methods ) {
-      stop( "The family option only works for inla, bayesx, and geostatsp")
-  }}
 
 
   out = list()
@@ -1189,8 +1184,8 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
     xys = as.data.frame(xy/out$stmv_internal_scale)
     names(xys) =  c("plon", "plat" ) # arbitrary
 
-    fm <- bayesx( z ~ sx(plon, plat, bs="kr" ), family=family, method="REML", data =xys )
-    # fm <- bayesx( z ~ sx(plon, plat,  bs="kr" ), family=family, method="HMCMC", data =xy )
+    fm <- bayesx( z ~ sx(plon, plat, bs="kr" ), family=family$family, method="REML", data =xys )
+    # fm <- bayesx( z ~ sx(plon, plat,  bs="kr" ), family=family$family, method="HMCMC", data =xy )
     # ?bayesx.control
     # warning( "BayesX documentation is not clear if rho is the scale parameter. This seems ok, but should do some more testing." )
 

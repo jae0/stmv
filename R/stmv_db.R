@@ -34,17 +34,14 @@
 
       p$cache$Ploc =  file.path( p$stloc, "predictions_loc.cache" )
 
-      if (exists("stmv_global_modelengine", p) ) {
         if (p$stmv_global_modelengine !="none" ) {
           p$cache$P0 = file.path( p$stloc, "P0.cache" )
           p$cache$P0sd = file.path( p$stloc, "P0sd.cache" )
         }
-      }
 
       p$cache$S =     file.path( p$stloc, "statistics.cache" )
       p$cache$Sloc =  file.path( p$stloc, "statistics_loc.cache" )
       p$cache$Sflag =     file.path( p$stloc, "statistics_flag.cache" )
-
 
       p$saved_state_fn = list()
       p$saved_state_fn$P = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean", "rdata", sep="." ) )
@@ -52,12 +49,10 @@
       p$saved_state_fn$Psd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd", "rdata", sep="." ) )
       p$saved_state_fn$stats = file.path( p$stmvSaveDir, paste( "tmp_stmv.statistics", "rdata", sep=".") )
       p$saved_state_fn$sflag = file.path( p$stmvSaveDir, paste( "tmp_stmv.sflag", "rdata", sep=".") )
-      if (exists("stmv_global_modelengine", p) ) {
         if (p$stmv_global_modelengine !="none" ) {
           p$saved_state_fn$P0 = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean0", "rdata", sep="." ) )
           p$saved_state_fn$P0sd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd0", "rdata", sep="." ) )
         }
-      }
 
       if (p$storage.backend == "bigmemory.filebacked" ) {
         p$bm = p$cache
@@ -356,12 +351,10 @@
             if (is.null(ip)) ip = 1:p$nruns
             PP = stmv_attach( p$storage.backend, p$ptr$P )
             PPsd = stmv_attach( p$storage.backend, p$ptr$Psd )
-            if (exists("stmv_global_modelengine", p)) {
               if (p$stmv_global_modelengine !="none" ) {
                 P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
                 P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )
               }
-            }
             vv = ncol(PP)
             for (it in ip) {
               y = p$yrs[ p$runs[it, "pny"] ]
@@ -375,7 +368,6 @@
                 V = PPsd[,it]
               }
 
-              if (exists("stmv_global_modelengine", p) ) {
                 if (p$stmv_global_modelengine !="none" ) {
                   ## maybe add via simulation, note: P0 and P are on link scale to this point
                   uu = which(!is.finite(P[]))
@@ -385,8 +377,6 @@
                   if (length(nV)>0) V[nV] = 0 # permit covariate-base predictions to pass through ..
                   V = sqrt( V[]^2 + P0sd[,it]^2) # simple additive independent errors assumed
                 }
-              }
-#            }})
 
               if ( !is.null(shallower) ){
                 if ( is.vector(P) ) {
@@ -403,14 +393,10 @@
               P =   P[]
 
               # return to user scale (that of Y)
-              if ( exists( "stmv_global_family", p)) {
-                if (p$stmv_global_family != "none") {
-                  if (exists("linkinv", p$stmv_global_family)) {
-                    Pl = p$stmv_global_family$linkinv( Pl[] )
-                    Pu = p$stmv_global_family$linkinv( Pu[] )
-                    P = p$stmv_global_family$linkinv( P[] )
-                  }
-                }
+              if (exists("linkinv", p$stmv_global_family )) {
+                Pl = p$stmv_global_family$linkinv( Pl[] )
+                Pu = p$stmv_global_family$linkinv( Pu[] )
+                P = p$stmv_global_family$linkinv( P[] )
               }
 
               # any additional transformations
@@ -433,16 +419,13 @@
 
         PP = stmv_attach( p$storage.backend, p$ptr$P )
         PPsd = stmv_attach( p$storage.backend, p$ptr$Psd )
-        if (exists("stmv_global_modelengine", p)) {
           if (p$stmv_global_modelengine !="none" ) {
             P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
             P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )
           }
-        }
 
         P = PP[]
         V = PPsd[]
-        if (exists("stmv_global_modelengine", p) ) {
           if (p$stmv_global_modelengine !="none" ) {
             uu = which(!is.finite(P[]))
             if (length(uu)>0) P[uu] = 0 # permit covariate-base predictions to pass through ..
@@ -451,7 +434,6 @@
             if (length(nV)>0) V[nV] = 0 # permit covariate-base predictions to pass through ..
             V = sqrt( V[]^2 + P0sd[]^2) # simple additive independent errors assumed
           }
-        }
         if ( !is.null(shallower) ){
           P[shallower] = NA
           V[shallower] = NA
@@ -462,14 +444,10 @@
         P =  P[]
 
         # return to user scale (that of Y)
-        if ( exists( "stmv_global_family", p)) {
-          if (p$stmv_global_family != "none") {
-            if (exists("linkinv", p$stmv_global_family)) {
-              Pl = p$stmv_global_family$linkinv( Pl[] )
-              Pu = p$stmv_global_family$linkinv( Pu[] )
-              P = p$stmv_global_family$linkinv( P[] )
-            }
-          }
+        if (exists("linkinv", p$stmv_global_family )) {
+          Pl = p$stmv_global_family$linkinv( Pl[] )
+          Pu = p$stmv_global_family$linkinv( Pu[] )
+          P = p$stmv_global_family$linkinv( P[] )
         }
 
         if (exists("stmv_Y_transform", p)) {
@@ -582,26 +560,22 @@
         sP = stmv_attach( p$storage.backend, p$ptr$P )[]
         save( sP, file=paste(p$saved_state_fn$P, runmode, sep="."), compress=TRUE )
         sP = NULL
-        if (exists("stmv_global_modelengine", p)) {
           if (p$stmv_global_modelengine !="none" ) {
             sP0 = stmv_attach( p$storage.backend, p$ptr$P0 )[]
             save( sP0,   file=paste(p$saved_state_fn$P0, runmode, sep="."),   compress=TRUE )
             sP0 = NULL
           }
-        }
       }
 
       if ( "Psd" %in% datasubset ) {
         sPsd = stmv_attach( p$storage.backend, p$ptr$Psd )[]
         save( sPsd, file=paste(p$saved_state_fn$Psd, runmode, sep="."), compress=TRUE )
         sPsd = NULL
-        if (exists("stmv_global_modelengine", p)) {
           if (p$stmv_global_modelengine !="none" ) {
             sP0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )[]
             save( sP0sd, file=paste(p$saved_state_fn$P0sd, runmode, sep="."),   compress=TRUE )
             sP0sd = NULL
           }
-        }
       }
 
       if ( "Pn" %in% datasubset ) {
@@ -638,11 +612,9 @@
       # named differently to avoid collisions
       if ( "P" %in% datasubset ) {
         P = stmv_attach( p$storage.backend, p$ptr$P )
-        if (exists("stmv_global_modelengine", p)) {
           if (p$stmv_global_modelengine !="none" ) {
             P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
           }
-        }
         sP = matrix( NaN, nrow=nrow(P), ncol=ncol(P) )
         if (file.exists(paste( p$saved_state_fn$P, runmode, sep="."))) {
           load( paste( p$saved_state_fn$P, runmode, sep=".") )
@@ -651,7 +623,6 @@
         }
         if (is.vector(sP))   sP=as.matrix(sP, nrow=nrow(P), ncol=1) # big matrix does not like vectors
         P[] = sP[]
-        if (exists("stmv_global_modelengine", p)) {
           if (p$stmv_global_modelengine !="none" ) {
             sP0 = matrix( NaN, nrow=nrow(P0), ncol=ncol(P0) )
             if (file.exists(paste( p$saved_state_fn$P0, runmode, sep="."))) {
@@ -662,18 +633,15 @@
             P0[] = sP0[]
             sP0 = NULL
           }
-        }
         sP = NULL
       }
 
 
       if ( "Psd" %in% datasubset ) {
         Psd = stmv_attach( p$storage.backend, p$ptr$Psd )
-        if (exists("stmv_global_modelengine", p)) {
           if (p$stmv_global_modelengine !="none" ) {
             P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )
           }
-        }
         sPsd = matrix( NaN, nrow=nrow(Psd), ncol=ncol(Psd) )
         if (file.exists(paste( p$saved_state_fn$Psd, runmode, sep="."))) {
           load( paste( p$saved_state_fn$Psd, runmode, sep=".") )
@@ -682,7 +650,6 @@
         }
         if (is.vector(sPsd)) sPsd=as.matrix(sPsd, nrow=nrow(Psd), ncol=1)  # big matrix does not like vectors
         Psd[] = sPsd[]
-        if (exists("stmv_global_modelengine", p)) {
           if (p$stmv_global_modelengine !="none" ) {
             sP0sd = matrix( NaN, nrow=nrow(P0sd), ncol=ncol(P0sd) )
             if (file.exists(paste( p$saved_state_fn$P0sd, runmode, sep="."))) {
@@ -693,7 +660,6 @@
             P0sd[] = sP0sd[]
             sP0sd = NULL
           }
-        }
         sPsd = NULL
       }
 

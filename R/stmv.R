@@ -120,7 +120,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
 
   # if there is a global model overwrite Ydata with residuals
   if ( any(grepl("globalmodel", runmode) ) ) {
-    if ( exists("stmv_global_modelengine", p) ) {
       if ( p$stmv_global_modelengine !="none" ) {
         if ( p$stmv_global_modelformula !="none" ) {
           stmv_db( p=p, DS="global_model.redo", B=DATA$input )
@@ -147,7 +146,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
           Ydata  = residuals(global_model, type="working") # ie. internal (link) scale
         }
         global_model =NULL
-        Yq_link = p$stmv_global_family$linkfun( Ydata_datarange ) # raw data range
+        if (exists("linkfun", p$stmv_global_family )) {
+          Yq_link = p$stmv_global_family$linkfun( Ydata_datarange ) # convert raw data range to link range
+        }
         # could operate upon quantiles of residuals but in poor models this can hyper inflate errors and slow down the whole estimation process
         # truncating using data range as a crude approximation of overall residual and prediction scale
         lb = which( Ydata < Yq_link[1])
@@ -159,7 +160,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
         Ydata = NULL
         gc()
       }
-    }
   }
 
 
@@ -443,7 +443,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
   ################
 
 
-  if (exists("stmv_global_modelengine", p) ) {
     if (p$stmv_global_modelengine !="none" ) {
       sP0 = matrix( NaN, nrow=nPloc, ncol=p$nt )
       if (!is.null(sP0)) {
@@ -479,7 +478,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
         sP0sd=NULL;
       }
     }
-  }
 
 
   # --------------------------------
@@ -516,8 +514,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
   # data to be worked upon .. either the raw data or covariate-residuals
   for ( nn in 1:niterations ) {
     message( "Iteration ", nn, " of ", niterations, "\n" )
-
-    if (exists("stmv_global_modelengine", p) ) {
       if (p$stmv_global_modelengine !="none" ) {
         # create prediction suface .. additive offsets
         # test to see if all covars are static as this can speed up the initial predictions
@@ -536,11 +532,10 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
           iYP_nomatch = which(!is.finite(iYP))
           inputdata[ iYP_nomatch ] = 0  # E[RaneFF] = 0
           iYP_nomatch = NULL
-          # return to user scale (that of Y)
-          if ( exists( "stmv_global_family", p)) {
-            if (p$stmv_global_family != "none") {
-              if (exists("linkinv", p$stmv_global_family)) inputdata = p$stmv_global_family$linkinv( inputdata )
-            }
+
+          if (exists("linkinv", p$stmv_global_family )) {
+            # return to user scale (that of Y)
+            inputdata = p$stmv_global_family$linkinv( inputdata )
           }
           global_model$model[, p$variables$Y ] = global_model$model[, p$variables$Y ] - inputdata  # update to current estimate of fixed effects
           inputdata = global_model$model
@@ -637,9 +632,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
         plot( ddo ~ testdat$substrate.grainsize )
         ddo[ddo > 10] = 10
         hist(ddo, "fd")
-
-
-
       }
     }
 

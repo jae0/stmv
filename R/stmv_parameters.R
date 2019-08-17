@@ -115,10 +115,9 @@ stmv_parameters = function( p=list(), ... ) {
     if (p$stmv_local_modelengine %in% c("gstat") ) p$libs = c( p$libs, "gstat" )
   }
 
-  if (exists("stmv_global_modelengine", p)) {
-    if (p$stmv_global_modelengine %in% c("gam", "mgcv") ) p$libs = c( p$libs, "mgcv" )
-    if (p$stmv_global_modelengine %in% c("bigglm", "biglm") ) p$libs = c( p$libs, "biglm" )
-  }
+  if (!exists("stmv_global_modelengine", p)) p$stmv_global_modelengine = "none"   # required variable .. default to none
+  if (p$stmv_global_modelengine %in% c("gam", "mgcv") ) p$libs = c( p$libs, "mgcv" )
+  if (p$stmv_global_modelengine %in% c("bigglm", "biglm") ) p$libs = c( p$libs, "biglm" )
 
   p$libs = unique( p$libs )
   suppressMessages( RLibrary( p$libs ) )

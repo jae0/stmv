@@ -99,7 +99,8 @@ stmv_predict_globalmodel = function( ip=NULL, p, prediction_limits=NULL, global_
       pa = NULL
 
       if ( ! is.null(Pbaseline) ) {
-        Yq_link = p$stmv_global_family$linkfun( prediction_limits ) # raw data range
+        Yq_link = prediction_limits
+        if (exists("linkfun", p$stmv_global_family )) Yq_link = p$stmv_global_family$linkfun( prediction_limits ) # raw data range
         # extreme data can make convergence slow and erratic .. this will be used later to limit 99.9%CI
         # do not permit extrapolation
         lb = which( Pbaseline$fit < Yq_link[1])
@@ -116,6 +117,8 @@ stmv_predict_globalmodel = function( ip=NULL, p, prediction_limits=NULL, global_
       Pbaseline = try( predict( global_model, newdata=pa, type="link", se.fit=TRUE ) )  # must be on link scale
       pa = NULL
       if (!inherits(Pbaseline, "try-error")) {
+        Yq_link = prediction_limits
+        if (exists("linkfun", p$stmv_global_family )) Yq_link = p$stmv_global_family$linkfun( prediction_limits ) # raw data range
         # do not permit extrapolation
         lb = which( Pbaseline$fit < Yq_link[1])
         ub = which( Pbaseline$fit > Yq_link[2])
