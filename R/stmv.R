@@ -1,7 +1,7 @@
 
 
 stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
-  debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE, robustify_quantiles=c(0.005, 0.995), ... ) {
+  debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE, robustify_quantiles=c(0.0005, 0.9995), ... ) {
 
   if (0) {
     runmode = NULL
@@ -9,7 +9,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
     niter = 1
     DATA=NULL
     debug_plot_variable_index=1
-    robustify_quantiles=c(0.005, 0.995)
+    robustify_quantiles=c(0.0005, 0.9995)
     # runmode=c("interpolate", "globalmodel")
     # runmode=c("interpolate")
   }
@@ -98,20 +98,12 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
 
   stmv_db( p=p, DS="cleanup" )
 
-  # if (!extrapolate_predictions) {
-  #   # force output covars to be in the same range as input data .. no extrapolation
-  #   for ( vn in p$variables$COV ){
-  #     vnrange = range( DATA$input[,vn], na.rm=TRUE )
-  #     toolow = which( DATA$output$COV[[vn]] < vnrange[1] )
-  #     if (length(toolow) > 1) DATA$output$COV[[vn]][toolow] = vnrange[1]
-  #     toohigh = which( DATA$output$COV[[vn]] > vnrange[1] )
-  #     if (length(toohigh) > 1) DATA$output$COV[[vn]][toohigh] = vnrange[2]
-  #   }
-  # }
 
-
-  # Ypreds = NULL
   Ydata = as.matrix( DATA$input[, p$variables$Y ] )
+  Ydata_datarange = range( Ydata, na.rm=TRUE )
+  if (!is.null(robustify_quantiles)) Ydata_datarange = quantile( Ydata, probs=robustify_quantiles, na.rm=TRUE )
+
+
   if (exists("stmv_Y_transform", p)) Ydata = p$stmv_Y_transform$transf( Ydata )
   if (p$storage.backend == "bigmemory.ram" ) {
     tmp_Y = big.matrix( nrow=nrow(Ydata), ncol=1, type="double"  )
@@ -126,6 +118,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
     p$ptr$Y = ff( Ydata, dim=dim(Ydata), file=p$cache$Y, overwrite=TRUE )
   }
 
+  # if there is a global model overwrite Ydata with residuals
   if ( any(grepl("globalmodel", runmode) ) ) {
     if ( exists("stmv_global_modelengine", p) ) {
       if ( p$stmv_global_modelengine !="none" ) {
@@ -154,17 +147,21 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
           Ydata  = residuals(global_model, type="working") # ie. internal (link) scale
         }
         global_model =NULL
+        Yq_link = p$stmv_global_family$linkfun( Ydata_datarange ) # raw data range
+        # could operate upon quantiles of residuals but in poor models this can hyper inflate errors and slow down the whole estimation process
+        # truncating using data range as a crude approximation of overall residual and prediction scale
+        lb = which( Ydata < Yq_link[1])
+        ub = which( Ydata > Yq_link[2])
+        if (length(lb) > 0) Ydata[lb] = Yq_link[1]
+        if (length(ub) > 0) Ydata[ub] = Yq_link[2]
+        Y = stmv_attach( p$storage.backend, p$ptr$Y )
+        Y[] = Ydata[]
+        Ydata = NULL
+        gc()
       }
     }
   }
-  Yq = quantile( Ydata, probs=robustify_quantiles )  # extreme data can make convergence slow and erratic .. this will be used later to limit 99.9%CI
-  lb = which( Ydata < Yq[1])
-  ub = which( Ydata > Yq[2])
-  if (length(lb) > 0) Ydata[lb] = Yq[1]
-  if (length(ub) > 0) Ydata[ub] = Yq[2]
-  Y[] = Ydata[]
-  Ydata = NULL
-  gc()
+
 
 
   # data coordinates
@@ -507,7 +504,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
     }
   }
 
-  stmv_statistics_status( p=p, reset="features" )  # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
+  invisible (stmv_statistics_status( p=p, reset="features" ))  # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
 
   devold = Inf
   eps = 1e-9
@@ -545,33 +542,104 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
               if (exists("linkinv", p$stmv_global_family)) inputdata = p$stmv_global_family$linkinv( inputdata )
             }
           }
-          global_model$data[, p$variables$Y ] = global_model$data[, p$variables$Y ] - inputdata  # update to current estimate of fixed effects
-          inputdata = global_model$data
+          global_model$model[, p$variables$Y ] = global_model$model[, p$variables$Y ] - inputdata  # update to current estimate of fixed effects
+          inputdata = global_model$model
           global_model = NULL
           gc()
           global_model = stmv_db( p=p, DS="global_model.redo", B=inputdata,  savedata=FALSE )  # do not overwrite initial model
           inputdata = NULL
         }
+
         devold = dev
-        Ypreds = predict(  global_model, type="link", se.fit=FALSE )
-        Yq_preds = quantile( Ypreds, probs=robustify_quantiles ) # extreme data can make convergence slow and erratic .. this will be used later to limit 99.9%CI
-        Ypreds = NULL
-        global_model$data = NULL  # reduce file size/RAM
         gc()
         message("Creating fixed effects predictons")
-        parallel_run( FUNC=stmv_predict_globalmodel, p=p, runindex=list( pnt=1:p$nt ), Yq=Yq_preds, global_model=global_model )
+        parallel_run( FUNC=stmv_predict_globalmodel, p=p, runindex=list( pnt=1:p$nt ), prediction_limits=Ydata_datarange, global_model=global_model )
         Ydata  = residuals(global_model, type="working") # ie. internal (link) scale
-        Yq = quantile( Ydata, probs=robustify_quantiles )  # extreme data can make convergence slow and erratic .. this will be used later to limit 99.9%CI
-        lb = which( Ydata < Yq[1])
-        ub = which( Ydata > Yq[2])
-        if (length(lb) > 0) Ydata[lb] = Yq[1]
-        if (length(ub) > 0) Ydata[ub] = Yq[2]
+
+        # Yq_link:: could operate upon quantiles of residuals but in poor models this can hyper inflate errors and slow down the whole estimation process
+        # truncating using data range as a crude approximation of overall residual and prediction scale
+        lb = which( Ydata < Yq_link[1])
+        ub = which( Ydata > Yq_link[2])
+        if (length(lb) > 0) Ydata[lb] = Yq_link[1]
+        if (length(ub) > 0) Ydata[ub] = Yq_link[2]
         Y = stmv_attach( p$storage.backend, p$ptr$Y )
         Y[] = Ydata[]  # update "Ydata" ... ( residuals)
         Ydata = NULL
         global_model = NULL
         p$time_covariates = round(difftime( Sys.time(), p$time_covariates_0 , units="hours"), 3)
         message( paste( "||| Time taken to predict covariate surface (hours):", p$time_covariates ) )
+      }
+
+      if (0) {
+        #check that working residual is correct
+        dd = glm( Sepal.Length ~ Sepal.Width + Petal.Length, data=iris, family=gaussian(link="log"))
+        ddp = predict(  dd, type="link", se.fit=FALSE )
+        ddr = residuals(dd, type="working") #
+        inv = family(dd)$linkinv
+        ddo = inv( ddp + ddr )
+        plot( ddo ~ iris$Sepal.Length )
+
+        require(mgcv)
+        dd = gam( Sepal.Length ~ s(Sepal.Width) + s(Petal.Length), data=iris, family=gaussian(link="log"))
+        ddp = predict(  dd, type="link", se.fit=FALSE )
+        ddr = residuals(dd, type="working") #
+        inv = family(dd)$linkinv
+        ddo = inv( ddp + ddr )
+        plot( ddo ~ iris$Sepal.Length )
+
+        require(mgcv)
+        yy = ifelse( iris$Sepal.Length < median(iris$Sepal.Length), 0, 1 )
+        dd = gam( yy ~ s(Sepal.Width), data=iris, family=binomial(link="logit"))
+        ddp = predict(  dd, type="link", se.fit=FALSE )
+        ddr = residuals(dd, type="working") #
+        inv = family(dd)$linkinv
+        lnk = family(dd)$linkfun
+        ddo = inv(ddp + ddr)
+        plot( ddo ~ yy )
+
+
+        # test a subsample
+        testdat = global_model$model
+        range(testdat$substrate.grainsize)
+        hist(testdat$substrate.grainsize)
+        dd = global_model
+        ddp = predict(  dd, type="link", se.fit=FALSE )
+        ddr = residuals(dd, type="working") #
+        inv = family(dd)$linkinv
+        ddo = inv( ddp + ddr )
+        ddo[ddo > 30] = 30
+        plot( ddo ~ testdat$substrate.grainsize )
+        hist(ddo, "fd")
+
+
+        # test a subsample
+        testdat = DATA$input[sample(nrow(DATA$input),1000),]
+        range(testdat$substrate.grainsize)
+        hist(testdat$substrate.grainsize)
+        dd = gam( substrate.grainsize ~ s(b.sdSpatial) + s(b.localrange) + s(log(z))+ s(log(dZ))+ s(log(ddZ)) , data=testdat, family=gaussian(link="log"))
+        ddp = predict(  dd, type="link", se.fit=FALSE )
+        ddr = residuals(dd, type="working") #
+        inv = family(dd)$linkinv
+        ddo = inv( ddp + ddr )
+        plot( ddo ~ testdat$substrate.grainsize )
+        ddo[ddo > 10] = 10
+        hist(ddo, "fd")
+
+        # test transformations within smooths
+        testdat$log_z = log(testdat$z)
+        testdat$log_dZ = log(testdat$dZ)
+        testdat$log_ddZ = log(testdat$ddZ)
+        dd = gam( substrate.grainsize ~ s(b.sdSpatial) + s(b.localrange) + s(log_z)+ s(log_dZ)+ s(log_ddZ) , data=testdat, family=gaussian(link="log"))
+        ddp = predict(  dd, type="link", se.fit=FALSE )
+        ddr = residuals(dd, type="working") #
+        inv = family(dd)$linkinv
+        ddo = inv( ddp + ddr )
+        plot( ddo ~ testdat$substrate.grainsize )
+        ddo[ddo > 10] = 10
+        hist(ddo, "fd")
+
+
+
       }
     }
 

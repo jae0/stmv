@@ -39,7 +39,7 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
 
 
     par = c(total.var=1, sigma.sq.fraction=0.75, phi=0.9 )
-    lower =c(0.75, 0, 0.01 )
+    lower =c(0.75, 0, 0.1 )
     upper =c(1.25, 1, 5)
 
     fit = try( optim( par=par, vgs=vgs, vxs=vxs, nu=nu, w=w, method="Nelder-Meads", fn=vario_function_phi ) )
@@ -78,8 +78,8 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
 
 
     par = c(total.var=1, sigma.sq.fraction=0.5, phi=1.1, nu=0.9)
-    lower =c(0.75, 0, 0.01, 0.01 )
-    upper =c(1.25, 1, 3,    3)
+    lower =c(0.75, 0, 0.1, 0.1 )
+    upper =c(1.25, 1, 5,    5)
 
     fit = try( optim( par=par, vgs=vgs, vxs=vxs, w=w, method="L-BFGS-B", lower=lower, upper=upper, fn=vario_function_phi_nu, control=control ))
       if ( !inherits(fit, "try-error")) if ( fit$convergence != 0 ) class(fit) = "try-error"

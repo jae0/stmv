@@ -1,4 +1,4 @@
-stmv_predict_globalmodel = function( ip=NULL, p, Yq=NULL, global_model=NULL ) {
+stmv_predict_globalmodel = function( ip=NULL, p, prediction_limits=NULL, global_model=NULL ) {
 
   if (0) {
     # for debugging  runs ..
@@ -99,13 +99,13 @@ stmv_predict_globalmodel = function( ip=NULL, p, Yq=NULL, global_model=NULL ) {
       pa = NULL
 
       if ( ! is.null(Pbaseline) ) {
-        if (!is.null(Yq)) {
-          # do not permit extrapolation
-          lb = which( Pbaseline$fit < Yq[1])
-          ub = which( Pbaseline$fit > Yq[2])
-          if (length(lb) > 0) Pbaseline$fit[lb] = Yq[1]
-          if (length(ub) > 0) Pbaseline$fit[ub] = Yq[2]
-        }
+        Yq_link = p$stmv_global_family$linkfun( prediction_limits ) # raw data range
+        # extreme data can make convergence slow and erratic .. this will be used later to limit 99.9%CI
+        # do not permit extrapolation
+        lb = which( Pbaseline$fit < Yq_link[1])
+        ub = which( Pbaseline$fit > Yq_link[2])
+        if (length(lb) > 0) Pbaseline$fit[lb] = Yq_link[1]
+        if (length(ub) > 0) Pbaseline$fit[ub] = Yq_link[2]
         P0[,it] = Pbaseline$fit
         P0sd[,it] = Pbaseline$se.fit
         Pbaseline = NULL
@@ -116,13 +116,11 @@ stmv_predict_globalmodel = function( ip=NULL, p, Yq=NULL, global_model=NULL ) {
       Pbaseline = try( predict( global_model, newdata=pa, type="link", se.fit=TRUE ) )  # must be on link scale
       pa = NULL
       if (!inherits(Pbaseline, "try-error")) {
-        if (!is.null(Yq)) {
-          # do not permit extrapolation
-          lb = which( Pbaseline$fit < Yq[1])
-          ub = which( Pbaseline$fit > Yq[2])
-          if (length(lb) > 0) Pbaseline$fit[lb] = Yq[1]
-          if (length(ub) > 0) Pbaseline$fit[ub] = Yq[2]
-        }
+        # do not permit extrapolation
+        lb = which( Pbaseline$fit < Yq_link[1])
+        ub = which( Pbaseline$fit > Yq_link[2])
+        if (length(lb) > 0) Pbaseline$fit[lb] = Yq_link[1]
+        if (length(ub) > 0) Pbaseline$fit[ub] = Yq_link[2]
         P0[,it] = Pbaseline$fit
         P0sd[,it] = Pbaseline$se.fit
       }
