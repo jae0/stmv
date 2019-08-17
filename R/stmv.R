@@ -633,7 +633,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
         ddo[ddo > 10] = 10
         hist(ddo, "fd")
       }
-    }
 
 
     # -----------------------------------------------------
