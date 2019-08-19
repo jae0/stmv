@@ -121,9 +121,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
   # if there is a global model overwrite Ydata with residuals
   if ( any(grepl("globalmodel", runmode) ) ) {
       if ( p$stmv_global_modelengine !="none" ) {
-        if ( p$stmv_global_modelformula !="none" ) {
-          stmv_db( p=p, DS="global_model.redo", B=DATA$input )
-        }
+        if ( p$stmv_global_modelformula !="none" ) stmv_db( p=p, DS="global_model.redo", B=DATA$input )
         if ( any(grepl("globalmodel.only", runmode)))  return( stmv_db( p=p, DS="global_model" ) )
         # model complete .. now predict to get residuals
         if ( p$stmv_global_modelengine == "userdefined") {

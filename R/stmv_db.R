@@ -181,7 +181,7 @@
       if ( file.exists( fn.global_model ) ) {
         message( "||| A global model already exists. It will be overwritten in 10 seconds.")
         message( "|||   Type <ctrl-c> or <esc> to interrupt. To reuse the saved model ")
-        message( "|||   leave out 'global_model' as a runmode option ... overwriting in:")
+        message( "|||   'p$stmv_runmode$globalmodel = FALSE' ... overwriting in:")
         for (i in 9:0) {
           Sys.sleep(1)
           cat( i)
@@ -473,8 +473,14 @@
       # nr .. x/plon
       # nc .. y/plat
 
-      nr = p$nplons
-      nc = p$nplats
+      #nr = p$nplons
+      #nc = p$nplats
+
+      u = list(
+        x=seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ),
+        y=seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid )
+      )
+      u$z = matrix( NA, nrow=length(u$x), ncol=length(u$y) )
 
       stats = matrix( NaN, ncol=length( p$statsvars ), nrow=nrow( Ploc) )  # output data .. ff does not handle NA's .. using NaN for now
       colnames(stats) = p$statsvars
@@ -482,34 +488,25 @@
       x_r = range(Ploc[,1])
       x_c = range(Ploc[,2])
       origin=c( x_r[1], x_c[1] )
-      res=c(p$pres, p$pres)
-      ind = as.matrix(array_map( "xy->2", coords=Sloc[], origin=origin, res=res ))  # map Stats Locs to Plocs
 
-      wght = setup.image.smooth( nrow=nr, ncol=nc, dx=res[1], dy=res[2],
-        theta=p$stmv_distance_statsgrid/3, xwidth=res[1]*10, ywidth=res[2]*10)
-      # theta is used to upscale/warp a coarse grid that is dense (already interpolated), keeping it small retains texture
-      # theta=p$stmv_distance_statsgrid/3 ensures that 1 unit of theta=p$stmv_distance_statsgrid contains almost all the variance
-      # xywidth = zero padding
+      Sres=c(p$stmv_distance_statsgrid, p$stmv_distance_statsgrid)
+      Sind = as.matrix(array_map( "xy->2", coords=Sloc[], origin=origin, res=Sres ))  # map Stats Locs to Plocs
 
       for ( i in 1:length( p$statsvars ) ) {
         print(i)
-        X = matrix(NA,  nrow=nr, ncol=nc )
-        X[ind] = S[,i]
-        rY = range( X, na.rm=TRUE )
+        u$z[] = NA # reset
+        u$z[Sind] = S[,i]
+        stats[,i] = as.vector( fields::interp.surface( u, loc=Ploc[] ) ) # linear interpolation
+        rY = range( stats[,i], na.rm=TRUE )
         if (!is.finite(prod(rY))) next()
-        tofill = which( ! is.finite( stats[,i] ) )
-        if (length( tofill) > 0 ) {
-          # first try guassian kernel interpolation
-          X = fields::image.smooth( X, dx=res[1], dy=res[2], wght )$z
-          lb = which( X < rY[1] )
-          if (length(lb) > 0) X[lb] = rY[1]
-          lb = NULL
-          ub = which( X > rY[2] )
-          if (length(ub) > 0) X[ub] = rY[2]
-          ub = NULL
-          stats[tofill,i] = X[tofill]
-        }
+        lb = which( stats[,i] < rY[1] )
+        if (length(lb) > 0) stats[lb,i] = rY[1]
+        lb = NULL
+        ub = which( stats[,i] > rY[2] )
+        if (length(ub) > 0) stats[ub,i] = rY[2]
+        ub = NULL
       }
+
       # lattice::levelplot( stats[,1] ~ Ploc[,1]+Ploc[,2])
       boundary = try( stmv_db( p=p, DS="boundary" ) )
       if( !("try-error" %in% class(boundary) ) ) {
