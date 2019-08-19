@@ -42,7 +42,7 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
   if (p$stmv_force_complete_method=="kernel") {
     # essentially gaussian fft
 
-    wght = setup.image.smooth( nrow=nr, ncol=nc,  dx=p$pres, dy=p$pres, theta=p$stmv_distance_statsgrid*3, xwidth=p$pres*10, ywidth=p$pres*10)
+    wght = setup.image.smooth( nrow=nr, ncol=nc,  dx=p$pres, dy=p$pres, theta=p$stmv_distance_statsgrid, xwidth=p$pres*10, ywidth=p$pres*10)
     # theta=p$stmv_distance_statsgrid*3 ensures that smoothing occurs. in a dense matrix, pres/3 is good to keep the texture when eg warping a full matrix.
     # but there may be many missing values and so 3*pres is safer though missing the texture
     # but this is ok as these areas repeated failed more refined methods
