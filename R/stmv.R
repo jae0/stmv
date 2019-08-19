@@ -102,6 +102,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
   Ydata = as.matrix( DATA$input[, p$variables$Y ] )
   Ydata_datarange = range( Ydata, na.rm=TRUE )
   if (!is.null(robustify_quantiles)) Ydata_datarange = quantile( Ydata, probs=robustify_quantiles, na.rm=TRUE )
+  Yq_link = p$stmv_global_family$linkfun( Ydata_datarange ) # convert raw data range to link range
 
 
   if (exists("stmv_Y_transform", p)) Ydata = p$stmv_Y_transform$transf( Ydata )
@@ -144,15 +145,12 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
           Ydata  = residuals(global_model, type="working") # ie. internal (link) scale
         }
         global_model =NULL
-        if (exists("linkfun", p$stmv_global_family )) {
-          Yq_link = p$stmv_global_family$linkfun( Ydata_datarange ) # convert raw data range to link range
-        }
-        # could operate upon quantiles of residuals but in poor models this can hyper inflate errors and slow down the whole estimation process
-        # truncating using data range as a crude approximation of overall residual and prediction scale
-        lb = which( Ydata < Yq_link[1])
-        ub = which( Ydata > Yq_link[2])
-        if (length(lb) > 0) Ydata[lb] = Yq_link[1]
-        if (length(ub) > 0) Ydata[ub] = Yq_link[2]
+          # could operate upon quantiles of residuals but in poor models this can hyper inflate errors and slow down the whole estimation process
+          # truncating using data range as a crude approximation of overall residual and prediction scale
+          lb = which( Ydata < Yq_link[1])
+          ub = which( Ydata > Yq_link[2])
+          if (length(lb) > 0) Ydata[lb] = Yq_link[1]
+          if (length(ub) > 0) Ydata[ub] = Yq_link[2]
         Y = stmv_attach( p$storage.backend, p$ptr$Y )
         Y[] = Ydata[]
         Ydata = NULL
@@ -546,7 +544,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
         devold = dev
         gc()
         message("Creating fixed effects predictons")
-        parallel_run( FUNC=stmv_predict_globalmodel, p=p, runindex=list( pnt=1:p$nt ), prediction_limits=Ydata_datarange, global_model=global_model )
+        parallel_run( FUNC=stmv_predict_globalmodel, p=p, runindex=list( pnt=1:p$nt ), Yq_link=Yq_link, global_model=global_model )
         Ydata  = residuals(global_model, type="working") # ie. internal (link) scale
 
         # Yq_link:: could operate upon quantiles of residuals but in poor models this can hyper inflate errors and slow down the whole estimation process
@@ -555,6 +553,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
         ub = which( Ydata > Yq_link[2])
         if (length(lb) > 0) Ydata[lb] = Yq_link[1]
         if (length(ub) > 0) Ydata[ub] = Yq_link[2]
+
         Y = stmv_attach( p$storage.backend, p$ptr$Y )
         Y[] = Ydata[]  # update "Ydata" ... ( residuals)
         Ydata = NULL
@@ -740,6 +739,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
   # -----------------------------------------------------
 
   if ("save_completed_data" %in% runmode) {
+   # loadfunctions("stmv")
     stmv_db( p=p, DS="stmv.results" ) # save to disk for use outside stmv*, returning to user scale
   }
 
