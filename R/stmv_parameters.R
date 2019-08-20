@@ -105,15 +105,14 @@ stmv_parameters = function( p=list(), ... ) {
   }
 
   # other libs
-  if (exists("stmv_local_modelengine", p)) {
-    if (p$stmv_local_modelengine=="bayesx")  p$libs = c( p$libs, "R2BayesX" )
-    if (p$stmv_local_modelengine %in% c("gam", "mgcv") )  p$libs = c( p$libs, "mgcv" )
-    if (p$stmv_local_modelengine %in% c("inla") )  p$libs = c( p$libs, "INLA" )
-    if (p$stmv_local_modelengine %in% c("fft", "gaussianprocess2Dt") )  p$libs = c( p$libs, "fields", "fftwtools", "fftw" )
-    if (p$stmv_local_modelengine %in% c("twostep") )  p$libs = c( p$libs, "mgcv", "fields", "fftwtools", "fftw"  )
-    if (p$stmv_local_modelengine %in% c("krige") ) p$libs = c( p$libs, "fields" )
-    if (p$stmv_local_modelengine %in% c("gstat") ) p$libs = c( p$libs, "gstat" )
-  }
+  if (!exists("stmv_local_modelengine", p)) p$stmv_local_modelengine = "none"
+  if (p$stmv_local_modelengine=="bayesx")  p$libs = c( p$libs, "R2BayesX" )
+  if (p$stmv_local_modelengine %in% c("gam", "mgcv") )  p$libs = c( p$libs, "mgcv" )
+  if (p$stmv_local_modelengine %in% c("inla") )  p$libs = c( p$libs, "INLA" )
+  if (p$stmv_local_modelengine %in% c("fft", "gaussianprocess2Dt") )  p$libs = c( p$libs, "fields", "fftwtools", "fftw" )
+  if (p$stmv_local_modelengine %in% c("twostep") )  p$libs = c( p$libs, "mgcv", "fields", "fftwtools", "fftw"  )
+  if (p$stmv_local_modelengine %in% c("krige") ) p$libs = c( p$libs, "fields" )
+  if (p$stmv_local_modelengine %in% c("gstat") ) p$libs = c( p$libs, "gstat" )
 
   if (!exists("stmv_global_modelengine", p)) p$stmv_global_modelengine = "none"   # required variable .. default to none
   if (p$stmv_global_modelengine %in% c("gam", "mgcv") ) p$libs = c( p$libs, "mgcv" )
