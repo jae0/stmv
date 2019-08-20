@@ -76,7 +76,7 @@ stmv_variablelist = function( p ) {
     }
   }
 
-  p$variables$ALL = c( p$variables$local_all, p$variables$global_all )
+  p$variables$ALL = unique( c( p$variables$local_all, p$variables$global_all ) )
 
   # all external variables (remove harmonics)
   p$variables$ALL_REQUIRED = p$variables$ALL
