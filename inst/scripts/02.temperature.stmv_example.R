@@ -40,7 +40,6 @@ p = aegis.temperature::temperature_parameters(
   yrs = year.start:year.assessment,
   stmv_dimensionality="space-year-season",
   stmv_global_modelengine = "none",
-  stmv_global_modelformula = "none",  # only marginally useful .. consider removing it and use "none",
   stmv_local_modelengine = "twostep" ,
   stmv_local_modelformula_time = formula( paste(
     't',
