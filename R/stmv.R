@@ -545,6 +545,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
         gc()
         message("Creating fixed effects predictons")
         parallel_run( FUNC=stmv_predict_globalmodel, p=p, runindex=list( pnt=1:p$nt ), Yq_link=Yq_link, global_model=global_model )
+        stmv_db(p=p, DS="save_current_state", runmode="interpolate", datasubset="P0")
+        stmv_db(p=p, DS="save_current_state", runmode="interpolate", datasubset="P0")
+
         Ydata  = residuals(global_model, type="working") # ie. internal (link) scale
 
         # Yq_link:: could operate upon quantiles of residuals but in poor models this can hyper inflate errors and slow down the whole estimation process
@@ -653,6 +656,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
     if ("interpolate" %in% runmode ) {
       stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" )
       if ( "restart_load" %in% runmode ) {
+        stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" )
         stmv_db(p=p, DS="load_saved_state", runmode="interpolate", datasubset="predictions" )
         currentstatus = stmv_statistics_status( p=p)
       }

@@ -62,7 +62,7 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
         ub = which( X > rY[2] )
         if (length(ub) > 0) X[ub] = rY[2]
         ub = NULL
-        P[tofill,ww] = X[ tofill]
+        P[tofill,ww] = X[ind [tofill] ]
       }
 
       ## SD
@@ -78,7 +78,7 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
         ub = which( X > rY[2] )
         if (length(ub) > 0) X[ub] = rY[2]
         ub = NULL
-        Psd[tofill,ww] = X[ tofill]
+        Psd[tofill,ww] = X[ ind[tofill] ]
       }
     }
     return( "complete" )
@@ -95,14 +95,14 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
         rY = range( P[,ww], na.rm=TRUE )
         X = matrix(NA, ncol=nc, nrow=nr )
         X[ind] = P[,ww]
-        X = fields::interp.surface( X, loc=Ploc[,] )$z # linear interpolation
+        Y = fields::interp.surface( X, loc=Ploc[,] )$z # linear interpolation
         lb = which( X < rY[1] )
         if (length(lb) > 0) X[lb] = rY[1]
         lb = NULL
         ub = which( X > rY[2] )
         if (length(ub) > 0) X[ub] = rY[2]
         ub = NULL
-        P[,ww][tofill] = X[ tofill]
+        P[tofill,ww] = X[ ind[tofill] ]
       }
 
       ## SD
@@ -119,7 +119,7 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
         ub = which( X > rY[2] )
         if (length(ub) > 0) X[ub] = rY[2]
         ub = NULL
-        Psd[,ww][tofill] = X[ tofill]
+        Psd[tofill,ww]  = X[ ind[tofill] ]
       }
     }
     return( "complete" )
@@ -147,7 +147,7 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
         ub = which( X > rY[2] )
         if (length(ub) > 0) X[ub] = rY[2]
         ub = NULL
-        P[,ww][tofill] = X[ tofill]
+        P[tofill,ww] = X[ ind[tofill] ]
         X = NULL
         tofill = NULL
         gc()
@@ -167,7 +167,7 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
         ub = which( X > rY[2] )
         if (length(ub) > 0) X[ub] = rY[2]
         ub = NULL
-        Psd[,ww][tofill] = X[ tofill]
+        Psd[tofill,ww] = X[ ind[tofill] ]
         X = NULL
         tofill = NULL
         gc()
@@ -290,7 +290,7 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
         # image(X)
         X[ X > P_qn[2] ]=P_qn[2]
         X[ X < P_qn[1] ]=P_qn[1]
-        P[,ww][tofill] = X[tofill]
+        P[tofill,ww] = X[ ind[tofill] ]
       }
 
 
@@ -338,7 +338,7 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
 
         X[ X > Psd_qn[2] ]=NA
         X[ X < 0 ]=NA
-        Psd[,ww][tofill] = X[ tofill]
+        Psd[tofill,ww] = X[ ind[tofill] ]
       }
 
     }
@@ -374,7 +374,7 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
         # image(X)
         X[ X > P_qn[2] ]=NA
         X[ X < P_qn[1] ]=NA
-        P[,ww][tofill] = X[tofill]
+        P[tofill,ww] = X[ind[tofill]]
       }
 
       ## SD estimates
@@ -393,7 +393,7 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
 
         X[ X > Psd_qn[2] ]=NA
         X[ X < 0 ]=NA
-        Psd[,ww][tofill] = X[ tofill]
+        Psd[tofill,ww]  = X[ ind[tofill] ]
 
       }
     }

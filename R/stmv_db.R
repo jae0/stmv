@@ -548,8 +548,8 @@
 
     if (DS %in% c("save_current_state") ) {
 
-      if ("all" %in% datasubset ) datasubset = unique( c( datasubset, "P", "Psd", "Pn", "S", "Sflag" ) )
-      if ("predictions" %in% datasubset ) datasubset = unique( c( datasubset, "P", "Psd", "Pn" ) )
+      if ("all" %in% datasubset ) datasubset = unique( c( datasubset, "P", "Psd", "P0", "P0sd", "Pn", "S", "Sflag" ) )
+      if ("predictions" %in% datasubset ) datasubset = unique( c( datasubset, "P", "Psd", "Pn", "P0", "P0sd" ) )
       if ("statistics" %in% datasubset ) datasubset = unique( c( datasubset, "S", "Sflag" ) )
 
       # named differently to avoid collisions
@@ -557,18 +557,24 @@
         sP = stmv_attach( p$storage.backend, p$ptr$P )[]
         save( sP, file=paste(p$saved_state_fn$P, runmode, sep="."), compress=TRUE )
         sP = NULL
-          if (p$stmv_global_modelengine !="none" ) {
-            sP0 = stmv_attach( p$storage.backend, p$ptr$P0 )[]
-            save( sP0,   file=paste(p$saved_state_fn$P0, runmode, sep="."),   compress=TRUE )
-            sP0 = NULL
-          }
+
+      }
+      if ( "P0" %in% datasubset ) {
+        if (p$stmv_global_modelengine !="none" ) {
+          sP0 = stmv_attach( p$storage.backend, p$ptr$P0 )[]
+          save( sP0,   file=paste(p$saved_state_fn$P0, runmode, sep="."),   compress=TRUE )
+          sP0 = NULL
+        }
       }
 
       if ( "Psd" %in% datasubset ) {
         sPsd = stmv_attach( p$storage.backend, p$ptr$Psd )[]
         save( sPsd, file=paste(p$saved_state_fn$Psd, runmode, sep="."), compress=TRUE )
         sPsd = NULL
-          if (p$stmv_global_modelengine !="none" ) {
+      }
+
+      if ( "P0sd" %in% datasubset ) {
+        if (p$stmv_global_modelengine !="none" ) {
             sP0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )[]
             save( sP0sd, file=paste(p$saved_state_fn$P0sd, runmode, sep="."),   compress=TRUE )
             sP0sd = NULL
@@ -602,43 +608,41 @@
     if (DS %in% c("load_saved_state") ) {
       returnflag = TRUE
 
-      if ("all" %in% datasubset ) datasubset = unique( c( datasubset, "P", "Psd", "Pn", "S", "Sflag" ) )
-      if ("predictions" %in% datasubset ) datasubset = unique( c( datasubset, "P", "Psd", "Pn" ) )
+      if ("all" %in% datasubset ) datasubset = unique( c( datasubset, "P", "Psd",  "P0", "P0sd", "Pn", "S", "Sflag" ) )
+      if ("predictions" %in% datasubset ) datasubset = unique( c( datasubset, "P", "Psd",  "P0", "P0sd", "Pn" ) )
       if ("statistics" %in% datasubset ) datasubset = unique( c( datasubset, "S", "Sflag" ) )
 
       # named differently to avoid collisions
       if ( "P" %in% datasubset ) {
         P = stmv_attach( p$storage.backend, p$ptr$P )
-          if (p$stmv_global_modelengine !="none" ) {
-            P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
-          }
         sP = matrix( NaN, nrow=nrow(P), ncol=ncol(P) )
         if (file.exists(paste( p$saved_state_fn$P, runmode, sep="."))) {
           load( paste( p$saved_state_fn$P, runmode, sep=".") )
         } else {
           returnflag = FALSE
         }
-        if (is.vector(sP))   sP=as.matrix(sP, nrow=nrow(P), ncol=1) # big matrix does not like vectors
+        if (is.vector(sP))  sP=as.matrix(sP, nrow=nrow(P), ncol=1) # big matrix does not like vectors
         P[] = sP[]
-          if (p$stmv_global_modelengine !="none" ) {
-            sP0 = matrix( NaN, nrow=nrow(P0), ncol=ncol(P0) )
-            if (file.exists(paste( p$saved_state_fn$P0, runmode, sep="."))) {
-              load( paste( p$saved_state_fn$P0, runmode, sep=".") )
-            } else {
-              returnflag = FALSE
-            }
-            P0[] = sP0[]
-            sP0 = NULL
-          }
         sP = NULL
       }
 
+      if ( "P0" %in% datasubset ) {
+        if (p$stmv_global_modelengine !="none" ) {
+          P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
+          sP0 = matrix( NaN, nrow=nrow(P0), ncol=ncol(P0) )
+          if (file.exists(paste( p$saved_state_fn$P0, runmode, sep="."))) {
+            load( paste( p$saved_state_fn$P0, runmode, sep=".") )
+          } else {
+            returnflag = FALSE
+          }
+          if (is.vector(sP0))  sP0=as.matrix(sP0, nrow=nrow(P0), ncol=1) # big matrix does not like vectors
+          P0[] = sP0[]
+          sP0 = NULL
+        }
+      }
 
       if ( "Psd" %in% datasubset ) {
         Psd = stmv_attach( p$storage.backend, p$ptr$Psd )
-          if (p$stmv_global_modelengine !="none" ) {
-            P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )
-          }
         sPsd = matrix( NaN, nrow=nrow(Psd), ncol=ncol(Psd) )
         if (file.exists(paste( p$saved_state_fn$Psd, runmode, sep="."))) {
           load( paste( p$saved_state_fn$Psd, runmode, sep=".") )
@@ -647,17 +651,22 @@
         }
         if (is.vector(sPsd)) sPsd=as.matrix(sPsd, nrow=nrow(Psd), ncol=1)  # big matrix does not like vectors
         Psd[] = sPsd[]
-          if (p$stmv_global_modelengine !="none" ) {
-            sP0sd = matrix( NaN, nrow=nrow(P0sd), ncol=ncol(P0sd) )
-            if (file.exists(paste( p$saved_state_fn$P0sd, runmode, sep="."))) {
-              load( paste( p$saved_state_fn$P0sd, runmode, sep=".") )
-            } else {
-              returnflag = FALSE
-            }
-            P0sd[] = sP0sd[]
-            sP0sd = NULL
-          }
         sPsd = NULL
+      }
+
+      if ( "P0sd" %in% datasubset ) {
+        if (p$stmv_global_modelengine !="none" ) {
+          P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )
+          sP0sd = matrix( NaN, nrow=nrow(P0sd), ncol=ncol(P0sd) )
+          if (file.exists(paste( p$saved_state_fn$P0sd, runmode, sep="."))) {
+            load( paste( p$saved_state_fn$P0sd, runmode, sep=".") )
+          } else {
+            returnflag = FALSE
+          }
+          if (is.vector(sP0sd)) sP0sd=as.matrix(sP0sd, nrow=nrow(P0sd), ncol=1)  # big matrix does not like vectors
+          P0sd[] = sP0sd[]
+          sP0sd = NULL
+        }
       }
 
       if ( "Pn" %in% datasubset ) {
