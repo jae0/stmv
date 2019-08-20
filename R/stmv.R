@@ -121,41 +121,41 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
 
   # if there is a global model overwrite Ydata with residuals
   if ( any(grepl("globalmodel", runmode) ) ) {
-      if ( p$stmv_global_modelengine !="none" ) {
-        if ( p$stmv_global_modelformula !="none" ) stmv_db( p=p, DS="global_model.redo", B=DATA$input )
-        if ( any(grepl("globalmodel.only", runmode)))  return( stmv_db( p=p, DS="global_model" ) )
-        # model complete .. now predict to get residuals
-        if ( p$stmv_global_modelengine == "userdefined") {
-          global_model = stmv_db( p=p, DS="global_model")
-          # TODO MUST find a generic form as below
-          # # Ypreds = predict(global_model, type="link", se.fit=FALSE )  ## TODO .. keep track of the SE
-          if (!exists("predict", p$stmv_global_model)) {
-            message( "||| p$stmv_global_model$predict =' " )
-            message( "|||   predict( global_model, newdata=pa, type='link', se.fit=TRUE )' " )
-            message( "||| where 'global_model', newdata=pa' are required " )
-            stop()
-          }
-          Ypreds = try( eval(parse(text=pp$stmv_global_model$predict )) )
-          Ypreds = p$stmv_global_model$predict( global_model )  # needs to be tested. .. JC
-          Ydata  = Ydata - Ypreds # ie. internalR (link) scale
-          Ypreds = NULL
-        } else {
-          # at present only those that have a predict and residuals methods ...
-          global_model = stmv_db( p=p, DS="global_model")
-          Ydata  = residuals(global_model, type="working") # ie. internal (link) scale
+    if ( p$stmv_global_modelengine !="none" ) {
+      stmv_db( p=p, DS="global_model.redo", B=DATA$input )
+      if ( any(grepl("globalmodel.only", runmode)))  return( stmv_db( p=p, DS="global_model" ) )
+      # model complete .. now predict to get residuals
+      if ( p$stmv_global_modelengine == "userdefined") {
+        global_model = stmv_db( p=p, DS="global_model")
+        # TODO MUST find a generic form as below
+        # # Ypreds = predict(global_model, type="link", se.fit=FALSE )  ## TODO .. keep track of the SE
+        if (!exists("predict", p$stmv_global_model)) {
+          message( "||| p$stmv_global_model$predict =' " )
+          message( "|||   predict( global_model, newdata=pa, type='link', se.fit=TRUE )' " )
+          message( "||| where 'global_model', newdata=pa' are required " )
+          stop()
         }
-        global_model =NULL
-          # could operate upon quantiles of residuals but in poor models this can hyper inflate errors and slow down the whole estimation process
-          # truncating using data range as a crude approximation of overall residual and prediction scale
-          lb = which( Ydata < Yq_link[1])
-          ub = which( Ydata > Yq_link[2])
-          if (length(lb) > 0) Ydata[lb] = Yq_link[1]
-          if (length(ub) > 0) Ydata[ub] = Yq_link[2]
-        Y = stmv_attach( p$storage.backend, p$ptr$Y )
-        Y[] = Ydata[]
-        Ydata = NULL
-        gc()
+        Ypreds = try( eval(parse(text=pp$stmv_global_model$predict )) )
+        Ypreds = p$stmv_global_model$predict( global_model )  # needs to be tested. .. JC
+        Ydata  = Ydata - Ypreds # ie. internalR (link) scale
+        Ypreds = NULL
+      } else {
+        # at present only those that have a predict and residuals methods ...
+        global_model = stmv_db( p=p, DS="global_model")
+        Ydata  = residuals(global_model, type="working") # ie. internal (link) scale
       }
+      global_model =NULL
+        # could operate upon quantiles of residuals but in poor models this can hyper inflate errors and slow down the whole estimation process
+        # truncating using data range as a crude approximation of overall residual and prediction scale
+        lb = which( Ydata < Yq_link[1])
+        ub = which( Ydata > Yq_link[2])
+        if (length(lb) > 0) Ydata[lb] = Yq_link[1]
+        if (length(ub) > 0) Ydata[ub] = Yq_link[2]
+      Y = stmv_attach( p$storage.backend, p$ptr$Y )
+      Y[] = Ydata[]
+      Ydata = NULL
+      gc()
+    }
   }
 
 
