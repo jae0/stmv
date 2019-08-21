@@ -43,11 +43,11 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
   # pre-calculate indices and dim for data to use inside the loop
   dat_names = unique( c(  p$variables$Y, p$variable$LOCS, p$variables$local_all,  "weights") )  # excludes p$variables$TIME
-  if (p$stmv_local_modelengine %in% c("fft", "tps") ) {
+  # if (p$stmv_local_modelengine %in% c("fft", "tps", "twostep") ) {
     if ( exists("TIME", p$variables)) {
       dat_names = c(dat_names, p$variables$TIME)
     }
-  }
+  # }
   # unless it is an explicit covariate and not a seasonal component there is no need for it
   # .. prediction grids create these from a time grid on the fly
 
@@ -99,7 +99,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       # global estimates
   global_nu = median( S[, i_nu], na.rm=TRUE )
 
-  if ( global_nu < 0.01 | global_nu > 5) global_nu = 0.5
+  if ( global_nu < 0.1 | global_nu > 5) global_nu = 0.5
   global_phi = median( S[, i_phi], na.rm=TRUE )
   global_range = median( S[, i_localrange], na.rm=TRUE )
   distance_limits = range( c(p$stmv_distance_scale, p$stmv_distance_statsgrid/10) )    # for range estimate
@@ -153,14 +153,14 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     if ( !is.finite(nu) ) {
       Sflag[Si] = E[["variogram_failure"]]
     } else {
-      if ( (nu < 0.01 ) | (nu > 5) ) {
+      if ( (nu < 0.1 ) | (nu > 5) ) {
         Sflag[Si] = E[["variogram_range_limit"]]
       }
     }
 
-    if ( !is.finite(nu) | (nu < 0.01) | (nu > 5) ) if (length(ii) > 0) nu =  median( S[ii, i_nu ], na.rm=TRUE )
-    if ( !is.finite(nu) | (nu < 0.01) | (nu > 5) ) nu = global_nu
-    if ( !is.finite(nu) | (nu < 0.01) | (nu > 5) ) nu = 0.5
+    if ( !is.finite(nu) | (nu < 0.1) | (nu > 5) ) if (length(ii) > 0) nu =  median( S[ii, i_nu ], na.rm=TRUE )
+    if ( !is.finite(nu) | (nu < 0.1) | (nu > 5) ) nu = global_nu
+    if ( !is.finite(nu) | (nu < 0.1) | (nu > 5) ) nu = 0.5
 
     # phi checks
     phi_lim = distance_limits / sqrt(8*nu)  # inla-approximation
@@ -215,7 +215,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     if (p$nloccov > 0) dat[,icov] = Ycov[yi, icov_local] # no need for other dim checks as this is user provided
     if (exists("TIME", p$variables)) {
       dat[, itime_cov] = as.matrix(stmv_timecovars( vars=ti_cov, ti=Ytime[yi,] ) )
-      dat[, p$variables$TIME] = Ytime[yi,] # not sure if this is needed ?...
+      dat[, which(dat_names==p$variables$TIME) ] = Ytime[yi,] # not sure if this is needed ?...
     }
     dat = as.data.frame(dat)
     names(dat) = dat_names
@@ -284,7 +284,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
         pa=pa,
         nu=nu,
         phi=phi,
-        localrange=10,
+        localrange=localrange,
         varObs = S[Si, i_sdObs]^2,
         varSpatial = S[Si, i_sdSpatial]^2,
         sloc = Sloc[Si,]

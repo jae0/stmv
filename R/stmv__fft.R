@@ -122,8 +122,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   distances = NULL
   breaks = NULL
 
-  fY = matrix(0, nrow = nr2, ncol = nc2)
-  fN = matrix(0, nrow = nr2, ncol = nc2)
+  fY0 = matrix(0, nrow = nr2, ncol = nc2)
+  fN0 = matrix(0, nrow = nr2, ncol = nc2)
 
   coo = as.matrix(array_map( "xy->2", coords=dat[, p$variables$LOCS], origin=origin, res=resolution ))
   good = which(coo[,1] >= 1 & coo[,1] <= nr & coo[,2] >= 1  & coo[,2] )
@@ -135,7 +135,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   xi   = 1:nrow(dat) # all data as p$nt==1
   pa_i = 1:nrow(pa)
 
-  OT = matrix( NA, ncol=length(p$statvars), nrow=p$nt )
+  OT = matrix( NA, ncol=length(p$statsvars), nrow=p$nt )
 
   for ( ti in 1:p$nt ) {
 
@@ -167,8 +167,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
         ny=nc
       )
       # surface (u)
-      # fY[1:nr,1:nc] = u$z
-      # fN[1:nr,1:nc] = u$weights
+      # fY0[1:nr,1:nc] = u$z
+      # fN0[1:nr,1:nc] = u$weights
       # u =NULL
   }
 
@@ -182,7 +182,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     nn = tapply( X=X, INDEX=list(coo[xi,1], coo[xi,2]), FUN = function(w) {length(w)}, simplify=TRUE )
 
     if (length (dimnames(yy)[[1]]) < 5 ) next()
-
+    fY = fY0
+    fN = fN0
     fY[as.numeric(dimnames(yy)[[1]]),as.numeric(dimnames(yy)[[2]])] = yy
     fN[as.numeric(dimnames(nn)[[1]]),as.numeric(dimnames(nn)[[2]])] = nn
 
@@ -224,7 +225,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
         fit = try( stmv_variogram_optimization( vx=vgm$distances[uu], vg=vgm$sv[uu], plotvgm=FALSE,
           stmv_internal_scale=dmax*0.75, cor=p$stmv_autocorrelation_localrange ))
 
-        statvars_scale = c(
+        statsvars_scale = c(
           sdTotal = sd(dat[xi, p$variable$Y], na.rm=T),
           sdSpatial = sqrt(fit$summary$varSpatial) ,
           sdObs = sqrt(fit$summary$varObs),
@@ -233,7 +234,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
           localrange = fit$summary$localrange,
           ndata=length(xi)
         )
-        OT[ti, match( names(statvars_scale), p$statsvars )] = statvars_scale
+        OT[ti, match( names(statsvars_scale), p$statsvars )] = statsvars_scale
         uu = NULL
 
         if ( !inherits(fit, "try-error") ) {
@@ -292,7 +293,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
         Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
       sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
       sp.covar = fftwtools::fftw2d(sp.covar)  * mC_fft
-  }
+    }
 
     if (p$stmv_fft_filter == "lowpass_matern_tapered") {
       sp.covar.lowpass = stationary.cov( dgrid, center, Covariance="Matern", theta=p$stmv_lowpass_phi, smoothness=p$stmv_lowpass_nu )
@@ -326,7 +327,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     X = X * zsd + zmean # revert to input scale
     if (0) {
       dev.new()
-      surface(list(x=c(1:nr)*dr, y=c(1:nc)*dc, z=X), xaxs="r", yaxs="r")
+      image(list(x=c(1:nr)*dr, y=c(1:nc)*dc, z=X), xaxs="r", yaxs="r")
     }
 
     pa$mean[pa_i] = X
