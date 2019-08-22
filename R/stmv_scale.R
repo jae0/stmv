@@ -76,16 +76,18 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps = 1e-6, ... ) {
     for ( ntarget in stmv_ntarget ) {
       for ( stmv_distance_cur in stmv_distances )  {
         # print(stmv_distance_cur)
-        yi = NULL
-        yi = stmv_select_data( p=p, Si=Si, localrange=stmv_distance_cur )
-        if ( is.null( yi ) ) next()
-        ndata = length(yi)
-        if ( ndata >= ntarget ) break()  # innermost loop
+        data_subset = NULL
+        data_subset = stmv_select_data( p=p, Si=Si, localrange=stmv_distance_cur )
+
+        if (is.null( data_subset )) next()
+        unique_spatial_locations = data_subset$unique_spatial_locations
+        ndata = length(data_subset$data_index)
+        if ( unique_spatial_locations >= ntarget ) break()  # innermost loop
       }
-      if ( ndata >= ntarget ) break() # middle loop
+      if ( unique_spatial_locations >= ntarget ) break() # middle loop
     }
 
-    if (ndata < p$stmv_nmin ) {
+    if (unique_spatial_locations < p$stmv_nmin ) {
       Sflag[Si] = E[["insufficient_data"]]
       if (debugging) print( paste("index =", iip, ";  insufficient data"  ) )
       next()   #not enough data
@@ -104,8 +106,8 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps = 1e-6, ... ) {
 
     for ( ss in 1:length(p$stmv_variogram_nbreaks_totry) ) {  # different number of breaks actually has an influence upon the stability of variograms
       o = try( stmv_variogram(
-        xy=Yloc[yi,],
-        z=Y[yi,],
+        xy=Yloc[data_subset$data_index,],
+        z=Y[data_subset$data_index,],
         methods=p$stmv_variogram_method,
         distance_cutoff=stmv_distance_cur,
         discretized_n = round(stmv_distance_cur / p$pres),
@@ -117,7 +119,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps = 1e-6, ... ) {
         }
       }
     }
-    yi = NULL
+    data_subset  = NULL
     gc()
 
     if ( is.null(o)) {

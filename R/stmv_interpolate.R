@@ -190,32 +190,33 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     }
 
     # last check .. ndata can change due to random sampling
-    yi = stmv_select_data( p=p, Si=Si, localrange=localrange )
-    if (is.null( yi )) next()
-    ndata = length(yi)
+    data_subset = stmv_select_data( p=p, Si=Si, localrange=localrange )
+    if (is.null( data_subset )) next()
+    unique_spatial_locations = data_subset$unique_spatial_locations
 
-    S[Si, i_ndata] = ndata
-
-    if (ndata < p$stmv_nmin) {
-      yi=NULL;
+    if (unique_spatial_locations < p$stmv_nmin) {
+      data_subset = NULL;
       Sflag[Si] = E[["insufficient_data"]]
       next()
     }
 
+    ndata = length(data_subset$data_index)
+    S[Si, i_ndata] = ndata
+
     # if here then there is something to do
-    # NOTE:: yi are the indices of locally useful data
+    # NOTE:: data_subset$data_index are the indices of locally useful data
 
     # prep dependent data
     # reconstruct data for modelling (dat)
     dat = matrix( 1, nrow=ndata, ncol=dat_nc )
-    dat[,iY] = Y[yi] # these are residuals if there is a global model
+    dat[,iY] = Y[data_subset$data_index] # these are residuals if there is a global model
     # add a small error term to prevent some errors when duplicate locations exist; localrange offsets to positive values
-    dat[,ilocs] = Yloc[yi,] + localrange * runif(2*ndata, -1e-6, 1e-6)
+    dat[,ilocs] = Yloc[data_subset$data_index,] + localrange * runif(2*ndata, -1e-6, 1e-6)
 
-    if (p$nloccov > 0) dat[,icov] = Ycov[yi, icov_local] # no need for other dim checks as this is user provided
+    if (p$nloccov > 0) dat[,icov] = Ycov[data_subset$data_index, icov_local] # no need for other dim checks as this is user provided
     if (exists("TIME", p$variables)) {
-      dat[, itime_cov] = as.matrix(stmv_timecovars( vars=ti_cov, ti=Ytime[yi,] ) )
-      dat[, which(dat_names==p$variables$TIME) ] = Ytime[yi,] # not sure if this is needed ?...
+      dat[, itime_cov] = as.matrix(stmv_timecovars( vars=ti_cov, ti=Ytime[data_subset$data_index,] ) )
+      dat[, which(dat_names==p$variables$TIME) ] = Ytime[data_subset$data_index,] # not sure if this is needed ?...
     }
     dat = as.data.frame(dat)
     names(dat) = dat_names
@@ -226,10 +227,9 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       # check data and statistical locations
       plot( Sloc[,], pch=20, cex=0.5, col="gray")
       points( Yloc[,], pch=20, cex=0.2, col="green")
-      points( Yloc[yi,], pch=20, cex=1, col="yellow" )
+      points( Yloc[data_subset$data_index,], pch=20, cex=1, col="yellow" )
       points( Sloc[Si,2] ~ Sloc[Si,1], pch=20, cex=5, col="blue" )
     }
-
 
     stmv_distance_prediction = localrange * p$stmv_distance_prediction_fraction # this is a half window km
     # construct prediction/output grid area ('pa')
@@ -258,10 +258,10 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
       Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
       Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
-      plot( Yloc[yi,2] ~ Yloc[yi,1], col="red", pch=".",
-        ylim=range(c(Yloc[yi,2], Sloc[Si,2], Ploc[pa$i,2]) ),
-        xlim=range(c(Yloc[yi,1], Sloc[Si,1], Ploc[pa$i,1]) ) ) # all data
-      points( Yloc[yi,2] ~ Yloc[yi,1], col="green" )  # with covars and no other data issues
+      plot( Yloc[data_subset$data_index,2] ~ Yloc[data_subset$data_index,1], col="red", pch=".",
+        ylim=range(c(Yloc[data_subset$data_index,2], Sloc[Si,2], Ploc[pa$i,2]) ),
+        xlim=range(c(Yloc[data_subset$data_index,1], Sloc[Si,1], Ploc[pa$i,1]) ) ) # all data
+      points( Yloc[data_subset$data_index,2] ~ Yloc[data_subset$data_index,1], col="green" )  # with covars and no other data issues
       points( Sloc[Si,2] ~ Sloc[Si,1], col="blue" ) # statistical locations
       # statistical output locations
       grids= spatial_grid(p, DS="planar.coords" )
@@ -270,7 +270,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       points( Ploc[pa$i,2] ~ Ploc[ pa$i, 1] , col="black", pch=6, cex=0.7 ) # check on pa$i indexing -- prediction locations
     }
 
-    yi = NULL
+    data_subset = NULL
 
 
     # model and prediction .. outputs are in scale of the link (and not response)

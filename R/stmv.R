@@ -656,7 +656,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
     if ("interpolate" %in% runmode ) {
       stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" )
       if ( "restart_load" %in% runmode ) {
-        stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" )
         stmv_db(p=p, DS="load_saved_state", runmode="interpolate", datasubset="predictions" )
         currentstatus = stmv_statistics_status( p=p)
       }

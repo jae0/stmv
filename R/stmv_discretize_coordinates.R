@@ -8,6 +8,8 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=N
     icoo = 1:nrow(coo)
   }
 
+  ntarget = min( ntarget, length(icoo))
+
   if (ncoo==1) {
 
     if (coord_is_time) {
