@@ -88,6 +88,8 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
     if (exists( "nw", p)) p$nt = p$nt * p$nw  # sub-annual time slices
   }
 
+  if ( !exists("stmv_tmin", p))  p$stmv_tmin = max(1, floor( p$nt / 5) )  # min no of time slices in twostep modelling
+
   # prediction times for space.annual methods, treat time as independent timeslices
   if ( !exists("prediction.ts", p)) p$prediction.ts = 1
 
@@ -644,7 +646,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
       p$time_start_runmode = Sys.time()
       p$runmode = "scale"
       p$clusters = p$stmv_runmode[["scale"]] # as ram reqeuirements increase drop cpus
-      message( "\n||| Entering <", p$runmode, "> stage: ", format(Sys.time()) , "\n" )
       currentstatus = stmv_statistics_status( p=p)
       currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
       parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )

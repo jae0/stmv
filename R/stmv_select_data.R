@@ -10,10 +10,12 @@ stmv_select_data = function( p, Si, localrange ) {
   Yi = stmv_attach( p$storage.backend, p$ptr$Yi )  # initial indices of good data
 
   # space only, ignore time as it is modelled separately
+  # U are indices of Yi
   U = which(
     (abs( Sloc[Si,1] - Yloc[Yi[],1] ) <= localrange ) &
     (abs( Sloc[Si,2] - Yloc[Yi[],2] ) <= localrange )
   )
+  # Yuniq are flags indexed on Yi
   Yuniq = !duplicated(Yloc[Yi[U],])  # dups in space only ... leave time alone
   ndata = length( which(Yuniq) )
 
@@ -28,27 +30,26 @@ stmv_select_data = function( p, Si, localrange ) {
       iU = stmv_discretize_coordinates( coo=Yloc[Yi[U],], ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )
     }
     ndata = length( which(Yuniq[iU] ) )
-    ntarget = floor( (p$stmv_nmax+p$stmv_nmin)/2 )
+    ntarget = p$stmv_nmax
     if (ndata < p$stmv_nmin) {
       # return some data
-      uu = setdiff( 1:length(U), iU)
+      uu = setdiff( U, U[iU])
       nuu = length(uu)
-      iMore = Yi[uu[ .Internal( sample( nuu, {ntarget - ndata}, replace=FALSE, prob=NULL)) ]]
-      U = U[c(iU, iMore)]
-      ndata = ntarget
+      iMore = uu[ .Internal( sample( nuu, {ntarget - ndata}, replace=FALSE, prob=NULL) ) ]
+      iU = c(iU, iMore)
+      U = U[iU]
       iMore = nuu = uu = NULL
     } else if (ndata > p$stmv_nmax) {
       # force via a random subsample
+      iU = .Internal( sample( length(iU), ntarget, replace=FALSE, prob=NULL))  # simple random
       U = U[iU]
-      U = U[ .Internal( sample( length(U), ntarget, replace=FALSE, prob=NULL)) ] # simple random
-      ndata = ntarget
     } else {
       U = U[iU]
     }
-  } else  if (ndata <= p$stmv_nmax & ndata >= p$stmv_nmin) {
+    ndata = length( which(Yuniq[iU] ) )
+    iU = NULL
+  } else if (ndata <= p$stmv_nmax & ndata >= p$stmv_nmin) {
     # all good .. nothing to do
   }
-  iU = NULL
   return( list( data_index=Yi[U], unique_spatial_locations=ndata ) )
-
 }
