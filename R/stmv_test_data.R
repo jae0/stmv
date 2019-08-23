@@ -177,23 +177,22 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
       return(out)
     }
 
-    p = bathymetry_parameters( spatial.domain="SSE" )
-    B = bathymetry.db( p=p, DS="complete"  )
+    pb = bathymetry_parameters( spatial.domain="SSE" )
+    B = bathymetry.db( p=pb, DS="complete"  )
 
     # output locations
     u = list(
-        x=seq(min(p$corners$plon), max(p$corners$plon), by = p$pres),
-        y=seq(min(p$corners$plat), max(p$corners$plat), by = p$pres)
+        x=seq(min(pb$corners$plon), max(pb$corners$plon), by = pb$pres),
+        y=seq(min(pb$corners$plat), max(pb$corners$plat), by = pb$pres)
     )
     u$z = matrix( NA, nrow=length(u$x), ncol=length(u$y) )
 
-    origin=c(min(p$corners$plon), min(p$corners$plat) )
-    i = as.matrix(array_map( "xy->2", coords=B[,c("plon", "plat")], origin=origin, res=c(p$pres, p$pres) ))  # map Stats Locs to Plocs
+    origin=c(min(pb$corners$plon), min(pb$corners$plat) )
+    i = as.matrix(array_map( "xy->2", coords=B[,c("plon", "plat")], origin=origin, res=c(pb$pres, pb$pres) ))  # map Stats Locs to Plocs
     u$z[i] = B$z
     # image(u)
 
-    out = as.data.frame( spatial_grid(p))
-    out$z = fields::interp.surface( u, loc=out ) # linear interpolation
+    out = fields::interp.surface( u, loc=spatial_grid(p0) ) # linear interpolation
     save(out, file=fn, compress=TRUE)
     return (out)
 
