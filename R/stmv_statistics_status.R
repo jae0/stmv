@@ -18,8 +18,12 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL  ) {
       uP = NULL
       if( length(noP) > 0 ) {
         Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
-        Sloc_nplat = round( diff( p$corners$plat) / p$stmv_distance_statsgrid) + 1L
-        Sloc_nplon = round( diff( p$corners$plon) / p$stmv_distance_statsgrid) + 1L
+        sbox = list(
+          plats = seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ),
+          plons = seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ) )
+        # statistics coordinates
+        Sloc_nplat = length(sbox$plats)
+        Sloc_nplon = length(sbox$plons)
         Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
         uS = array_map( "2->1", round( cbind(Sloc[,1]-p$origin[1], Sloc[,2]-p$origin[2])/p$stmv_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
         toreset = array_map( "2->1", round( cbind(Ploc[noP,1]-p$origin[1], Ploc[noP,2]-p$origin[2])/p$stmv_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )

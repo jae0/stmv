@@ -46,7 +46,7 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_variogram_method = "fft",
   stmv_autocorrelation_fft_taper = 0.5,  # benchmark from which to taper
   stmv_autocorrelation_localrange = 0.1,
-  stmv_autocorrelation_interpolation = c(0.25, 0.1, 0.05, 0.01),
+  stmv_autocorrelation_interpolation = c(0.5, 0.25, 0.1, 0.01),
   depth.filter = FALSE,  # need data above sea level to get coastline
   stmv_Y_transform =list(
     transf = function(x) {log10(x + 2500)} ,
@@ -54,16 +54,16 @@ p = aegis.bathymetry::bathymetry_parameters(
   ), # data range is from -1667 to 5467 m: make all positive valued
   stmv_rsquared_threshold = 0.01, # lower threshold  .. i.e., ignore
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
-  stmv_distance_scale = c( 10, 20, 30, 40, 50  ), # km ... approx guesses of 95% AC range
+  stmv_distance_scale = c( 5, 10, 20, 30, 40, 50  ), # km ... approx guesses of 95% AC range
   stmv_distance_prediction_fraction = 0.95, # i.e. 4/5 * 5 = 4 km .. relative to stats grid
-  stmv_nmin = 200,  # min number of data points req before attempting to model in a localized space
-  stmv_nmax = 500, # no real upper bound.. just speed /RAM
+  stmv_nmin = 100,  # min number of data points req before attempting to model in a localized space
+  stmv_nmax = 400, # no real upper bound.. just speed /RAM
   stmv_runmode = list(
-    # scale = rep("localhost", scale_ncpus),
+    scale = rep("localhost", scale_ncpus),
     interpolate = list(
         cor_0.5 = rep("localhost", interpolate_ncpus),
-        cor_0.1 = rep("localhost", interpolate_ncpus),
-        cor_0.05 = rep("localhost", max(1, interpolate_ncpus-1)),
+        cor_0.25 = rep("localhost", interpolate_ncpus),
+        cor_0.1 = rep("localhost", max(1, interpolate_ncpus-1)),
         cor_0.01 = rep("localhost", max(1, interpolate_ncpus-2))
       ),  # ncpus for each runmode
     interpolate_force_complete = rep("localhost", max(1, interpolate_ncpus-2)),
@@ -97,13 +97,12 @@ if (0) {
   dev.new(); surface( as.image( Z=DATA$input$z, x=DATA$input[, c("plon", "plat")], nx=p$nplons, ny=p$nplats, na.rm=TRUE) )
 
 
-stmv( p=p  )  # This will take from 40-70 hrs, depending upon system
+stmv( p=p  )  # This will take from xx hrs, depending upon system
 
 
 predictions = stmv_db( p=p, DS="stmv.prediction", ret="mean" )
 statistics  = stmv_db( p=p, DS="stmv.stats" )
-locations   = spatial_grid( p )
-
+locations = DATA$output$LOCS  # or: locations   = spatial_grid( p )
 
 # comparison
 dev.new(); surface( as.image( Z=predictions, x=locations, nx=p$nplons, ny=p$nplats, na.rm=TRUE) )
