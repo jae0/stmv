@@ -164,6 +164,43 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
   }
 
 
+
+  if ( datasource == "aegis.bathymetry" ) {
+
+    RLibrary( "aegis.bathymetry" )
+    require(sp)
+    # fn = system.file( "extdata", "aegis_space_test.Rdata", package="stmv" )
+    out = NULL
+    fn = project.codedirectory("stmv", "inst", "extdata", "aegis_bathymetry.Rdata")
+    if (!redo) {
+      if (file.exists(fn)) load(fn)
+      return(out)
+    }
+
+    p = bathymetry_parameters( spatial.domain="SSE" )
+    B = bathymetry.db( p=p, DS="complete"  )
+
+    # output locations
+    u = list(
+        x=seq(min(p$corners$plon), max(p$corners$plon), by = p$pres),
+        y=seq(min(p$corners$plat), max(p$corners$plat), by = p$pres)
+    )
+    u$z = matrix( NA, nrow=length(u$x), ncol=length(u$y) )
+
+    origin=c(min(p$corners$plon), min(p$corners$plat) )
+    i = as.matrix(array_map( "xy->2", coords=B[,c("plon", "plat")], origin=origin, res=c(p$pres, p$pres) ))  # map Stats Locs to Plocs
+    u$z[i] = B$z
+    # image(u)
+
+    out = as.data.frame( spatial_grid(p))
+    out$z = fields::interp.surface( u, loc=out ) # linear interpolation
+    save(out, file=fn, compress=TRUE)
+    return (out)
+
+  }
+
+
+
   if ( datasource == "aegis.test.paramaters" ) {
       # dres  is the 15 second grid from CHS  .. default use highest resolution
     p = aegis::spatial_parameters( spatial.domain="testing", internal.crs="+proj=utm +ellps=WGS84 +zone=20 +units=km", dres=1/60/4, pres=0.5, lon0=-64, lon1=-62, lat0=44, lat1=45, psignif=2 )

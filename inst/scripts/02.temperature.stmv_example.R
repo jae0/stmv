@@ -23,7 +23,12 @@ p0 = aegis::spatial_parameters( spatial.domain="temperature_test", internal.crs=
 
 DATA = list(
   input = stmv::stmv_test_data( datasource="aegis.spacetime", p=p0),
-  output = list( LOCS = spatial_grid(p0) )
+  output = list(
+    LOCS = spatial_grid(p0),
+    COV  = list(
+      z = stmv::stmv_test_data( datasource="aegis.bathymetry", p=p0)
+    )
+  )
 )
 DATA$input = lonlat2planar( DATA$input, p0$internal.crs )
 DATA$input = DATA$input[, c("plon", "plat", "tiyr", "z", "t")]   ## yr, cos.w and sin.w are note required as they are computed internally
@@ -57,25 +62,27 @@ p = aegis.temperature::temperature_parameters(
   stmv_variogram_method = "fft",
   stmv_autocorrelation_fft_taper = 0.5,  # benchmark from which to taper
   stmv_autocorrelation_localrange=0.1,
-  stmv_autocorrelation_interpolation = c(0.5, 0.1, 0.05, 0.01),
+  stmv_autocorrelation_interpolation = c(0.5, 0.25, 0.1, 0.01),
   stmv_local_model_distanceweighted = TRUE,
+  depth.filter = 0, # the depth covariate is input as log(depth) so, choose stats locations with elevation > log(1 m) as being on land
   stmv_rsquared_threshold = 0, # lower threshold .. not used if twostep method
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
   stmv_distance_scale = c( 20, 30, 40, 50 ), # km ... approx guess of 95% AC range
   stmv_distance_prediction_fraction = 0.95, #
-  stmv_nmin = 16*(year.assessment - year.start),  # ~ 1000 min number of data points req before attempting to model timeseries in a localized space .. control no error in local model
-  stmv_nmax = 25*(year.assessment - year.start), # no real upper bound.. just speed / RAM limits  .. can go up to 10 GB / core if too large
+  stmv_nmin = 250,  # min number of data points req before attempting to model in a localized space .. control no error in local model
+  stmv_nmax = 500, # no real upper bound.. just speed / RAM limits  .. can go up to 10 GB / core if too large
+  stmv_tmin = 3*(year.assessment - year.start ),
   stmv_runmode = list(
     scale = rep("localhost", scale_ncpus),
     interpolate = list(
         cor_0.5 = rep("localhost", interpolate_ncpus),
-        cor_0.1 = rep("localhost", interpolate_ncpus),
-        cor_0.05 = rep("localhost", max(1, interpolate_ncpus-1)),
+        cor_0.25 = rep("localhost", interpolate_ncpus),
+        cor_0.1 = rep("localhost", max(1, interpolate_ncpus-1)),
         cor_0.01 = rep("localhost", max(1, interpolate_ncpus-2))
       ),  # ncpus for each runmode
     interpolate_force_complete = rep("localhost", max(1, interpolate_ncpus-2)),
-    globalmodel = TRUE,
-    save_intermediate_results = FALSE,
+    globalmodel = FALSE,
+    restart_load = FALSE,
     save_completed_data = TRUE # just a dummy variable with the correct name
   )  # ncpus for each runmode
 )
@@ -84,7 +91,7 @@ p = aegis.temperature::temperature_parameters(
 # quick look of data
 dev.new(); surface( as.image( Z=DATA$input$t, x=DATA$input[, c("plon", "plat")], nx=p$nplons, ny=p$nplats, na.rm=TRUE) )
 
-stmv( p=p )  # This will take from 40-70 hrs, depending upon system
+stmv( p=p )  # This will take from xx hrs, depending upon system
 
 
 predictions = stmv_db( p=p, DS="stmv.prediction", ret="mean" )

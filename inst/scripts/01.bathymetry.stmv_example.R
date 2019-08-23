@@ -37,12 +37,12 @@ p = aegis.bathymetry::bathymetry_parameters(
   variables = list(Y="z"),  # required as fft has no formulae
   stmv_global_modelengine = "none",  # too much data to use glm as an entry into link space ... use a direct transformation
   stmv_local_modelengine="fft",
-  # stmv_fft_filter = "matern_tapered", #  matern with taper
-  stmv_fft_filter = "lowpass_matern_tapered", #  act as a low pass filter first before matern with taper .. depth has enough data for this. Otherwise, use:
+  stmv_fft_filter = "matern_tapered", #  matern with taper
+  # stmv_fft_filter = "lowpass_matern_tapered", #  act as a low pass filter first before matern with taper .. depth has enough data for this. Otherwise, use:
   stmv_fft_taper_method = "modelled",  # vs "empirical"
   # stmv_fft_taper_fraction = 0.5,  # if empirical: in local smoothing convolutions taper to this areal expansion factor sqrt( r=0.5 ) ~ 70% of variance in variogram
-  stmv_lowpass_nu = 0.1,
-  stmv_lowpass_phi = stmv::matern_distance2phi( distance=0.2, nu=0.1, cor=0.5 ),  # note: p$pres = 0.2
+  # stmv_lowpass_nu = 0.1,
+  # stmv_lowpass_phi = stmv::matern_distance2phi( distance=0.2, nu=0.1, cor=0.5 ),  # note: p$pres = 0.2
   stmv_variogram_method = "fft",
   stmv_autocorrelation_fft_taper = 0.5,  # benchmark from which to taper
   stmv_autocorrelation_localrange = 0.1,
@@ -56,8 +56,8 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
   stmv_distance_scale = c( 5, 10, 20, 30, 40, 50  ), # km ... approx guesses of 95% AC range
   stmv_distance_prediction_fraction = 0.95, # i.e. 4/5 * 5 = 4 km .. relative to stats grid
-  stmv_nmin = 100,  # min number of data points req before attempting to model in a localized space
-  stmv_nmax = 400, # no real upper bound.. just speed /RAM
+  stmv_nmin = 250,  # min number of data points req before attempting to model in a localized space
+  stmv_nmax = 500, # no real upper bound.. just speed /RAM
   stmv_runmode = list(
     scale = rep("localhost", scale_ncpus),
     interpolate = list(
@@ -67,8 +67,8 @@ p = aegis.bathymetry::bathymetry_parameters(
         cor_0.01 = rep("localhost", max(1, interpolate_ncpus-2))
       ),  # ncpus for each runmode
     interpolate_force_complete = rep("localhost", max(1, interpolate_ncpus-2)),
-    globalmodel = TRUE,
-    save_intermediate_results = FALSE,
+    globalmodel = FALSE,
+    restart_load = FALSE,
     save_completed_data = TRUE # just a dummy variable with the correct name
   )  # ncpus for each runmode
 )
@@ -97,7 +97,7 @@ if (0) {
   dev.new(); surface( as.image( Z=DATA$input$z, x=DATA$input[, c("plon", "plat")], nx=p$nplons, ny=p$nplats, na.rm=TRUE) )
 
 
-stmv( p=p  )  # This will take from xx hrs, depending upon system
+stmv( p=p  )  # This will take from a few minutes, depending upon system
 
 
 predictions = stmv_db( p=p, DS="stmv.prediction", ret="mean" )
@@ -109,15 +109,8 @@ dev.new(); surface( as.image( Z=predictions, x=locations, nx=p$nplons, ny=p$npla
 
 (p$statsvars)
 # p$statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "phi", "nu", "localrange" )
-dev.new(); levelplot( predictions[,1] ~ locations[,1] + locations[,2], aspect="iso" )
+dev.new(); levelplot( predictions[] ~ locations[,1] + locations[,2], aspect="iso" )
 dev.new(); levelplot( statistics[,match("nu", p$statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) # nu
 dev.new(); levelplot( statistics[,match("sdTot", p$statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) #sd total
 dev.new(); levelplot( statistics[,match("localrange", p$statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) #localrange
 
-
-
-
-global_model = stmv_db( p=p, DS="global_model")
-iYP = stmv_index_predictions_to_observations(p)
-iYPkeep = which(is.finite(iYP))
-cor(global_model$data[, p$variables$Y ], predictions[ iYP ], use="complete.obs" ) # P aer spatial/spatio-temporal random effects
