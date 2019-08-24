@@ -98,6 +98,7 @@ if (0) {
 
 
 stmv( p=p  )  # This will take from a few minutes, depending upon system
+# stmv_db( p=p, DS="cleanup.all" )
 
 
 predictions = stmv_db( p=p, DS="stmv.prediction", ret="mean" )

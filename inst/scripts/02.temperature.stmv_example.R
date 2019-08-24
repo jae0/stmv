@@ -93,6 +93,7 @@ dev.new(); surface( as.image( Z=DATA$input$t, x=DATA$input[, c("plon", "plat")],
 
 stmv( p=p )  # This will take from xx hrs, depending upon system
 
+# stmv_db( p=p, DS="cleanup.all" )
 
 predictions = stmv_db( p=p, DS="stmv.prediction", ret="mean" )
 statistics  = stmv_db( p=p, DS="stmv.stats" )
