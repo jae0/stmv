@@ -67,19 +67,9 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
   local_fn = ifelse (p$stmv_local_modelengine=="userdefined", p$stmv_local_modelengine_userdefined, stmv_interpolation_function( p$stmv_local_modelengine ) )
 
-  nip = length(ip)
-  if (nip < 100) {
-    nlogs = 3
-  } else {
-    nlogs = p$nlogs
-  }
-  if (nlogs > nip/10) nlogs = 3
-  inc_logs = trunc(nip / nlogs)
-  if ( inc_logs > (nip /10)   ) {
-    logpoints = ip[1]
-  } else {
-    logpoints  = ip[ round( seq( from=inc_logs, to=(nip-inc_logs), length.out=nlogs ) ) ]
-  }
+  nlogs = max(1, ifelse( length(ip) > p$nlogs*10, round(p$nlogs/5), length(ip) / p$nlogs ) )
+  logpoints  = ip[ round( seq( from=2, to=length(ip), length.out=nlogs ) ) ]
+  if (length(logpoints) > 3) logpoints =  logpoints[ -c(1, length(logpoints)) ]  # drop first and last ones
 
   if (debugging) {
     nsavepoints = 3
@@ -200,6 +190,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       next()
     }
 
+    # ndata abovev is for unique locations .. now ndata is for dim of input data
     ndata = length(data_subset$data_index)
     S[Si, i_ndata] = ndata
 

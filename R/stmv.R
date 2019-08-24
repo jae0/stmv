@@ -593,6 +593,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
       currentstatus = stmv_statistics_status( p=p)
       p$time_start_runmode = Sys.time()
       p0 = p
+      completion_threshold = 3
       ncomplete = -1
       for ( j in 1:length(p$stmv_autocorrelation_interpolation) ) {
         p = p0 #reset
@@ -601,10 +602,10 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
         message( "\n||| Entering <", p$runmode, "> stage: ", format(Sys.time()) , "\n" )
         p$clusters = p$stmv_runmode[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
         currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
-        if ( ncomplete == currentstatus$n.complete ) break()
+        if ( ( currentstatus$n.complete - ncomplete ) < completion_threshold ) break()
         ncomplete = currentstatus$n.complete
         if ( length(currentstatus$todo) == 0 ) break()
-        if ( length(currentstatus$todo) < length(p$clusters)) p$clusters = p$clusters[1] # drop to serial mode .. otherwise negative indexing occurs
+        if ( length(currentstatus$todo) < (2*length(p$clusters))) p$clusters = p$clusters[1] # drop to serial mode .. otherwise negative indexing occurs
         parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  )
         stmv_db(p=p, DS="save_current_state", runmode="interpolate", datasubset="predictions")
       }
@@ -618,7 +619,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
         P = stmv_attach( p$storage.backend, p$ptr$P )
         Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
         if (length(dim(P)) > 1 ) {
-          lattice::levelplot( P[] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso" )
+          lattice::levelplot( P[,1] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso" )
         } else {
           lattice::levelplot( P[] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso" )
         }
@@ -641,6 +642,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
     }
     p$time_start_runmode = Sys.time()
     p0 = p
+    completion_threshold = 3
     ncomplete = -1
     for ( j in 1:length(p$stmv_autocorrelation_interpolation) ) {
       p = p0 #reset
@@ -650,10 +652,10 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
       p$clusters = p$stmv_runmode[["interpolate_hybrid_boost"]] # as ram reqeuirements increase drop cpus
       p$stmv_local_modelengine = "kernel"  # override -- no covariates, basic moving window average (weighted by inverse variance)
       currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
-      if ( ncomplete == currentstatus$n.complete ) break()
+      if ( ( currentstatus$n.complete - ncomplete ) < completion_threshold ) break()
       ncomplete = currentstatus$n.complete
       if ( length(currentstatus$todo) == 0 ) break()
-      if ( length(currentstatus$todo) < length(p$clusters)) p$clusters = p$clusters[1] # drop to serial mode
+      if ( length(currentstatus$todo) < (2*length(p$clusters)) ) p$clusters = p$clusters[1] # drop to serial mode
       parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  )
       stmv_db(p=p, DS="save_current_state", runmode="interpolate_hybrid_boost", datasubset="predictions")
       message( paste( "Time used for <interpolate_hybrid_boost", j, ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
