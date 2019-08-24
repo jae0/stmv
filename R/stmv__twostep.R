@@ -10,7 +10,7 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
   if (variablelist)  return( c() )
 
   # crude check of number of time slices
-  n_time_slices = stmv_discretize_coordinates( coo=dat[, p$variables$TIME], ntarget=p$nt, minresolution=p$minresolution[3], method="thin" )
+  n_time_slices = stmv_discretize_coordinates( coo=dat[, p$variables$TIME], ntarget=p$nt, minresolution=p$minresolution[3], method="thin"  )
   if ( length(n_time_slices) < p$stmv_tmin )  return(NULL)
 
   px = dat # only the static parts .. time has to be a uniform grid so reconstruct below

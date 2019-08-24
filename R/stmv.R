@@ -567,75 +567,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
         message( paste( "||| Time taken to predict covariate surface (hours):", p$time_covariates ) )
       }
 
-      if (0) {
-        #check that working residual is correct
-        dd = glm( Sepal.Length ~ Sepal.Width + Petal.Length, data=iris, family=gaussian(link="log"))
-        ddp = predict(  dd, type="link", se.fit=FALSE )
-        ddr = residuals(dd, type="working") #
-        inv = family(dd)$linkinv
-        ddo = inv( ddp + ddr )
-        plot( ddo ~ iris$Sepal.Length )
-
-        require(mgcv)
-        dd = gam( Sepal.Length ~ s(Sepal.Width) + s(Petal.Length), data=iris, family=gaussian(link="log"))
-        ddp = predict(  dd, type="link", se.fit=FALSE )
-        ddr = residuals(dd, type="working") #
-        inv = family(dd)$linkinv
-        ddo = inv( ddp + ddr )
-        plot( ddo ~ iris$Sepal.Length )
-
-        require(mgcv)
-        yy = ifelse( iris$Sepal.Length < median(iris$Sepal.Length), 0, 1 )
-        dd = gam( yy ~ s(Sepal.Width), data=iris, family=binomial(link="logit"))
-        ddp = predict(  dd, type="link", se.fit=FALSE )
-        ddr = residuals(dd, type="working") #
-        inv = family(dd)$linkinv
-        lnk = family(dd)$linkfun
-        ddo = inv(ddp + ddr)
-        plot( ddo ~ yy )
-
-
-        # test a subsample
-        testdat = global_model$model
-        range(testdat$substrate.grainsize)
-        hist(testdat$substrate.grainsize)
-        dd = global_model
-        ddp = predict(  dd, type="link", se.fit=FALSE )
-        ddr = residuals(dd, type="working") #
-        inv = family(dd)$linkinv
-        ddo = inv( ddp + ddr )
-        ddo[ddo > 30] = 30
-        plot( ddo ~ testdat$substrate.grainsize )
-        hist(ddo, "fd")
-
-
-        # test a subsample
-        testdat = DATA$input[sample(nrow(DATA$input),1000),]
-        range(testdat$substrate.grainsize)
-        hist(testdat$substrate.grainsize)
-        dd = gam( substrate.grainsize ~ s(b.sdSpatial) + s(b.localrange) + s(log(z))+ s(log(dZ))+ s(log(ddZ)) , data=testdat, family=gaussian(link="log"))
-        ddp = predict(  dd, type="link", se.fit=FALSE )
-        ddr = residuals(dd, type="working") #
-        inv = family(dd)$linkinv
-        ddo = inv( ddp + ddr )
-        plot( ddo ~ testdat$substrate.grainsize )
-        ddo[ddo > 10] = 10
-        hist(ddo, "fd")
-
-        # test transformations within smooths
-        testdat$log_z = log(testdat$z)
-        testdat$log_dZ = log(testdat$dZ)
-        testdat$log_ddZ = log(testdat$ddZ)
-        dd = gam( substrate.grainsize ~ s(b.sdSpatial) + s(b.localrange) + s(log_z)+ s(log_dZ)+ s(log_ddZ) , data=testdat, family=gaussian(link="log"))
-        ddp = predict(  dd, type="link", se.fit=FALSE )
-        ddr = residuals(dd, type="working") #
-        inv = family(dd)$linkinv
-        ddo = inv( ddp + ddr )
-        plot( ddo ~ testdat$substrate.grainsize )
-        ddo[ddo > 10] = 10
-        hist(ddo, "fd")
-      }
-
 
     # -----------------------------------------------------
     if ( "scale" %in% runmode ) {
@@ -680,12 +611,18 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
       message( paste( "Time used for <interpolate", j, ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
       p = p0
     }
-    # stmv_db(p=p, DS="load_saved_state", runmode="interpolate" )
-    # stmv_db(p=p, DS="save_current_state", runmode="interpolate")
-    # P = stmv_attach( p$storage.backend, p$ptr$P )
-    # Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
-    # lattice::levelplot( P[] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso" )
 
+      if(0) {
+        stmv_db(p=p, DS="load_saved_state", runmode="interpolate" )
+        stmv_db(p=p, DS="save_current_state", runmode="interpolate")
+        P = stmv_attach( p$storage.backend, p$ptr$P )
+        Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+        if (length(dim(P)) > 1 ) {
+          lattice::levelplot( P[] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso" )
+        } else {
+          lattice::levelplot( P[] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso" )
+        }
+      }
   }
 
 

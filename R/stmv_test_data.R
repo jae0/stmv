@@ -223,4 +223,75 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
 
   }
 
+
+      if (0) {
+        #check that working residual is correct
+        dd = glm( Sepal.Length ~ Sepal.Width + Petal.Length, data=iris, family=gaussian(link="log"))
+        ddp = predict(  dd, type="link", se.fit=FALSE )
+        ddr = residuals(dd, type="working") #
+        inv = family(dd)$linkinv
+        ddo = inv( ddp + ddr )
+        plot( ddo ~ iris$Sepal.Length )
+
+        require(mgcv)
+        dd = gam( Sepal.Length ~ s(Sepal.Width) + s(Petal.Length), data=iris, family=gaussian(link="log"))
+        ddp = predict(  dd, type="link", se.fit=FALSE )
+        ddr = residuals(dd, type="working") #
+        inv = family(dd)$linkinv
+        ddo = inv( ddp + ddr )
+        plot( ddo ~ iris$Sepal.Length )
+
+        require(mgcv)
+        yy = ifelse( iris$Sepal.Length < median(iris$Sepal.Length), 0, 1 )
+        dd = gam( yy ~ s(Sepal.Width), data=iris, family=binomial(link="logit"))
+        ddp = predict(  dd, type="link", se.fit=FALSE )
+        ddr = residuals(dd, type="working") #
+        inv = family(dd)$linkinv
+        lnk = family(dd)$linkfun
+        ddo = inv(ddp + ddr)
+        plot( ddo ~ yy )
+
+
+        # test a subsample
+        testdat = global_model$model
+        range(testdat$substrate.grainsize)
+        hist(testdat$substrate.grainsize)
+        dd = global_model
+        ddp = predict(  dd, type="link", se.fit=FALSE )
+        ddr = residuals(dd, type="working") #
+        inv = family(dd)$linkinv
+        ddo = inv( ddp + ddr )
+        ddo[ddo > 30] = 30
+        plot( ddo ~ testdat$substrate.grainsize )
+        hist(ddo, "fd")
+
+
+        # test a subsample
+        testdat = DATA$input[sample(nrow(DATA$input),1000),]
+        range(testdat$substrate.grainsize)
+        hist(testdat$substrate.grainsize)
+        dd = gam( substrate.grainsize ~ s(b.sdSpatial) + s(b.localrange) + s(log(z))+ s(log(dZ))+ s(log(ddZ)) , data=testdat, family=gaussian(link="log"))
+        ddp = predict(  dd, type="link", se.fit=FALSE )
+        ddr = residuals(dd, type="working") #
+        inv = family(dd)$linkinv
+        ddo = inv( ddp + ddr )
+        plot( ddo ~ testdat$substrate.grainsize )
+        ddo[ddo > 10] = 10
+        hist(ddo, "fd")
+
+        # test transformations within smooths
+        testdat$log_z = log(testdat$z)
+        testdat$log_dZ = log(testdat$dZ)
+        testdat$log_ddZ = log(testdat$ddZ)
+        dd = gam( substrate.grainsize ~ s(b.sdSpatial) + s(b.localrange) + s(log_z)+ s(log_dZ)+ s(log_ddZ) , data=testdat, family=gaussian(link="log"))
+        ddp = predict(  dd, type="link", se.fit=FALSE )
+        ddr = residuals(dd, type="working") #
+        inv = family(dd)$linkinv
+        ddo = inv( ddp + ddr )
+        plot( ddo ~ testdat$substrate.grainsize )
+        ddo[ddo > 10] = 10
+        hist(ddo, "fd")
+      }
+
+
 }

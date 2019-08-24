@@ -95,7 +95,7 @@ stmv( p=p )  # This will take from xx hrs, depending upon system
 
 # stmv_db( p=p, DS="cleanup.all" )
 
-predictions = stmv_db( p=p, DS="stmv.prediction", ret="mean" )
+predictions = stmv_db( p=p, DS="stmv.prediction", ret="mean", yr = year.assessment )
 statistics  = stmv_db( p=p, DS="stmv.stats" )
 locations   = spatial_grid( p )
 
@@ -108,7 +108,7 @@ dev.new(); surface( as.image( Z=rowMeans(predictions), x=locations, nx=p$nplons,
 # p$statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "phi", "nu", "localrange" )
 dev.new(); levelplot( predictions[,1] ~ locations[,1] + locations[,2], aspect="iso" )
 dev.new(); levelplot( statistics[,match("nu", p$statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) # nu
-dev.new(); levelplot( statistics[,match("sdTot", p$statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) #sd total
+dev.new(); levelplot( statistics[,match("sdTotal", p$statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) #sd total
 dev.new(); levelplot( statistics[,match("localrange", p$statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) #localrange
 
 

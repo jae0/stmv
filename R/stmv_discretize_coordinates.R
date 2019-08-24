@@ -75,7 +75,7 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=N
         invcount = 1/res$n * ntarget / ressum  # proportion to remove to make each cell equal in weight
         tokeep = NULL
         for (o in 1:nrow(res)) {
-          oo = which( coo[,1] == res[o,1]  )
+          oo = which( coo == res[o,1]  )
           noo = length(oo)
           if ( noo > 1) {
             okeep = max(1, floor(invcount[o] * noo))
