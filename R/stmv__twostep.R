@@ -7,6 +7,15 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
   # step 1 -- timeseries modelling
   # use all available data in 'dat' to get a time trend .. and assume it applies to the prediction area of interest 'pa'
      # some methods require a uniform (temporal with associated covariates) prediction grid based upon all dat locations
+
+  if (0) {
+    varObs = S[Si, i_sdObs]^2
+    varSpatial = S[Si, i_sdSpatial]^2
+    sloc = Sloc[Si,]
+    eps = 1e-9
+  }
+
+
   if (variablelist)  return( c() )
 
   # crude check of number of time slices
@@ -124,7 +133,7 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
   }
 
   if (p$stmv_twostep_space %in% c("fft") ) {
-    out = stmv__fft( p, dat=pxts, pa=pa, nu=nu, phi=phi )
+    out = stmv__fft( p=p, dat=pxts, pa=pa, nu=nu, phi=phi )
   }
 
   if (p$stmv_twostep_space %in% c("gam") ) {

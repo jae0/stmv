@@ -71,10 +71,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
   logpoints  = ip[ round( seq( from=2, to=length(ip), length.out=nlogs ) ) ]
   if (length(logpoints) > 3) logpoints =  logpoints[ -c(1, length(logpoints)) ]  # drop first and last ones
 
-  if (debugging) {
-    nsavepoints = 3
-    savepoints = sample(logpoints, nsavepoints)
-  }
 
   i_ndata = match( "ndata", p$statsvars )
   i_rsquared = match("rsquared", p$statsvars )

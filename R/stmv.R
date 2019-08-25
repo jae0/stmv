@@ -594,7 +594,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
       p$time_start_runmode = Sys.time()
       p0 = p
       completion_threshold = 3
-      ncomplete = -1
+      ncomplete = -1e9
       for ( j in 1:length(p$stmv_autocorrelation_interpolation) ) {
         p = p0 #reset
         p$local_interpolation_correlation = p$stmv_autocorrelation_interpolation[j]
@@ -643,7 +643,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
     p$time_start_runmode = Sys.time()
     p0 = p
     completion_threshold = 3
-    ncomplete = -1
+    ncomplete = -1e9
     for ( j in 1:length(p$stmv_autocorrelation_interpolation) ) {
       p = p0 #reset
       p$local_interpolation_correlation = p$stmv_autocorrelation_interpolation[j]

@@ -60,6 +60,7 @@ p = aegis.temperature::temperature_parameters(
   # stmv_lowpass_nu = 0.5,
   # stmv_lowpass_phi = 0.1,  # note: p$pres = 0.2
   stmv_variogram_method = "fft",
+  stmv_fft_taper_method = "modelled"
   stmv_autocorrelation_fft_taper = 0.5,  # benchmark from which to taper
   stmv_autocorrelation_localrange=0.1,
   stmv_autocorrelation_interpolation = c(0.5, 0.25, 0.1, 0.01),

@@ -25,7 +25,7 @@ stmv_select_data = function( p, Si, localrange ) {
     # try to trim
     if ( exists("TIME", p$variables)) {
       Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )
-      iU = stmv_discretize_coordinates( coo=cbind(Yloc[Yi[U],], Ytime[Yi[U]]), ntarget=floor(p$stmv_nmax*p$nt/4), minresolution=p$minresolution, method="thin" )
+      iU = stmv_discretize_coordinates( coo=cbind(Yloc[Yi[U],], Ytime[Yi[U]]), ntarget=floor(p$stmv_nmax*p$stmv_tmax), minresolution=p$minresolution, method="thin" )
     } else {
       iU = stmv_discretize_coordinates( coo=Yloc[Yi[U],], ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )
     }
