@@ -23,12 +23,17 @@ stmv_select_data = function( p, Si, localrange ) {
     Sflag[Si] = E[["insufficient_data"]]
   } else if (ndata > p$stmv_nmax) {
     # try to trim
+    iU = NULL
     if ( exists("TIME", p$variables)) {
-      Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )
-      iU = stmv_discretize_coordinates( coo=cbind(Yloc[Yi[U],], Ytime[Yi[U]]), ntarget=floor(p$stmv_nmax*p$stmv_tmax), minresolution=p$minresolution, method="thin" )
-    } else {
-      iU = stmv_discretize_coordinates( coo=Yloc[Yi[U],], ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )
+      if (exists("stmv_variogram_resolve_time", p)) {
+        if (p$stmv_variogram_resolve_time) {
+          Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )
+          iU = stmv_discretize_coordinates( coo=cbind(Yloc[Yi[U],], Ytime[Yi[U]]), ntarget=floor(p$stmv_nmax*p$stmv_tmax), minresolution=p$minresolution, method="thin" )
+        }
+      }
     }
+    if (is.null(iU)) iU = stmv_discretize_coordinates( coo=Yloc[Yi[U],], ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )
+
     ndata = length( which(Yuniq[iU] ) )
     ntarget = p$stmv_nmax
     if (ndata < p$stmv_nmin) {

@@ -198,7 +198,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     local_phi = phi
     local_nu = nu
 
-    if(exists("stmv_variogram_resolve_time", p)) {
+    if (exists("stmv_variogram_resolve_time", p)) {
       if (p$stmv_variogram_resolve_time) {
         # create time-specific variograms
         # fY * Conj(fY) == power spectra
