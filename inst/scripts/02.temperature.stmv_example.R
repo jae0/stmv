@@ -49,9 +49,9 @@ p = aegis.temperature::temperature_parameters(
   stmv_local_modelformula_time = formula( paste(
     't',
     '~ s( yr, k=20, bs="ts") + s(cos.w, k=3, bs="ts") + s(sin.w, k=3, bs="ts")  ',
-    '+ s( yr, cos.w, sin.w, k=15, bs="ts") ',
+    '+ s( yr, cos.w, sin.w, k=20, bs="ts") ',
     '+ s( log(z), k=3, bs="ts") + s( plon, k=3, bs="ts") + s( plat, k=3, bs="ts")  ',
-    '+ s( log(z), plon, plat, k=15, bs="ts")  '
+    '+ s( log(z), plon, plat, k=20, bs="ts")  '
     ) ),
   stmv_twostep_time = "gam",
   stmv_twostep_space = "fft",  # everything else is too slow ...
@@ -63,21 +63,23 @@ p = aegis.temperature::temperature_parameters(
   stmv_fft_taper_method = "modelled",
   stmv_autocorrelation_fft_taper = 0.5,  # benchmark from which to taper
   stmv_autocorrelation_localrange=0.1,  # for reporting
-  stmv_autocorrelation_interpolation = c(0.25, 0.1, 0.01, 0.001),
+  stmv_autocorrelation_interpolation = c(0.25, 0.1, 0.05, 0.01, 0.001),
   stmv_local_model_distanceweighted = TRUE,
   depth.filter = log(10), # the depth covariate is input as log(depth) so, choose stats locations with elevation > log(1 m) as being on land
   stmv_rsquared_threshold = 0, # lower threshold .. not used if twostep method
-  stmv_distance_statsgrid = 4, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
-  stmv_distance_scale = c( 10, 20, 30, 40, 50 ), # km ... approx guess of 95% AC range
+  stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
+  stmv_distance_scale = c( 10, 20, 30, 40, 50, 60 ), # km ... approx guess of 95% AC range
   stmv_distance_prediction_fraction = 0.975, #
-  stmv_nmin = 100,  # min number of data points req before attempting to model in a localized space .. control no error in local model
+  stmv_nmin = 200,  # min number of data points req before attempting to model in a localized space .. control no error in local model
   stmv_nmax = 500, # no real upper bound.. just speed / RAM limits  .. can go up to 10 GB / core if too large
   stmv_tmin = (year.assessment - year.start ),
+  stmv_force_complete_method = "linear",
   stmv_runmode = list(
-    scale = rep("localhost", scale_ncpus),
+    # scale = rep("localhost", scale_ncpus),
     interpolate = list(
         cor_0.25 = rep("localhost", interpolate_ncpus),
         cor_0.1 = rep("localhost", interpolate_ncpus),
+        cor_0.05 = rep("localhost", interpolate_ncpus),
         cor_0.01 = rep("localhost", max(1, interpolate_ncpus-1)),
         cor_0.001 = rep("localhost", max(1, interpolate_ncpus-2))
       ),  # ncpus for each runmode

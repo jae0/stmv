@@ -674,7 +674,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
   if ("interpolate_force_complete" %in% runmode) {
     message( "\n||| Entering <interpolate force complete> stage: ", format(Sys.time()),  "\n" )
     currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
-    p$stmv_force_complete_method = "kernel"
+    if (!exists("stmv_force_complete_method", p)) p$stmv_force_complete_method = "linear"
     if ( length(currentstatus$todo) > 0 ) stmv_interpolate_force_complete( p=p )
     stmv_db(p=p, DS="save_current_state", runmode="interpolate_force_complete", datasubset="predictions")  # not needed as this is a terminal step .. but to be consistent
     # stmv_db(p=p, DS="load_saved_state", runmode="interpolate_force_complete", datasubset="predictions")  # not needed as this is a terminal step .. but to be consistent
