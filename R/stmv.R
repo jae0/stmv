@@ -619,10 +619,11 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
         P = stmv_attach( p$storage.backend, p$ptr$P )
         Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
         if (length(dim(P)) > 1 ) {
-          lattice::levelplot( P[,1] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso" )
+          for (i in 1:p$nt) print(lattice::levelplot( P[,i] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso" ))
         } else {
           lattice::levelplot( P[] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso" )
         }
+
       }
   }
 
