@@ -88,7 +88,7 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
 #  if (ss$r.sq < p$stmv_rsquared_threshold ) return(NULL)  # smooth/flat surfaces are ok ..
   # temporal r-squared test
   if (exists("stmv_rsquared_threshold", p)) {
-    if ( exists("stmv_stats", ts_preds) {
+    if ( exists("stmv_stats", ts_preds)) {
       if ( exists("rsquared", ts_preds$stmv_stats) ) {
         # ts_preds_rsquared = ts_preds$stmv_stats$rsquared  # store for now until return call
         if (!is.finite(ts_preds$stmv_stats$rsquared) ) return(NULL)
