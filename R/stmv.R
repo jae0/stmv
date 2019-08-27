@@ -590,7 +590,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
       if ( "restart_load" %in% runmode ) {
         stmv_db(p=p, DS="load_saved_state", runmode="interpolate", datasubset="predictions" )
       }
-      currentstatus = stmv_statistics_status( p=p)
+      currentstatus = stmv_statistics_status( p=p )
       p$time_start_runmode = Sys.time()
       p0 = p
       completion_threshold = 3
@@ -598,8 +598,8 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
       for ( j in 1:length(p$stmv_autocorrelation_interpolation) ) {
         p = p0 #reset
         p$local_interpolation_correlation = p$stmv_autocorrelation_interpolation[j]
-        p$runmode = paste("interpolate_", p$local_interpolation_correlation, sep="")
-        message( "\n||| Entering <", p$runmode, "> stage: ", format(Sys.time()) , "\n" )
+        p$runmode = paste("Interpolation_correlation_", p$local_interpolation_correlation, sep="")
+        message( "\n||| Entering <", p$runmode, " > : ", format(Sys.time()) , "\n" )
         p$clusters = p$stmv_runmode[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
         currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
         if ( ( currentstatus$n.complete - ncomplete ) < completion_threshold ) break()
@@ -607,7 +607,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
         if ( length(currentstatus$todo) == 0 ) break()
         if ( length(currentstatus$todo) < (2*length(p$clusters))) p$clusters = p$clusters[1] # drop to serial mode .. otherwise negative indexing occurs
         parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  )
-        stmv_db(p=p, DS="save_current_state", runmode="interpolate", datasubset="predictions")
+        stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="predictions")
       }
       message( paste( "Time used for <interpolate", j, ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
       p = p0

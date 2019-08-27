@@ -354,7 +354,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
 
   # lattice::levelplot( mean ~ plon + plat, data=pa, col.regions=heat.colors(100), scale=list(draw=TRUE) , aspect="iso" )
 
-  if(exists("stmv_variogram_resolve_time", p)) {
+  if (exists("stmv_variogram_resolve_time", p)) {
     if (p$stmv_variogram_resolve_time) {
       return( list( predictions=pa, stmv_stats=stmv_stats, stmv_localstats=OT ) )
     }

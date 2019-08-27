@@ -500,7 +500,7 @@
         u$z[Sind] = S[,i]
         stats[,i] = as.vector( fields::interp.surface( u, loc=Ploc[] ) ) # linear interpolation
         rY = range( stats[,i], na.rm=TRUE )
-        if (!is.finite(prod(rY))) next()
+        if (any(!is.finite(rY))) next()
         lb = which( stats[,i] < rY[1] )
         if (length(lb) > 0) stats[lb,i] = rY[1]
         lb = NULL
