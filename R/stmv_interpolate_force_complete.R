@@ -95,14 +95,14 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
         rY = range( P[,ww], na.rm=TRUE )
         X = matrix(NA, ncol=nc, nrow=nr )
         X[ind] = P[,ww]
-        Y = fields::interp.surface( X, loc=Ploc[,] )$z # linear interpolation
+        X = fields::interp.surface( list(x=p$plons, y=p$plats,z=X), loc=Ploc[,] ) # linear interpolation
         lb = which( X < rY[1] )
         if (length(lb) > 0) X[lb] = rY[1]
         lb = NULL
         ub = which( X > rY[2] )
         if (length(ub) > 0) X[ub] = rY[2]
         ub = NULL
-        P[tofill,ww] = X[ ind[tofill] ]
+        P[tofill,ww] = X[ tofill ]
       }
 
       ## SD
@@ -111,7 +111,7 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
         rY = range( Psd[,ww], na.rm=TRUE )
         X = matrix(NA, ncol=nc, nrow=nr )
         X[ind] = Psd[,ww]
-        X = fields::interp.surface( X, loc=Ploc[,] )$z # linear interpolation
+        X = fields::interp.surface( list(x=p$plons, y=p$plats,z=X), loc=Ploc[,] ) # linear interpolation
         # image(X)
         lb = which( X < rY[1] )
         if (length(lb) > 0) X[lb] = rY[1]
@@ -119,7 +119,7 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
         ub = which( X > rY[2] )
         if (length(ub) > 0) X[ub] = rY[2]
         ub = NULL
-        Psd[tofill,ww]  = X[ ind[tofill] ]
+        Psd[tofill,ww]  = X[ tofill ]
       }
     }
     return( "complete" )

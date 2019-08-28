@@ -496,12 +496,12 @@
       Sind = as.matrix(array_map( "xy->2", coords=Sloc[], origin=origin, res=Sres ))  # map Stats Locs to Plocs
 
       for ( i in 1:length( p$statsvars ) ) {
-        print(i)
+        # print(i)
         u$z[] = NA # reset
         u$z[Sind] = S[,i]
         stats[,i] = as.vector( fields::interp.surface( u, loc=Ploc[] ) ) # linear interpolation
+        if (all(!is.finite(stats[,i]))) next()
         rY = range( stats[,i], na.rm=TRUE )
-        if (any(!is.finite(rY))) next()
         lb = which( stats[,i] < rY[1] )
         if (length(lb) > 0) stats[lb,i] = rY[1]
         lb = NULL
