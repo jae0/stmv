@@ -463,6 +463,7 @@
         save( Pu, file=file.path( p$stmvSaveDir, paste("stmv.prediction", "ub",   "rdata", sep="." ) ), compress=T )
       } # end if TIME
 
+      message( "\n||| Saving predictions complete: ", format(Sys.time()),  "\n" )
 
       # prediction.stats .. warp to same resolution
 
@@ -524,6 +525,9 @@
 
       fn = file.path( p$stmvSaveDir, paste( "stmv.statistics", "rdata", sep=".") )
       save( stats, file=fn, compress=TRUE )
+      message( "\n||| Saving statistics complete: ", format(Sys.time()),  "\n" )
+
+      return( )
 
       if (0){
         #         p$statsvars

@@ -683,7 +683,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
   # -----------------------------------------------------
 
   if ("save_completed_data" %in% runmode) {
-   # loadfunctions("stmv")
+    message( "\n||| Saving final results: ", format(Sys.time()),  "\n" )
     stmv_db( p=p, DS="stmv.results" ) # save to disk for use outside stmv*, returning to user scale
   }
 
