@@ -15,7 +15,9 @@ interpolate_ram_required_per_process  = 1.5 # twostep / fft /fields vario ..
 interpolate_ncpus = min( parallel::detectCores(), floor( (ram_local()- interpolate_ram_required_main_process) / interpolate_ram_required_per_process ) )
 
 
-p0 = aegis::spatial_parameters( spatial.domain="bathymetry_example", internal.crs="+proj=utm +ellps=WGS84 +zone=20 +units=km", dres=1/60/4, pres=0.5, lon0=-64, lon1=-62, lat0=44, lat1=45, psignif=2 )
+p0 = aegis::spatial_parameters( spatial.domain="bathymetry_example",
+  internal.crs="+proj=utm +ellps=WGS84 +zone=20 +units=km",
+  dres=1/60/4, pres=0.5, lon0=-64, lon1=-62, lat0=44, lat1=45, psignif=2 )
 # or:  p0 = stmv_test_data( "aegis.test.paramaters")
 
 DATA = list(
