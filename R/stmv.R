@@ -577,7 +577,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
       p$time_start_runmode = Sys.time()
       p$runmode = "scale"
       p$clusters = p$stmv_runmode[["scale"]] # as ram reqeuirements increase drop cpus
-      invisible( currentstatus = stmv_statistics_status( p=p) )
       currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
       parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
       stmv_db(p=p, DS="save_current_state", runmode="scale", datasubset="statistics") # temp save to disk
@@ -590,7 +589,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
       if ( "restart_load" %in% runmode ) {
         stmv_db(p=p, DS="load_saved_state", runmode="interpolate", datasubset="predictions" )
       }
-      invisible( currentstatus = stmv_statistics_status( p=p ))
       p$time_start_runmode = Sys.time()
       p0 = p
       completion_threshold = 3
