@@ -61,15 +61,6 @@ stmv_parameters = function( p=list(), ... ) {
     # if (!exists("stmv_gam_optimizer", p)) p$stmv_gam_optimizer="perf"
   }
 
-  if (p$stmv_local_modelengine == "twostep") {
-    if (exists("stmv_rsquared_threshold", p) ) {
-      if (p$stmv_rsquared_threshold > 0) {
-        # message( "Ignoring value of p$stmv_rsquared_threshold as it is meaningless with twostep")
-        p$stmv_rsquared_threshold = 0  # override :: this is meaningless when broken apart in space and time ..
-      }
-    }
-  }
-
   if ( p$stmv_local_modelengine %in% c("krige" )) {
      # nothing to add yet ..
   }

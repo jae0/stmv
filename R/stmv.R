@@ -572,7 +572,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
     if ( "scale" %in% runmode ) {
       message ( "\n", "||| Entering spatial scale (variogram) determination: ", format(Sys.time())  )
       if ( "restart_load" %in% runmode ) {
-        stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" )
+        invisible( stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" ) )
       }
       p$time_start_runmode = Sys.time()
       p$runmode = "scale"
@@ -587,7 +587,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
     if ("interpolate" %in% runmode ) {
       invisible( stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" ))
       if ( "restart_load" %in% runmode ) {
-        stmv_db(p=p, DS="load_saved_state", runmode="interpolate", datasubset="predictions" )
+        invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolate", datasubset="predictions" ) )
       }
       p$time_start_runmode = Sys.time()
       p0 = p
@@ -636,8 +636,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
     # interpolation based on data
     # NOTE:: no covariates are used
     if ( "restart_load" %in% runmode ) {
-      stmv_db(p=p, DS="load_saved_state", runmode="interpolate_hybrid_boost", datasubset="predictions" )
-      currentstatus = stmv_statistics_status( p=p)
+      invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolate_hybrid_boost", datasubset="predictions" ) )
     }
     p$time_start_runmode = Sys.time()
     p0 = p

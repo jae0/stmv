@@ -6,10 +6,12 @@
 
 # FFT is the method of choice for speed and ability to capture the variability .. this shold take just a few minutes
 
-scale_ram_required_main_process = 1 # GB twostep / fft
+# 2 mins
+scale_ram_required_main_process = 1 # GB twostep / fft ---
 scale_ram_required_per_process  = 1 # twostep / fft /fields vario ..  (mostly 0.5 GB, but up to 5 GB)
 scale_ncpus = min( parallel::detectCores(), floor( (ram_local()- scale_ram_required_main_process) / scale_ram_required_per_process ) )
 
+# 2 mins
 interpolate_ram_required_main_process = 1 # GB twostep / fft
 interpolate_ram_required_per_process  = 1.5 # twostep / fft /fields vario ..
 interpolate_ncpus = min( parallel::detectCores(), floor( (ram_local()- interpolate_ram_required_main_process) / interpolate_ram_required_per_process ) )
@@ -48,18 +50,19 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_variogram_method = "fft",
   stmv_autocorrelation_fft_taper = 0.5,  # benchmark from which to taper
   stmv_autocorrelation_localrange = 0.1,
-  stmv_autocorrelation_interpolation = c(0.5, 0.25, 0.1, 0.01),
+  stmv_autocorrelation_interpolation = c(0.3, 0.2, 0.1, 0.05, 0.01),  # start with smaller localrange estimates and expand
   depth.filter = FALSE,  # need data above sea level to get coastline
   stmv_Y_transform =list(
     transf = function(x) {log10(x + 2500)} ,
     invers = function(x) {10^(x) - 2500}
   ), # data range is from -1667 to 5467 m: make all positive valued
-  stmv_rsquared_threshold = 0.01, # lower threshold  .. i.e., ignore
+  stmv_rsquared_threshold = 0.01, # lower threshold  .. i.e., ignore ... there is no timeseries model, nor a fixed effect spatial "model"
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
-  stmv_distance_scale = c( 5, 10, 20, 30, 40, 50  ), # km ... approx guesses of 95% AC range
+  stmv_distance_scale = c( 2.5, 5, 10, 20, 40 ), # km ... approx guesses of 95% AC range
   stmv_distance_prediction_fraction = 0.95, # i.e. 4/5 * 5 = 4 km .. relative to stats grid
   stmv_nmin = 200,  # min number of data points req before attempting to model in a localized space
   stmv_nmax = 400, # no real upper bound.. just speed /RAM
+  stmv_force_complete_method = "linear",
   stmv_runmode = list(
     scale = rep("localhost", scale_ncpus),
     interpolate = list(
@@ -114,6 +117,6 @@ dev.new(); surface( as.image( Z=predictions, x=locations, nx=p$nplons, ny=p$npla
 # p$statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "phi", "nu", "localrange" )
 dev.new(); levelplot( predictions[] ~ locations[,1] + locations[,2], aspect="iso" )
 dev.new(); levelplot( statistics[,match("nu", p$statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) # nu
-dev.new(); levelplot( statistics[,match("sdTot", p$statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) #sd total
+dev.new(); levelplot( statistics[,match("sdTotal", p$statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) #sd total
 dev.new(); levelplot( statistics[,match("localrange", p$statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) #localrange
 
