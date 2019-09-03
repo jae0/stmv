@@ -128,7 +128,9 @@ stmv_parameters = function( p=list(), ... ) {
 
   if ( !exists("stmv_distance_prediction_fraction", p)) p$stmv_distance_prediction_fraction = 1  # fraction of statsgrid (below)
 
-  if ( !exists("stmv_force_complete_method", p)) p$stmv_force_complete_method = "constant"  # moving average
+  if ( !exists("stmv_force_complete_method", p)) p$stmv_force_complete_method = "linear"  # moving average
+
+  if ( !exists("stmv_rsquared_threshold", p) ) p$stmv_rsquared_threshold = 0  # essentially ignore ..
 
   return(p)
 }

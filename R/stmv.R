@@ -607,7 +607,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
         parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  )
         stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="predictions")
       }
-      message( paste( "Time used for <interpolate", j, ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
+      message( paste( "Time used for <interpolations", ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
       p = p0
     }
 
@@ -656,7 +656,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
       if ( length(currentstatus$todo) < (2*length(p$clusters)) ) p$clusters = p$clusters[1] # drop to serial mode
       invisible( parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  ) )
       stmv_db(p=p, DS="save_current_state", runmode="interpolate_hybrid_boost", datasubset="predictions")
-      message( paste( "Time used for <interpolate_hybrid_boost", j, ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
     }
     message( paste( "Time used for <interpolate_hybrid_boost", j, ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
     p = p0
@@ -697,8 +696,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
     }
   }
 
+  message( "||| NOTE:: parameter 'p' has been updated in case you need to re-run something \n" )
+
   p$time_total = round( difftime( Sys.time(), p$time_start, units="hours" ), 3)
   message( "||| Total time taken (hours):", p$time_total  )
-  message( "||| NOTE:: parameter 'p' has been updated in case you need to re-run something" )
 
 }

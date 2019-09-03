@@ -195,9 +195,11 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     fY = fftwtools::fftw2d(fY)
     fN = fftwtools::fftw2d(fN)
 
+    # default to crude mean phi and nu
     local_phi = phi
     local_nu = nu
 
+    # update to time-slice averaged values
     if (exists("stmv_variogram_resolve_time", p)) {
       if (p$stmv_variogram_resolve_time) {
         # create time-specific variograms
@@ -236,6 +238,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
         )
         OT[ti, match( names(statsvars_scale), p$statsvars )] = statsvars_scale
         uu = NULL
+        statsvars_scale = NULL
 
         if ( !inherits(fit, "try-error") ) {
           if (exists("summary", fit)) {
