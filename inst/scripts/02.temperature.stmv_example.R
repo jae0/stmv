@@ -57,10 +57,10 @@ p = aegis.temperature::temperature_parameters(
   stmv_local_modelengine = "twostep" ,
   stmv_local_modelformula_time = formula( paste(
     't',
-    '~ s( yr, k=', round(nyrs*0.33), ', bs="ts") + s(cos.w, k=3, bs="ts") + s(sin.w, k=3, bs="ts")  ',
-    '+ s( yr, cos.w, sin.w, k=', round(nyrs*0.1), ', bs="ts") ',
+    '~ s( yr, k=', round(nyrs*0.5), ', bs="ts") + s(cos.w, k=3, bs="ts") + s(sin.w, k=3, bs="ts")  ',
+    '+ s( yr, cos.w, sin.w, k=9, bs="ts") ',
     '+ s( log(z), k=3, bs="ts") + s( plon, k=3, bs="ts") + s( plat, k=3, bs="ts")  ',
-    '+ s( log(z), plon, plat, k=9, bs="ts")  '
+    '+ s( log(z), plon, plat, k=12, bs="ts")  '
     ) ),
   stmv_twostep_time = "gam",
   stmv_twostep_space = "fft",  # everything else is too slow ...
@@ -79,16 +79,16 @@ p = aegis.temperature::temperature_parameters(
   depth.filter = 5, # the depth covariate is input as units of depth (m) so, choose stats locations with elevation > 10m as being on land
   stmv_rsquared_threshold = 0, # lower threshold for timeseries model
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
-  stmv_distance_scale = c( 5, 10, 20, 30, 40 ), # km ... approx guess of 95% AC range, the range also determine limits of localrange
+  stmv_distance_scale = c( 5, 10, 15, 20, 25, 30, 35 ), # km ... approx guess of 95% AC range, the range also determine limits of localrange
   stmv_distance_prediction_fraction = 0.95, #
   stmv_nmin = 100,  # min number of data points req before attempting to model in a localized space .. control no error in local model
-  stmv_nmax = 600, # no real upper bound.. just speed / RAM limits  .. can go up to 10 GB / core if too large
-  stmv_tmin = round( nyrs * 0.5 ),
+  stmv_nmax = 800, # no real upper bound.. just speed / RAM limits  .. can go up to 10 GB / core if too large
+  stmv_tmin = round( nyrs * 0.4 ),
   stmv_force_complete_method = "linear",
   stmv_runmode = list(
     scale = rep("localhost", scale_ncpus),  # 7 min
     interpolate = list(   # interpolation takes about 50 min
-        cor_0.25 = rep("localhost", interpolate_ncpus),
+        cor_0.2 = rep("localhost", interpolate_ncpus),
         cor_0.1 = rep("localhost", interpolate_ncpus),
         cor_0.05 = rep("localhost", max(1, interpolate_ncpus-1)),
         cor_0.01 = rep("localhost", max(1, interpolate_ncpus-2))

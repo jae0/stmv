@@ -591,8 +591,8 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
       }
       p$time_start_runmode = Sys.time()
       p0 = p
-      completion_threshold = 3
-      ncomplete = -1e9
+      # completion_threshold = 1
+      # ncomplete = -1e9
       for ( j in 1:length(p$stmv_autocorrelation_interpolation) ) {
         p = p0 #reset
         p$local_interpolation_correlation = p$stmv_autocorrelation_interpolation[j]
@@ -600,8 +600,8 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
         message( "\n||| Entering <", p$runmode, " > : ", format(Sys.time()) )
         p$clusters = p$stmv_runmode[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
         currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
-        if ( ( currentstatus$n.complete - ncomplete ) < completion_threshold ) break()
-        ncomplete = currentstatus$n.complete
+        # if ( ( currentstatus$n.complete - ncomplete ) < completion_threshold ) break()
+        # ncomplete = currentstatus$n.complete
         if ( length(currentstatus$todo) == 0 ) break()
         if ( length(currentstatus$todo) < (2*length(p$clusters))) p$clusters = p$clusters[1] # drop to serial mode .. otherwise negative indexing occurs
         parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  )
@@ -640,8 +640,8 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
     }
     p$time_start_runmode = Sys.time()
     p0 = p
-    completion_threshold = 3
-    ncomplete = -1e9
+    # completion_threshold = 1
+    # ncomplete = -1e9
     for ( j in 1:length(p$stmv_autocorrelation_interpolation) ) {
       p = p0 #reset
       p$local_interpolation_correlation = p$stmv_autocorrelation_interpolation[j]
@@ -650,8 +650,8 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
       p$clusters = p$stmv_runmode[["interpolate_hybrid_boost"]] # as ram reqeuirements increase drop cpus
       p$stmv_local_modelengine = "kernel"  # override -- no covariates, basic moving window average (weighted by inverse variance)
       currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
-      if ( ( currentstatus$n.complete - ncomplete ) < completion_threshold ) break()
-      ncomplete = currentstatus$n.complete
+      # $n.complete - ncomplete ) < completion_threshold ) break()
+      # ncomplete = currentstatus$n.complete
       if ( length(currentstatus$todo) == 0 ) break()
       if ( length(currentstatus$todo) < (2*length(p$clusters)) ) p$clusters = p$clusters[1] # drop to serial mode
       invisible( parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  ) )
