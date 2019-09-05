@@ -46,11 +46,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   sdTotal = sd(dat[,p$variable$Y], na.rm=T)
 
   # system size
-  #nr = nx
-  #nc = ny
-
-  # nr .. x/plon
-  # nc .. y/plat
+  #nr = nx # nr .. x/plon
+  #nc = ny # nc .. y/plat
 
   dx = p$pres
   dy = p$pres
@@ -122,9 +119,6 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   distances = NULL
   breaks = NULL
 
-  fY0 = matrix(0, nrow = nr2, ncol = nc2)
-  fN0 = matrix(0, nrow = nr2, ncol = nc2)
-
   coo = as.matrix(array_map( "xy->2", coords=dat[, p$variables$LOCS], origin=origin, res=resolution ))
   good = which(coo[,1] >= 1 & coo[,1] <= nr & coo[,2] >= 1  & coo[,2] )
   if (length(good) > 0) {
@@ -135,11 +129,13 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   xi   = 1:nrow(dat) # all data as p$nt==1
   pa_i = 1:nrow(pa)
 
-  OT = matrix( NA, ncol=length(p$statsvars), nrow=p$nt )
+  if (exists("stmv_variogram_resolve_time", p)) {
+    if (p$stmv_variogram_resolve_time) {
+      OT = matrix( NA, ncol=length(p$statsvars), nrow=p$nt )  # container to hold time-specific results
+    }
+  }
 
   for ( ti in 1:p$nt ) {
-
-    theta.Taper = NULL
 
     if ( exists("TIME", p$variables) ) {
       xi   = which( dat[ , p$variables$TIME] == p$prediction.ts[ti] )
@@ -155,8 +151,11 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     zmean = mean(z, na.rm=TRUE)
     zsd = sd(z, na.rm=TRUE)
     zvar = zsd^2
-    X = (z - zmean) / zsd # zscore -- making it mean 0 removes the DC component
+    X = (z - zmean) / zsd # zscore -- making it mean 0 removes the "DC component"
     z = NULL
+
+    fY = matrix(0, nrow = nr2, ncol = nc2)
+    fN = matrix(0, nrow = nr2, ncol = nc2)
 
     if (0) {
       u = as.image(
@@ -167,8 +166,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
         ny=nc
       )
       # surface (u)
-      # fY0[1:nr,1:nc] = u$z
-      # fN0[1:nr,1:nc] = u$weights
+      # fY[1:nr,1:nc] = u$z
+      # fN[1:nr,1:nc] = u$weights
       # u =NULL
   }
 
@@ -180,13 +179,9 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
 
     yy = tapply( X=X, INDEX=list(coo[xi,1], coo[xi,2]), FUN = function(w) {mean(w, na.rm=TRUE)}, simplify=TRUE )
     nn = tapply( X=X, INDEX=list(coo[xi,1], coo[xi,2]), FUN = function(w) {length(w)}, simplify=TRUE )
-
     if (length (dimnames(yy)[[1]]) < 5 ) next()
-    fY = fY0
-    fN = fN0
     fY[as.numeric(dimnames(yy)[[1]]),as.numeric(dimnames(yy)[[2]])] = yy
     fN[as.numeric(dimnames(nn)[[1]]),as.numeric(dimnames(nn)[[2]])] = nn
-
     yy = nn =  NULL
 
     fY[!is.finite(fY)] = 0
@@ -254,19 +249,21 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
             }
           }
         }
-
-        if (p$stmv_fft_taper_method == "empirical") {
-          theta.Taper = vgm$distances[ find_intersection( vgm$ac, threshold=p$stmv_autocorrelation_fft_taper ) ]
-          theta.Taper = theta.Taper * p$stmv_fft_taper_fraction # fraction of the distance to 0 correlation; sqrt(0.5) = ~ 70% of the variability (associated with correlation = 0.5)
-        }
-        vgm = NULL
-        fit = NULL
-        gc()
       }
     }
 
-    if (p$stmv_fft_taper_method == "modelled") theta.Taper = matern_phi2distance( phi=local_phi, nu=local_nu, cor=p$stmv_autocorrelation_fft_taper )
+    theta.Taper = NULL
+    if (p$stmv_fft_taper_method == "empirical") {
+      theta.Taper = vgm$distances[ find_intersection( vgm$ac, threshold=p$stmv_autocorrelation_fft_taper ) ]
+      theta.Taper = theta.Taper * p$stmv_fft_taper_fraction # fraction of the distance to 0 correlation; sqrt(0.5) = ~ 70% of the variability (associated with correlation = 0.5)
+    } else if (stmv_fft_taper_method == "modelled") {
+      theta.Taper = matern_phi2distance( phi=local_phi, nu=local_nu, cor=p$stmv_autocorrelation_fft_taper )
+    }
     if (is.null(theta.Taper)) theta.Taper = theta.Taper_global
+
+    vgm = NULL
+    fit = NULL
+    gc()
 
     if ( p$stmv_fft_filter == "lowpass") {
       theta = p$stmv_lowpass_phi
@@ -327,15 +324,15 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     sp.covar = NULL
     X = ifelse((fN > eps), (fY/fN), NA)
     X[!is.finite(X)] = NA
-    X = X * zsd + zmean # revert to input scale
-    if (0) {
-      dev.new()
-      image(list(x=c(1:nr)*dr, y=c(1:nc)*dc, z=X), xaxs="r", yaxs="r")
-    }
 
-    pa$mean[pa_i] = X
+    pa$mean[pa_i] = X * zsd + zmean # revert to input scale
     # pa$sd[pa_i] = NA  ## fix as NA
     X = NULL
+
+    if (0) {
+      dev.new()
+      image(list(x=c(1:nr)*dr, y=c(1:nc)*dc, z=pa$mean[pa_i]), xaxs="r", yaxs="r")
+    }
 
     dat[ xi, p$variable$LOCS ] = round( dat[ xi, p$variable$LOCS ] / p$pres  ) * p$pres
     iYP = match(

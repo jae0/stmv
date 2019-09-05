@@ -1,6 +1,7 @@
 
 stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE, eps=1e-9, add.interpolation=FALSE,
-  stmv_fft_taper_method="modelled", stmv_autocorrelation_localrange=0.1, stmv_autocorrelation_fft_taper=0, stmv_fft_taper_fraction=sqrt(0.5) ) {
+  stmv_fft_taper_method="modelled", stmv_fft_taper_fraction=sqrt(0.5),
+  stmv_autocorrelation_localrange=0.1, stmv_autocorrelation_fft_taper=0 ) {
 
   if (0) {
     require(fields)
@@ -73,11 +74,10 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
 
   #  Nadaraya/Watson normalization for missing values s
   coo = as.matrix(array_map( "xy->2", coords=xyz[,c("x", "y")], origin=origin, res=resolution ))
+
   yy = tapply( X=z, INDEX=list(coo[,1], coo[,2]),  FUN = function(w) {mean(w, na.rm=TRUE)}, simplify=TRUE )
   nn = tapply( X=z, INDEX=list(coo[,1], coo[,2]), FUN = function(w) {length(w)}, simplify=TRUE )
-
   if (length (dimnames(yy)[[1]]) < 5 ) return( out )
-
   fY[as.numeric(dimnames(yy)[[1]]),as.numeric(dimnames(yy)[[2]])] = yy
   fN[as.numeric(dimnames(nn)[[1]]),as.numeric(dimnames(nn)[[2]])] = nn
   yy = nn = NULL
@@ -160,7 +160,7 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
     mC[nr, nc] = 1  # equal weights
     center = matrix(c((dr * nr), (dc * nc)), nrow = 1, ncol = 2)
 
-
+    # determine tapering distance .. user control of smoothing/sharpness
     if (stmv_fft_taper_method == "empirical") {
       theta.Taper = vgm$distances[ find_intersection( vgm$ac, threshold=stmv_autocorrelation_fft_taper ) ]
       theta.Taper = theta.Taper * stmv_fft_taper_fraction # fraction of the distance to 0 correlation; sqrt(0.5) = ~ 70% of the variability (associated with correlation = 0.5)
