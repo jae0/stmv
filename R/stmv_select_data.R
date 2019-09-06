@@ -21,7 +21,6 @@ stmv_select_data = function( p, Si, localrange ) {
 
   if (ndata < p$stmv_nmin) {
     Sflag[Si] = E[["insufficient_data"]]
-    return(NULL)
   } else if (ndata > p$stmv_nmax) {
     # try to trim
     iU = NULL
@@ -38,12 +37,11 @@ stmv_select_data = function( p, Si, localrange ) {
     ndata = length( which(Yuniq[iU] ) )
     ntarget = p$stmv_nmax
     if (ndata < p$stmv_nmin) {
-      # return what data we do have .. calling funcction determines what to do with it if anything
+      # return some data
       uu = setdiff( 1:length(U), iU)
       iMore = uu[ .Internal( sample( length(uu), {ntarget - ndata}, replace=FALSE, prob=NULL) ) ]
       iU = unique(sort(c(iU, iMore)))
       iMore =  uu = NULL
-      Sflag[Si] = E[["insufficient_data"]]
     } else if (ndata > p$stmv_nmax) {
       # force via a random subsample
       iU = iU[ .Internal( sample( length(iU), ntarget, replace=FALSE, prob=NULL)) ] # simple random

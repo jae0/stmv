@@ -1,9 +1,8 @@
 
 stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
   plotdata=FALSE, methods=c("geoR"), discretized_n=64, nbreaks = 32,
-  distance_cutoff=NA, family=gaussian(link="identity"),
-  range_correlation=0.1, stmv_autocorrelation_fft_taper=0, stmv_fft_taper_fraction=sqrt(0.5),
-  stanmodel=NULL, modus_operandi="easygoing" ) {
+  distance_cutoff=NA, family=gaussian(link="identity"), stanmodel=NULL, range_correlation=0.1, stmv_autocorrelation_fft_taper=0, stmv_fft_taper_fraction=sqrt(0.5),
+  modus_operandi="easygoing" ) {
 
   #\\ estimate empirical variograms (actually correlation functions)
   #\\ and then model them using a number of different approaches .. using a Matern basis
@@ -365,7 +364,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
       out$fft = fit$summary
       if (exists("phi", out$fft)) {
         if (is.finite(out$fft$phi)) {
-          out$fft$phi_ok = ifelse( out$fft$phi < out$distance_cutoff*0.99, TRUE, FALSE )  # using distance as an upper limit
+          out$fft$phi_ok = ifelse( out$fft$phi < out$distance_cutoff*0.99, TRUE, FALSE )
         }
       }
     }

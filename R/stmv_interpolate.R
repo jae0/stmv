@@ -176,10 +176,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
     # last check .. ndata can change due to random sampling
     data_subset = stmv_select_data( p=p, Si=Si, localrange=localrange )
-    if (is.null( data_subset )) {
-      Sflag[Si] = E[["insufficient_data"]]
-      next()
-    }
+    if (is.null( data_subset )) next()
     unique_spatial_locations = data_subset$unique_spatial_locations
 
     if (unique_spatial_locations < p$stmv_nmin) {
