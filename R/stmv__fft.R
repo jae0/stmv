@@ -122,8 +122,6 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   distances = NULL
   breaks = NULL
 
-  fY0 = matrix(0, nrow = nr2, ncol = nc2)
-  fN0 = matrix(0, nrow = nr2, ncol = nc2)
 
   coo = as.matrix(array_map( "xy->2", coords=dat[, p$variables$LOCS], origin=origin, res=resolution ))
   good = which(coo[,1] >= 1 & coo[,1] <= nr & coo[,2] >= 1  & coo[,2] )
@@ -135,7 +133,12 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   xi   = 1:nrow(dat) # all data as p$nt==1
   pa_i = 1:nrow(pa)
 
-  OT = matrix( NA, ncol=length(p$statsvars), nrow=p$nt )
+  if (exists("stmv_variogram_resolve_time", p)) {
+    if (p$stmv_variogram_resolve_time) {
+      OT = matrix( NA, ncol=length(p$statsvars), nrow=p$nt )
+    }
+  }
+
 
   for ( ti in 1:p$nt ) {
 
@@ -158,8 +161,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     X = (z - zmean) / zsd # zscore -- making it mean 0 removes the DC component
     z = NULL
 
-    fY = fY0
-    fN = fN0
+    fY = matrix(0, nrow = nr2, ncol = nc2)
+    fN = matrix(0, nrow = nr2, ncol = nc2)
 
     if (0) {
       u = as.image(
@@ -170,8 +173,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
         ny=nc
       )
       # surface (u)
-      # fY0[1:nr,1:nc] = u$z
-      # fN0[1:nr,1:nc] = u$weights
+      # fY[1:nr,1:nc] = u$z
+      # fN[1:nr,1:nc] = u$weights
       # u =NULL
   }
 
