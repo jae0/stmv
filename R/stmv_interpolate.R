@@ -133,6 +133,11 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       {abs( Sloc[Si,2] - Sloc[,2] ) <= localrange}
     )
 
+    if (length( ii ) < p$stmv_nmin) {
+      Sflag[Si] = E[["insufficient_data"]]
+      next()
+    }
+
 
     # nu checks
     if ( !is.finite(nu) ) {
@@ -222,8 +227,8 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
     stmv_distance_prediction = localrange * p$stmv_distance_prediction_fraction # this is a half window km
     # construct prediction/output grid area ('pa')
-    windowsize.half = round(stmv_distance_prediction/p$pres) + 1L  # convert distance to discretized increments of row/col indices; stmv_distance_prediction = 0.75* stmv_distance_statsgrid (unless overridden)
-
+    # convert distance to discretized increments of row/col indices; stmv_distance_prediction = 0.75* stmv_distance_statsgrid (unless overridden)
+    windowsize.half = 1L + round( min( stmv_distance_prediction, p$stmv_distance_prediction_max ) / p$pres )
     # construct data (including covariates) for prediction locations (pa)
     pa = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=windowsize.half ) )
     if (is.null(pa)) {

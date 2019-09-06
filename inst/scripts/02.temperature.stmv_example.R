@@ -40,7 +40,7 @@ DATA$input = DATA$input[, c("plon", "plat", "tiyr", "z", "t")]   ## yr, cos.w an
 
 
 # quick look of data
-dev.new(); surface( as.image( Z=DATA$input$t, x=DATA$input[, c("plon", "plat")], nx=p$nplons, ny=p$nplats, na.rm=TRUE) )
+dev.new(); fields::surface( fields::as.image( Z=DATA$input$t, x=DATA$input[, c("plon", "plat")], nx=p0$nplons, ny=p0$nplats, na.rm=TRUE) )
 
 
 p = aegis.temperature::temperature_parameters(
@@ -57,8 +57,8 @@ p = aegis.temperature::temperature_parameters(
   stmv_local_modelengine = "twostep" ,
   stmv_local_modelformula_time = formula( paste(
     't',
-    '~ s( yr, k=', round(nyrs*0.33), ', bs="ts") + s(cos.w, k=3, bs="ts") + s(sin.w, k=3, bs="ts")  ',
-    '+ s( yr, cos.w, sin.w, k=', round(nyrs*0.2), ', bs="ts") ',
+    '~ s( yr, k=', round(nyrs*0.4), ', bs="ts") + s(cos.w, k=3, bs="ts") + s(sin.w, k=3, bs="ts")  ',
+    '+ s( cos.w, sin.w, k=', round(nyrs*0.2), ', bs="ts") ',
     '+ s( log(z), k=3, bs="ts") + s( plon, k=3, bs="ts") + s( plat, k=3, bs="ts")  ',
     '+ s( log(z), plon, plat, k=9, bs="ts")  '
     ) ),
@@ -67,7 +67,6 @@ p = aegis.temperature::temperature_parameters(
   stmv_fft_filter="lowpass_matern_tapered",  #  matern, krige (very slow), lowpass, lowpass_matern
   stmv_fft_taper_method = "modelled",
   # stmv_fft_taper_method = "empirical",
-  # stmv_fft_taper_fraction = sqrt(0.5),  # when stmv_fft_taper_method = "empirical", in local smoothing convolutions taper to this areal expansion factor sqrt( r=0.5 ) ~ 70% of variance in variogram
   stmv_lowpass_nu = 0.5,  # 0.5=exponential, 1=gaussian
   stmv_lowpass_phi = 0.5,  # note: p$pres = 0.5
   # stmv_variogram_resolve_time = TRUE,

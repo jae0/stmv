@@ -35,7 +35,6 @@ stmv_parameters = function( p=list(), ... ) {
   if( !exists( "stmv_autocorrelation_localrange", p)) p$stmv_autocorrelation_localrange = 0.1   # auto-correlation at which to compute range distance
   if( !exists( "stmv_autocorrelation_localrange_expanding", p)) p$stmv_autocorrelation_localrange_expanding = c(0.1, 0.01, 0.001)   # auto-correlation at which to compute range distance
 
-  if( !exists( "stmv_fft_taper_fraction", p)) p$stmv_fft_taper_fraction = sqrt(0.5)
   if( !exists( "stmv_autocorrelation_fft_taper", p)) p$stmv_autocorrelation_fft_taper = 0   # scale at which to mark tapering
 
   if (!exists( "stmv_global_family", p)) p$stmv_global_family = gaussian(link = "identity")
@@ -126,7 +125,8 @@ stmv_parameters = function( p=list(), ... ) {
   p$nloccov = 0
   if (exists("local_cov", p$variables)) p$nloccov = length(p$variables$local_cov)
 
-  if ( !exists("stmv_distance_prediction_fraction", p)) p$stmv_distance_prediction_fraction = 1  # fraction of statsgrid (below)
+  if ( !exists("stmv_distance_prediction_fraction", p)) p$stmv_distance_prediction_fraction = 0.95  # fraction of localrange
+  if ( !exists("stmv_distance_prediction_max", p)) p$stmv_distance_prediction_max = p$stmv_distance_statsgrid * 1.5
 
   if ( !exists("stmv_force_complete_method", p)) p$stmv_force_complete_method = "linear"  # moving average
 

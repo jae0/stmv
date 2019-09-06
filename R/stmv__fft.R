@@ -61,8 +61,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   nr = round( rr/dx ) + 1
   nc = round( rc/dy ) + 1
 
-  dr = rr/(nr-1)
-  dc = rc/(nc-1)
+  dr = rr/(nr-1) # == dx
+  dc = rc/(nc-1) # == dy
 
   nr2 = 2 * nr
   nc2 = 2 * nc
@@ -72,7 +72,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   # d_sa = sa/nrow(dat) # sa associated with each datum
   # d_length = sqrt( d_sa/pi )  # sa = pi*l^2  # characteristic length scale
   # theta.Taper_global = d_length * 5
-  theta.Taper_global = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_autocorrelation_fft_taper )
+  theta.Taper_global = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_autocorrelation_fft_taper )  # default
 
 
   # final output grid
@@ -129,10 +129,17 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   xi   = 1:nrow(dat) # all data as p$nt==1
   pa_i = 1:nrow(pa)
 
+  OT = NA
   if (exists("stmv_variogram_resolve_time", p)) {
     if (p$stmv_variogram_resolve_time) {
       OT = matrix( NA, ncol=length(p$statsvars), nrow=p$nt )  # container to hold time-specific results
     }
+  }
+
+  # things to do outside of the time loop
+  if ( grepl("lowpass", p$stmv_fft_filter)) {
+    sp.covar.lowpass = stationary.cov( dgrid, center, Covariance="Matern", theta=p$stmv_lowpass_phi, smoothness=p$stmv_lowpass_nu )
+    sp.covar.lowpass = as.surface(dgrid, c(sp.covar.lowpass))$z / (nr2*nc2)
   }
 
   for ( ti in 1:p$nt ) {
@@ -146,6 +153,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
       }
     }
 
+    theta.Taper = NULL
+
     # bounds check: make sure predictions exist
     z = dat[xi, p$variables$Y]
     zmean = mean(z, na.rm=TRUE)
@@ -154,8 +163,6 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     X = (z - zmean) / zsd # zscore -- making it mean 0 removes the "DC component"
     z = NULL
 
-    fY = matrix(0, nrow = nr2, ncol = nc2)
-    fN = matrix(0, nrow = nr2, ncol = nc2)
 
     if (0) {
       u = as.image(
@@ -165,11 +172,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
         nx=nr,
         ny=nc
       )
-      # surface (u)
-      # fY[1:nr,1:nc] = u$z
-      # fN[1:nr,1:nc] = u$weights
-      # u =NULL
-  }
+      surface (u)
+    }
 
     # Nadaraya/Watson normalization for missing values
     # See explanation:  https://en.wikipedia.org/wiki/Autocorrelation#Efficient_computation
@@ -180,6 +184,10 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     yy = tapply( X=X, INDEX=list(coo[xi,1], coo[xi,2]), FUN = function(w) {mean(w, na.rm=TRUE)}, simplify=TRUE )
     nn = tapply( X=X, INDEX=list(coo[xi,1], coo[xi,2]), FUN = function(w) {length(w)}, simplify=TRUE )
     if (length (dimnames(yy)[[1]]) < 5 ) next()
+
+    fY = matrix(0, nrow = nr2, ncol = nc2)
+    fN = matrix(0, nrow = nr2, ncol = nc2)
+
     fY[as.numeric(dimnames(yy)[[1]]),as.numeric(dimnames(yy)[[2]])] = yy
     fN[as.numeric(dimnames(nn)[[1]]),as.numeric(dimnames(nn)[[2]])] = nn
     yy = nn =  NULL
@@ -249,75 +257,69 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
             }
           }
         }
+        fit = NULL
+
+        if (grepl("tapered", p$stmv_fft_filter)) {
+          # figure out which taper distance to use
+          if (p$stmv_fft_taper_method == "empirical") {
+            if (!is.null(vgm)) {
+              theta.Taper = vgm$distances[ find_intersection( vgm$ac, threshold=p$stmv_autocorrelation_fft_taper ) ]
+            }
+          }
+        }
+        vgm = NULL
+
       }
     }
 
-    theta.Taper = NULL
-    if (p$stmv_fft_taper_method == "empirical") {
-      theta.Taper = vgm$distances[ find_intersection( vgm$ac, threshold=p$stmv_autocorrelation_fft_taper ) ]
-      theta.Taper = theta.Taper * p$stmv_fft_taper_fraction # fraction of the distance to 0 correlation; sqrt(0.5) = ~ 70% of the variability (associated with correlation = 0.5)
-    } else if (stmv_fft_taper_method == "modelled") {
-      theta.Taper = matern_phi2distance( phi=local_phi, nu=local_nu, cor=p$stmv_autocorrelation_fft_taper )
-    }
-    if (is.null(theta.Taper)) theta.Taper = theta.Taper_global
-
-    vgm = NULL
-    fit = NULL
     gc()
 
-    if ( p$stmv_fft_filter == "lowpass") {
-      theta = p$stmv_lowpass_phi
-      sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=theta, smoothness=p$stmv_lowpass_nu )
-      sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
-      sp.covar = fftwtools::fftw2d(sp.covar) * mC_fft
+
+    sp.covar = 1  # init collator of the kernal
+
+    if ( grepl("lowpass", p$stmv_fft_filter) ) {
+      sp.covar = sp.covar * fftwtools::fftw2d(sp.covar.lowpass) * mC_fft  # this is created outside of the loop for speed
     }
 
-    if (p$stmv_fft_filter %in% c("matern") ) {
-      sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=local_phi, smoothness=local_nu )
-      sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
-      sp.covar = fftwtools::fftw2d(sp.covar) * mC_fft
+    if ( grepl("matern", p$stmv_fft_filter) ) {
+      if ( grepl("tapered", p$stmv_fft_filter) ) {
+        if  (p$stmv_fft_taper_method == "modelled") theta.Taper = matern_phi2distance( phi=local_phi, nu=local_nu, cor=p$stmv_autocorrelation_fft_taper )
+        if (is.null(theta.Taper)) theta.Taper = theta.Taper_global  # test for empirical taper has alread been completed above .. do not repeat here
+        spk =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=local_phi, smoothness=local_nu,
+          Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
+        spk = as.surface(dgrid, c(spk))$z / (nr2*nc2)
+        sp.covar = sp.covar * fftwtools::fftw2d(spk)  * mC_fft
+      } else {
+        spk = stationary.cov( dgrid, center, Covariance="Matern", theta=local_phi, smoothness=local_nu )
+        spk = as.surface(dgrid, c(spk))$z / (nr2*nc2)
+        sp.covar = sp.covar * fftwtools::fftw2d(spk) * mC_fft
+      }
     }
 
-    if (p$stmv_fft_filter == "lowpass_matern") {
-      # both ..
-      sp.covar.lowpass = stationary.cov( dgrid, center, Covariance="Matern", theta=p$stmv_lowpass_phi, smoothness=p$stmv_lowpass_nu )
-      sp.covar.lowpass = as.surface(dgrid, c(sp.covar.lowpass))$z / (nr2*nc2)
-      sp.covar = stationary.cov( dgrid, center, Covariance="Matern", theta=local_phi, smoothness=local_nu )
-      sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
-      sp.covar = ( fftwtools::fftw2d(sp.covar.lowpass) * mC_fft ) * (fftwtools::fftw2d(sp.covar) * mC_fft )
-      sp.covar.lowpass = NULL
-    }
-
-    if (p$stmv_fft_filter == "matern_tapered") {
-      sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=local_phi, smoothness=local_nu,
-        Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
-      sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
-      sp.covar = fftwtools::fftw2d(sp.covar)  * mC_fft
-    }
-
-    if (p$stmv_fft_filter == "lowpass_matern_tapered") {
-      sp.covar.lowpass = stationary.cov( dgrid, center, Covariance="Matern", theta=p$stmv_lowpass_phi, smoothness=p$stmv_lowpass_nu )
-      sp.covar.lowpass = as.surface(dgrid, c(sp.covar.lowpass))$z / (nr2*nc2)
-      sp.covar =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=local_phi, smoothness=local_nu,
-        Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
-      sp.covar = as.surface(dgrid, c(sp.covar))$z / (nr2*nc2)
-      sp.covar = (fftwtools::fftw2d(sp.covar.lowpass) * mC_fft ) * ( fftwtools::fftw2d(sp.covar) * mC_fft )
-      sp.covar.lowpass = NULL
-    }
-
-
-    if (p$stmv_fft_filter == "normal_kernel") {
+    if ( grepl("normal_kernel", p$stmv_fft_filter) ) {
       theta = matern_phi2distance( phi=local_phi, nu=local_nu, cor=p$stmv_autocorrelation_localrange )
-      xseq = seq(-(nr - 1), nr, 1) * dx / theta
-      yseq = seq(-(nc - 1), nc, 1) * dy / theta
-      dd = ((matrix(xseq, nr2, nc2)^2 + matrix(yseq, nr2, nc2, byrow = TRUE)^2))  # squared distances
-      yseq = xseq = NULL
-      # double.exp: An R function that takes as its argument the _squared_
-      # distance between two points divided by the bandwidth. The
-      # default is exp( -abs(x)) yielding a normal kernel
-      sp.covar = matrix( double.exp(dd), nrow = nr2, ncol = nc2)
-      sp.covar = fftwtools::fftw2d(sp.covar) * mC_fft / (nr2*nc2)# kernal weights
+      if ( grepl("tapered", p$stmv_fft_filter) ) {
+        if  (p$stmv_fft_taper_method == "modelled") theta.Taper = matern_phi2distance( phi=local_phi, nu=local_nu, cor=p$stmv_autocorrelation_fft_taper )
+        if (is.null(theta.Taper)) theta.Taper = theta.Taper_global  # test for empirical taper has alread been completed above .. do not repeat here
+        spk =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Exponential", theta=theta,
+          Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
+        spk = as.surface(dgrid, c(spk))$z / (nr2*nc2)
+        sp.covar = sp.covar * fftwtools::fftw2d(spk)  * mC_fft
+      } else {
+        # written out in long form to show the math
+        xseq = seq(-(nr - 1), nr, 1) * dx / theta
+        yseq = seq(-(nc - 1), nc, 1) * dy / theta
+        dd = ((matrix(xseq, nr2, nc2)^2 + matrix(yseq, nr2, nc2, byrow = TRUE)^2))  # squared distances
+        yseq = xseq = NULL
+        # double.exp: An R function that takes as its argument the _squared_
+        # distance between two points divided by the bandwidth. The
+        # default is exp( -abs(x)) yielding a normal kernel
+        spk = matrix( double.exp(dd), nrow = nr2, ncol = nc2) / (nr2*nc2)
+        sp.covar = sp.covar * fftwtools::fftw2d(spk) * mC_fft # kernal weights
+      }
     }
+
+    spk = NULL
 
     fY = Re( fftwtools::fftw2d( sp.covar * fY, inverse = TRUE))[1:nr, 1:nc]
     fN = Re( fftwtools::fftw2d( sp.covar * fN, inverse = TRUE))[1:nr, 1:nc]
@@ -354,13 +356,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
 
   # lattice::levelplot( mean ~ plon + plat, data=pa, col.regions=heat.colors(100), scale=list(draw=TRUE) , aspect="iso" )
 
-  if (exists("stmv_variogram_resolve_time", p)) {
-    if (p$stmv_variogram_resolve_time) {
-      return( list( predictions=pa, stmv_stats=stmv_stats, stmv_localstats=OT ) )
-    }
-  }
-
-  return( list( predictions=pa, stmv_stats=stmv_stats, stmv_localstats=NULL ) )
+  return( list( predictions=pa, stmv_stats=stmv_stats, stmv_localstats=OT ) )
 
 }
 
