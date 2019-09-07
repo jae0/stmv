@@ -342,7 +342,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
 
     # update in stats .. if there are updates
-    if (!is.null( res$stmv_localstats )) {
+    if (!is.na( res$stmv_localstats )) {
       lss = colMeans( res$stmv_localstats, na.rm=TRUE )
       names(lss) = p$statvars
       if (is.finite(lss[["nu"]])) S[Si, i_nu] = lss[["nu"]]
