@@ -27,8 +27,6 @@ stmv_parameters = function( p=list(), ... ) {
 
   if( !exists( "storage.backend", p))  p$storage.backend="bigmemory.ram"
 
-  if( !exists( "stmv_fft_taper_method", p)) p$stmv_fft_taper_method = "modelled"
-
   if( !exists( "stmv_variogram_method", p)) p$stmv_variogram_method = "fft"   # note GP methods are slow when there is too much data
   if( !exists( "stmv_variogram_nbreaks_totry", p)) p$stmv_variogram_nbreaks_totry = c( 16, 21, 32, 47, 63, 77, 51, 13 )  # different numbers of nbreaks can influence variogram stabilty
 
@@ -126,7 +124,7 @@ stmv_parameters = function( p=list(), ... ) {
   if (exists("local_cov", p$variables)) p$nloccov = length(p$variables$local_cov)
 
   if ( !exists("stmv_distance_prediction_fraction", p)) p$stmv_distance_prediction_fraction = 0.95  # fraction of localrange
-  if ( !exists("stmv_distance_prediction_max", p)) p$stmv_distance_prediction_max = p$stmv_distance_statsgrid * 1.5
+  if ( !exists("stmv_distance_prediction_max", p)) p$stmv_distance_prediction_max = p$stmv_distance_statsgrid * 1.25
 
   if ( !exists("stmv_force_complete_method", p)) p$stmv_force_complete_method = "linear"  # moving average
 

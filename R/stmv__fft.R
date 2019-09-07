@@ -73,8 +73,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   # sa = rr * rc
   # d_sa = sa/nrow(dat) # sa associated with each datum
   # d_length = sqrt( d_sa/pi )  # sa = pi*l^2  # characteristic length scale
-  # theta.Taper_global = d_length * 5
-  theta.Taper_global = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_autocorrelation_fft_taper )  # default
+  # theta.Taper_static = d_length * 5
+  theta.Taper_static = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_autocorrelation_fft_taper )  # default
 
 
   # final output grid
@@ -104,7 +104,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   mC_fft = 1 / fftwtools::fftw2d(mC)  # multiplication is faster than division
   mC = NULL
 
-  if (!exists("stmv_fft_filter",p) ) p$stmv_fft_filter="lowpass" # default in case of no specification
+  if (!exists("stmv_fft_filter",p) ) p$stmv_fft_filter="matern" # default in case of no specification
 
   origin = c(x_r[1], x_c[1])
   resolution = c(dx, dy)
@@ -263,10 +263,12 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
 
         if (grepl("tapered", p$stmv_fft_filter)) {
           # figure out which taper distance to use
-          if (p$stmv_fft_taper_method == "empirical") {
+          if (grepl("empirical", p$stmv_fft_filter) ) {
             if (!is.null(vgm)) {
               theta.Taper = vgm$distances[ find_intersection( vgm$ac, threshold=p$stmv_autocorrelation_fft_taper ) ]
             }
+          } else if (grepl("modelled", p$stmv_fft_filter) ) {
+            theta.Taper = matern_phi2distance( phi=local_phi, nu=local_nu, cor=p$stmv_autocorrelation_fft_taper )
           }
         }
         vgm = NULL
@@ -285,8 +287,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
 
     if ( grepl("matern", p$stmv_fft_filter) ) {
       if ( grepl("tapered", p$stmv_fft_filter) ) {
-        if  (p$stmv_fft_taper_method == "modelled") theta.Taper = matern_phi2distance( phi=local_phi, nu=local_nu, cor=p$stmv_autocorrelation_fft_taper )
-        if (is.null(theta.Taper)) theta.Taper = theta.Taper_global  # test for empirical taper has alread been completed above .. do not repeat here
+        if (is.null(theta.Taper)) theta.Taper = theta.Taper_static  # if null then not time varying so use static
         spk =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=local_phi, smoothness=local_nu,
           Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
         spk = as.surface(dgrid, c(spk))$z / (nr2*nc2)
@@ -301,8 +302,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     if ( grepl("normal_kernel", p$stmv_fft_filter) ) {
       theta = matern_phi2distance( phi=local_phi, nu=local_nu, cor=p$stmv_autocorrelation_localrange )
       if ( grepl("tapered", p$stmv_fft_filter) ) {
-        if  (p$stmv_fft_taper_method == "modelled") theta.Taper = matern_phi2distance( phi=local_phi, nu=local_nu, cor=p$stmv_autocorrelation_fft_taper )
-        if (is.null(theta.Taper)) theta.Taper = theta.Taper_global  # test for empirical taper has alread been completed above .. do not repeat here
+        if (is.null(theta.Taper)) theta.Taper = theta.Taper_static  # if null then not time varying so use static
         spk =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Exponential", theta=theta,
           Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
         spk = as.surface(dgrid, c(spk))$z / (nr2*nc2)

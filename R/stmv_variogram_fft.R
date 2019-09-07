@@ -1,6 +1,6 @@
 
 stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE, eps=1e-9, add.interpolation=FALSE,
-  stmv_fft_taper_method="modelled", stmv_autocorrelation_localrange=0.1, stmv_autocorrelation_fft_taper=0 ) {
+  stmv_fft_filter="matern_tapered_modelled", stmv_autocorrelation_localrange=0.1, stmv_autocorrelation_fft_taper=0 ) {
 
   if (0) {
     require(fields)
@@ -19,6 +19,7 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
     add.interpolation=TRUE
     stmv_autocorrelation_localrange=0.1
     stmv_autocorrelation_fft_taper=0
+    stmv_fft_filter="matern_tapered_modelled"
 
   }
 
@@ -160,9 +161,9 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
     center = matrix(c((dr * nr), (dc * nc)), nrow = 1, ncol = 2)
 
     # determine tapering distance .. user control of smoothing/sharpness
-    if (stmv_fft_taper_method == "empirical") {
+    if (grepl("empirical", stmv_fft_filter) ) {
       theta.Taper = vgm$distances[ find_intersection( vgm$ac, threshold=stmv_autocorrelation_fft_taper ) ]
-    } else if (stmv_fft_taper_method == "modelled") {
+    } else if (grepl("modelled", stmv_fft_filter) ) {
       theta.Taper = matern_phi2distance( phi=phi, nu=nu, cor=stmv_autocorrelation_fft_taper )
     }
 
@@ -210,10 +211,10 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
       XYZ=XYZ[c("x","y","z")]
       x11()
       oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=nx, plotdata=TRUE, add.interpolation=TRUE,
-        stmv_fft_taper_method="modelled", stmv_autocorrelation_fft_taper=0.05 )
+        stmv_fft_filter="matern_tapered_modelled", stmv_autocorrelation_fft_taper=0.05 )
 
       oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=nx, plotdata=TRUE, add.interpolation=TRUE,
-        stmv_fft_taper_method="empirical", stmv_autocorrelation_fft_taper=0.09 )
+        stmv_fft_filter="matern_tapered_empirical", stmv_autocorrelation_fft_taper=0.09 )
 
       gr = stmv_variogram( XYZ[, c("x", "y")], XYZ[,"z"], methods="fft", plotdata=TRUE ) # fft/nl least squares
     }
@@ -225,10 +226,10 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
       XYZ=XYZ[, c("x","y","z") ]
       x11()
       oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=nx, plotdata=TRUE,  add.interpolation=TRUE,
-        stmv_fft_taper_method="modelled", stmv_autocorrelation_fft_taper=0.25  )
+        stmv_fft_filter="matern_tapered_modelled", stmv_autocorrelation_fft_taper=0.25  )
 
       oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=nx, plotdata=TRUE,  add.interpolation=TRUE,
-        stmv_fft_taper_method="empirical",  stmv_autocorrelation_fft_taper=0.05 )
+        stmv_fft_filter="matern_tapered_empirical",  stmv_autocorrelation_fft_taper=0.05 )
 
       gr = stmv_variogram( XYZ[, c("x", "y")], XYZ[,"z"], methods="fft", plotdata=TRUE )
     }
@@ -242,10 +243,10 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
       XYZ = as.data.frame( cbind( RMprecip$x, RMprecip$y ) )
       names(XYZ) =c( "x","y","z")
       oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=nx, plotdata=TRUE,  add.interpolation=TRUE,
-          stmv_fft_taper_method="modelled", stmv_autocorrelation_fft_taper=0.2  )
+          stmv_fft_filter="matern_tapered_modelled", stmv_autocorrelation_fft_taper=0.2  )
 
       oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=nx, plotdata=TRUE,  add.interpolation=TRUE,
-          stmv_fft_taper_method="empirical",  stmv_autocorrelation_fft_taper=0.07  )
+          stmv_fft_filter="matern_tapered_empirical",  stmv_autocorrelation_fft_taper=0.07  )
 
       gr = stmv_variogram( XYZ[, c("x", "y")], XYZ[,"z"], methods="fft", plotdata=TRUE )
     }

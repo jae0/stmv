@@ -41,9 +41,8 @@ p = aegis.bathymetry::bathymetry_parameters(
   variables = list(Y="z"),  # required as fft has no formulae
   stmv_global_modelengine = "none",  # too much data to use glm as an entry into link space ... use a direct transformation
   stmv_local_modelengine="fft",
-  stmv_fft_filter = "matern_tapered", #  matern with taper
+  stmv_fft_filter = "matern_tapered_modelled", #  matern with taper
   # stmv_fft_filter = "lowpass_matern_tapered", #  act as a low pass filter first before matern with taper .. depth has enough data for this. Otherwise, use:
-  stmv_fft_taper_method = "modelled",  # vs "empirical"
   # stmv_lowpass_nu = 0.1,
   # stmv_lowpass_phi = stmv::matern_distance2phi( distance=0.2, nu=0.1, cor=0.5 ),  # note: p$pres = 0.2
   stmv_variogram_method = "fft",

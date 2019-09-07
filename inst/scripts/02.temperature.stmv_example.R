@@ -12,7 +12,7 @@ scale_ram_required_main_process = 0.8 # GB twostep / fft
 scale_ram_required_per_process  = 1.25 # twostep / fft /fields vario ..  (mostly 0.5 GB, but up to 5 GB) -- 20 hrs
 scale_ncpus = min( parallel::detectCores(), floor( (ram_local()- scale_ram_required_main_process) / scale_ram_required_per_process ) )
 
-# about 2 hrs
+# about 4 hrs
 interpolate_ram_required_main_process = 2.5 # GB twostep / fft
 interpolate_ram_required_per_process  = 5 # 1 GB seems enough for twostep / fft /fields vario .. but make 2 in case
 interpolate_ncpus = min( parallel::detectCores(), floor( (ram_local()- interpolate_ram_required_main_process) / interpolate_ram_required_per_process ) )
@@ -64,14 +64,12 @@ p = aegis.temperature::temperature_parameters(
     ) ),
   stmv_twostep_time = "gam",
   stmv_twostep_space = "fft",  # everything else is too slow ...
-  stmv_fft_filter="lowpass_matern_tapered",  #  matern, krige (very slow), lowpass, lowpass_matern
-  stmv_fft_taper_method = "modelled",
-  # stmv_fft_taper_method = "empirical",
+  stmv_fft_filter="lowpass_matern_tapered_modelled",  #  matern, krige (very slow), lowpass, lowpass_matern
   stmv_lowpass_nu = 0.5,  # 0.5=exponential, 1=gaussian
   stmv_lowpass_phi = 0.5,  # note: p$pres = 0.5
   # stmv_variogram_resolve_time = TRUE,
   stmv_variogram_method = "fft",
-  stmv_autocorrelation_fft_taper = 0.4,  # benchmark from which to taper .. user level control of smoothness
+  stmv_autocorrelation_fft_taper = 0.5,  # benchmark from which to taper .. user level control of smoothness
   stmv_autocorrelation_localrange = 0.1,  # for reporting
   stmv_autocorrelation_interpolation = c( 0.25, 0.1, 0.05, 0.01 ),  # range finding
   stmv_local_model_distanceweighted = TRUE,
@@ -79,10 +77,11 @@ p = aegis.temperature::temperature_parameters(
   stmv_rsquared_threshold = 0, # lower threshold for timeseries model
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
   stmv_distance_scale = c( 5, 10, 20, 30, 40 ), # km ... approx guess of 95% AC range, the range also determine limits of localrange
-  stmv_distance_prediction_fraction = 0.95, #
+  stmv_distance_prediction_fraction = 0.95, # fraction of local range to try to predict upon
+  stmv_distance_prediction_max = 5 * 1.25 , # upper limit in distnace to predict upon (just over the grid size of statsgrid) .. in timeseries can become very slow so try to be small
   stmv_nmin = 100,  # min number of data points req before attempting to model in a localized space .. control no error in local model
   stmv_nmax = 800, # no real upper bound.. just speed / RAM limits  .. can go up to 10 GB / core if too large
-  stmv_tmin = round( nyrs * 0.75 ),
+  stmv_tmin = round( nyrs * 1.25 ),
   stmv_force_complete_method = "linear",
   stmv_runmode = list(
     scale = rep("localhost", scale_ncpus),  # 7 min

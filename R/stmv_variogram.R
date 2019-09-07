@@ -355,7 +355,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
     names(XYZ) =  c("plon", "plat", "z" ) # arbitrary
 
     VGM = stmv_variogram_fft( xyz=XYZ, nx=discretized_n, ny=discretized_n, nbreaks=nbreaks,
-      stmv_fft_taper_method="modelled", stmv_autocorrelation_fft_taper=stmv_autocorrelation_fft_taper  )  # empirical variogram by fftw2d
+      stmv_fft_filter="matern_tapered_modelled", stmv_autocorrelation_fft_taper=stmv_autocorrelation_fft_taper  )  # empirical variogram by fftw2d
     out$vgm = VGM
     uu = which( (VGM$vgm$distances < 0.9*max(VGM$vgm$distances) ) & is.finite(VGM$vgm$sv) )
     fit = try( stmv_variogram_optimization( vx=VGM$vgm$distances[uu], vg=VGM$vgm$sv[uu], plotvgm=plotdata,

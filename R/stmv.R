@@ -586,6 +586,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
       message( "||| Time used for scale estimation: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n"  )
     }
 
+
     # -----------------------------------------------------
     if ("interpolate" %in% runmode ) {
       invisible( stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" ))
@@ -605,23 +606,25 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
         if ( length(currentstatus$todo) < (2*length(p$clusters))) p$clusters = p$clusters[1] # drop to serial mode .. otherwise negative indexing occurs
         parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  )
         stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="predictions")
+        currentstatus = stmv_statistics_status( p=p ) # quick update before logging
+        slog = stmv_logfile(p=p, flag= paste("Interpolation phase", p$runmode, "completed ...") ) # final update before continuing
       }
       message( paste( "Time used for <interpolations", ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
       p = p0
     }
 
-      if(0) {
-        stmv_db(p=p, DS="load_saved_state", runmode="interpolate" )
-        stmv_db(p=p, DS="save_current_state", runmode="interpolate")
-        P = stmv_attach( p$storage.backend, p$ptr$P )
-        Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
-        if (length(dim(P)) > 1 ) {
-          for (i in 1:p$nt) print(lattice::levelplot( P[,i] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso" ))
-        } else {
-          lattice::levelplot( P[] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso" )
-        }
-
+    if(0) {
+      stmv_db(p=p, DS="load_saved_state", runmode="interpolate" )
+      stmv_db(p=p, DS="save_current_state", runmode="interpolate")
+      P = stmv_attach( p$storage.backend, p$ptr$P )
+      Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+      if (length(dim(P)) > 1 ) {
+        for (i in 1:p$nt) print(lattice::levelplot( P[,i] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso" ))
+      } else {
+        lattice::levelplot( P[] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso" )
       }
+    }
+
   }
 
 
@@ -651,6 +654,8 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
       if ( length(currentstatus$todo) < (2*length(p$clusters)) ) p$clusters = p$clusters[1] # drop to serial mode
       invisible( parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  ) )
       stmv_db(p=p, DS="save_current_state", runmode="interpolate_hybrid_boost", datasubset="predictions")
+      currentstatus = stmv_statistics_status( p=p )  # quick update before logging
+      slog = stmv_logfile(p=p, flag= paste("Interpolation phase", p$runmode, "completed ...") ) # final update
     }
     message( paste( "Time used for <interpolate_hybrid_boost", j, ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
     p = p0
@@ -670,6 +675,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
     stmv_db(p=p, DS="save_current_state", runmode="interpolate_force_complete", datasubset="predictions")  # not needed as this is a terminal step .. but to be consistent
     # stmv_db(p=p, DS="load_saved_state", runmode="interpolate_force_complete", datasubset="predictions")  # not needed as this is a terminal step .. but to be consistent
   }
+
 
   # -----------------------------------------------------
 
