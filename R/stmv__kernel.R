@@ -10,8 +10,8 @@ stmv__kernel = function( p=NULL, dat=NULL, pa=NULL, phi=NULL, nu=NULL, variablel
 
   sdTotal = sd(dat[,p$variable$Y], na.rm=T)
 
-  x_r = range(pa[,p$variables$LOCS[1]])
-  x_c = range(pa[,p$variables$LOCS[2]])
+  x_r = range(dat[,p$variables$LOCS[1]])
+  x_c = range(dat[,p$variables$LOCS[2]])
 
   nr = round( diff(x_r)/p$pres +1 )
   nc = round( diff(x_c)/p$pres +1 )
@@ -52,10 +52,17 @@ stmv__kernel = function( p=NULL, dat=NULL, pa=NULL, phi=NULL, nu=NULL, variablel
 
     X = fields::image.smooth( X, dx=dx, dy=dy, wght )
 
-    pa$mean[pa_i] = X$z
-    X = NULL
+    X_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=resolution )
+    tokeep = which( X_i[,1] >= 1 & X_i[,2] >= 1  & X_i[,1] <= nr & X_i[,2] <= nc )
+    if (length(tokeep) < 1) next()
+    X_i = X_i[tokeep,]
 
-    pa$sd[pa_i] = sd( dat[xi,p$variable$Y], na.rm=T)   ## fix as NA
+    pa$mean[pa_i[tokeep]] = X[X_i]
+    # pa$sd[pa_i] = NA  ## fix as NA
+    X = X_i = NULL
+
+
+    pa$sd[pa_i[tokeep]] = sd( dat[xi,p$variable$Y], na.rm=T)   ## fix as NA
 
     dat[ xi, p$variable$LOCS ] = round( dat[ xi, p$variable$LOCS ] / p$pres  ) * p$pres
     iYP = match(

@@ -511,61 +511,64 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
 
   # data to be worked upon .. either the raw data or covariate-residuals
   for ( nn in 1:niterations ) {
+
+    # nn = 1
     message( "Iteration ", nn, " of ", niterations, "\n" )
-      if (p$stmv_global_modelengine !="none" ) {
-        # create prediction suface .. additive offsets
-        # test to see if all covars are static as this can speed up the initial predictions
-        message ( "\n", "||| Entering Predicting global effect of covariates at each prediction location: ", format(Sys.time()) , "\n" )
-        message( "||| This can take a while (usually a few minutes but hours if complex) ... ")
-        p$time_covariates_0 =  Sys.time()
-        global_model = stmv_db( p=p, DS="global_model")
-        if (is.null(global_model)) stop("Global model not found.")
-        dev = global_model$deviance
-        message("Model Deviance: ", dev)
-        if (nn > 1) {
-          if (abs(dev - devold)/(0.1 + abs(dev)) < eps ) break() # globalmodel_converged
-          iYP = stmv_index_predictions_to_observations(p)
-          inputdata = P[ iYP ]  # P are the spatial/spatio-temporal random effects (on link scale)
-          iYP = NULL
-          iYP_nomatch = which(!is.finite(iYP))
-          inputdata[ iYP_nomatch ] = 0  # E[RaneFF] = 0
-          iYP_nomatch = NULL
 
-          if (exists("linkinv", p$stmv_global_family )) {
-            # return to user scale (that of Y)
-            inputdata = p$stmv_global_family$linkinv( inputdata )
-          }
-          global_model$model[, p$variables$Y ] = global_model$model[, p$variables$Y ] - inputdata  # update to current estimate of fixed effects
-          inputdata = global_model$model
-          global_model = NULL
-          gc()
-          global_model = stmv_db( p=p, DS="global_model.redo", B=inputdata,  savedata=FALSE )  # do not overwrite initial model
-          inputdata = NULL
+    if (p$stmv_global_modelengine !="none" ) {
+      # create prediction suface .. additive offsets
+      # test to see if all covars are static as this can speed up the initial predictions
+      message ( "\n", "||| Entering Predicting global effect of covariates at each prediction location: ", format(Sys.time()) , "\n" )
+      message( "||| This can take a while (usually a few minutes but hours if complex) ... ")
+      p$time_covariates_0 =  Sys.time()
+      global_model = stmv_db( p=p, DS="global_model")
+      if (is.null(global_model)) stop("Global model not found.")
+      dev = global_model$deviance
+      message("Model Deviance: ", dev)
+      if (nn > 1) {
+        if (abs(dev - devold)/(0.1 + abs(dev)) < eps ) break() # globalmodel_converged
+        iYP = stmv_index_predictions_to_observations(p)
+        inputdata = P[ iYP ]  # P are the spatial/spatio-temporal random effects (on link scale)
+        iYP = NULL
+        iYP_nomatch = which(!is.finite(iYP))
+        inputdata[ iYP_nomatch ] = 0  # E[RaneFF] = 0
+        iYP_nomatch = NULL
+
+        if (exists("linkinv", p$stmv_global_family )) {
+          # return to user scale (that of Y)
+          inputdata = p$stmv_global_family$linkinv( inputdata )
         }
-
-        devold = dev
-        gc()
-        message("Creating fixed effects predictons")
-        parallel_run( FUNC=stmv_predict_globalmodel, p=p, runindex=list( pnt=1:p$nt ), Yq_link=Yq_link, global_model=global_model )
-        stmv_db(p=p, DS="save_current_state", runmode="interpolate", datasubset="P0")
-        stmv_db(p=p, DS="save_current_state", runmode="interpolate", datasubset="P0")
-
-        Ydata  = residuals(global_model, type="working") # ie. internal (link) scale
-
-        # Yq_link:: could operate upon quantiles of residuals but in poor models this can hyper inflate errors and slow down the whole estimation process
-        # truncating using data range as a crude approximation of overall residual and prediction scale
-        lb = which( Ydata < Yq_link[1])
-        ub = which( Ydata > Yq_link[2])
-        if (length(lb) > 0) Ydata[lb] = Yq_link[1]
-        if (length(ub) > 0) Ydata[ub] = Yq_link[2]
-
-        Y = stmv_attach( p$storage.backend, p$ptr$Y )
-        Y[] = Ydata[]  # update "Ydata" ... ( residuals)
-        Ydata = NULL
+        global_model$model[, p$variables$Y ] = global_model$model[, p$variables$Y ] - inputdata  # update to current estimate of fixed effects
+        inputdata = global_model$model
         global_model = NULL
-        p$time_covariates = round(difftime( Sys.time(), p$time_covariates_0 , units="hours"), 3)
-        message( paste( "||| Time taken to predict covariate surface (hours):", p$time_covariates ) )
+        gc()
+        global_model = stmv_db( p=p, DS="global_model.redo", B=inputdata,  savedata=FALSE )  # do not overwrite initial model
+        inputdata = NULL
       }
+
+      devold = dev
+      gc()
+      message("Creating fixed effects predictons")
+      parallel_run( FUNC=stmv_predict_globalmodel, p=p, runindex=list( pnt=1:p$nt ), Yq_link=Yq_link, global_model=global_model )
+      stmv_db(p=p, DS="save_current_state", runmode="interpolate", datasubset="P0")
+      stmv_db(p=p, DS="save_current_state", runmode="interpolate", datasubset="P0")
+
+      Ydata  = residuals(global_model, type="working") # ie. internal (link) scale
+
+      # Yq_link:: could operate upon quantiles of residuals but in poor models this can hyper inflate errors and slow down the whole estimation process
+      # truncating using data range as a crude approximation of overall residual and prediction scale
+      lb = which( Ydata < Yq_link[1])
+      ub = which( Ydata > Yq_link[2])
+      if (length(lb) > 0) Ydata[lb] = Yq_link[1]
+      if (length(ub) > 0) Ydata[ub] = Yq_link[2]
+
+      Y = stmv_attach( p$storage.backend, p$ptr$Y )
+      Y[] = Ydata[]  # update "Ydata" ... ( residuals)
+      Ydata = NULL
+      global_model = NULL
+      p$time_covariates = round(difftime( Sys.time(), p$time_covariates_0 , units="hours"), 3)
+      message( paste( "||| Time taken to predict covariate surface (hours):", p$time_covariates ) )
+    }
 
 
     # -----------------------------------------------------

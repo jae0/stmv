@@ -49,11 +49,12 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   #nr = nx # nr .. x/plon
   #nc = ny # nc .. y/plat
 
+  # data area dimensionality
   dx = p$pres
   dy = p$pres
 
-  x_r = range(pa[,p$variables$LOCS[1]])
-  x_c = range(pa[,p$variables$LOCS[2]])
+  x_r = range(dat[,p$variables$LOCS[1]])
+  x_c = range(dat[,p$variables$LOCS[2]])
 
   rr = diff(x_r)
   rc = diff(x_c)
@@ -63,6 +64,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
 
   dr = rr/(nr-1) # == dx
   dc = rc/(nc-1) # == dy
+
 
   nr2 = 2 * nr
   nc2 = 2 * nc
@@ -326,15 +328,22 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     sp.covar = NULL
     X = ifelse((fN > eps), (fY/fN), NA)
     X[!is.finite(X)] = NA
-
-    pa$mean[pa_i] = X * zsd + zmean # revert to input scale
-    # pa$sd[pa_i] = NA  ## fix as NA
-    X = NULL
+    X = X * zsd + zmean # revert to input scale
 
     if (0) {
       dev.new()
-      image(list(x=c(1:nr)*dr, y=c(1:nc)*dc, z=pa$mean[pa_i]), xaxs="r", yaxs="r")
+      image(list(x=c(1:nr)*dr, y=c(1:nc)*dc, z=X), xaxs="r", yaxs="r")
     }
+
+    X_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=resolution )
+    tokeep = which( X_i[,1] >= 1 & X_i[,2] >= 1  & X_i[,1] <= nr & X_i[,2] <= nc )
+    if (length(tokeep) < 1) next()
+    X_i = X_i[tokeep,]
+
+    pa$mean[pa_i[tokeep]] = X[X_i]
+    # pa$sd[pa_i] = NA  ## fix as NA
+    X = X_i = NULL
+
 
     dat[ xi, p$variable$LOCS ] = round( dat[ xi, p$variable$LOCS ] / p$pres  ) * p$pres
     iYP = match(

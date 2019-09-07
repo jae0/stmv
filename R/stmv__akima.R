@@ -8,8 +8,8 @@ stmv__akima = function( p=NULL,  dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) 
 
   if (variablelist)  return( c() )
 
-  x_r = range(pa[,p$variables$LOCS[1]])
-  x_c = range(pa[,p$variables$LOCS[2]])
+  x_r = range(dat[,p$variables$LOCS[1]])
+  x_c = range(dat[,p$variables$LOCS[2]])
 
   nr = round( diff(x_r)/p$pres +1 )
   nc = round( diff(x_c)/p$pres +1 )
@@ -49,11 +49,15 @@ stmv__akima = function( p=NULL,  dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) 
     if (length(ub) > 0) X[ub] = rY[2]
     ub = NULL
 
-    pa$mean[pa_i] = X
+    X_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=resolution )
+    tokeep = which( X_i[,1] >= 1 & X_i[,2] >= 1  & X_i[,1] <= nr & X_i[,2] <= nc )
+    if (length(tokeep) < 1) next()
+    X_i = X_i[tokeep,]
 
-    pa$sd[pa_i] = sd(dat[ xi, p$variable$Y ], na.rm=TRUE)  # timeslice guess
+    pa$mean[pa_i[tokeep]] = X[X_i]
+    pa$sd[pa_i[tokeep]] = sd(dat[ xi, p$variable$Y ], na.rm=TRUE)  # timeslice guess
 
-    X = NULL
+    X = X_i = NULL
 
     dat[ xi, p$variable$LOCS ] = round( dat[ xi, p$variable$LOCS ] / p$pres  ) * p$pres
     iYP = match(
@@ -61,7 +65,6 @@ stmv__akima = function( p=NULL,  dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) 
       stmv::array_map( "xy->1", pa[ pa_i , p$variable$LOCS ], gridparams=p$gridparams )
     )
     dat$mean[xi] = pa$mean[pa_i][iYP]
-
   }
 
   # plot(pred ~ z , dat)

@@ -10,8 +10,8 @@ stmv__kernel = function( p=NULL, dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) 
 
   sdTotal = sd(dat[,p$variable$Y], na.rm=T)
 
-  x_r = range(pa[,p$variables$LOCS[1]])
-  x_c = range(pa[,p$variables$LOCS[2]])
+  x_r = range(dat[,p$variables$LOCS[1]])
+  x_c = range(dat[,p$variables$LOCS[2]])
 
   nr = round( diff(x_r)/p$pres +1 )
   nc = round( diff(x_c)/p$pres +1 )
@@ -37,8 +37,16 @@ stmv__kernel = function( p=NULL, dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) 
       pa_i = 1:nrow(pa)
     }
 
-    pa$mean[pa_i] = mba.surf(dat[xi, c(p$variables$LOCS, p$variables$Y)], no.X=nr, no.Y=nc, extend=TRUE)$xyz.est$z
-    pa$sd[pa_i] = sd( dat[xi,p$variable$Y], na.rm=T)   ## fix as NA
+
+    X_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=resolution )
+    tokeep = which( X_i[,1] >= 1 & X_i[,2] >= 1  & X_i[,1] <= nr & X_i[,2] <= nc )
+    if (length(tokeep) < 1) next()
+    X_i = X_i[tokeep,]
+
+    pa$mean[pa_i[tokeep]] = mba.surf(dat[xi, c(p$variables$LOCS, p$variables$Y)], no.X=nr, no.Y=nc, extend=TRUE)$xyz.est$z[X_i]
+    pa$sd[pa_i[tokeep]] = sd( dat[xi,p$variable$Y], na.rm=T)   ## fix as NA
+
+    X_i = NULL
 
     dat[ xi, p$variable$LOCS ] = round( dat[ xi, p$variable$LOCS ] / p$pres  ) * p$pres
     iYP = match(
