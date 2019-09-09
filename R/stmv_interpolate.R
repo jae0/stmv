@@ -68,7 +68,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
   local_fn = ifelse (p$stmv_local_modelengine=="userdefined", p$stmv_local_modelengine_userdefined, stmv_interpolation_function( p$stmv_local_modelengine ) )
 
   nlogs = round( max(1, ifelse( length(ip) > p$nlogs*5, round(p$nlogs/5), length(ip) / p$nlogs ) ) )
-  logpoints  = ip[ round( seq( from=2, to=length(ip), length.out=nlogs ) ) ]
+  logpoints  = ip[ round( seq( from=sample(10,1), to=length(ip)-sample(10,1), length.out=nlogs ) ) ]  # randomize start and end
   if (length(logpoints) > 3) logpoints =  logpoints[ -c(1, length(logpoints)) ]  # drop first and last ones
 
   i_ndata = match( "ndata", p$statsvars )
@@ -225,10 +225,10 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       points( Sloc[Si,2] ~ Sloc[Si,1], pch=20, cex=5, col="blue" )
     }
 
-    stmv_distance_prediction = localrange * p$stmv_distance_prediction_fraction # this is a half window km
+    stmv_distance_prediction = min( localrange, p$stmv_distance_prediction_max )  # this is a half window km
     # construct prediction/output grid area ('pa')
-    # convert distance to discretized increments of row/col indices; stmv_distance_prediction = 0.75* stmv_distance_statsgrid (unless overridden)
-    windowsize.half = 1L + round( min( stmv_distance_prediction, p$stmv_distance_prediction_max ) / p$pres )
+    # convert distance to discretized increments of row/col indices;
+    windowsize.half = 1L + round( stmv_distance_prediction / p$pres )
     # construct data (including covariates) for prediction locations (pa)
     pa = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=windowsize.half ) )
     if (is.null(pa)) {

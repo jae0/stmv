@@ -123,7 +123,6 @@ stmv_parameters = function( p=list(), ... ) {
   p$nloccov = 0
   if (exists("local_cov", p$variables)) p$nloccov = length(p$variables$local_cov)
 
-  if ( !exists("stmv_distance_prediction_fraction", p)) p$stmv_distance_prediction_fraction = 0.95  # fraction of localrange
   if ( !exists("stmv_distance_prediction_max", p)) p$stmv_distance_prediction_max = p$stmv_distance_statsgrid * 1.25
 
   if ( !exists("stmv_force_complete_method", p)) p$stmv_force_complete_method = "linear"  # moving average

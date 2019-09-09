@@ -58,37 +58,36 @@ p = aegis.temperature::temperature_parameters(
   stmv_local_modelformula_time = formula( paste(
     't',
     '~ s( yr, k=', round(nyrs*0.4), ', bs="ts") + s(cos.w, k=3, bs="ts") + s(sin.w, k=3, bs="ts")  ',
-    '+ s( cos.w, sin.w, k=', round(nyrs*0.2), ', bs="ts") ',
+    '+ s( yr, cos.w, sin.w, k=', round(nyrs*0.2), ', bs="ts") ',
     '+ s( log(z), k=3, bs="ts") + s( plon, k=3, bs="ts") + s( plat, k=3, bs="ts")  ',
     '+ s( log(z), plon, plat, k=9, bs="ts")  '
     ) ),
   stmv_twostep_time = "gam",
   stmv_twostep_space = "fft",  # everything else is too slow ...
-  stmv_fft_filter="lowpass_matern_tapered_modelled",  #  matern, krige (very slow), lowpass, lowpass_matern
+  stmv_fft_filter="lowpass matern tapered modelled",  #  matern, krige (very slow), lowpass, lowpass_matern
   stmv_lowpass_nu = 0.5,  # 0.5=exponential, 1=gaussian
   stmv_lowpass_phi = 0.5,  # note: p$pres = 0.5
   # stmv_variogram_resolve_time = TRUE,
   stmv_variogram_method = "fft",
   stmv_autocorrelation_fft_taper = 0.5,  # benchmark from which to taper .. user level control of smoothness
   stmv_autocorrelation_localrange = 0.1,  # for reporting
-  stmv_autocorrelation_interpolation = c( 0.25, 0.1, 0.05, 0.01 ),  # range finding
+  stmv_autocorrelation_interpolation = c( 0.1, 0.01, 0.05, 0.001 ),  # range finding
   stmv_local_model_distanceweighted = TRUE,
   depth.filter = 5, # the depth covariate is input as units of depth (m) so, choose stats locations with elevation > 10m as being on land
   stmv_rsquared_threshold = 0, # lower threshold for timeseries model
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
   stmv_distance_scale = c( 5, 10, 20, 30, 40 ), # km ... approx guess of 95% AC range, the range also determine limits of localrange
-  stmv_distance_prediction_fraction = 0.95, # fraction of local range to try to predict upon
   stmv_distance_prediction_max = 5 * 1.25 , # upper limit in distnace to predict upon (just over the grid size of statsgrid) .. in timeseries can become very slow so try to be small
-  stmv_nmin = 100,  # min number of data points req before attempting to model in a localized space .. control no error in local model
+  stmv_nmin = 100,  # min number of unit spatial locations req before attempting to model in a localized space .. control no error in local model
   stmv_nmax = 800, # no real upper bound.. just speed / RAM limits  .. can go up to 10 GB / core if too large
-  stmv_tmin = round( nyrs * 1.25 ),
+  stmv_tmin = round( nyrs * 1.5 ),
   stmv_force_complete_method = "linear",
   stmv_runmode = list(
     scale = rep("localhost", scale_ncpus),  # 7 min
     interpolate = list(   # interpolation takes about 50 min
         cor_0.25 = rep("localhost", interpolate_ncpus),
-        cor_0.1 = rep("localhost", interpolate_ncpus),
-        cor_0.05 = rep("localhost", max(1, interpolate_ncpus-1)),
+        cor_0.1  = rep("localhost", interpolate_ncpus),
+        cor_0.05 = rep("localhost", interpolate_ncpus),
         cor_0.01 = rep("localhost", max(1, interpolate_ncpus-2))
       ),  # ncpus for each runmode
     interpolate_force_complete = rep("localhost", max(1, interpolate_ncpus-2)),

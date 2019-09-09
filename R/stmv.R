@@ -1,11 +1,11 @@
 
 
-stmv = function( p, runmode=NULL, DATA=NULL, nlogs=200, niter=1,
+stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE, robustify_quantiles=c(0.0005, 0.9995), ... ) {
 
   if (0) {
     runmode = NULL
-    nlogs = 25
+    nlogs = 10
     niter = 1
     DATA=NULL
     debug_plot_variable_index=1
