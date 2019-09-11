@@ -46,10 +46,12 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps = 1e-6, ... ) {
   iY = which(dat_names== p$variables$Y)
   ilocs = which( dat_names %in% p$variable$LOCS )
 
-  nlogs = round( max(1, ifelse( length(ip) > (p$nlogs*5), p$nlogs, length(ip) / 5  )  )  )
-  logpoints  = ip[ round( seq( from=2, to=length(ip), length.out=nlogs ) ) ]
-  if (length(logpoints) > 3) logpoints =  logpoints[ -c(1, length(logpoints)) ]  # drop first and last ones
-
+  if (length(ip) < 100) {
+    nlogs = length(ip) / 5
+  } else {
+    nlogs = ifelse( length(ip) > (p$nlogs*5), p$nlogs, length(ip) / 5  )
+  }
+  logpoints  =  sort( sample( ip, round( max(1, nlogs) ) ) )  # randomize
 
   stmv_ntarget = sort( unique( c(1, p$stmv_nmin_downsize_factor) * p$stmv_nmax ), decreasing=TRUE )  # largest first
   stmv_ntarget = stmv_ntarget[ stmv_ntarget >=  p$stmv_nmin ]
