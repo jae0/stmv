@@ -1,5 +1,5 @@
 
-stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist=FALSE, eps=1e-9, ... ) {
+stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist=FALSE, varSpatial=NULL, eps=1e-9, ... ) {
 
   #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
   #\\ note: time is not being modelled and treated independently
@@ -54,9 +54,11 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   dy = p$pres
 
   if ( grepl("fastpredictions", p$stmv_fft_filter)) {
+    # predict only where required
     x_r = range(pa[,p$variables$LOCS[1]])
     x_c = range(pa[,p$variables$LOCS[2]])
   } else {
+    # predict on full data subset
     x_r = range(dat[,p$variables$LOCS[1]])
     x_c = range(dat[,p$variables$LOCS[2]])
   }
@@ -92,7 +94,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
 
   dat$mean = NA
   pa$mean = NA
-  pa$sd = sdTotal  # this is ignored with fft
+  pa$sd = sqrt(varSpatial)
 
   # constainer for spatial filters
   grid.list = list((1:nr2) * dx, (1:nc2) * dy)
@@ -108,8 +110,6 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   mC[nr, nc] = 1
   mC_fft = 1 / fftwtools::fftw2d(mC)  # multiplication is faster than division
   mC = NULL
-
-  if (!exists("stmv_fft_filter",p) ) p$stmv_fft_filter="matern" # default in case of no specification
 
   origin = c(x_r[1], x_c[1])
   resolution = c(dx, dy)
@@ -137,10 +137,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   pa_i = 1:nrow(pa)
 
   OT = NA
-  if (exists("stmv_variogram_resolve_time", p)) {
-    if (p$stmv_variogram_resolve_time) {
+  if ( grepl("stmv_variogram_resolve_time", p$stmv_fft_filter)) {
       OT = matrix( NA, ncol=length(p$statsvars), nrow=p$nt )  # container to hold time-specific results
-    }
   }
 
   # things to do outside of the time loop
@@ -210,8 +208,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     local_nu = nu
 
     # update to time-slice averaged values
-    if (exists("stmv_variogram_resolve_time", p)) {
-      if (p$stmv_variogram_resolve_time) {
+    if ( grepl("stmv_variogram_resolve_time", p$stmv_fft_filter)) {
         # create time-specific variograms
         # fY * Conj(fY) == power spectra
         acY = Re( fftwtools::fftw2d( fY * Conj(fY), inverse=TRUE)  ) # autocorrelation (amplitude)
@@ -277,9 +274,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
           }
         }
         vgm = NULL
-
-      }
-    }
+  }
 
     gc()
 
@@ -341,19 +336,21 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     }
 
     if ( grepl("fastpredictions", p$stmv_fft_filter)) {
-      pa$mean[tokeep] = X[tokeep]
-      # pa$sd[pa_i] = NA  ## fix as NA
+      pa$mean[pa_i] = X
       X = NULL
-
     } else {
       X_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=resolution )
       tokeep = which( X_i[,1] >= 1 & X_i[,2] >= 1  & X_i[,1] <= nr & X_i[,2] <= nc )
       if (length(tokeep) < 1) next()
       X_i = X_i[tokeep,]
       pa$mean[pa_i[tokeep]] = X[X_i]
-      # pa$sd[pa_i] = NA  ## fix as NA
       X = X_i = NULL
     }
+
+    if ( grepl("stmv_variogram_resolve_time", p$stmv_fft_filter)) {
+      pa$sd[pa_i] = OT[ti, match("sdSpatial", p$statsvars )]
+    }
+
 
     dat[ xi, p$variable$LOCS ] = round( dat[ xi, p$variable$LOCS ] / p$pres  ) * p$pres
     iYP = match(
@@ -371,7 +368,12 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
     if (rsquared < p$stmv_rsquared_threshold ) return(NULL)
   }
 
-  stmv_stats = list( sdTotal=sdTotal, rsquared=rsquared, ndata=nrow(dat) ) # must be same order as p$statsvars
+
+  stmv_stats = list( sdTotal=sdTotal, rsquared=rsquared, ndata=nrow(dat) )
+
+  if ( grepl("stmv_variogram_resolve_time", p$stmv_fft_filter)) {
+    stmv_stats = as.list(colMeans(OT, na.rm=TRUE))
+  }
 
   # lattice::levelplot( mean ~ plon + plat, data=pa, col.regions=heat.colors(100), scale=list(draw=TRUE) , aspect="iso" )
 

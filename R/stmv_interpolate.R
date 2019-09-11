@@ -225,7 +225,14 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       points( Sloc[Si,2] ~ Sloc[Si,1], pch=20, cex=5, col="blue" )
     }
 
+
     stmv_distance_prediction = min( localrange, p$stmv_distance_prediction_max )  # this is a half window km
+    if (exists("stmv_fft_filter", p)) {
+      if ( grepl("fastpredictions", p$stmv_fft_filter)) {
+        stmv_distance_prediction = min( localrange, max(p$stmv_distance_scale, p$stmv_distance_prediction_max ) ) # limit to max scale definition)
+      }
+    }
+
     # construct prediction/output grid area ('pa')
     # convert distance to discretized increments of row/col indices;
     windowsize.half = 1L + round( stmv_distance_prediction / p$pres )

@@ -64,10 +64,9 @@ p = aegis.temperature::temperature_parameters(
     ) ),
   stmv_twostep_time = "gam",
   stmv_twostep_space = "fft",  # everything else is too slow ...
-  stmv_fft_filter="lowpass matern tapered modelled",  #  matern, krige (very slow), lowpass, lowpass_matern
+  stmv_fft_filter="lowpass matern tapered modelled fastpredictions",  #  matern, krige (very slow), lowpass, lowpass_matern, stmv_variogram_resolve_time
   stmv_lowpass_nu = 0.5,  # 0.5=exponential, 1=gaussian
   stmv_lowpass_phi = 0.1,  # note: p$pres = 0.5
-  # stmv_variogram_resolve_time = TRUE,
   stmv_variogram_method = "fft",
   stmv_autocorrelation_fft_taper = 0.5,  # benchmark from which to taper .. user level control of smoothness
   stmv_autocorrelation_localrange = 0.1,  # for reporting
