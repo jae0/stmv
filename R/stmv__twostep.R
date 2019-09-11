@@ -139,26 +139,26 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
   # }
 
   if (p$stmv_twostep_space %in% c("tps") ) {
-    out = stmv__tps( p, dat=pxts, pa=pa, lambda=varObs/varSpatial  )
+    out = stmv__tps( p, dat=pxts, pa=pa, lambda=varObs/varSpatial, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial   )
   }
 
   if (p$stmv_twostep_space %in% c("fft") ) {
-    out = stmv__fft( p=p, dat=pxts, pa=pa, nu=nu, phi=phi )
+    out = stmv__fft( p=p, dat=pxts, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial )
   }
 
   if (p$stmv_twostep_space %in% c("gam") ) {
     p$stmv_local_modelformula = p$stmv_local_modelformula_space
-    out = stmv__gam( p, dat=pxts, pa=pa  )
+    out = stmv__gam( p, dat=pxts, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial   )
   }
 
   if (p$stmv_twostep_space %in% c("glm") ) {
     p$stmv_local_modelformula = p$stmv_local_modelformula_space
-    out = stmv__glm( p, dat=pxts, pa=pa  )
+    out = stmv__glm( p, dat=pxts, pa=pa,nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial   )
   }
 
   if (p$stmv_twostep_space %in% c("bayesx") ) {
     p$stmv_local_modelformula = p$stmv_local_modelformula_space
-    out = stmv__bayesx( p, dat=pxts, pa=pa  )
+    out = stmv__bayesx( p, dat=pxts, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial  )
   }
 
   # TODO

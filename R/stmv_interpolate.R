@@ -67,7 +67,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
   local_fn = ifelse (p$stmv_local_modelengine=="userdefined", p$stmv_local_modelengine_userdefined, stmv_interpolation_function( p$stmv_local_modelengine ) )
 
-  nlogs = round( max(1, ifelse( length(ip) > p$nlogs*5, round(p$nlogs/5), length(ip) / p$nlogs ) ) )
+  nlogs = round( max(1, ifelse( length(ip) > (p$nlogs*5), p$nlogs, length(ip) / 5  )  )  )
   logpoints  = ip[ round( seq( from=sample(10,1), to=length(ip)-sample(10,1), length.out=nlogs ) ) ]  # randomize start and end
   if (length(logpoints) > 3) logpoints =  logpoints[ -c(1, length(logpoints)) ]  # drop first and last ones
 

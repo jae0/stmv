@@ -1,5 +1,5 @@
 
-stmv__kernel = function( p=NULL, dat=NULL, pa=NULL, phi=NULL, nu=NULL, variablelist=FALSE, ...  ) {
+stmv__kernel = function( p=NULL, dat=NULL, pa=NULL, phi=NULL, nu=NULL, varObs=NULL, varSpatial=NULL,  variablelist=FALSE, ...  ) {
   #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
   #\\ note: time is not being modelled and treated independently
   #\\      .. you had better have enough data in each time slice ..  essentially this is cubic b-splines interpolation
@@ -10,15 +10,23 @@ stmv__kernel = function( p=NULL, dat=NULL, pa=NULL, phi=NULL, nu=NULL, variablel
 
   sdTotal = sd(dat[,p$variable$Y], na.rm=T)
 
-  x_r = range(dat[,p$variables$LOCS[1]])
-  x_c = range(dat[,p$variables$LOCS[2]])
+  if ( grepl("fastpredictions", p$stmv_fft_filter)) {
+    # predict only where required
+    x_r = range(pa[,p$variables$LOCS[1]])
+    x_c = range(pa[,p$variables$LOCS[2]])
+  } else {
+    # predict on full data subset
+    x_r = range(dat[,p$variables$LOCS[1]])
+    x_c = range(dat[,p$variables$LOCS[2]])
+  }
+
 
   nr = round( diff(x_r)/p$pres +1 )
   nc = round( diff(x_c)/p$pres +1 )
 
   dat$mean = NA
   pa$mean = NA
-  pa$sd = NA
+  pa$sd = sqrt(varSpatial)
 
   origin=c(x_r[1], x_c[1])
   res=c(p$pres, p$pres)
@@ -52,17 +60,20 @@ stmv__kernel = function( p=NULL, dat=NULL, pa=NULL, phi=NULL, nu=NULL, variablel
 
     X = fields::image.smooth( X, dx=dx, dy=dy, wght )
 
-    X_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=resolution )
-    tokeep = which( X_i[,1] >= 1 & X_i[,2] >= 1  & X_i[,1] <= nr & X_i[,2] <= nc )
-    if (length(tokeep) < 1) next()
-    X_i = X_i[tokeep,]
+    if ( grepl("fastpredictions", p$stmv_fft_filter)) {
+      pa$mean[pa_i] = X
+      # pa$sd[pa_i[tokeep]] = sd( dat[xi,p$variable$Y], na.rm=T)   ## fix
+      X = NULL
+    } else {
+      X_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=resolution )
+      tokeep = which( X_i[,1] >= 1 & X_i[,2] >= 1  & X_i[,1] <= nr & X_i[,2] <= nc )
+      if (length(tokeep) < 1) next()
+      X_i = X_i[tokeep,]
+      pa$mean[pa_i[tokeep]] = X[X_i]
+      # pa$sd[pa_i[tokeep]] = sd( dat[xi,p$variable$Y], na.rm=T)   ## fix
+      X = X_i = NULL
+    }
 
-    pa$mean[pa_i[tokeep]] = X[X_i]
-    # pa$sd[pa_i] = NA  ## fix as NA
-    X = X_i = NULL
-
-
-    pa$sd[pa_i[tokeep]] = sd( dat[xi,p$variable$Y], na.rm=T)   ## fix as NA
 
     dat[ xi, p$variable$LOCS ] = round( dat[ xi, p$variable$LOCS ] / p$pres  ) * p$pres
     iYP = match(

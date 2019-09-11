@@ -10,7 +10,7 @@ stmv__krige = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varObs=NUL
 
   dat$mean = NA
   pa$mean = NA
-  pa$sd = sdTotal  # leave as this as sd estimation is too expensive
+  pa$sd = sqrt(varSpatial)  # leave as this as sd estimation is too expensive
 
   for ( ti in 1:p$nt ) {
 
