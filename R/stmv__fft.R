@@ -53,8 +53,13 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
   dx = p$pres
   dy = p$pres
 
-  x_r = range(dat[,p$variables$LOCS[1]])
-  x_c = range(dat[,p$variables$LOCS[2]])
+  if ( grepl("fastpredictions", p$stmv_fft_filter)) {
+    x_r = range(pa[,p$variables$LOCS[1]])
+    x_c = range(pa[,p$variables$LOCS[2]])
+  } else {
+    x_r = range(dat[,p$variables$LOCS[1]])
+    x_c = range(dat[,p$variables$LOCS[2]])
+  }
 
   rr = diff(x_r)
   rc = diff(x_c)
@@ -335,15 +340,20 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist
       image(list(x=c(1:nr)*dr, y=c(1:nc)*dc, z=X), xaxs="r", yaxs="r")
     }
 
-    X_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=resolution )
-    tokeep = which( X_i[,1] >= 1 & X_i[,2] >= 1  & X_i[,1] <= nr & X_i[,2] <= nc )
-    if (length(tokeep) < 1) next()
-    X_i = X_i[tokeep,]
+    if ( grepl("fastpredictions", p$stmv_fft_filter)) {
+      pa$mean[tokeep] = X[tokeep]
+      # pa$sd[pa_i] = NA  ## fix as NA
+      X = NULL
 
-    pa$mean[pa_i[tokeep]] = X[X_i]
-    # pa$sd[pa_i] = NA  ## fix as NA
-    X = X_i = NULL
-
+    } else {
+      X_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=resolution )
+      tokeep = which( X_i[,1] >= 1 & X_i[,2] >= 1  & X_i[,1] <= nr & X_i[,2] <= nc )
+      if (length(tokeep) < 1) next()
+      X_i = X_i[tokeep,]
+      pa$mean[pa_i[tokeep]] = X[X_i]
+      # pa$sd[pa_i] = NA  ## fix as NA
+      X = X_i = NULL
+    }
 
     dat[ xi, p$variable$LOCS ] = round( dat[ xi, p$variable$LOCS ] / p$pres  ) * p$pres
     iYP = match(
