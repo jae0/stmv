@@ -65,31 +65,30 @@ p = aegis.temperature::temperature_parameters(
   stmv_twostep_time = "gam",
   stmv_twostep_space = "fft",  # everything else is too slow ...
   stmv_fft_filter="lowpass matern tapered modelled fastpredictions",  # options for fft method: also matern, krige (very slow), lowpass, lowpass_matern, stmv_variogram_resolve_time
-  stmv_lowpass_nu = 0.5,  # 0.5=exponential, 1=gaussian
-  stmv_lowpass_phi = 0.5,  # note: p$pres = 0.5
+  stmv_lowpass_nu = 1,  # 0.5=exponential, 1=gaussian
+  stmv_lowpass_phi = 1,  # note: p$pres = 0.5
   stmv_variogram_method = "fft",
   stmv_autocorrelation_fft_taper = 0.5,  # benchmark from which to taper .. user level control of smoothness
   stmv_autocorrelation_localrange = 0.1,  # for reporting
-  stmv_autocorrelation_interpolation = c(  0.25, 0.1, 0.01, 0.005, 0.001 ),  # range finding
+  stmv_autocorrelation_interpolation = c(  0.3, 0.2, 0.1, 0.05, 0.01 ),  # range finding
   stmv_local_model_distanceweighted = TRUE,
   depth.filter = 5, # the depth covariate is input as units of depth (m) so, choose stats locations with elevation > 10m as being on land
   stmv_rsquared_threshold = 0, # lower thindreshold for timeseries model
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
-  stmv_distance_scale = c( 2.5, 5, 10, 20, 30, 40 ), # km ... approx guess of 95% AC range, the range also determine limits of localrange
-  stmv_distance_prediction_max = 5 * 1.25 , # upper limit in distnace to predict upon .. in timeseries can become very slow so try to be small, ignored if stmv_fft_filter contains "fastpredictions"
-  stmv_nmin = 120,  # min number of unit spatial locations req before attempting to model in a localized space .. control no error in local model
+  stmv_distance_scale = c( 5, 10, 20, 30, 40 ), # km ... approx guess of 95% AC range, the range also determine limits of localrange
+  stmv_distance_prediction_fraction = 0.95 , # upper limit in distnace to predict upon .. in timeseries can become very slow so try to be small, ignored if stmv_fft_filter contains "fastpredictions"
+  stmv_nmin = 100,  # min number of unit spatial locations req before attempting to model in a localized space .. control no error in local model
   stmv_nmax = 1000, # no real upper bound.. just speed / RAM limits  .. can go up to 10 GB / core if too large
   stmv_tmin = round( nyrs * 1.2 ),
   stmv_force_complete_method = "linear",
   stmv_runmode = list(
     scale = rep("localhost", scale_ncpus),  # 7 min
     interpolate = list(   # interpolation takes about 50 min
-        # cor_0.5 = rep("localhost", interpolate_ncpus),
-        cor_0.25  = rep("localhost", interpolate_ncpus),
+        cor_0.3  = rep("localhost", interpolate_ncpus),
+        cor_0.2  = rep("localhost", interpolate_ncpus),
         cor_0.1 = rep("localhost", interpolate_ncpus),
         cor_0.01 = rep("localhost", max(1, interpolate_ncpus-1)),
-        cor_0.005 = rep("localhost", max(1, interpolate_ncpus-1)),
-        cor_0.001 = rep("localhost", max(1, interpolate_ncpus-2))
+        cor_0.05 = rep("localhost", max(1, interpolate_ncpus-2))
       ),  # ncpus for each runmode
     interpolate_force_complete = rep("localhost", max(1, interpolate_ncpus-2)),
     globalmodel = FALSE,

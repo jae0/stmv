@@ -82,16 +82,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
   i_sdSpatial = match("sdSpatial",   p$statsvars)
   i_sdObs = match("sdObs",   p$statsvars)
 
-
-## drange = max( min( max(p$stmv_distance_scale )),  min(p$pres, p$stmv_distance_scale ))
-      # global estimates
-  global_nu = median( S[, i_nu], na.rm=TRUE )
-
-  if ( global_nu < 0.1 | global_nu > 5) global_nu = 0.5
-  global_phi = median( S[, i_phi], na.rm=TRUE )
-  global_range = median( S[, i_localrange], na.rm=TRUE )
-  distance_limits = range( c(p$stmv_distance_scale, p$stmv_distance_statsgrid/10) )    # for range estimate
-  if ( global_range < distance_limits[1] | global_range > distance_limits[2] ) global_range = median(distance_limits)
+  distance_limits = range( p$stmv_distance_scale )    # for range estimate
 
 
 # main loop over each output location in S (stats output locations)
@@ -105,19 +96,12 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
     nu    = S[Si, i_nu]
     phi   = S[Si, i_phi]
-
-    localrange = NA
-    if (is.finite(nu+phi)) localrange = matern_phi2distance( phi=phi, nu=nu, cor=p$local_interpolation_correlation )
+    localrange = S[Si, i_localrange]
 
     # range checks
-    if ( length(localrange)==0 )  {
-      Sflag[Si] %in% E[["variogram_failure"]]
-      localrange = global_range
-    }
-
     if ( !is.finite(localrange) )  {
       Sflag[Si] %in% E[["variogram_failure"]]
-      localrange = global_range
+      localrange = median( distance_limits )
     }
 
     if ( localrange < distance_limits[1] ) {
@@ -152,11 +136,13 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     }
 
     if ( !is.finite(nu) | (nu < 0.1) | (nu > 5) ) if (length(ii) > 0) nu =  median( S[ii, i_nu ], na.rm=TRUE )
-    if ( !is.finite(nu) | (nu < 0.1) | (nu > 5) ) nu = global_nu
-    if ( !is.finite(nu) | (nu < 0.1) | (nu > 5) ) nu = 0.5
+    if ( !is.finite(nu) | (nu < 0.1) | (nu > 5) ) nu = 1  # gaussian as default
+    ii = NULL
 
     # phi checks
-    phi_lim = distance_limits / sqrt(8*nu)  # inla-approximation
+    phi_lim = c(NA, NA)
+    phi_lim[1] = matern_distance2phi( dis=distance_limits[1], nu=nu, cor=p$stmv_autocorrelation_localrange )
+    phi_lim[2] = matern_distance2phi( dis=distance_limits[2], nu=nu, cor=p$stmv_autocorrelation_localrange )
     if ( !is.finite(phi) ) {
       Sflag[Si] %in% E[["variogram_failure"]]
     } else {
@@ -164,12 +150,9 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
         Sflag[Si] %in% E[["variogram_range_limit"]]
       }
     }
-    if ( !is.finite(phi) | (phi < phi_lim[1]) | (phi > phi_lim[2]) )  if (length(ii) > 0)  phi =  median( S[ii, i_phi ], na.rm=TRUE )
-    if ( !is.finite(phi) | (phi < phi_lim[1]) | (phi > phi_lim[2]) )  phi = global_phi
-    if ( !is.finite(phi) | (phi < phi_lim[1]) | (phi > phi_lim[2]) )  phi = phi_lim[2]
+    if ( !is.finite(phi) | (phi < phi_lim[1]) | (phi > phi_lim[2]) )  phi = matern_distance2phi( dis=localrange, nu=nu, cor=p$stmv_autocorrelation_localrange )
+    if ( !is.finite(phi) | (phi < phi_lim[1]) | (phi > phi_lim[2]) )  phi = median(phi_lim)
 
-
-    ii = NULL
 
     if ( Sflag[Si] != E[["todo"]] ) {
       if (exists("stmv_rangecheck", p)) {
@@ -229,16 +212,10 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     }
 
 
-    stmv_distance_prediction = min( localrange, p$stmv_distance_prediction_max )  # this is a half window km
-    if (exists("stmv_fft_filter", p)) {
-      if ( grepl("fastpredictions", p$stmv_fft_filter)) {
-        stmv_distance_prediction = min( localrange, max(p$stmv_distance_scale, p$stmv_distance_prediction_max ) ) # limit to max scale definition)
-      }
-    }
 
     # construct prediction/output grid area ('pa')
     # convert distance to discretized increments of row/col indices;
-    windowsize.half = 1L + round( stmv_distance_prediction / p$pres )
+    windowsize.half = 1L + round( localrange * p$stmv_distance_prediction_fraction / p$pres )
     # construct data (including covariates) for prediction locations (pa)
     pa = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=windowsize.half ) )
     if (is.null(pa)) {
