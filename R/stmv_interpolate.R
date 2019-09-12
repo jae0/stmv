@@ -212,12 +212,9 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     }
 
 
-    # bound the prediction area if required
-    dist_prediction = max( min( localrange * p$stmv_distance_prediction_fraction, max(p$stmv_distance_prediction_range)), min(p$stmv_distance_prediction_range) )
-
     # construct prediction/output grid area ('pa')
     # convert distance to discretized increments of row/col indices;
-    windowsize.half = 1L + round( dist_prediction / p$pres )
+    windowsize.half = 1L + round( localrange / p$pres )
     # construct data (including covariates) for prediction locations (pa)
     pa = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=windowsize.half ) )
     if (is.null(pa)) {
