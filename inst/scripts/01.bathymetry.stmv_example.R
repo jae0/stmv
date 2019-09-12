@@ -41,7 +41,7 @@ p = aegis.bathymetry::bathymetry_parameters(
   variables = list(Y="z"),  # required as fft has no formulae
   stmv_global_modelengine = "none",  # too much data to use glm as an entry into link space ... use a direct transformation
   stmv_local_modelengine="fft",
-  stmv_fft_filter = "matern_tapered_modelled", #  matern with taper
+  stmv_fft_filter = "matern tapered modelled", #  matern with taper
   # stmv_fft_filter = "lowpass_matern_tapered", #  act as a low pass filter first before matern with taper .. depth has enough data for this. Otherwise, use:
   # stmv_lowpass_nu = 0.1,
   # stmv_lowpass_phi = stmv::matern_distance2phi( distance=0.2, nu=0.1, cor=0.5 ),  # note: p$pres = 0.2
@@ -57,6 +57,7 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_rsquared_threshold = 0.01, # lower threshold  .. i.e., ignore ... there is no timeseries model, nor a fixed effect spatial "model"
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
   stmv_distance_scale = c( 2.5, 5, 10, 20, 40 ), # km ... approx guesses of 95% AC range
+  stmv_distance_prediction_range =c( 2.5, 25 ), # range of permissible predictions km (i.e 1/2 stats grid to upper limit)
   stmv_distance_prediction_fraction = 0.95 , # upper limit in distnace to predict upon (just over the grid size of statsgrid) .. in timeseries can become very slow so try to be small
   stmv_nmin = 200,  # min number of data points req before attempting to model in a localized space
   stmv_nmax = 400, # no real upper bound.. just speed /RAM
@@ -64,9 +65,10 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_runmode = list(
     scale = rep("localhost", scale_ncpus),
     interpolate = list(
-        cor_0.5 = rep("localhost", interpolate_ncpus),
-        cor_0.25 = rep("localhost", interpolate_ncpus),
+        cor_0.3 = rep("localhost", interpolate_ncpus),
+        cor_0.2 = rep("localhost", interpolate_ncpus),
         cor_0.1 = rep("localhost", max(1, interpolate_ncpus-1)),
+        cor_0.05 = rep("localhost", max(1, interpolate_ncpus-1)),
         cor_0.01 = rep("localhost", max(1, interpolate_ncpus-2))
       ),  # ncpus for each runmode
     interpolate_force_complete = rep("localhost", max(1, interpolate_ncpus-2)),

@@ -53,14 +53,14 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
   dx = p$pres
   dy = p$pres
 
-  if ( grepl("fastpredictions", p$stmv_fft_filter)) {
-    # predict only where required
-    x_r = range(pa[,p$variables$LOCS[1]])
-    x_c = range(pa[,p$variables$LOCS[2]])
-  } else {
+  if ( grepl("exhaustivepredictions", p$stmv_fft_filter)) {
     # predict on full data subset
     x_r = range(dat[,p$variables$LOCS[1]])
     x_c = range(dat[,p$variables$LOCS[2]])
+  } else {
+    # predict only where required
+    x_r = range(pa[,p$variables$LOCS[1]])
+    x_c = range(pa[,p$variables$LOCS[2]])
   }
 
   rr = diff(x_r)
@@ -335,17 +335,18 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
       image(list(x=c(1:nr)*dr, y=c(1:nc)*dc, z=X), xaxs="r", yaxs="r")
     }
 
-    if ( grepl("fastpredictions", p$stmv_fft_filter)) {
-      pa$mean[pa_i] = X
-      X = NULL
-    } else {
+    if ( grepl("exhaustivepredictions", p$stmv_fft_filter)) {
       X_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=resolution )
       tokeep = which( X_i[,1] >= 1 & X_i[,2] >= 1  & X_i[,1] <= nr & X_i[,2] <= nc )
       if (length(tokeep) < 1) next()
       X_i = X_i[tokeep,]
       pa$mean[pa_i[tokeep]] = X[X_i]
       X = X_i = NULL
+    } else {
+      pa$mean[pa_i] = X
+      X = NULL
     }
+
 
     if ( grepl("stmv_variogram_resolve_time", p$stmv_fft_filter)) {
       pa$sd[pa_i] = OT[ti, match("sdSpatial", p$statsvars )]

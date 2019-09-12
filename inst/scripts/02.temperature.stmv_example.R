@@ -64,8 +64,8 @@ p = aegis.temperature::temperature_parameters(
     ) ),
   stmv_twostep_time = "gam",
   stmv_twostep_space = "fft",  # everything else is too slow ...
-  stmv_fft_filter="lowpass matern tapered modelled fastpredictions",  # options for fft method: also matern, krige (very slow), lowpass, lowpass_matern, stmv_variogram_resolve_time
-  stmv_lowpass_nu = 1,  # 0.5=exponential, 1=gaussian
+  stmv_fft_filter="lowpass matern tapered modelled",  # options for fft method: also matern, krige (very slow), lowpass, lowpass_matern, stmv_variogram_resolve_time
+  stmv_lowpass_nu = 0.5,  # 0.5=exponential, 1=gaussian
   stmv_lowpass_phi = 1,  # note: p$pres = 0.5
   stmv_variogram_method = "fft",
   stmv_autocorrelation_fft_taper = 0.5,  # benchmark from which to taper .. user level control of smoothness
@@ -75,11 +75,11 @@ p = aegis.temperature::temperature_parameters(
   depth.filter = 5, # the depth covariate is input as units of depth (m) so, choose stats locations with elevation > 10m as being on land
   stmv_rsquared_threshold = 0, # lower thindreshold for timeseries model
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
-  stmv_distance_scale = c( 5, 10, 20, 30, 40 ), # km ... approx guess of 95% AC range, the range also determine limits of localrange
-  stmv_distance_prediction_range =c( 5, 25), # range of permissible predictions km (i.e 1/2 stats grid to upper limit)
-  stmv_distance_prediction_fraction = 0.95 , # upper limit in distnace to predict upon .. in timeseries can become very slow so try to be small, ignored if stmv_fft_filter contains "fastpredictions"
-  stmv_nmin = 100,  # min number of unit spatial locations req before attempting to model in a localized space .. control no error in local model
-  stmv_nmax = 1000, # no real upper bound.. just speed / RAM limits  .. can go up to 10 GB / core if too large
+  stmv_distance_scale = c( 5, 10, 20, 30, 40, 50, 60  ), # km ... approx guess of 95% AC range, the range also determine limits of localrange
+  stmv_distance_prediction_range =c( 2.5, 30 ), # range of permissible predictions km (i.e 1/2 stats grid to upper limit)
+  stmv_distance_prediction_fraction = 0.95 , # trim upper limit in distance to predict upon yo avoid boundary issues ..
+  stmv_nmin = 150,  # min number of unit spatial locations req before attempting to model in a localized space .. control no error in local model
+  stmv_nmax = 900, # no real upper bound.. just speed / RAM limits  .. can go up to 10 GB / core if too large
   stmv_tmin = round( nyrs * 1.2 ),
   stmv_force_complete_method = "linear",
   stmv_runmode = list(

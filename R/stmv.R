@@ -590,9 +590,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
     # -----------------------------------------------------
     if ("interpolate" %in% runmode ) {
       invisible( stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" ))
-      if ( "restart_load" %in% runmode ) {
-        invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolate", datasubset="predictions" ) )
-      }
+      Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
+      Sflag[] = stmv_error_codes()[["todo"]]
+      if ( "restart_load" %in% runmode ) invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolate", datasubset="predictions" ) )
       p$time_start_runmode = Sys.time()
       p0 = p
       for ( j in 1:length(p$stmv_autocorrelation_interpolation) ) {
@@ -637,9 +637,10 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
     # finalize all interpolations where there are missing data/predictions using
     # interpolation based on data
     # NOTE:: no covariates are used
-    if ( "restart_load" %in% runmode ) {
-      invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolate_hybrid_boost", datasubset="predictions" ) )
-    }
+    invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolate", datasubset="predictions" ) )
+    Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
+    Sflag[] = stmv_error_codes()[["todo"]]
+    if ( "restart_load" %in% runmode ) invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolate_hybrid_boost", datasubset="predictions" ) )
     p$time_start_runmode = Sys.time()
     p0 = p
     for ( j in 1:length(p$stmv_autocorrelation_interpolation) ) {
