@@ -96,7 +96,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
     nu    = S[Si, i_nu]
     phi   = S[Si, i_phi]
-    localrange = S[Si, i_localrange]
+    localrange = S[Si, i_localrange]   # attached to p$stmv_autocorrelation_localrange
 
     # range checks
     if ( !is.finite(localrange) )  {
@@ -165,8 +165,12 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       }
     }
 
+
     # last check .. ndata can change due to random sampling
-    data_subset = stmv_select_data( p=p, Si=Si, localrange=localrange )
+
+    localrange_interpolation = matern_phi2distance( phi=phi, nu=nu, cor=p$local_interpolation_correlation )
+    localrange_interpolation = min( max( localrange_interpolation, min(distance_limits) ), max(distance_limits) )
+    data_subset = stmv_select_data( p=p, Si=Si, localrange=localrange_interpolation )
     if (is.null( data_subset )) {
       Sflag[Si] = E[["insufficient_data"]]
       next()
@@ -190,8 +194,8 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     # reconstruct data for modelling (dat)
     dat = matrix( 1, nrow=ndata, ncol=dat_nc )
     dat[,iY] = Y[data_subset$data_index] # these are residuals if there is a global model
-    # add a small error term to prevent some errors when duplicate locations exist; localrange offsets to positive values
-    dat[,ilocs] = Yloc[data_subset$data_index,] + localrange * runif(2*ndata, -1e-6, 1e-6)
+    # add a small error term to prevent some errors when duplicate locations exist; localrange_interpolation offsets to positive values
+    dat[,ilocs] = Yloc[data_subset$data_index,] + localrange_interpolation * runif(2*ndata, -1e-6, 1e-6)
 
     if (p$nloccov > 0) dat[,icov] = Ycov[data_subset$data_index, icov_local] # no need for other dim checks as this is user provided
     if (exists("TIME", p$variables)) {
@@ -214,7 +218,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
     # construct prediction/output grid area ('pa')
     # convert distance to discretized increments of row/col indices;
-    windowsize.half = 1L + round( localrange / p$pres )
+    windowsize.half = 1L + round( localrange_interpolation / p$pres )
     # construct data (including covariates) for prediction locations (pa)
     pa = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=windowsize.half ) )
     if (is.null(pa)) {
@@ -264,7 +268,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
         pa=pa,
         nu=nu,
         phi=phi,
-        localrange=localrange,
+        localrange=localrange_interpolation,
         varObs = S[Si, i_sdObs]^2,
         varSpatial = S[Si, i_sdSpatial]^2,
         sloc = Sloc[Si,]
