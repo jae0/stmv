@@ -169,7 +169,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     # last check .. ndata can change due to random sampling
 
     localrange_interpolation = matern_phi2distance( phi=phi, nu=nu, cor=p$local_interpolation_correlation )
-    localrange_interpolation = min( max( localrange_interpolation, min(distance_limits) ), max(distance_limits) )
+    localrange_interpolation = min( max( localrange_interpolation, min(p$stmv_distance_prediction_range) ), max(p$stmv_distance_prediction_range) )
     data_subset = stmv_select_data( p=p, Si=Si, localrange=localrange_interpolation )
     if (is.null( data_subset )) {
       Sflag[Si] = E[["insufficient_data"]]

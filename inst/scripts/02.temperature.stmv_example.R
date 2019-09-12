@@ -77,7 +77,6 @@ p = aegis.temperature::temperature_parameters(
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
   stmv_distance_scale = c( 5, 10, 20, 30, 40, 50, 60  ), # km ... approx guess of 95% AC range, the range also determine limits of localrange
   stmv_distance_prediction_range =c( 2.5, 25 ), # range of permissible predictions km (i.e 1/2 stats grid to upper limit)
-  stmv_distance_prediction_fraction = 0.95 , # trim upper limit in distance to predict upon yo avoid boundary issues ..
   stmv_nmin = 125,  # min number of unit spatial locations req before attempting to model in a localized space .. control no error in local model
   stmv_nmax = 900, # no real upper bound.. just speed / RAM limits  .. can go up to 10 GB / core if too large
   stmv_tmin = round( nyrs * 1.25 ),
