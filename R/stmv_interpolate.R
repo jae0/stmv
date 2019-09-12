@@ -114,7 +114,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       localrange = distance_limits[2]
     }
 
-    ii = NULL
     ii = which(
       {abs( Sloc[Si,1] - Sloc[,1] ) <= localrange} &
       {abs( Sloc[Si,2] - Sloc[,2] ) <= localrange}
@@ -125,18 +124,16 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       next()
     }
 
-
     # nu checks
     if ( !is.finite(nu) ) {
       Sflag[Si] = E[["variogram_failure"]]
+      nu =  median( S[ii, i_nu ], na.rm=TRUE )
     } else {
       if ( (nu < 0.1 ) | (nu > 5) ) {
         Sflag[Si] = E[["variogram_range_limit"]]
+        nu =  median( S[ii, i_nu ], na.rm=TRUE )
       }
     }
-
-    if ( !is.finite(nu) | (nu < 0.1) | (nu > 5) ) if (length(ii) > 0) nu =  median( S[ii, i_nu ], na.rm=TRUE )
-    if ( !is.finite(nu) | (nu < 0.1) | (nu > 5) ) nu = 1  # gaussian as default
     ii = NULL
 
     # phi checks
@@ -145,14 +142,13 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     phi_lim[2] = matern_distance2phi( dis=distance_limits[2], nu=nu, cor=p$stmv_autocorrelation_localrange )
     if ( !is.finite(phi) ) {
       Sflag[Si] %in% E[["variogram_failure"]]
+      phi = matern_distance2phi( dis=localrange, nu=nu, cor=p$stmv_autocorrelation_localrange )
     } else {
       if ( (phi < phi_lim[1]) | (phi > phi_lim[2]) ) {
         Sflag[Si] %in% E[["variogram_range_limit"]]
+        phi = matern_distance2phi( dis=localrange, nu=nu, cor=p$stmv_autocorrelation_localrange )
       }
     }
-    if ( !is.finite(phi) | (phi < phi_lim[1]) | (phi > phi_lim[2]) )  phi = matern_distance2phi( dis=localrange, nu=nu, cor=p$stmv_autocorrelation_localrange )
-    if ( !is.finite(phi) | (phi < phi_lim[1]) | (phi > phi_lim[2]) )  phi = median(phi_lim)
-
 
     if ( Sflag[Si] != E[["todo"]] ) {
       if (exists("stmv_rangecheck", p)) {
@@ -169,7 +165,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     # last check .. ndata can change due to random sampling
 
     localrange_interpolation = matern_phi2distance( phi=phi, nu=nu, cor=p$local_interpolation_correlation )
-    localrange_interpolation = min( max( localrange_interpolation, min(p$stmv_distance_prediction_range) ), max(p$stmv_distance_prediction_range) )
+    localrange_interpolation = min( max( localrange_interpolation, min(p$stmv_distance_prediction_range) ), max(p$stmv_distance_prediction_range), na.rm=TRUE )
     data_subset = stmv_select_data( p=p, Si=Si, localrange=localrange_interpolation )
     if (is.null( data_subset )) {
       Sflag[Si] = E[["insufficient_data"]]
@@ -268,7 +264,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
         pa=pa,
         nu=nu,
         phi=phi,
-        localrange=localrange_interpolation,
         varObs = S[Si, i_sdObs]^2,
         varSpatial = S[Si, i_sdSpatial]^2,
         sloc = Sloc[Si,]
