@@ -317,7 +317,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     }
 
 
-    if (grepl( Sflag[Si], c("local_model_error", "prediction_error", "prediction_area", "insufficient_data" ) ) next()
+    if (grepl( Sflag[Si], c("local_model_error", "prediction_error", "prediction_area", "insufficient_data" ) )) next()
 
 
     tolimit = which( res$predictions$mean < dat_range[1])
