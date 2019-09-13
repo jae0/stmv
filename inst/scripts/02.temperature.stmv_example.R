@@ -66,27 +66,28 @@ p = aegis.temperature::temperature_parameters(
   stmv_twostep_space = "fft",  # everything else is too slow ...
   stmv_fft_filter="lowpass matern tapered modelled",  # options for fft method: also matern, krige (very slow), lowpass, lowpass_matern, stmv_variogram_resolve_time
   stmv_lowpass_nu = 0.5,  # 0.5=exponential, 1=gaussian
-  stmv_lowpass_phi = 0.5,  # note: p$pres = 0.5
+  stmv_lowpass_phi = 2,  # note: p$pres = 0.5
   stmv_variogram_method = "fft",
   stmv_autocorrelation_fft_taper = 0.5,  # benchmark from which to taper .. user level control of smoothness
   stmv_autocorrelation_localrange = 0.1,  # for reporting
-  stmv_autocorrelation_interpolation = c(  0.2, 0.1, 0.05, 0.01 ),  # range finding
+  stmv_autocorrelation_interpolation = c(  0.1, 0.05, 0.01 ),  # range finding
   stmv_local_model_distanceweighted = TRUE,
   depth.filter = 5, # the depth covariate is input as units of depth (m) so, choose stats locations with elevation > 10m as being on land
-  stmv_rsquared_threshold = 0, # lower thindreshold for timeseries model
+  stmv_rsquared_threshold = 0.25, # lower thindreshold for timeseries model
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
   stmv_distance_scale = c( 5, 10, 20, 30, 40, 50, 60  ), # km ... approx guess of 95% AC range, the range also determine limits of localrange
-  stmv_distance_prediction_range =c( 5, 35 ), # range of permissible predictions km (i.e 1/2 stats grid to upper limit)
-  stmv_nmin = 150,  # min number of unit spatial locations req before attempting to model in a localized space .. control no error in local model
+  stmv_distance_prediction_range =c( 5, 25 ), # range of permissible predictions km (i.e 1/2 stats grid to upper limit)
+  stmv_nmin = 125,  # min number of unit spatial locations req before attempting to model in a localized space .. control no error in local model
   stmv_nmax = 1000, # no real upper bound.. just speed / RAM limits  .. can go up to 10 GB / core if too large
-  stmv_tmin = round( nyrs * 1.2 ),
+  stmv_tmin = round( nyrs * 1.25 ),
   stmv_force_complete_method = "linear",
   stmv_runmode = list(
     scale = rep("localhost", scale_ncpus),  # 7 min
     interpolate = list(   # interpolation takes about 50 min
-        cor_0.5  = rep("localhost", interpolate_ncpus),
-        cor_0.25  = rep("localhost", interpolate_ncpus),
-        cor_0.1 = rep("localhost", interpolate_ncpus),
+#        cor_0.4  = rep("localhost", interpolate_ncpus),
+#        cor_0.2  = rep("localhost", interpolate_ncpus),
+        cor_0.1  = rep("localhost", interpolate_ncpus),
+        cor_0.05 = rep("localhost", interpolate_ncpus),
         cor_0.01 = rep("localhost", max(1, interpolate_ncpus-2))
       ),  # ncpus for each runmode
     interpolate_force_complete = rep("localhost", max(1, interpolate_ncpus-2)),
