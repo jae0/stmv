@@ -7,6 +7,8 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NUL
 
   if (!is.null(reset)) {
 
+    reset = paste0(reset, collapse=" ")
+
     if ( grepl("all", reset)) {
       Sflag[] = E[["todo"]]
     }
