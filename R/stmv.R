@@ -580,37 +580,31 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
       p$time_start_runmode = Sys.time()
       p$runmode = "scale"
       p$clusters = p$stmv_runmode[["scale"]] # as ram reqeuirements increase drop cpus
-      currentstatus = stmv_statistics_status( p=p, reset=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
+      currentstatus = stmv_statistics_status( p=p, reset="flags", reset_flags=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
       parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
+      invisible ( currentstatus = stmv_statistics_status( p=p ) ) # quick update before logging
       stmv_db(p=p, DS="save_current_state", runmode="scale", datasubset="statistics") # temp save to disk
       message( "||| Time used for scale estimation: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n"  )
+      invisible ( currentstatus = stmv_statistics_status( p=p, reset=c("all", "features" ) ) ) # required to start as scale determination uses Sflags too
     }
 
 
     # -----------------------------------------------------
     if ("interpolate" %in% runmode ) {
+
       invisible( stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" ))
-      Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-      Sflag[] = stmv_error_codes()[["todo"]]
+      invisible ( currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
       if ( "restart_load" %in% runmode ) invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolate", datasubset="predictions" ) )
+
       p$time_start_runmode = Sys.time()
-      p0 = p
-      for ( j in 1:length(p$stmv_autocorrelation_interpolation) ) {
-        p = p0 #reset
-        p$local_interpolation_correlation = p$stmv_autocorrelation_interpolation[j]
-        p$runmode = paste("Interpolation_correlation_", p$local_interpolation_correlation, sep="")
-        message( "\n||| Entering <", p$runmode, " > : ", format(Sys.time()) )
-        p$clusters = p$stmv_runmode[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
-        currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
-        if ( length(currentstatus$todo) == 0 ) break()
-        if ( length(currentstatus$todo) < (2*length(p$clusters))) p$clusters = p$clusters[1] # drop to serial mode .. otherwise negative indexing occurs
-        parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  )
-        stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="predictions")
-        currentstatus = stmv_statistics_status( p=p ) # quick update before logging
-        slog = stmv_logfile(p=p, flag= paste("Interpolation phase", p$runmode, "completed ...") ) # final update before continuing
-      }
+      p$runmode = "Interpolation"
+      message( "\n||| Entering <", p$runmode, " > : ", format(Sys.time()) )
+      p$clusters = p$stmv_runmode[["interpolate"]] # as ram reqeuirements increase drop cpus
+      parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  )
+      stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="predictions")
+      invisible ( currentstatus = stmv_statistics_status( p=p ) ) # quick update before logging
+      slog = stmv_logfile(p=p, flag= paste("Interpolation phase", p$runmode, "completed ...") ) # final update before continuing
       message( paste( "Time used for <interpolations", ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
-      p = p0
     }
 
     if(0) {
@@ -638,8 +632,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
     # interpolation based on data
     # NOTE:: no covariates are used
     invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolate", datasubset="predictions" ) )
-    Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
-    Sflag[] = stmv_error_codes()[["todo"]]
     if ( "restart_load" %in% runmode ) invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolate_hybrid_boost", datasubset="predictions" ) )
     p$time_start_runmode = Sys.time()
     p0 = p
@@ -650,7 +642,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
       message( "\n||| Entering <", p$runmode, "> stage: ", format(Sys.time()) , "\n" )
       p$clusters = p$stmv_runmode[["interpolate_hybrid_boost"]] # as ram reqeuirements increase drop cpus
       p$stmv_local_modelengine = "kernel"  # override -- no covariates, basic moving window average (weighted by inverse variance)
-      currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
+      invisible ( currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
       if ( length(currentstatus$todo) == 0 ) break()
       if ( length(currentstatus$todo) < (2*length(p$clusters)) ) p$clusters = p$clusters[1] # drop to serial mode
       invisible( parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  ) )

@@ -1,4 +1,4 @@
-stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL  ) {
+stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NULL  ) {
 
   E = stmv_error_codes()
   Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
@@ -6,49 +6,13 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL  ) {
   out = list()
 
   if (!is.null(reset)) {
-    if ("incomplete" %in% reset) {
-      # statistics locations where estimations need to be redone
 
-      P = stmv_attach( p$storage.backend, p$ptr$P )
-      if (ncol(P) == 1 ) {
-        noP = which( !is.finite( P[]) )
-      } else {
-        noP = which( !is.finite( rowSums( P[])) )
-      }
-      uP = NULL
-      if( length(noP) > 0 ) {
-        Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
-        sbox = list(
-          plats = seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ),
-          plons = seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ) )
-        # statistics coordinates
-        Sloc_nplat = length(sbox$plats)
-        Sloc_nplon = length(sbox$plons)
-        Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
-        uS = array_map( "2->1", round( cbind(Sloc[,1]-p$origin[1], Sloc[,2]-p$origin[2])/p$stmv_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
-        toreset = array_map( "2->1", round( cbind(Ploc[noP,1]-p$origin[1], Ploc[noP,2]-p$origin[2])/p$stmv_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
-        toreset = unique(toreset)
-        Sloc_nplon = Sloc_nplat = noP = NULL
-        inrange = which( (toreset >= min(uS, na.rm=TRUE)) & (toreset <= max(uS, na.rm=TRUE)) )
-        uS = NULL
-        if (length( inrange) > 0) toreset = toreset[inrange]
-        if ( !is.null(toreset) && length(toreset) > 0) {
-          E_not_to_alter =  E[ c("outside_bounds", "too_shallow") ]
-          ignore = which( Sflag[] %in% unlist(E_not_to_alter) )
-          if (length(ignore) > 0 ) toreset = setdiff( toreset, ignore )
-          if (length(toreset) > 0) Sflag[toreset] = E[["todo"]]
-        }
-        ignore = toreset = inrange = E_not_to_alter = NULL
-        gc()
+    if ( grepl("all", reset)) {
+      Sflag[] = E[["todo"]]
+    }
 
-        # # catch strange missing values ..
-        # S = stmv_attach( p$storage.backend, p$ptr$S  )
-        # ii = which( !is.finite(S[, match("localrange", p$statsvars ) ]) )
-        # if ( length(ii) > 0 ) Sflag[ii] = E[["unknown"]]
 
-      }
-
-    } else if ("features"  %in% reset) {
+    if ( grepl("features", reset)) {
 
       # create location specific flags for analysis, etc..
 
@@ -120,12 +84,59 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL  ) {
         }
       }
 
-    } else {
-      Eflags_reset = E[ reset ]
+    }
+
+
+    if ( grepl("incomplete", reset)) {
+      # statistics locations where estimations need to be redone
+
+      P = stmv_attach( p$storage.backend, p$ptr$P )
+      if (ncol(P) == 1 ) {
+        noP = which( !is.finite( P[]) )
+      } else {
+        noP = which( !is.finite( rowSums( P[])) )
+      }
+      uP = NULL
+      if( length(noP) > 0 ) {
+        Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
+        sbox = list(
+          plats = seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ),
+          plons = seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ) )
+        # statistics coordinates
+        Sloc_nplat = length(sbox$plats)
+        Sloc_nplon = length(sbox$plons)
+        Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+        uS = array_map( "2->1", round( cbind(Sloc[,1]-p$origin[1], Sloc[,2]-p$origin[2])/p$stmv_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
+        toreset = array_map( "2->1", round( cbind(Ploc[noP,1]-p$origin[1], Ploc[noP,2]-p$origin[2])/p$stmv_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
+        toreset = unique(toreset)
+        Sloc_nplon = Sloc_nplat = noP = NULL
+        inrange = which( (toreset >= min(uS, na.rm=TRUE)) & (toreset <= max(uS, na.rm=TRUE)) )
+        uS = NULL
+        if (length( inrange) > 0) toreset = toreset[inrange]
+        if ( !is.null(toreset) && length(toreset) > 0) {
+          E_not_to_alter =  E[ c("outside_bounds", "too_shallow") ]
+          ignore = which( Sflag[] %in% unlist(E_not_to_alter) )
+          if (length(ignore) > 0 ) toreset = setdiff( toreset, ignore )
+          if (length(toreset) > 0) Sflag[toreset] = E[["todo"]]
+        }
+        ignore = toreset = inrange = E_not_to_alter = NULL
+        gc()
+
+        # # catch strange missing values ..
+        # S = stmv_attach( p$storage.backend, p$ptr$S  )
+        # ii = which( !is.finite(S[, match("localrange", p$statsvars ) ]) )
+        # if ( length(ii) > 0 ) Sflag[ii] = E[["unknown"]]
+
+      }
+    }
+
+    if ( grepl("flags", reset)) {
+      Eflags_reset = E[ reset_flags ]
       toreset = which( Sflag[] %in% unlist(Eflags_reset) )
       if (length(toreset) > 0) Sflag[toreset] = E[["todo"]]
       toreset = NULL
     }
+
   }
 
   out$todo = which( Sflag[]==E[["todo"]] )       # 0 = TODO

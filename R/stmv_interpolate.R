@@ -163,154 +163,161 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
 
     # last check .. ndata can change due to random sampling
-
-    localrange_interpolation = matern_phi2distance( phi=phi, nu=nu, cor=p$local_interpolation_correlation )
-    localrange_interpolation = min( max( localrange_interpolation, min(p$stmv_distance_prediction_range) ), max(p$stmv_distance_prediction_range), na.rm=TRUE )
-    data_subset = stmv_select_data( p=p, Si=Si, localrange=localrange_interpolation )
-    if (is.null( data_subset )) {
-      Sflag[Si] = E[["insufficient_data"]]
-      next()
-    }
-    unique_spatial_locations = data_subset$unique_spatial_locations
-
-    if (unique_spatial_locations < p$stmv_nmin) {
-      data_subset = NULL;
-      Sflag[Si] = E[["insufficient_data"]]
-      next()
-    }
-
-    # ndata abovev is for unique locations .. now ndata is for dim of input data
-    ndata = length(data_subset$data_index)
-    S[Si, i_ndata] = ndata
-
-    # if here then there is something to do
-    # NOTE:: data_subset$data_index are the indices of locally useful data
-
-    # prep dependent data
-    # reconstruct data for modelling (dat)
-    dat = matrix( 1, nrow=ndata, ncol=dat_nc )
-    dat[,iY] = Y[data_subset$data_index] # these are residuals if there is a global model
-    # add a small error term to prevent some errors when duplicate locations exist; localrange_interpolation offsets to positive values
-    dat[,ilocs] = Yloc[data_subset$data_index,] + localrange_interpolation * runif(2*ndata, -1e-6, 1e-6)
-
-    if (p$nloccov > 0) dat[,icov] = Ycov[data_subset$data_index, icov_local] # no need for other dim checks as this is user provided
-    if (exists("TIME", p$variables)) {
-      dat[, itime_cov] = as.matrix(stmv_timecovars( vars=ti_cov, ti=Ytime[data_subset$data_index,] ) )
-      dat[, which(dat_names==p$variables$TIME) ] = Ytime[data_subset$data_index,] # not sure if this is needed ?...
-    }
-    dat = as.data.frame(dat)
-    names(dat) = dat_names
-
-    # remember that these are crude mean/discretized estimates
-    if (debugging) {
-      dev.new()
-      # check data and statistical locations
-      plot( Sloc[,], pch=20, cex=0.5, col="gray")
-      points( Yloc[,], pch=20, cex=0.2, col="green")
-      points( Yloc[data_subset$data_index,], pch=20, cex=1, col="yellow" )
-      points( Sloc[Si,2] ~ Sloc[Si,1], pch=20, cex=5, col="blue" )
-    }
-
-
-    # construct prediction/output grid area ('pa')
-    # convert distance to discretized increments of row/col indices;
-    windowsize.half = 1L + round( localrange_interpolation / p$pres )
-    # construct data (including covariates) for prediction locations (pa)
-    pa = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=windowsize.half ) )
-    if (is.null(pa)) {
-      Sflag[Si] = E[["prediction_area"]]
-      if (debugging) message( Si )
-      if (debugging) message("Error: prediction grid ... null .. this should not happen")
-      pa = NULL
-      next()
-    }
-    if ( inherits(pa, "try-error") ) {
-      pa = NULL
-      Sflag[Si] = E[["prediction_area"]]
-      if (debugging) message("Error: prediction grid ... try-error .. this should not happen")
-      next()
-    }
-
-    if (debugging) {
-
-      dev.new()
-      # check that position indices are working properly
-      Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
-      Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
-      Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
-      plot( Yloc[data_subset$data_index,2] ~ Yloc[data_subset$data_index,1], col="red", pch=".",
-        ylim=range(c(Yloc[data_subset$data_index,2], Sloc[Si,2], Ploc[pa$i,2]) ),
-        xlim=range(c(Yloc[data_subset$data_index,1], Sloc[Si,1], Ploc[pa$i,1]) ) ) # all data
-      points( Yloc[data_subset$data_index,2] ~ Yloc[data_subset$data_index,1], col="green" )  # with covars and no other data issues
-      points( Sloc[Si,2] ~ Sloc[Si,1], col="blue" ) # statistical locations
-      # statistical output locations
-      grids= spatial_grid(p, DS="planar.coords" )
-      points( grids$plat[round( (Sloc[Si,2]-p$origin[2])/p$pres) + 1]
-            ~ grids$plon[round( (Sloc[Si,1]-p$origin[1])/p$pres) + 1] , col="purple", pch=25, cex=5 )
-      points( Ploc[pa$i,2] ~ Ploc[ pa$i, 1] , col="black", pch=6, cex=0.7 ) # check on pa$i indexing -- prediction locations
-    }
-
-    data_subset = NULL
-
-
-    # model and prediction .. outputs are in scale of the link (and not response)
-    # the following permits user-defined models (might want to use compiler::cmpfun )
-
-    res =NULL
-    res = try(
-      local_fn (
-        p=p,
-        dat=dat,
-        pa=pa,
-        nu=nu,
-        phi=phi,
-        varObs = S[Si, i_sdObs]^2,
-        varSpatial = S[Si, i_sdSpatial]^2,
-        sloc = Sloc[Si,]
-      )
-    )
-
-    dat_range = range( dat[,iY], na.rm=TRUE )
-
-    dat =  NULL
-    pa  =  NULL
-
-    if ( is.null(res)) {
-      Sflag[Si] = E[["local_model_error"]]   # modelling / prediction did not complete properly
-      if (debugging) message("Error: local model error")
-      next()
-    }
-
-    if ( inherits(res, "try-error") ) {
-      Sflag[Si] =  E[["local_model_error"]]   # modelling / prediction did not complete properly
-      res = NULL
-      if (debugging) message("Error: local model error")
-      next()
-    }
-
-    if (!exists("predictions", res)) {
-      Sflag[Si] =  E[["prediction_error"]]   # modelling / prediction did not complete properly
-      res = NULL
-      if (debugging) message("Error: prediction error")
-      next()
-    }
-
-    if (!exists("mean", res$predictions)) {
-      Sflag[Si] =  E[["prediction_error"]]   # modelling / prediction did not complete properly
-      res = NULL
-      if (debugging) message("Error: prediction error")
-      next()
-    }
-
-    if (length(which( is.finite(res$predictions$mean ))) < 5) {
-      Sflag[Si] =  E[["prediction_error"]]   # modelling / prediction did not complete properly
-      res = NULL
-      if (debugging) {
-        message("Error: prediction error")
-        browser()
+    for ( auin in 1:length(p$stmv_autocorrelation_interpolation) ) {
+      local_interpolation_correlation = p$stmv_autocorrelation_interpolation[auin]
+      localrange_interpolation = matern_phi2distance( phi=phi, nu=nu, cor=local_interpolation_correlation )
+      localrange_interpolation = min( max( localrange_interpolation, min(p$stmv_distance_prediction_range) ), max(p$stmv_distance_prediction_range), na.rm=TRUE )
+      data_subset = stmv_select_data( p=p, Si=Si, localrange=localrange_interpolation )
+      if (is.null( data_subset )) {
+        Sflag[Si] = E[["insufficient_data"]]
+        next()
       }
-      next()  # looks to be a faulty solution
+      unique_spatial_locations = data_subset$unique_spatial_locations
+
+      if (unique_spatial_locations < p$stmv_nmin) {
+        data_subset = NULL;
+        Sflag[Si] = E[["insufficient_data"]]
+        next()
+      }
+
+      # ndata abovev is for unique locations .. now ndata is for dim of input data
+      ndata = length(data_subset$data_index)
+      S[Si, i_ndata] = ndata
+
+      # if here then there is something to do
+      # NOTE:: data_subset$data_index are the indices of locally useful data
+
+      # prep dependent data
+      # reconstruct data for modelling (dat)
+      dat = matrix( 1, nrow=ndata, ncol=dat_nc )
+      dat[,iY] = Y[data_subset$data_index] # these are residuals if there is a global model
+      # add a small error term to prevent some errors when duplicate locations exist; localrange_interpolation offsets to positive values
+      dat[,ilocs] = Yloc[data_subset$data_index,] + localrange_interpolation * runif(2*ndata, -1e-6, 1e-6)
+
+      if (p$nloccov > 0) dat[,icov] = Ycov[data_subset$data_index, icov_local] # no need for other dim checks as this is user provided
+      if (exists("TIME", p$variables)) {
+        dat[, itime_cov] = as.matrix(stmv_timecovars( vars=ti_cov, ti=Ytime[data_subset$data_index,] ) )
+        dat[, which(dat_names==p$variables$TIME) ] = Ytime[data_subset$data_index,] # not sure if this is needed ?...
+      }
+      dat = as.data.frame(dat)
+      names(dat) = dat_names
+
+      # remember that these are crude mean/discretized estimates
+      if (debugging) {
+        dev.new()
+        # check data and statistical locations
+        plot( Sloc[,], pch=20, cex=0.5, col="gray")
+        points( Yloc[,], pch=20, cex=0.2, col="green")
+        points( Yloc[data_subset$data_index,], pch=20, cex=1, col="yellow" )
+        points( Sloc[Si,2] ~ Sloc[Si,1], pch=20, cex=5, col="blue" )
+      }
+
+
+      # construct prediction/output grid area ('pa')
+      # convert distance to discretized increments of row/col indices;
+      windowsize.half = 1L + round( localrange_interpolation / p$pres )
+      # construct data (including covariates) for prediction locations (pa)
+      pa = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=windowsize.half ) )
+      if (is.null(pa)) {
+        Sflag[Si] = E[["prediction_area"]]
+        if (debugging) message( Si )
+        if (debugging) message("Error: prediction grid ... null .. this should not happen")
+        pa = NULL
+        next()
+      }
+      if ( inherits(pa, "try-error") ) {
+        pa = NULL
+        Sflag[Si] = E[["prediction_area"]]
+        if (debugging) message("Error: prediction grid ... try-error .. this should not happen")
+        next()
+      }
+
+      if (debugging) {
+
+        dev.new()
+        # check that position indices are working properly
+        Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+        Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
+        Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
+        plot( Yloc[data_subset$data_index,2] ~ Yloc[data_subset$data_index,1], col="red", pch=".",
+          ylim=range(c(Yloc[data_subset$data_index,2], Sloc[Si,2], Ploc[pa$i,2]) ),
+          xlim=range(c(Yloc[data_subset$data_index,1], Sloc[Si,1], Ploc[pa$i,1]) ) ) # all data
+        points( Yloc[data_subset$data_index,2] ~ Yloc[data_subset$data_index,1], col="green" )  # with covars and no other data issues
+        points( Sloc[Si,2] ~ Sloc[Si,1], col="blue" ) # statistical locations
+        # statistical output locations
+        grids= spatial_grid(p, DS="planar.coords" )
+        points( grids$plat[round( (Sloc[Si,2]-p$origin[2])/p$pres) + 1]
+              ~ grids$plon[round( (Sloc[Si,1]-p$origin[1])/p$pres) + 1] , col="purple", pch=25, cex=5 )
+        points( Ploc[pa$i,2] ~ Ploc[ pa$i, 1] , col="black", pch=6, cex=0.7 ) # check on pa$i indexing -- prediction locations
+      }
+
+      data_subset = NULL
+
+
+      # model and prediction .. outputs are in scale of the link (and not response)
+      # the following permits user-defined models (might want to use compiler::cmpfun )
+
+      res =NULL
+      res = try(
+        local_fn (
+          p=p,
+          dat=dat,
+          pa=pa,
+          nu=nu,
+          phi=phi,
+          localrange=localrange_interpolation,
+          varObs = S[Si, i_sdObs]^2,
+          varSpatial = S[Si, i_sdSpatial]^2,
+          sloc = Sloc[Si,]
+        )
+      )
+
+      dat_range = range( dat[,iY], na.rm=TRUE )
+
+      dat =  NULL
+      pa  =  NULL
+
+      if ( is.null(res)) {
+        Sflag[Si] = E[["local_model_error"]]   # modelling / prediction did not complete properly
+        if (debugging) message("Error: local model error")
+        next()
+      }
+
+      if ( inherits(res, "try-error") ) {
+        Sflag[Si] =  E[["local_model_error"]]   # modelling / prediction did not complete properly
+        res = NULL
+        if (debugging) message("Error: local model error")
+        next()
+      }
+
+      if (!exists("predictions", res)) {
+        Sflag[Si] =  E[["prediction_error"]]   # modelling / prediction did not complete properly
+        res = NULL
+        if (debugging) message("Error: prediction error")
+        next()
+      }
+
+      if (!exists("mean", res$predictions)) {
+        Sflag[Si] =  E[["prediction_error"]]   # modelling / prediction did not complete properly
+        res = NULL
+        if (debugging) message("Error: prediction error")
+        next()
+      }
+
+      if (length(which( is.finite(res$predictions$mean ))) < 5) {
+        Sflag[Si] =  E[["prediction_error"]]   # modelling / prediction did not complete properly
+        res = NULL
+        if (debugging) {
+          message("Error: prediction error")
+          browser()
+        }
+        next()  # looks to be a faulty solution
+      }
+
     }
+
+
+    if (grepl( Sflag[Si], c("local_model_error", "prediction_error", "prediction_area", "insufficient_data" ) ) next()
 
 
     tolimit = which( res$predictions$mean < dat_range[1])

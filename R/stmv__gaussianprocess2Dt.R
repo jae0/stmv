@@ -1,5 +1,5 @@
 
-stmv__gaussianprocess2Dt = function(p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, variablelist=FALSE, ...  ) {
+stmv__gaussianprocess2Dt = function(p=NULL, dat=NULL, pa=NULL, localrange=NULL,  variablelist=FALSE, ...  ) {
   #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
   # \ as a 2D gaussian process (basically, simple krigimg or TPS -- time is treated as being independent)
   #\\ note: time is not being modelled and treated independently
@@ -19,7 +19,6 @@ stmv__gaussianprocess2Dt = function(p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL
   pa$mean = NA
   pa$sd = NA
 
-  localrange = matern_phi2distance( phi=phi, nu=nu, cor=p$local_interpolation_correlation )
   phi.grid = p$phi.grid * localrange
 
   for ( ti in 1:p$nt ) {
