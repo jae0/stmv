@@ -11,7 +11,7 @@ scale_ram_required_main_process = 1 # GB twostep / fft ---
 scale_ram_required_per_process  = 1 # twostep / fft /fields vario ..  (mostly 0.5 GB, but up to 5 GB)
 scale_ncpus = min( parallel::detectCores(), floor( (ram_local()- scale_ram_required_main_process) / scale_ram_required_per_process ) )
 
-# 2 mins
+# 5 mins
 interpolate_ram_required_main_process = 1 # GB twostep / fft
 interpolate_ram_required_per_process  = 1.5 # twostep / fft /fields vario ..
 interpolate_ncpus = min( parallel::detectCores(), floor( (ram_local()- interpolate_ram_required_main_process) / interpolate_ram_required_per_process ) )
@@ -43,7 +43,7 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_local_modelengine="fft",
   stmv_fft_filter = "matern tapered lowpass modelled", #  matern with taper
   stmv_lowpass_nu = 0.5,
-  stmv_lowpass_phi = stmv::matern_distance2phi( distance=0.5, nu=0.5, cor=0.1 ),  # note: p$pres = 0.2
+  stmv_lowpass_phi = stmv::matern_distance2phi( distance=0.2, nu=0.5, cor=0.1 ),  # note: p$pres = 0.2
   stmv_variogram_method = "fft",
   stmv_autocorrelation_fft_taper = 0.8,  # benchmark from which to taper
   stmv_autocorrelation_localrange = 0.1,
@@ -56,9 +56,9 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_rsquared_threshold = 0.01, # lower threshold  .. i.e., ignore ... there is no timeseries model, nor a fixed effect spatial "model"
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
   stmv_distance_scale = c( 2.5, 5, 10, 20, 40, 80 ), # km ... approx guesses of 95% AC range
-  stmv_distance_prediction_range =c( 5, 10 ), # range of permissible predictions km (i.e 1/2 stats grid to upper limit)
+  stmv_distance_prediction_range =c( 2.5, 10 ), # range of permissible predictions km (i.e 1/2 stats grid to upper limit based upon data density)
   stmv_nmin = 50,  # min number of data points req before attempting to model in a localized space
-  stmv_nmax = 1000, # no real upper bound.. just speed /RAM
+  stmv_nmax = 500, # no real upper bound.. just speed /RAM
   stmv_force_complete_method = "linear",
   stmv_runmode = list(
     scale = rep("localhost", scale_ncpus),
@@ -76,12 +76,7 @@ if (0) {
   # to force serial mode
    p$stmv_runmode = list(
     scale=rep("localhost", scale_ncpus),
-    interpolate = list(
-        cor_0.5 = rep("localhost", 1),
-        cor_0.1 = rep("localhost", 1),
-        cor_0.05 = rep("localhost", 1),
-        cor_0.01 = rep("localhost", 1)
-    ),  # ncpus for each runmode
+    interpolate = rep("localhost", 1),
     interpolate_force_complete = rep("localhost", max(1, interpolate_ncpus-2)),
     globalmodel = FALSE,
     save_intermediate_results = FALSE,

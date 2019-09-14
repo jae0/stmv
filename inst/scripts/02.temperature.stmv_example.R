@@ -13,7 +13,7 @@ scale_ram_required_per_process  = 1.25 # twostep / fft /fields vario ..  (mostly
 scale_ncpus = min( parallel::detectCores(), floor( (ram_local()- scale_ram_required_main_process) / scale_ram_required_per_process ) )
 
 # about 4 hrs
-interpolate_ram_required_main_process = 2.5 # GB twostep / fft  -- 10 hrs
+interpolate_ram_required_main_process = 2.5 # GB twostep / fft  -- 4 hrs
 interpolate_ram_required_per_process  = 5 # 1 GB seems enough for twostep / fft /fields vario .. but make 2 in case
 interpolate_ncpus = min( parallel::detectCores(), floor( (ram_local()- interpolate_ram_required_main_process) / interpolate_ram_required_per_process ) )
 
@@ -58,7 +58,7 @@ p = aegis.temperature::temperature_parameters(
   stmv_local_modelformula_time = formula( paste(
     't',
     '~ s( yr, k=', round(nyrs*0.4), ', bs="ts") + s(cos.w, k=3, bs="ts") + s(sin.w, k=3, bs="ts")  ',
-    '+ s( yr, cos.w, sin.w, k=', round(nyrs*0.25), ', bs="ts") ',
+    '+ s( yr, cos.w, sin.w, k=', round(nyrs*0.2), ', bs="ts") ',
     '+ s( log(z), k=3, bs="ts") + s( plon, k=3, bs="ts") + s( plat, k=3, bs="ts")  ',
     '+ s( log(z), plon, plat, k=9, bs="ts")  '
     ) ),
@@ -66,30 +66,25 @@ p = aegis.temperature::temperature_parameters(
   stmv_twostep_space = "fft",  # everything else is too slow ...
   stmv_fft_filter="lowpass matern tapered modelled",  # options for fft method: also matern, krige (very slow), lowpass, lowpass_matern, stmv_variogram_resolve_time
   stmv_lowpass_nu = 0.5,  # 0.5=exponential, 1=gaussian
-  stmv_lowpass_phi = 2,  # note: p$pres = 0.5
+  stmv_lowpass_phi = stmv::matern_distance2phi( distance=0.5, nu=0.5, cor=0.1 ),  # note: p$pres = 0.5
   stmv_variogram_method = "fft",
-  stmv_autocorrelation_fft_taper = 0.5,  # benchmark from which to taper .. user level control of smoothness
+  stmv_autocorrelation_fft_taper = 0.75,  # benchmark from which to taper .. user level control of smoothness
   stmv_autocorrelation_localrange = 0.1,  # for reporting
-  stmv_autocorrelation_interpolation = c(  0.1, 0.05, 0.01 ),  # range finding
+  stmv_autocorrelation_interpolation = c(  0.5, 0.1, 0.01, 0.001 ),  # range finding
   stmv_local_model_distanceweighted = TRUE,
   depth.filter = 5, # the depth covariate is input as units of depth (m) so, choose stats locations with elevation > 10m as being on land
-  stmv_rsquared_threshold = 0.25, # lower thindreshold for timeseries model
+  stmv_rsquared_threshold = 0.01, # lower thindreshold for timeseries model
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
-  stmv_distance_scale = c( 5, 10, 20, 30, 40, 50, 60  ), # km ... approx guess of 95% AC range, the range also determine limits of localrange
-  stmv_distance_prediction_range =c( 5, 25 ), # range of permissible predictions km (i.e 1/2 stats grid to upper limit)
-  stmv_nmin = 125,  # min number of unit spatial locations req before attempting to model in a localized space .. control no error in local model
-  stmv_nmax = 1000, # no real upper bound.. just speed / RAM limits  .. can go up to 10 GB / core if too large
-  stmv_tmin = round( nyrs * 1.25 ),
+  stmv_distance_scale = c( 2, 5, 10, 20, 40, 60  ), # km ... approx guess of 95% AC range, the range also determine limits of localrange
+  stmv_distance_prediction_range =c( 5, 20 ), # range of permissible predictions km (i.e 1/2 stats grid to upper limit) .. in this case 5, 10, 20
+  stmv_nmin = 120,  # min number of unit spatial locations req before attempting to model in a localized space .. control no error in local model
+  stmv_nmax = 120*5, # no real upper bound.. just speed / RAM limits  .. can go up to 10 GB / core if too large
+  stmv_tmin = round( nyrs * 1.2 ),
   stmv_force_complete_method = "linear",
   stmv_runmode = list(
     scale = rep("localhost", scale_ncpus),  # 7 min
-    interpolate = list(   # interpolation takes about 50 min
-#        cor_0.4  = rep("localhost", interpolate_ncpus),
-#        cor_0.2  = rep("localhost", interpolate_ncpus),
-        cor_0.1  = rep("localhost", interpolate_ncpus),
-        cor_0.05 = rep("localhost", interpolate_ncpus),
-        cor_0.01 = rep("localhost", max(1, interpolate_ncpus-2))
-      ),  # ncpus for each runmode
+    interpolate = rep("localhost", interpolate_ncpus),
+    interpolate_distance_basis = rep("localhost", interpolate_ncpus),
     interpolate_force_complete = rep("localhost", max(1, interpolate_ncpus-2)),
     globalmodel = FALSE,
     restart_load = FALSE,  # FALSE means redo all, TRUE means update currently saved  instance
