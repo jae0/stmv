@@ -41,14 +41,13 @@ p = aegis.bathymetry::bathymetry_parameters(
   variables = list(Y="z"),  # required as fft has no formulae
   stmv_global_modelengine = "none",  # too much data to use glm as an entry into link space ... use a direct transformation
   stmv_local_modelengine="fft",
-  stmv_fft_filter = "matern tapered modelled", #  matern with taper
-  # stmv_fft_filter = "lowpass_matern_tapered", #  act as a low pass filter first before matern with taper .. depth has enough data for this. Otherwise, use:
-  # stmv_lowpass_nu = 0.1,
-  # stmv_lowpass_phi = stmv::matern_distance2phi( distance=0.2, nu=0.1, cor=0.5 ),  # note: p$pres = 0.2
+  stmv_fft_filter = "matern tapered lowpass modelled", #  matern with taper
+  stmv_lowpass_nu = 0.5,
+  stmv_lowpass_phi = stmv::matern_distance2phi( distance=0.5, nu=0.5, cor=0.1 ),  # note: p$pres = 0.2
   stmv_variogram_method = "fft",
-  stmv_autocorrelation_fft_taper = 0.75,  # benchmark from which to taper
+  stmv_autocorrelation_fft_taper = 0.8,  # benchmark from which to taper
   stmv_autocorrelation_localrange = 0.1,
-  stmv_autocorrelation_interpolation = c(0.2, 0.1, 0.05, 0.01),  # start with smaller localrange estimates and expand
+  stmv_autocorrelation_interpolation = c(0.1, 0.01, 0.001),  # start with smaller localrange estimates and expand
   depth.filter = FALSE,  # need data above sea level to get coastline
   stmv_Y_transform =list(
     transf = function(x) {log10(x + 2500)} ,
@@ -57,10 +56,9 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_rsquared_threshold = 0.01, # lower threshold  .. i.e., ignore ... there is no timeseries model, nor a fixed effect spatial "model"
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
   stmv_distance_scale = c( 2.5, 5, 10, 20, 40, 80 ), # km ... approx guesses of 95% AC range
-  stmv_distance_prediction_range =c( 1, 10 ), # range of permissible predictions km (i.e 1/2 stats grid to upper limit)
-  stmv_distance_prediction_fraction = 0.95 , # upper limit in distnace to predict upon (just over the grid size of statsgrid) .. in timeseries can become very slow so try to be small
-  stmv_nmin = 200,  # min number of data points req before attempting to model in a localized space
-  stmv_nmax = 600, # no real upper bound.. just speed /RAM
+  stmv_distance_prediction_range =c( 5, 10 ), # range of permissible predictions km (i.e 1/2 stats grid to upper limit)
+  stmv_nmin = 50,  # min number of data points req before attempting to model in a localized space
+  stmv_nmax = 1000, # no real upper bound.. just speed /RAM
   stmv_force_complete_method = "linear",
   stmv_runmode = list(
     scale = rep("localhost", scale_ncpus),

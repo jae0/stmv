@@ -119,10 +119,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       {abs( Sloc[Si,2] - Sloc[,2] ) <= localrange}
     )
 
-    if (length( ii ) < p$stmv_nmin) {
-      Sflag[Si] = E[["insufficient_data"]]
-      next()
-    }
+    if (length( ii ) < 1)  next()
 
     # nu checks
     if ( !is.finite(nu) ) {
@@ -135,6 +132,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       }
     }
     ii = NULL
+    if ( !is.finite(nu) ) nu =0.5
 
     # phi checks
     phi_lim = c(NA, NA)
@@ -149,6 +147,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
         phi = matern_distance2phi( dis=localrange, nu=nu, cor=p$stmv_autocorrelation_localrange )
       }
     }
+    if ( !is.finite(nu) ) nu = 0.5
 
     if ( Sflag[Si] != E[["todo"]] ) {
       if (exists("stmv_rangecheck", p)) {
@@ -163,10 +162,21 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
 
     # last check .. ndata can change due to random sampling
-    for ( auin in 1:length(p$stmv_autocorrelation_interpolation) ) {
-      local_interpolation_correlation = p$stmv_autocorrelation_interpolation[auin]
-      localrange_interpolation = matern_phi2distance( phi=phi, nu=nu, cor=local_interpolation_correlation )
+    n_auin = length(p$stmv_autocorrelation_interpolation)
+    for ( auin in 1:(n_auin +1) ) {
+      if (auin == (n_auin +1) ) {
+        # if regular corellation-based distances are still to short to capture enough data .. force to max prediction range as a last resort -- fail-safe
+        localrange_interpolation = max(p$stmv_distance_prediction_range)  # force the largest permissible distance
+        nu = 0.5
+        phi = matern_distance2phi( dis=localrange_interpolation, nu=nu, cor=p$stmv_autocorrelation_localrange )
+      }
+       else {
+        local_interpolation_correlation = p$stmv_autocorrelation_interpolation[auin]
+        localrange_interpolation = matern_phi2distance( phi=phi, nu=nu, cor=local_interpolation_correlation )
+      }
+
       localrange_interpolation = min( max( localrange_interpolation, min(p$stmv_distance_prediction_range) ), max(p$stmv_distance_prediction_range), na.rm=TRUE )
+
       data_subset = stmv_select_data( p=p, Si=Si, localrange=localrange_interpolation )
       if (is.null( data_subset )) {
         Sflag[Si] = E[["insufficient_data"]]
@@ -314,75 +324,74 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
         next()  # looks to be a faulty solution
       }
 
+      if (grepl( Sflag[Si], paste0( c("local_model_error", "prediction_error", "prediction_area", "insufficient_data" ), collapse=" " )) ) next()
+
+
+      tolimit = which( res$predictions$mean < dat_range[1])
+      if (length(tolimit) > 0 ) {
+        res$predictions$mean[tolimit] = dat_range[1]
+        res$predictions$sd[tolimit] = NA
+      }
+
+      tolimit = which( res$predictions$mean > dat_range[2])
+      if (length(tolimit) > 0 ) {
+        res$predictions$mean[tolimit] = dat_range[2]
+        res$predictions$sd[tolimit] = NA
+      }
+
+
+      # update in stats .. if there are updates
+      if (!is.na( res$stmv_localstats )) {
+        lss = colMeans( res$stmv_localstats, na.rm=TRUE )
+        names(lss) = p$statvars
+        if (is.finite(lss[["nu"]])) S[Si, i_nu] = lss[["nu"]]
+        if (is.finite(lss[["phi"]])) S[Si, i_phi] = lss[["phi"]]
+        if (is.finite(lss[["localrange"]])) S[Si, i_localrange] = lss[["localrange"]]
+        if (is.finite(lss[["rsquared"]])) S[Si, i_rsquared] = lss[["rsquared"]]
+        if (is.finite(lss[["sdSpatial"]])) S[Si, i_sdSpatial] = lss[["sdSpatial"]]
+        if (is.finite(lss[["sdObs"]])) S[Si, i_sdObs] = lss[["sdObs"]]
+        if (is.finite(lss[["ndata"]])) S[Si, i_ndata] = lss[["ndata"]]
+      } else {
+        if ( exists("nu", res$stmv_stats ) ) if (is.finite(res$stmv_stats$nu)) S[Si, i_nu] = res$stmv_stats$nu
+        if ( exists("phi", res$stmv_stats ) ) if (is.finite(res$stmv_stats$phi)) S[Si, i_phi] = res$stmv_stats$phi
+        if ( exists("localrange", res$stmv_stats ) ) if (is.finite(res$stmv_stats$localrange)) S[Si, i_localrange] = res$stmv_stats$localrange
+        if ( exists("rsquared", res$stmv_stats ) ) if (is.finite(res$stmv_stats$rsquared)) S[Si, i_rsquared] = res$stmv_stats$rsquared
+        if ( exists("sdSpatial", res$stmv_stats ) ) if (is.finite(res$stmv_stats$sdSpatial)) S[Si, i_sdSpatial] = res$stmv_stats$sdSpatial
+        if ( exists("sdObs", res$stmv_stats ) ) if (is.finite(res$stmv_stats$sdObs)) S[Si, i_sdObs] = res$stmv_stats$sdObs
+        if ( exists("ndata", res$stmv_stats ) ) if (is.finite(res$stmv_stats$ndata)) S[Si, i_ndata] = res$stmv_stats$ndata
+      }
+
+      res$stmv_stats = NULL # reduce memory usage
+
+      sf = try( stmv_predictions_update(p=p, preds=res$predictions ) )
+      res = NULL
+
+      if ( is.null(sf) ) {
+        Sflag[Si] = E[["prediction_update_error"]]
+        sf = NULL
+        if (debugging) message("Error: prediction update error .. is null")
+        next()
+      }
+      if ( inherits(sf, "try-error") ) {
+        Sflag[Si] = E[["prediction_update_error"]]
+        sf = NULL
+        if (debugging) message("Error: prediction update error .. try-error")
+        next()
+      }
+      if ( sf=="error" ) {
+        Sflag[Si] = E[["prediction_update_error"]]
+        sf = NULL
+        if (debugging) message("Error: prediction update error .. general")
+        next()
+      }
+
+
+      # ----------------------
+      # do last. it is an indicator of completion of all tasks
+      # restarts would be broken otherwise
+      Sflag[Si] = E[["complete"]]  # mark as complete without issues
+
     }
-
-
-    if (grepl( Sflag[Si], paste0( c("local_model_error", "prediction_error", "prediction_area", "insufficient_data" ), collapse=" " )) ) next()
-
-
-    tolimit = which( res$predictions$mean < dat_range[1])
-    if (length(tolimit) > 0 ) {
-      res$predictions$mean[tolimit] = dat_range[1]
-      res$predictions$sd[tolimit] = NA
-    }
-
-    tolimit = which( res$predictions$mean > dat_range[2])
-    if (length(tolimit) > 0 ) {
-      res$predictions$mean[tolimit] = dat_range[2]
-      res$predictions$sd[tolimit] = NA
-    }
-
-
-    # update in stats .. if there are updates
-    if (!is.na( res$stmv_localstats )) {
-      lss = colMeans( res$stmv_localstats, na.rm=TRUE )
-      names(lss) = p$statvars
-      if (is.finite(lss[["nu"]])) S[Si, i_nu] = lss[["nu"]]
-      if (is.finite(lss[["phi"]])) S[Si, i_phi] = lss[["phi"]]
-      if (is.finite(lss[["localrange"]])) S[Si, i_localrange] = lss[["localrange"]]
-      if (is.finite(lss[["rsquared"]])) S[Si, i_rsquared] = lss[["rsquared"]]
-      if (is.finite(lss[["sdSpatial"]])) S[Si, i_sdSpatial] = lss[["sdSpatial"]]
-      if (is.finite(lss[["sdObs"]])) S[Si, i_sdObs] = lss[["sdObs"]]
-      if (is.finite(lss[["ndata"]])) S[Si, i_ndata] = lss[["ndata"]]
-    } else {
-      if ( exists("nu", res$stmv_stats ) ) if (is.finite(res$stmv_stats$nu)) S[Si, i_nu] = res$stmv_stats$nu
-      if ( exists("phi", res$stmv_stats ) ) if (is.finite(res$stmv_stats$phi)) S[Si, i_phi] = res$stmv_stats$phi
-      if ( exists("localrange", res$stmv_stats ) ) if (is.finite(res$stmv_stats$localrange)) S[Si, i_localrange] = res$stmv_stats$localrange
-      if ( exists("rsquared", res$stmv_stats ) ) if (is.finite(res$stmv_stats$rsquared)) S[Si, i_rsquared] = res$stmv_stats$rsquared
-      if ( exists("sdSpatial", res$stmv_stats ) ) if (is.finite(res$stmv_stats$sdSpatial)) S[Si, i_sdSpatial] = res$stmv_stats$sdSpatial
-      if ( exists("sdObs", res$stmv_stats ) ) if (is.finite(res$stmv_stats$sdObs)) S[Si, i_sdObs] = res$stmv_stats$sdObs
-      if ( exists("ndata", res$stmv_stats ) ) if (is.finite(res$stmv_stats$ndata)) S[Si, i_ndata] = res$stmv_stats$ndata
-    }
-
-    res$stmv_stats = NULL # reduce memory usage
-
-    sf = try( stmv_predictions_update(p=p, preds=res$predictions ) )
-    res = NULL
-
-    if ( is.null(sf) ) {
-      Sflag[Si] = E[["prediction_update_error"]]
-      sf = NULL
-      if (debugging) message("Error: prediction update error .. is null")
-      next()
-    }
-    if ( inherits(sf, "try-error") ) {
-      Sflag[Si] = E[["prediction_update_error"]]
-      sf = NULL
-      if (debugging) message("Error: prediction update error .. try-error")
-      next()
-    }
-    if ( sf=="error" ) {
-      Sflag[Si] = E[["prediction_update_error"]]
-      sf = NULL
-      if (debugging) message("Error: prediction update error .. general")
-      next()
-    }
-
-
-    # ----------------------
-    # do last. it is an indicator of completion of all tasks
-    # restarts would be broken otherwise
-    Sflag[Si] = E[["complete"]]  # mark as complete without issues
 
   }  # end for loop
 
