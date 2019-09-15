@@ -83,8 +83,20 @@ p = aegis.temperature::temperature_parameters(
   stmv_force_complete_method = "linear",
   stmv_runmode = list(
     scale = rep("localhost", scale_ncpus),  # 7 min
-    interpolate = rep("localhost", interpolate_ncpus),
-    interpolate_distance_basis = rep("localhost", interpolate_ncpus),
+    interpolate = list(
+      c1 = rep("localhost", interpolate_ncpus),  # ncpus for each runmode
+      c2 = rep("localhost", max(1, interpolate_ncpus-1)),
+      c3 = rep("localhost", max(1, interpolate_ncpus-1)),
+      c4 = rep("localhost", max(1, interpolate_ncpus-2))
+    ),
+    interpolate_distance_basis = list(
+      d1 = rep("localhost", interpolate_ncpus),
+      d2 = rep("localhost", interpolate_ncpus),
+      d3 = rep("localhost", max(1, interpolate_ncpus-1)),
+      d4 = rep("localhost", max(1, interpolate_ncpus-1)),
+      d5 = rep("localhost", max(1, interpolate_ncpus-2)),
+      d6 = rep("localhost", max(1, interpolate_ncpus-2))
+    ),
     interpolate_force_complete = rep("localhost", max(1, interpolate_ncpus-2)),
     globalmodel = FALSE,
     restart_load = FALSE,  # FALSE means redo all, TRUE means update currently saved  instance
