@@ -121,6 +121,15 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
     if (length( ii ) < 1)  next()
 
+    if (!is.finite(S[Si, i_localrange] )) {
+      localrange = median( S[ii, i_localrange ], na.rm=TRUE )
+      ii = which(
+        {abs( Sloc[Si,1] - Sloc[,1] ) <= localrange} &
+        {abs( Sloc[Si,2] - Sloc[,2] ) <= localrange}
+      )
+      if (length( ii ) < 1)  next()
+    }
+
     # nu checks
     if ( !is.finite(nu) ) {
       Sflag[Si] = E[["variogram_failure"]]
