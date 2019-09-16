@@ -82,13 +82,13 @@ p = aegis.temperature::temperature_parameters(
   stmv_tmin = round( nyrs * 1.0 ),
   stmv_force_complete_method = "linear",
   stmv_runmode = list(
-    # scale = rep("localhost", scale_ncpus),  # 7 min
-    # interpolate = list(
-    #   c1 = rep("localhost", interpolate_ncpus),  # ncpus for each runmode
-    #   c2 = rep("localhost", max(1, interpolate_ncpus-1)),
-    #   c3 = rep("localhost", max(1, interpolate_ncpus-1)),
-    #   c4 = rep("localhost", max(1, interpolate_ncpus-2))
-    # ),
+    scale = rep("localhost", scale_ncpus),  # 7 min
+    interpolate = list(
+      c1 = rep("localhost", interpolate_ncpus),  # ncpus for each runmode
+      c2 = rep("localhost", max(1, interpolate_ncpus-1)),
+      c3 = rep("localhost", max(1, interpolate_ncpus-1)),
+      c4 = rep("localhost", max(1, interpolate_ncpus-2))
+    ),
     interpolate_distance_basis = list(
       d1 = rep("localhost", interpolate_ncpus),
       d2 = rep("localhost", interpolate_ncpus),
