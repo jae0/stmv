@@ -91,7 +91,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     if ( iip %in% logpoints )  slog = stmv_logfile(p=p, flag= paste("Interpolation", p$runoption) )
     Si = p$runs[ iip, "locs" ]
 
-     print( paste("index =", iip, ";  Si = ", Si ) )
+    print( paste("index =", iip, ";  Si = ", Si ) )
     if ( Sflag[Si] == E[["complete"]] ) next()
 
     nu    = S[Si, i_nu]
@@ -99,63 +99,44 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     localrange = S[Si, i_localrange]   # attached to p$stmv_autocorrelation_localrange
 
     # range checks
-    if ( !is.finite(localrange) )  {
+    if ( any( !is.finite( c(localrange, nu, phi) ) ) )  {
       Sflag[Si] %in% E[["variogram_failure"]]
-      localrange = median( distance_limits )
-    }
+      s1 = abs( Sloc[Si,1] - Sloc[,1] )
+      s2 = abs( Sloc[Si,2] - Sloc[,2] )
 
-    if ( localrange < distance_limits[1] ) {
-      Sflag[Si] %in% E[["variogram_range_limit"]]
-      localrange = distance_limits[1]
-    }
+      ii = NULL
+      if ( !is.finite( localrange ) ) {
+        # update estimate of localrange from adjoining areas
+        localrange = max( distance_limits )
+        ii = which( ( s1 <= localrange ) & ( s2 <= localrange ) )
+        if (length( ii ) < 1)  next()
+        localrange = median( S[ii, i_localrange ], na.rm=TRUE )
+        ii = which( ( s1 <= localrange ) & ( s2 <= localrange ) ) # update
+        if (length( ii ) < 1)  next()
+        localrange = median( S[ii, i_localrange ], na.rm=TRUE )
+      }
 
-    if ( localrange > distance_limits[2] ) {
-      Sflag[Si] %in% E[["variogram_range_limit"]]
-      localrange = distance_limits[2]
-    }
-
-    ii = which(
-      {abs( Sloc[Si,1] - Sloc[,1] ) <= localrange} &
-      {abs( Sloc[Si,2] - Sloc[,2] ) <= localrange}
-    )
-
-    if (length( ii ) < 1)  next()
-
-    if (!is.finite(S[Si, i_localrange] )) {
-      localrange = median( S[ii, i_localrange ], na.rm=TRUE )
-      ii = which(
-        {abs( Sloc[Si,1] - Sloc[,1] ) <= localrange} &
-        {abs( Sloc[Si,2] - Sloc[,2] ) <= localrange}
-      )
-      if (length( ii ) < 1)  next()
-    }
-
-    # nu checks
-    if ( !is.finite(nu) ) {
-      Sflag[Si] = E[["variogram_failure"]]
-      nu =  median( S[ii, i_nu ], na.rm=TRUE )
-    } else {
-      if ( (nu < 0.1 ) | (nu > 5) ) {
-        Sflag[Si] = E[["variogram_range_limit"]]
+      # the above forces localrange to always be available
+      if ( !is.finite(nu) )  {
+        if (is.null(ii))  ii = which( ( s1 <= localrange ) & ( s2 <= localrange ) ) # update
         nu =  median( S[ii, i_nu ], na.rm=TRUE )
       }
-    }
-    ii = NULL
-    if ( !is.finite(nu) ) nu = 0.5
+      if ( !is.finite(nu) )  nu = 0.5  # give up and use exponential
 
-    # phi checks
-    phi_lim = c(NA, NA)
-    phi_lim[1] = matern_distance2phi( dis=distance_limits[1], nu=nu, cor=p$stmv_autocorrelation_localrange )
-    phi_lim[2] = matern_distance2phi( dis=distance_limits[2], nu=nu, cor=p$stmv_autocorrelation_localrange )
-    if ( !is.finite(phi) ) {
-      Sflag[Si] %in% E[["variogram_failure"]]
-      phi = matern_distance2phi( dis=localrange, nu=nu, cor=p$stmv_autocorrelation_localrange )
-    } else {
-      if ( (phi < phi_lim[1]) | (phi > phi_lim[2]) ) {
-        Sflag[Si] %in% E[["variogram_range_limit"]]
+      # phi checks
+      phi_lim = c(NA, NA)
+      phi_lim[1] = matern_distance2phi( dis=distance_limits[1], nu=nu, cor=p$stmv_autocorrelation_localrange )
+      phi_lim[2] = matern_distance2phi( dis=distance_limits[2], nu=nu, cor=p$stmv_autocorrelation_localrange )
+
+      if ( !is.finite(phi) ) {
         phi = matern_distance2phi( dis=localrange, nu=nu, cor=p$stmv_autocorrelation_localrange )
       }
+      s1 = NULL
+      s2 = NULL
+      ii = NULL
+      gc()
     }
+
 
     if ( Sflag[Si] != E[["todo"]] ) {
       if (exists("stmv_rangecheck", p)) {

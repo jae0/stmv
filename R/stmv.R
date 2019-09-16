@@ -641,7 +641,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
       p0 = p
       for ( j in 1:length(p$stmv_distance_scale) ) {
         p = p0 #reset
-        p$stmv_interpolation_basis_distance = p$stmv_autocorrelation_interpolation[j]
+        p$stmv_interpolation_basis_distance = p$stmv_distance_scale[j]
         p$runmode = paste("interpolate_distance_basis_", p$stmv_interpolation_basis_distance, sep="")
         p$clusters = p$stmv_runmode[["interpolate_distance_basis"]][[j]] # as ram reqeuirements increase drop cpus
         message( "\n||| Entering <", p$runmode, " > : ", format(Sys.time()) )

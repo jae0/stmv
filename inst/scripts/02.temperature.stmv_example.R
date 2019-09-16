@@ -57,8 +57,8 @@ p = aegis.temperature::temperature_parameters(
   stmv_local_modelengine = "twostep" ,
   stmv_local_modelformula_time = formula( paste(
     't',
-    '~ s( yr, k=', round(nyrs*0.3), ', bs="ts") + s(cos.w, k=3, bs="ts") + s(sin.w, k=3, bs="ts")  ',
-    '+ s( yr, cos.w, sin.w, k=', round(nyrs*0.3), ', bs="ts") ',
+    '~ s( yr, k=', round(nyrs*0.25), ', bs="ts") + s(cos.w, k=3, bs="ts") + s(sin.w, k=3, bs="ts")  ',
+    '+ s( yr, cos.w, sin.w, k=', round(nyrs*0.25), ', bs="ts") ',
     '+ s( log(z), k=3, bs="ts") + s( plon, k=3, bs="ts") + s( plat, k=3, bs="ts")  ',
     '+ s( log(z), plon, plat, k=7, bs="ts")  '
     ) ),
@@ -70,16 +70,16 @@ p = aegis.temperature::temperature_parameters(
   stmv_variogram_method = "fft",
   stmv_autocorrelation_fft_taper = 0.8,  # benchmark from which to taper .. user level control of smoothness
   stmv_autocorrelation_localrange = 0.1,  # for reporting
-  stmv_autocorrelation_interpolation = c(  0.1, 0.01, 0.001 ),  # range finding
+  stmv_autocorrelation_interpolation = c(  0.1, 0.05, 0.01  ),  # range finding
   stmv_local_model_distanceweighted = TRUE,
   depth.filter = 5, # the depth covariate is input as units of depth (m) so, choose stats locations with elevation > 10m as being on land
-  stmv_rsquared_threshold = 0.25, # lower thindreshold for timeseries model
+  stmv_rsquared_threshold = 0.001, # lower thindreshold for timeseries model
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
   stmv_distance_scale = c( 2, 5, 10, 20, 40, 80  ), # km ... approx guess of 95% AC range, the range also determine limits of localrange
-  stmv_distance_prediction_range =c( 2, 20 ), # range of permissible predictions km (i.e 1/2 stats grid to upper limit) .. in this case 5, 10, 20
-  stmv_nmin = 120,  # min number of unit spatial locations req before attempting to model in a localized space .. control no error in local model
-  stmv_nmax = 120*10, # no real upper bound.. just speed / RAM limits  .. can go up to 10 GB / core if too large
-  stmv_tmin = round( nyrs * 1.5 ),
+  stmv_distance_prediction_range =c( 5, 10 ), # range of permissible predictions km (i.e 1/2 stats grid to upper limit) .. in this case 5, 10, 20
+  stmv_nmin = 80,  # min number of unit spatial locations req before attempting to model in a localized space .. control no error in local model
+  stmv_nmax = 80*10, # no real upper bound.. just speed / RAM limits  .. can go up to 10 GB / core if too large
+  stmv_tmin = round( nyrs * 1.0 ),
   stmv_force_complete_method = "linear",
   stmv_runmode = list(
     scale = rep("localhost", scale_ncpus),  # 7 min
