@@ -11,10 +11,7 @@ stmv_select_data = function( p, Si, localrange ) {
 
   # space only, ignore time as it is modelled separately
   # U are indices of Yi
-  U = which(
-    (abs( Sloc[Si,1] - Yloc[Yi[],1] ) <= localrange ) &
-    (abs( Sloc[Si,2] - Yloc[Yi[],2] ) <= localrange )
-  )
+  U = which( ( Sloc[Si,1] - Yloc[Yi[],1] )^2 + ( Sloc[Si,2] - Yloc[Yi[],2] )^2  <= localrange^2 )  # avoid sqrt of diffs
   # Yuniq are flags indexed on Yi
   Yuniq = !duplicated(Yloc[Yi[U],])  # dups in space only ... leave time alone
   ndata = length( which(Yuniq) )

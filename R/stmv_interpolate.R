@@ -84,6 +84,12 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
   distance_limits = range( p$stmv_distance_scale )    # for range estimate
 
+  # error (km) to add to locations to force solutions that are affected by duplicated locations
+  dist_error = 1e-6
+  if ( exists( "stmv_lowpass_nu", p) & exists( "stmv_lowpass_phi", p) ) {
+    dist_error_target = matern_phi2distance( phi=p$stmv_lowpass_phi, nu=p$stmv_lowpass_nu, cor=p$stmv_autocorrelation_localrange )
+    if (is.finite(dist_error_target)) dist_error = dist_error_target
+  }
 
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
@@ -106,37 +112,35 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
       ii = NULL
       if ( !is.finite( localrange ) ) {
-        # update estimate of localrange from adjoining areas
-        localrange = max( distance_limits )
+        # obtain estimate of localrange from adjoining areas
+        localrange = max( distance_limits ) #initial guess
         ii = which( ( s1 <= localrange ) & ( s2 <= localrange ) )
         if (length( ii ) < 1)  next()
-        localrange = median( S[ii, i_localrange ], na.rm=TRUE )
-        ii = which( ( s1 <= localrange ) & ( s2 <= localrange ) ) # update
+        localrange = median( S[ii, i_localrange ], na.rm=TRUE ) # initial local estimate
+        ii = which( ( s1 <= localrange ) & ( s2 <= localrange ) )
         if (length( ii ) < 1)  next()
-        localrange = median( S[ii, i_localrange ], na.rm=TRUE )
+        localrange = median( S[ii, i_localrange ], na.rm=TRUE )  # refined local estimate
       }
+      if ( !is.finite( localrange ) ) next()  # last check
 
       # the above forces localrange to always be available
       if ( !is.finite(nu) )  {
         if (is.null(ii))  ii = which( ( s1 <= localrange ) & ( s2 <= localrange ) ) # update
         nu =  median( S[ii, i_nu ], na.rm=TRUE )
       }
-      if ( !is.finite(nu) )  nu = 0.5  # give up and use exponential
+      if ( !is.finite(nu) ) next()  # last check
 
-      # phi checks
-      phi_lim = c(NA, NA)
-      phi_lim[1] = matern_distance2phi( dis=distance_limits[1], nu=nu, cor=p$stmv_autocorrelation_localrange )
-      phi_lim[2] = matern_distance2phi( dis=distance_limits[2], nu=nu, cor=p$stmv_autocorrelation_localrange )
+      # phi meaningful only with some given nu .. restimate from localrange
+      if ( !is.finite(phi) ) phi = matern_distance2phi( dis=localrange, nu=nu, cor=p$stmv_autocorrelation_localrange )
+      if ( !is.finite(phi) ) next() # last check
 
-      if ( !is.finite(phi) ) {
-        phi = matern_distance2phi( dis=localrange, nu=nu, cor=p$stmv_autocorrelation_localrange )
-      }
       s1 = NULL
       s2 = NULL
       ii = NULL
       gc()
     }
 
+    if ( any( !is.finite( c(localrange, nu, phi) ) ) )  next()
 
     if ( Sflag[Si] != E[["todo"]] ) {
       if (exists("stmv_rangecheck", p)) {
@@ -149,16 +153,12 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       }
     }
 
-
-    # last check .. ndata can change due to random sampling
     if (p$stmv_interpolation_basis == "correlation")  {
       localrange_interpolation = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_interpolation_basis_correlation )
     } else if (p$stmv_interpolation_basis == "distance")  {
       localrange_interpolation = p$stmv_interpolation_basis_distance
     }
-
     localrange_interpolation = min( max( localrange_interpolation, min(p$stmv_distance_prediction_range) ), max(p$stmv_distance_prediction_range), na.rm=TRUE )
-    if (!is.finite(phi)) phi = matern_distance2phi( dis=localrange_interpolation, nu=nu, cor=p$stmv_autocorrelation_localrange )  # nominal
 
     data_subset = stmv_select_data( p=p, Si=Si, localrange=localrange_interpolation )
     if (is.null( data_subset )) {
@@ -185,7 +185,8 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     dat = matrix( 1, nrow=ndata, ncol=dat_nc )
     dat[,iY] = Y[data_subset$data_index] # these are residuals if there is a global model
     # add a small error term to prevent some errors when duplicate locations exist; localrange_interpolation offsets to positive values
-    dat[,ilocs] = Yloc[data_subset$data_index,] + localrange_interpolation * runif(2*ndata, -1e-6, 1e-6)
+
+    dat[,ilocs] = Yloc[data_subset$data_index,] + localrange_interpolation * runif(2*ndata, -dist_error, dist_error)
 
     if (p$nloccov > 0) dat[,icov] = Ycov[data_subset$data_index, icov_local] # no need for other dim checks as this is user provided
     if (exists("TIME", p$variables)) {
