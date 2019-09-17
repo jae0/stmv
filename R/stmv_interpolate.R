@@ -140,7 +140,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       gc()
     }
 
-    if ( any( !is.finite( c(localrange, nu, phi) ) ) )  next()
 
     if ( Sflag[Si] != E[["todo"]] ) {
       if (exists("stmv_rangecheck", p)) {
@@ -158,7 +157,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     } else if (p$stmv_interpolation_basis == "distance")  {
       localrange_interpolation = p$stmv_interpolation_basis_distance
     }
-    localrange_interpolation = min( max( localrange_interpolation, min(p$stmv_distance_prediction_range) ), max(p$stmv_distance_prediction_range), na.rm=TRUE )
 
     data_subset = stmv_select_data( p=p, Si=Si, localrange=localrange_interpolation )
     if (is.null( data_subset )) {
@@ -209,7 +207,8 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
     # construct prediction/output grid area ('pa')
     # convert distance to discretized increments of row/col indices;
-    windowsize.half = 1L + round( localrange_interpolation / p$pres )
+    prediction_area = min( max( localrange_interpolation, min(p$stmv_distance_prediction_range) ), max(p$stmv_distance_prediction_range), na.rm=TRUE )
+    windowsize.half = 1L + round( prediction_area / p$pres )
     # construct data (including covariates) for prediction locations (pa)
     pa = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=windowsize.half ) )
     if (is.null(pa)) {
