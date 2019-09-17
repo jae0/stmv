@@ -77,9 +77,9 @@ p = aegis.temperature::temperature_parameters(
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
   stmv_distance_scale = c( 2, 5, 10, 15, 20, 40, 80  ), # km ... approx guess of 95% AC range, the range also determine limits of localrange
   # stmv_distance_basis_interpolation = c( 5, 10, 15, 20, 40, 80  ) , # range of permissible predictions km (i.e 1/2 stats grid to upper limit) .. in this case 5, 10, 20
-  stmv_distance_prediction_range =c( 2, 15 ), # range of permissible predictions km (i.e 1/2 stats grid to upper limit) .. in this case 5, 10, 20
-  stmv_nmin = 50,  # min number of unit spatial locations req before attempting to model in a localized space .. control no error in local model
-  stmv_nmax = 50*nyrs, # no real upper bound.. just speed / RAM limits  .. can go up to 10 GB / core if too large
+  stmv_distance_prediction_range =c( 2, 10 ), # range of permissible predictions km (i.e 1/2 stats grid to upper limit) .. in this case 5, 10, 20
+  stmv_nmin = 30,  # min number of unit spatial locations req before attempting to model in a localized space .. control no error in local model
+  stmv_nmax = 30*(nyrs/2), # no real upper bound.. just speed / RAM limits  .. can go up to 10 GB / core if too large
   stmv_tmin = round( nyrs * 1 ),
   stmv_force_complete_method = "linear",
   stmv_runmode = list(
@@ -91,14 +91,21 @@ p = aegis.temperature::temperature_parameters(
       c4 = rep("localhost", max(1, interpolate_ncpus-1)),
       c5 = rep("localhost", max(1, interpolate_ncpus-2))
     ),
-    # interpolate_distance_basis = list(
-    #   d1 = rep("localhost", interpolate_ncpus),
-    #   d2 = rep("localhost", interpolate_ncpus),
-    #   d3 = rep("localhost", max(1, interpolate_ncpus-1)),
-    #   d4 = rep("localhost", max(1, interpolate_ncpus-1)),
-    #   d5 = rep("localhost", max(1, interpolate_ncpus-2)),
-    #   d6 = rep("localhost", max(1, interpolate_ncpus-2))
-    # ),
+  #  interpolate_exhaustivepredictions = list(
+  #     c1 = rep("localhost", interpolate_ncpus),  # ncpus for each runmode
+  #     c2 = rep("localhost", max(1, interpolate_ncpus-1)),
+  #     c3 = rep("localhost", max(1, interpolate_ncpus-1)),
+  #     c4 = rep("localhost", max(1, interpolate_ncpus-1)),
+  #     c5 = rep("localhost", max(1, interpolate_ncpus-2))
+  #   ),
+    interpolate_distance_basis = list(
+      d1 = rep("localhost", interpolate_ncpus),
+      d2 = rep("localhost", interpolate_ncpus),
+      d3 = rep("localhost", max(1, interpolate_ncpus-1)),
+      d4 = rep("localhost", max(1, interpolate_ncpus-1)),
+      d5 = rep("localhost", max(1, interpolate_ncpus-2)),
+      d6 = rep("localhost", max(1, interpolate_ncpus-2))
+    ),
     interpolate_force_complete = rep("localhost", max(1, interpolate_ncpus-2)),
     globalmodel = FALSE,
     restart_load = FALSE,  # FALSE means redo all, TRUE means update currently saved  instance

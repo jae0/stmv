@@ -641,7 +641,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
       p0 = p
       for ( j in 1:length(p$stmv_autocorrelation_interpolation) ) {
         p = p0 #reset
-        p$stmv_fft_filter = paste( p$stmv_fft_filter, "exhaustivepredictions")
+        if (exists("stmv_fft_filter", p)) p$stmv_fft_filter = paste( p$stmv_fft_filter, "exhaustivepredictions")
         p$stmv_interpolation_basis_correlation = p$stmv_autocorrelation_interpolation[j]
         p$runmode = paste("interpolate_correlation_basis_", p$stmv_interpolation_basis_correlation, sep="")
         p$clusters = p$stmv_runmode[["interpolate_exhaustivepredictions"]][[j]] # as ram reqeuirements increase drop cpus
@@ -682,6 +682,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
       p0 = p
       for ( j in 1:length(p$stmv_distance_basis_interpolation) ) {
         p = p0 #reset
+        # if (exists("stmv_fft_filter", p)) p$stmv_fft_filter = paste( p$stmv_fft_filter, "exhaustivepredictions")
         p$stmv_interpolation_basis_distance = p$stmv_distance_basis_interpolation[j]
         p$runmode = paste("interpolate_distance_basis_", p$stmv_interpolation_basis_distance, sep="")
         p$clusters = p$stmv_runmode[["interpolate_distance_basis"]][[j]] # as ram reqeuirements increase drop cpus
