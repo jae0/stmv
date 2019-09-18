@@ -207,7 +207,9 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
     # construct prediction/output grid area ('pa')
     # convert distance to discretized increments of row/col indices;
-    prediction_area = min( max( localrange_interpolation, min(p$stmv_distance_prediction_range) ), max(p$stmv_distance_prediction_range), na.rm=TRUE )
+    if (exists("stmv_distance_prediction_limits", p)) {
+      prediction_area = min( max( localrange_interpolation, min(p$stmv_distance_prediction_limits) ), max(p$stmv_distance_prediction_limits), na.rm=TRUE )
+    }
     windowsize.half = 1L + round( prediction_area / p$pres )
     # construct data (including covariates) for prediction locations (pa)
     pa = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=windowsize.half ) )
