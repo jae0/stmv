@@ -124,7 +124,6 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NUL
         ignore = toreset = inrange = E_not_to_alter = NULL
         gc()
       }
-      }
       uS = NULL
       Sloc_nplon = Sloc_nplat = NULL
     }
