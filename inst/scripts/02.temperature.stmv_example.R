@@ -91,7 +91,7 @@ p = aegis.temperature::temperature_parameters(
       c4 = rep("localhost", max(1, interpolate_ncpus-1)),
       c5 = rep("localhost", max(1, interpolate_ncpus-2))
     ),
-   interpolate_fast_predictions = list(
+    interpolate_fast_predictions = list(
       c1 = rep("localhost", interpolate_ncpus),  # ncpus for each runmode
       c2 = rep("localhost", max(1, interpolate_ncpus-1)),
       c3 = rep("localhost", max(1, interpolate_ncpus-1)),
