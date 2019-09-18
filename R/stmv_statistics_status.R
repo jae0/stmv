@@ -89,15 +89,13 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NUL
     }
 
 
-    if ( grepl("incomplete", reset)) {
+    if ( grepl("complete", reset)) {
       # statistics locations where estimations need to be redone
 
       P = stmv_attach( p$storage.backend, p$ptr$P )
       if (ncol(P) == 1 ) {
-        noP = which( !is.finite( P[]) )
         yesP = which( is.finite( P[]) )
       } else {
-        noP = which( !is.finite( rowSums( P[])) )
         yesP = which( is.finite( rowSums( P[])) )
       }
 
@@ -126,6 +124,31 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NUL
         ignore = toreset = inrange = E_not_to_alter = NULL
         gc()
       }
+      }
+      uS = NULL
+      Sloc_nplon = Sloc_nplat = NULL
+    }
+
+
+    if ( grepl("incomplete", reset)) {
+      # statistics locations where estimations need to be redone
+
+      P = stmv_attach( p$storage.backend, p$ptr$P )
+      if (ncol(P) == 1 ) {
+        noP = which( !is.finite( P[]) )
+      } else {
+        noP = which( !is.finite( rowSums( P[])) )
+      }
+
+      Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
+      sbox = list(
+        plats = seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ),
+        plons = seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ) )
+      # statistics coordinates
+      Sloc_nplat = length(sbox$plats)
+      Sloc_nplon = length(sbox$plons)
+      Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+      uS = array_map( "2->1", round( cbind(Sloc[,1]-p$origin[1], Sloc[,2]-p$origin[2])/p$stmv_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
 
       if( length(noP) > 0 ) {
         toreset = array_map( "2->1", round( cbind(Ploc[noP,1]-p$origin[1], Ploc[noP,2]-p$origin[2])/p$stmv_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
@@ -151,6 +174,7 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NUL
       uS = NULL
       Sloc_nplon = Sloc_nplat = NULL
     }
+
 
     if ( grepl("flags", reset)) {
       Eflags_reset = E[ reset_flags ]

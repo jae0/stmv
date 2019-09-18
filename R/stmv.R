@@ -595,9 +595,10 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
       invisible( stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" ))
       if ( "restart_load" %in% runmode ) {
         invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolate", datasubset="predictions" ) )
-        invisible( stmv_statistics_status( p=p, reset=c("all") ) ) # required to start as scale determination uses Sflags too
-        invisible( stmv_statistics_status( p=p, reset=c("features" ) ) ) # required to start as scale determination uses Sflags too
+        invisible( stmv_statistics_status( p=p, reset=c( "all") ) ) # required to start as scale determination uses Sflags too
+        invisible( stmv_statistics_status( p=p, reset=c( "complete" ) ) )
         invisible( stmv_statistics_status( p=p, reset=c( "incomplete" ) ) )
+        invisible( stmv_statistics_status( p=p, reset=c( "features" ) ) ) # required to start as scale determination uses Sflags too
       }
 
       p$time_start_runmode = Sys.time()
@@ -610,8 +611,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         p$clusters = p$stmv_runmode[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
         if (exists("stmv_fft_filter", p)) p$stmv_fft_filter = paste( p$stmv_fft_filter, "exhaustive_predictions")
         message( "\n||| Entering <", p$runmode, " > : ", format(Sys.time()) )
-        invisible( stmv_statistics_status( p=p, reset=c( "all" ) ) ) # required to start as scale determination uses Sflags too
-        invisible( stmv_statistics_status( p=p, reset=c( "features" ) ) ) # required to start as scale determination uses Sflags too
         currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
         if ( currentstatus$n.todo == 0 ) break()
         if ( currentstatus$n.todo < (2*length(p$clusters)) ) p$clusters = p$clusters[1] # drop to serial mode
@@ -643,9 +642,10 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
       invisible( stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" ))
       if ( "restart_load" %in% runmode ) {
         invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolate_fast_predictions", datasubset="predictions" ) )
-        invisible( stmv_statistics_status( p=p, reset=c( "all" ) ) ) # required to start as scale determination uses Sflags too
-        invisible( stmv_statistics_status( p=p, reset=c( "features" ) ) ) # required to start as scale determination uses Sflags too
+        invisible( stmv_statistics_status( p=p, reset=c( "all") ) ) # required to start as scale determination uses Sflags too
+        invisible( stmv_statistics_status( p=p, reset=c( "complete" ) ) )
         invisible( stmv_statistics_status( p=p, reset=c( "incomplete" ) ) )
+        invisible( stmv_statistics_status( p=p, reset=c( "features" ) ) ) # required to start as scale determination uses Sflags too
       }
 
       p$time_start_runmode = Sys.time()
@@ -658,8 +658,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         p$runmode = paste("interpolate_correlation_basis_", p$stmv_interpolation_basis_correlation, sep="")
         p$clusters = p$stmv_runmode[["interpolate_fast_predictions"]][[j]] # as ram reqeuirements increase drop cpus
         message( "\n||| Entering <", p$runmode, " > : ", format(Sys.time()) )
-        invisible( stmv_statistics_status( p=p, reset=c( "all" ) ) ) # required to start as scale determination uses Sflags too
-        invisible( stmv_statistics_status( p=p, reset=c( "features" ) ) ) # required to start as scale determination uses Sflags too
         currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
         if ( currentstatus$n.todo == 0 ) break()
         if ( currentstatus$n.todo < (2*length(p$clusters)) ) p$clusters = p$clusters[1] # drop to serial mode
@@ -689,7 +687,13 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
     if ("interpolate_distance_basis" %in% runmode ) {
 
       invisible( stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" ))
-      if ( "restart_load" %in% runmode ) invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolate", datasubset="predictions" ) )
+      if ( "restart_load" %in% runmode ) {
+        invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolate", datasubset="predictions" ) )
+        invisible( stmv_statistics_status( p=p, reset=c( "all") ) ) # required to start as scale determination uses Sflags too
+        invisible( stmv_statistics_status( p=p, reset=c( "complete" ) ) )
+        invisible( stmv_statistics_status( p=p, reset=c( "incomplete" ) ) )
+        invisible( stmv_statistics_status( p=p, reset=c( "features" ) ) ) # required to start as scale determination uses Sflags too
+      }
 
       p$time_start_runmode = Sys.time()
       p$stmv_interpolation_basis = "distance"
@@ -701,8 +705,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         p$runmode = paste("interpolate_distance_basis_", p$stmv_interpolation_basis_distance, sep="")
         p$clusters = p$stmv_runmode[["interpolate_distance_basis"]][[j]] # as ram reqeuirements increase drop cpus
         message( "\n||| Entering <", p$runmode, " > : ", format(Sys.time()) )
-        invisible( stmv_statistics_status( p=p, reset=c( "all" ) ) ) # required to start as scale determination uses Sflags too
-        invisible( stmv_statistics_status( p=p, reset=c( "features" ) ) ) # required to start as scale determination uses Sflags too
         currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
         if ( currentstatus$n.todo == 0 ) break()
         if ( currentstatus$n.todo < (2*length(p$clusters)) ) p$clusters = p$clusters[1] # drop to serial mode
@@ -741,7 +743,13 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         # interpolation based on data
         # NOTE:: no covariates are used
         invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolate", datasubset="predictions" ) )
-        if ( "restart_load" %in% runmode ) invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolate_hybrid_boost", datasubset="predictions" ) )
+        if ( "restart_load" %in% runmode ) {
+          invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolate_hybrid_boost", datasubset="predictions" ) )
+          invisible( stmv_statistics_status( p=p, reset=c( "all") ) ) # required to start as scale determination uses Sflags too
+          invisible( stmv_statistics_status( p=p, reset=c( "complete" ) ) )
+          invisible( stmv_statistics_status( p=p, reset=c( "incomplete" ) ) )
+          invisible( stmv_statistics_status( p=p, reset=c( "features" ) ) ) # required to start as scale determination uses Sflags too
+        }
         p$time_start_runmode = Sys.time()
         p0 = p
         for ( j in 1:length(p$stmv_autocorrelation_interpolation) ) {
@@ -751,8 +759,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
           p$clusters = p$stmv_runmode[["interpolate_hybrid_boost"]][[j]] # as ram reqeuirements increase drop cpus
           message( "\n||| Entering <", p$runmode, "> stage: ", format(Sys.time()) , "\n" )
           p$stmv_local_modelengine = "kernel"  # override -- no covariates, basic moving window average (weighted by inverse variance)
-          invisible( stmv_statistics_status( p=p, reset=c( "all" ) ) ) # required to start as scale determination uses Sflags too
-          invisible( stmv_statistics_status( p=p, reset=c( "features" ) ) ) # required to start as scale determination uses Sflags too
           currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
           if ( currentstatus$n.todo == 0 ) break()
           if ( currentstatus$n.todo < (2*length(p$clusters)) ) p$clusters = p$clusters[1] # drop to serial mode
