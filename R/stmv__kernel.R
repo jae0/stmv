@@ -14,7 +14,7 @@ stmv__kernel = function( p=NULL, dat=NULL, pa=NULL, phi=NULL, nu=NULL, varObs=NU
     # predict only where required
     x_r = range(pa[,p$variables$LOCS[1]])
     x_c = range(pa[,p$variables$LOCS[2]])
-  } else {
+  } else if (grepl("exhaustive_predictions", p$stmv_fft_filter) ) {
     # predict on full data subset
     x_r = range(dat[,p$variables$LOCS[1]])
     x_c = range(dat[,p$variables$LOCS[2]])
@@ -63,8 +63,8 @@ stmv__kernel = function( p=NULL, dat=NULL, pa=NULL, phi=NULL, nu=NULL, varObs=NU
       pa$mean[pa_i] = X
       # pa$sd[pa_i[tokeep]] = sd( dat[xi,p$variable$Y], na.rm=T)   ## fix
       X = NULL
-    } else {
-      X_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=resolution )
+    }  else if (grepl("exhaustive_predictions", p$stmv_fft_filter) ) {
+        X_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=resolution )
       tokeep = which( X_i[,1] >= 1 & X_i[,2] >= 1  & X_i[,1] <= nr & X_i[,2] <= nc )
       if (length(tokeep) < 1) next()
       X_i = X_i[tokeep,]
