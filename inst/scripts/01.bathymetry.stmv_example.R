@@ -45,7 +45,7 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_lowpass_nu = 0.5,
   stmv_lowpass_phi = stmv::matern_distance2phi( distance=0.2, nu=0.5, cor=0.1 ),  # note: p$pres = 0.2
   stmv_variogram_method = "fft",
-  stmv_autocorrelation_fft_taper = 0.9,  # benchmark from which to taper .. high data density truncate local predictions to capture heterogeneity
+  stmv_autocorrelation_fft_taper = 0.75,  # benchmark from which to taper .. high data density truncate local predictions to capture heterogeneity
   stmv_autocorrelation_localrange = 0.1,
   stmv_autocorrelation_interpolation = c(0.5, 0.25, 0.1, 0.01, 0.001),  # start with smaller localrange estimates and expand
   stmv_filter_depth_m = FALSE,  # need data above sea level to get coastline
@@ -70,15 +70,16 @@ p = aegis.bathymetry::bathymetry_parameters(
       c4 = rep("localhost", max(1, interpolate_ncpus-2)),
       c5 = rep("localhost", max(1, interpolate_ncpus-2))
     ),
-    interpolate_distance_basis = list(
-      d1 = rep("localhost", interpolate_ncpus),
-      d2 = rep("localhost", interpolate_ncpus),
-      d3 = rep("localhost", max(1, interpolate_ncpus-1)),
-      d4 = rep("localhost", max(1, interpolate_ncpus-1)),
-      d5 = rep("localhost", max(1, interpolate_ncpus-2)),
-      d6 = rep("localhost", max(1, interpolate_ncpus-2))
-    ),
-    # interpolate_force_complete = rep("localhost", max(1, interpolate_ncpus-2)),
+    # if a good idea of autocorrelation is missing, forcing via explicit distance limits is an option
+    # interpolate_distance_basis = list(
+    #   d1 = rep("localhost", interpolate_ncpus),
+    #   d2 = rep("localhost", interpolate_ncpus),
+    #   d3 = rep("localhost", max(1, interpolate_ncpus-1)),
+    #   d4 = rep("localhost", max(1, interpolate_ncpus-1)),
+    #   d5 = rep("localhost", max(1, interpolate_ncpus-2)),
+    #   d6 = rep("localhost", max(1, interpolate_ncpus-2))
+    # ),
+    interpolate_force_complete = rep("localhost", max(1, interpolate_ncpus-2)),
     globalmodel = FALSE,
     restart_load = FALSE,
     save_completed_data = TRUE # just a dummy variable with the correct name

@@ -57,16 +57,17 @@ p = aegis.temperature::temperature_parameters(
   stmv_local_modelengine = "twostep" ,
   stmv_local_modelformula_time = formula( paste(
     't',
-    '~ s( yr, k=', round(nyrs*0.3), ', bs="ts") + s(cos.w, k=3, bs="ts") + s(sin.w, k=3, bs="ts")  ',
-    '+ s( yr, cos.w, sin.w, k=', round(nyrs*0.3), ', bs="ts") ',
+    '~ s( yr, k=', round(nyrs*0.25), ', bs="ts") + s(cos.w, k=3, bs="ts") + s(sin.w, k=3, bs="ts")  ',
+    '+ s( yr, cos.w, sin.w, k=', round(nyrs*0.25), ', bs="ts") ',
     '+ s( log(z), k=3, bs="ts") + s( plon, k=3, bs="ts") + s( plat, k=3, bs="ts")  ',
     '+ s( log(z), plon, plat, k=6, bs="ts")  '
     ) ),
   stmv_twostep_time = "gam",
   stmv_twostep_space = "fft",  # everything else is too slow ...
-  stmv_fft_filter="lowpass matern tapered modelled",  # options for fft method: also matern, krige (very slow), lowpass, lowpass_matern, stmv_variogram_resolve_time
+#  stmv_fft_filter="lowpass matern tapered modelled fast_predictions",  # options for fft method: also matern, krige (very slow), lowpass, lowpass_matern, stmv_variogram_resolve_time
+  stmv_fft_filter="lowpass matern tapered modelled fast_predictions",  # options for fft method: also matern, krige (very slow), lowpass, lowpass_matern, stmv_variogram_resolve_time
   stmv_lowpass_nu = 0.5,  # 0.5=exponential, 1=gaussian
-  stmv_lowpass_phi = stmv::matern_distance2phi( distance=1, nu=0.5, cor=0.1 ),  # note: p$pres = 0.5
+  stmv_lowpass_phi = stmv::matern_distance2phi( distance=0.5, nu=0.5, cor=0.1 ),  # note: p$pres = 0.5
   stmv_variogram_method = "fft",
   stmv_autocorrelation_fft_taper = 0.8,  # benchmark from which to taper .. user level control of smoothness
   stmv_autocorrelation_localrange = 0.1,  # for reporting
@@ -77,9 +78,9 @@ p = aegis.temperature::temperature_parameters(
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
   stmv_distance_scale = c( 2, 5, 10, 15, 20, 40, 80  ), # km ... approx guess of 95% AC range, the range also determine limits of localrange
   stmv_distance_basis_interpolation = c( 5, 10, 15, 20, 40, 80  ) , # range of permissible predictions km (i.e 1/2 stats grid to upper limit) .. in this case 5, 10, 20
-  stmv_distance_prediction_limits =c( 2.5, 10 ), # range of permissible predictions km (i.e 1/2 stats grid to upper limit) .. in this case 5, 10, 20
-  stmv_nmin = 50,  # min number of unit spatial locations req before attempting to model in a localized space .. control no error in local model
-  stmv_nmax = 50*nyrs, # no real upper bound.. just speed / RAM limits  .. can go up to 10 GB / core if too large
+  stmv_distance_prediction_limits =c( 2.5, 12.5 ), # range of permissible predictions km (i.e 1/2 stats grid to upper limit) .. in this case 5, 10, 20
+  stmv_nmin = 100,  # min number of unit spatial locations req before attempting to model in a localized space .. control no error in local model
+  stmv_nmax = 100*nyrs, # no real upper bound.. just speed / RAM limits  .. can go up to 10 GB / core if too large
   stmv_tmin = round( nyrs * 1.25 ),
   stmv_force_complete_method = "linear",
   stmv_runmode = list(
@@ -91,13 +92,7 @@ p = aegis.temperature::temperature_parameters(
       c4 = rep("localhost", max(1, interpolate_ncpus-1)),
       c5 = rep("localhost", max(1, interpolate_ncpus-2))
     ),
-    interpolate_fast_predictions = list(
-      c1 = rep("localhost", interpolate_ncpus),  # ncpus for each runmode
-      c2 = rep("localhost", max(1, interpolate_ncpus-1)),
-      c3 = rep("localhost", max(1, interpolate_ncpus-1)),
-      c4 = rep("localhost", max(1, interpolate_ncpus-1)),
-      c5 = rep("localhost", max(1, interpolate_ncpus-2))
-    ),
+    # if a good idea of autocorrelation is missing, forcing via explicit distance limits is an option
     # interpolate_distance_basis = list(
     #   d1 = rep("localhost", interpolate_ncpus),
     #   d2 = rep("localhost", interpolate_ncpus),
