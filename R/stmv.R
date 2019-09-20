@@ -609,6 +609,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         p = p0 #reset
         p$stmv_interpolation_basis_correlation = p$stmv_autocorrelation_interpolation[j]
         p$runmode = paste("interpolate_fast_predictions_correlation_basis_", p$stmv_interpolation_basis_correlation, sep="")
+        if (exists("stmv_fft_filter", p)) p$stmv_fft_filter = paste( p$stmv_fft_filter, "fast_predictions")
         p$clusters = p$stmv_runmode[["interpolate_fast_predictions"]][[j]] # as ram reqeuirements increase drop cpus
         message( "\n||| Entering <", p$runmode, " > : ", format(Sys.time()) )
         currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
