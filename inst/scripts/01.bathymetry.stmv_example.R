@@ -41,7 +41,7 @@ p = aegis.bathymetry::bathymetry_parameters(
   variables = list(Y="z"),  # required as fft has no formulae
   stmv_global_modelengine = "none",  # too much data to use glm as an entry into link space ... use a direct transformation
   stmv_local_modelengine="fft",
-  stmv_fft_filter = "matern tapered lowpass modelled", #  matern with taper
+  stmv_fft_filter = "matern tapered lowpass modelled fast_predictions", #  matern with taper
   stmv_lowpass_nu = 0.5,
   stmv_lowpass_phi = stmv::matern_distance2phi( distance=0.2, nu=0.5, cor=0.1 ),  # note: p$pres = 0.2
   stmv_variogram_method = "fft",
@@ -56,36 +56,29 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_rsquared_threshold = 0.01, # lower threshold  .. i.e., ignore ... there is no timeseries model, nor a fixed effect spatial "model"
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
   stmv_distance_scale = c( 2.5, 5, 10, 20, 40, 80 ), # km ... approx guesses of 95% AC range
-  # stmv_distance_basis_interpolation = c( 5, 10, 15, 20, 40, 80  ) , # range of permissible predictions km (i.e 1/2 stats grid to upper limit) .. in this case 5, 10, 20
+  stmv_distance_basis_interpolation = c( 5, 10, 15, 20, 40, 80  ) , # range of permissible predictions km (i.e 1/2 stats grid to upper limit) .. in this case 5, 10, 20
   stmv_distance_prediction_limits =c( 2.5, 10 ), # range of permissible predictions km (i.e 1/2 stats grid to upper limit based upon data density)
   stmv_nmin = 50,  # min number of data points req before attempting to model in a localized space
   stmv_nmax = 50 * 10, # no real upper bound.. just speed /RAM
   stmv_force_complete_method = "linear",
   stmv_runmode = list(
     scale = rep("localhost", scale_ncpus),
-    # interpolate = list(
-    #   c1 = rep("localhost", interpolate_ncpus),  # ncpus for each runmode
-    #   c2 = rep("localhost", interpolate_ncpus),  # ncpus for each runmode
-    #   c3 = rep("localhost", max(1, interpolate_ncpus-1)),
-    #   c4 = rep("localhost", max(1, interpolate_ncpus-2)),
-    #   c5 = rep("localhost", max(1, interpolate_ncpus-2))
-    # ),
-    interpolate_fast_predictions = list(
+    interpolate = list(
       c1 = rep("localhost", interpolate_ncpus),  # ncpus for each runmode
       c2 = rep("localhost", interpolate_ncpus),  # ncpus for each runmode
       c3 = rep("localhost", max(1, interpolate_ncpus-1)),
       c4 = rep("localhost", max(1, interpolate_ncpus-2)),
       c5 = rep("localhost", max(1, interpolate_ncpus-2))
     ),
-    # interpolate_distance_basis = list(
-    #   d1 = rep("localhost", interpolate_ncpus),
-    #   d2 = rep("localhost", interpolate_ncpus),
-    #   d3 = rep("localhost", max(1, interpolate_ncpus-1)),
-    #   d4 = rep("localhost", max(1, interpolate_ncpus-1)),
-    #   d5 = rep("localhost", max(1, interpolate_ncpus-2)),
-    #   d6 = rep("localhost", max(1, interpolate_ncpus-2))
-    # ),
-    interpolate_force_complete = rep("localhost", max(1, interpolate_ncpus-2)),
+    interpolate_distance_basis = list(
+      d1 = rep("localhost", interpolate_ncpus),
+      d2 = rep("localhost", interpolate_ncpus),
+      d3 = rep("localhost", max(1, interpolate_ncpus-1)),
+      d4 = rep("localhost", max(1, interpolate_ncpus-1)),
+      d5 = rep("localhost", max(1, interpolate_ncpus-2)),
+      d6 = rep("localhost", max(1, interpolate_ncpus-2))
+    ),
+    # interpolate_force_complete = rep("localhost", max(1, interpolate_ncpus-2)),
     globalmodel = FALSE,
     restart_load = FALSE,
     save_completed_data = TRUE # just a dummy variable with the correct name

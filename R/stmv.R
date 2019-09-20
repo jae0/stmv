@@ -591,7 +591,8 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
     # -----------------------------------------------------
     if ("interpolate_fast_predictions" %in% runmode ) {
-      # this must be detected before the main "interpolation" (below) which is a bit slower and more exhausive
+      # this must be detected before the main "interpolation" (below) which is a bit slower and more exhausive ..
+      # choosing this means to do a first pass with this and then interpolate again
       invisible( stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" ))
       if ( "restart_load" %in% runmode ) {
         invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolate_fast_predictions", datasubset="predictions" ) )
@@ -606,7 +607,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
       p0 = p
       for ( j in 1:length(p$stmv_autocorrelation_interpolation) ) {
         p = p0 #reset
-        if (exists("stmv_fft_filter", p)) p$stmv_fft_filter = paste( p$stmv_fft_filter, "fast_predictions")
         p$stmv_interpolation_basis_correlation = p$stmv_autocorrelation_interpolation[j]
         p$runmode = paste("interpolate_fast_predictions_correlation_basis_", p$stmv_interpolation_basis_correlation, sep="")
         p$clusters = p$stmv_runmode[["interpolate_fast_predictions"]][[j]] # as ram reqeuirements increase drop cpus
@@ -622,6 +622,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
       message( paste( "Time used for <Fast interpolations", ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
       p = p0
     }
+
 
     if(0) {
       stmv_db(p=p, DS="load_saved_state", runmode="interpolate_fast_predictions" )
@@ -657,7 +658,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         p$stmv_interpolation_basis_correlation = p$stmv_autocorrelation_interpolation[j]
         p$runmode = paste("interpolate_correlation_basis_", p$stmv_interpolation_basis_correlation, sep="")
         p$clusters = p$stmv_runmode[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
-        if (exists("stmv_fft_filter", p)) p$stmv_fft_filter = paste( p$stmv_fft_filter, "exhaustive_predictions")
         message( "\n||| Entering <", p$runmode, " > : ", format(Sys.time()) )
         currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
         if ( currentstatus$n.todo == 0 ) break()
@@ -702,7 +702,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
       p0 = p
       for ( j in 1:length(p$stmv_distance_basis_interpolation) ) {
         p = p0 #reset
-        # if (exists("stmv_fft_filter", p)) p$stmv_fft_filter = paste( p$stmv_fft_filter, "fast_predictions")
         p$stmv_interpolation_basis_distance = p$stmv_distance_basis_interpolation[j]
         p$runmode = paste("interpolate_distance_basis_", p$stmv_interpolation_basis_distance, sep="")
         p$clusters = p$stmv_runmode[["interpolate_distance_basis"]][[j]] # as ram reqeuirements increase drop cpus
