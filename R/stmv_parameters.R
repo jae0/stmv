@@ -31,19 +31,17 @@ stmv_parameters = function( p=list(), ... ) {
   if( !exists( "stmv_variogram_nbreaks_totry", p)) p$stmv_variogram_nbreaks_totry = c( 16, 21, 32, 47, 63, 77, 51, 13 )  # different numbers of nbreaks can influence variogram stabilty
 
   if( !exists( "stmv_autocorrelation_localrange", p)) p$stmv_autocorrelation_localrange = 0.1   # auto-correlation at which to compute range distance
-  if( !exists( "stmv_autocorrelation_localrange_expanding", p)) p$stmv_autocorrelation_localrange_expanding = c(0.1, 0.01, 0.001)   # auto-correlation at which to compute range distance
-
-  if( !exists( "stmv_autocorrelation_fft_taper", p)) p$stmv_autocorrelation_fft_taper = 0   # scale at which to mark tapering
+  if( !exists( "stmv_autocorrelation_fft_taper", p))  p$stmv_autocorrelation_fft_taper = 0.75   # scale at which to mark tapering
 
   if (!exists( "stmv_global_family", p)) p$stmv_global_family = gaussian(link = "identity")
 
   if (!exists( "boundary", p)) p$boundary = FALSE
-  if (!exists( "depth.filter", p)) p$depth.filter = FALSE # if !FALSE .. depth is given as m so, choose andy stats locations with elevation > 1 m as being on land
+  if (!exists( "stmv_filter_depth_m", p)) p$stmv_filter_depth_m = FALSE # if !FALSE .. depth is given as m so, choose andy stats locations with elevation > 1 m as being on land
 
-  if (!exists( "stmv_nmin_downsize_factor", p)) p$stmv_nmin_downsize_factor = c(1.0, 0.9, 0.8, 0.7, 0.6, 0.5)
+  if (!exists( "stmv_nmin_downsize_factor", p)) p$stmv_nmin_downsize_factor = c(1.0, 0.9, 0.8, 0.7)
 
-  if (!exists( "stmv_lowpass_phi", p)) p$stmv_lowpass_phi = p$pres*2 # FFT based method when operating gloablly
   if (!exists( "stmv_lowpass_nu", p)) p$stmv_lowpass_nu = 0.5 # this is exponential covar
+  if (!exists( "stmv_lowpass_phi", p)) p$stmv_lowpass_phi = stmv::matern_distance2phi( distance=ifelse(exists("pres", p), p$pres, stop("'p$pres' needs to be defined")), nu=p$stmv_lowpass_nu, cor=p$stmv_autocorrelation_localrange ) # FFT based method when operating gloablly
 
   # used by "fields" GRMF functions
   if ( p$stmv_local_modelengine %in% c("gaussianprocess2Dt")) {

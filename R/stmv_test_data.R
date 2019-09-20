@@ -91,7 +91,7 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
     if (is.null(p)) p = stmv_test_data( "aegis.test.paramaters")
 
     pb = bathymetry_parameters( project.mode="stmv" )
-    B = bathymetry.db( p=pb,  DS="stmv.inputs")$input  # this is a subset of "complete" with depth filtered
+    B = bathymetry.db( p=pb,  DS="stmv.inputs")$input  # this is a subset of "complete" with depths filtered
     B = planar2lonlat( B, proj.type=pb$internal.crs )
     # B = B[,c( "lon", "lat", "z")]
     B = B[ which( B$lon > p$corners$lon[1] & B$lon < p$corners$lon[2]  & B$lat > p$corners$lat[1] & B$lat < p$corners$lat[2] ), ]

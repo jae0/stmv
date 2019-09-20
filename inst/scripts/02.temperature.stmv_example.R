@@ -50,7 +50,7 @@ p = aegis.temperature::temperature_parameters(
   DATA = DATA,
   spatial.domain = p0$spatial.domain,
   spatial.domain.subareas =NULL,  # prevent subgrid estimation
-  pres_discretization_temperature = 1 / 10, # 0.5==p$pres; controls resolution of data prior to modelling (km .. ie 20 linear units smaller than the final discretization pres)
+  inputdata_spatial_discretization_planar_km = 1 / 10, # 0.5==p$pres; controls resolution of data prior to modelling (km .. ie 20 linear units smaller than the final discretization pres)
   yrs = year.start:year.assessment,
   stmv_dimensionality="space-year-season",
   stmv_global_modelengine = "none",
@@ -72,7 +72,7 @@ p = aegis.temperature::temperature_parameters(
   stmv_autocorrelation_localrange = 0.1,  # for reporting
   stmv_autocorrelation_interpolation = c(  0.2, 0.1, 0.05, 0.01, 0.001 ),  # range finding
   stmv_local_model_distanceweighted = TRUE,
-  depth.filter = 5, # the depth covariate is input as units of depth (m) so, choose stats locations with elevation > 10m as being on land
+  stmv_filter_depth_m = 5, # the depth covariate is input as units of depth (m) so, choose stats locations with elevation > 10m as being on land
   stmv_rsquared_threshold = 0.001, # lower thindreshold for timeseries model
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
   stmv_distance_scale = c( 2, 5, 10, 15, 20, 40, 80  ), # km ... approx guess of 95% AC range, the range also determine limits of localrange

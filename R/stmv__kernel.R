@@ -64,7 +64,7 @@ stmv__kernel = function( p=NULL, dat=NULL, pa=NULL, phi=NULL, nu=NULL, varObs=NU
       # pa$sd[pa_i[tokeep]] = sd( dat[xi,p$variable$Y], na.rm=T)   ## fix
       X = NULL
     }  else if (grepl("exhaustive_predictions", p$stmv_fft_filter) ) {
-        X_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=resolution )
+      X_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=res )
       tokeep = which( X_i[,1] >= 1 & X_i[,2] >= 1  & X_i[,1] <= nr & X_i[,2] <= nc )
       if (length(tokeep) < 1) next()
       X_i = X_i[tokeep,]

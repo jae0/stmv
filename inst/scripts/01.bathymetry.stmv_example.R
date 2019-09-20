@@ -36,7 +36,7 @@ p = aegis.bathymetry::bathymetry_parameters(
   data_root = file.path(work_root, "bathymetry_example"),
   DATA = DATA,
   spatial.domain = p0$spatial.domain,
-  pres_discretization_bathymetry = p0$pres,
+  inputdata_spatial_discretization_planar_km = p0$pres,
   stmv_dimensionality="space",
   variables = list(Y="z"),  # required as fft has no formulae
   stmv_global_modelengine = "none",  # too much data to use glm as an entry into link space ... use a direct transformation
@@ -48,7 +48,7 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_autocorrelation_fft_taper = 0.9,  # benchmark from which to taper .. high data density truncate local predictions to capture heterogeneity
   stmv_autocorrelation_localrange = 0.1,
   stmv_autocorrelation_interpolation = c(0.5, 0.25, 0.1, 0.01, 0.001),  # start with smaller localrange estimates and expand
-  depth.filter = FALSE,  # need data above sea level to get coastline
+  stmv_filter_depth_m = FALSE,  # need data above sea level to get coastline
   stmv_Y_transform =list(
     transf = function(x) {log10(x + 2500)} ,
     invers = function(x) {10^(x) - 2500}

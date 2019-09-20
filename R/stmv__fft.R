@@ -112,7 +112,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
   mC = NULL
 
   origin = c(x_r[1], x_c[1])
-  resolution = c(dx, dy)
+  res = c(dx, dy)
 
   # precompute a few things that are used repeatedly for time-specific variograms
   xy = expand_grid_fast( c(-(nr-1):0, 0:(nr-1)) * dr,  c(-(nc-1):0, 0:(nc-1)) * dc )
@@ -126,7 +126,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
   distances = NULL
   breaks = NULL
 
-  coo = as.matrix(array_map( "xy->2", coords=dat[, p$variables$LOCS], origin=origin, res=resolution ))
+  coo = as.matrix(array_map( "xy->2", coords=dat[, p$variables$LOCS], origin=origin, res=res ))
   good = which(coo[,1] >= 1 & coo[,1] <= nr & coo[,2] >= 1  & coo[,2] )
   if (length(good) > 0) {
     coo = coo[good,]
@@ -172,7 +172,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
     if (0) {
       u = as.image(
         X,
-        ind=as.matrix(array_map( "xy->2", coords=dat[xi, p$variables$LOCS], origin=origin, res=resolution )),
+        ind=as.matrix(array_map( "xy->2", coords=dat[xi, p$variables$LOCS], origin=origin, res=res )),
         na.rm=TRUE,
         nx=nr,
         ny=nc
@@ -339,7 +339,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
       pa$mean[pa_i] = X
       X = NULL
     } else if (grepl("exhaustive_predictions", p$stmv_fft_filter) ) {
-        X_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=resolution )
+        X_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=res )
       tokeep = which( X_i[,1] >= 1 & X_i[,2] >= 1  & X_i[,1] <= nr & X_i[,2] <= nc )
       if (length(tokeep) < 1) next()
       X_i = X_i[tokeep,]

@@ -70,10 +70,10 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
   out$nr = nr
   out$nc = nc
   out$origin = origin = c(x_r[1], x_c[1])
-  out$resolution  = resolution = c(dr, dc)
+  out$res  = res = c(dr, dc)
 
   #  Nadaraya/Watson normalization for missing values s
-  coo = as.matrix(array_map( "xy->2", coords=xyz[,c("x", "y")], origin=origin, res=resolution ))
+  coo = as.matrix(array_map( "xy->2", coords=xyz[,c("x", "y")], origin=origin, res=res ))
 
   yy = tapply( X=z, INDEX=list(coo[,1], coo[,2]),  FUN = function(w) {mean(w, na.rm=TRUE)}, simplify=TRUE )
   nn = tapply( X=z, INDEX=list(coo[,1], coo[,2]), FUN = function(w) {length(w)}, simplify=TRUE )

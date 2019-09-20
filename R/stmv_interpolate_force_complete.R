@@ -224,7 +224,7 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
     vgm = NA
 
     origin = c(x_r[1], x_c[1])
-    resolution = c(dx, dy)
+    res = c(dx, dy)
 
     # precompute a few things that are used repeatedly for time-specific variograms
     xy = expand_grid_fast( c(-(nr-1):0, 0:(nr-1)) * dr,  c(-(nc-1):0, 0:(nc-1)) * dc )

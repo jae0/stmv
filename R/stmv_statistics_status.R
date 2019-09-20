@@ -47,13 +47,13 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NUL
         message( paste( "||| Time taken to estimate spatial bounds (mins):", round( difftime( Sys.time(), timeb0, units="mins" ),3) ) )
       }
 
-      if ( exists("depth.filter", p) && is.finite(p$depth.filter) ) {
+      if ( exists("stmv_filter_depth_m", p) && is.finite(p$stmv_filter_depth_m) ) {
         # additionaldepth-based filter:
         # assuming that there is depth information in Pcov, match Sloc's and filter out locations that fall on land
         if ( "z" %in% p$variables$COV ){
           z = stmv_attach( p$storage.backend, p$ptr$Pcov[["z"]] )[]
-          Pabove = which( z < p$depth.filter ) # negative = above land:: depth = - height
-          Pbelow = which( z >= p$depth.filter )
+          Pabove = which( z < p$stmv_filter_depth_m ) # negative = above land:: depth = - height
+          Pbelow = which( z >= p$stmv_filter_depth_m )
 
           Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
           Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
@@ -187,7 +187,7 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NUL
   out$todo = which( Sflag[]==E[["todo"]] )       # 0 = TODO
   out$complete = which( Sflag[]==E[["complete"]] )       # 1 = completed
   out$outside_bounds = which( Sflag[]==E[["outside_bounds"]] )    # 2 = oustide bounds(if any)
-  out$too_shallow = which( Sflag[]==E[["too_shallow"]] )    # 3 = depth shallower than p$depth.filter (if it exists .. z is a covariate)
+  out$too_shallow = which( Sflag[]==E[["too_shallow"]] )    # 3 = depth shallower than p$stmv_filter_depth_m (if it exists .. z is a covariate)
   out$prediction_area = which( Sflag[]==E[["prediction_area"]] ) # 4=predictionarea not ok,
   out$local_model_error = which( Sflag[]==E[["local_model_error"]] ) # 4=predictionarea not ok,
   out$insufficient_data = which( Sflag[]==E[["insufficient_data"]] )     # 5=skipped due to insufficient data,

@@ -328,10 +328,10 @@
       }
 
       shallower = NULL
-      if ( exists("depth.filter", p) && is.finite( p$depth.filter) ) {
+      if ( exists("stmv_filter_depth_m", p) && is.finite( p$stmv_filter_depth_m) ) {
         if ( "z" %in% p$variables$COV ){
           depths = stmv_attach( p$storage.backend, p$ptr$Pcov[["z"]] )[]
-          ii = which( depths[] < p$depth.filter )
+          ii = which( depths[] < p$stmv_filter_depth_m )
           if (length(ii) > 0) shallower = ii
           ii= depths=NULL
         }

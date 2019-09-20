@@ -17,6 +17,9 @@ stmv__akima = function( p=NULL,  dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) 
   xo = seq(x_r[1], x_r[2], length.out = nr )
   yo = seq(x_c[1], x_c[2], length.out = nc )
 
+  origin=c(x_r[1], x_c[1])
+  res=c(p$pres, p$pres)
+
   dat$mean = NA
   pa$mean = NA
   pa$sd = NA
@@ -49,7 +52,7 @@ stmv__akima = function( p=NULL,  dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) 
     if (length(ub) > 0) X[ub] = rY[2]
     ub = NULL
 
-    X_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=resolution )
+    X_i = array_map( "xy->2", coords=pa[pa_i, p$variables$LOCS], origin=origin, res=res )
     tokeep = which( X_i[,1] >= 1 & X_i[,2] >= 1  & X_i[,1] <= nr & X_i[,2] <= nc )
     if (length(tokeep) < 1) next()
     X_i = X_i[tokeep,]
