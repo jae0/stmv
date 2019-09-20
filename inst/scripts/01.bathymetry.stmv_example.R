@@ -117,7 +117,7 @@ stmv( p=p  )  # This will take from a few minutes, depending upon system
 
 predictions = stmv_db( p=p, DS="stmv.prediction", ret="mean" )
 statistics  = stmv_db( p=p, DS="stmv.stats" )
-locations = DATA$output$LOCS  # or: locations   = spatial_grid( p )
+locations =  spatial_grid( p )
 
 # comparison
 dev.new(); surface( as.image( Z=predictions, x=locations, nx=p$nplons, ny=p$nplats, na.rm=TRUE) )

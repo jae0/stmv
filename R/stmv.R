@@ -28,7 +28,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
     TF = c( sapply(p$stmv_runmode, is.logical ))
     o[TF] = p$stmv_runmode[TF]
     s_runmode = s_runmode[ unlist(o) ]
-    runmode = intersect(s_runmode, c( "globalmodel", "scale", "interpolate", "interpolate_distance_basis", "interpolate_force_complete", "save_completed_data", "restart_load") )
+    runmode = intersect(s_runmode, c( "globalmodel", "scale", "interpolate_fast_predictions", "interpolate", "interpolate_distance_basis", "interpolate_force_complete", "save_completed_data", "restart_load") )
   }
   message( "Runmodes: ", paste(runmode, ", ", sep=" ")  )
 
@@ -608,7 +608,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         p = p0 #reset
         if (exists("stmv_fft_filter", p)) p$stmv_fft_filter = paste( p$stmv_fft_filter, "fast_predictions")
         p$stmv_interpolation_basis_correlation = p$stmv_autocorrelation_interpolation[j]
-        p$runmode = paste("interpolate_correlation_basis_", p$stmv_interpolation_basis_correlation, sep="")
+        p$runmode = paste("interpolate_fast_predictions_correlation_basis_", p$stmv_interpolation_basis_correlation, sep="")
         p$clusters = p$stmv_runmode[["interpolate_fast_predictions"]][[j]] # as ram reqeuirements increase drop cpus
         message( "\n||| Entering <", p$runmode, " > : ", format(Sys.time()) )
         currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
@@ -617,9 +617,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         invisible( parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) ) )
         stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="predictions")
         invisible( stmv_statistics_status( p=p ) ) # quick update before logging
-        slog = stmv_logfile(p=p, flag= paste("Interpolation correlation basis phase", p$runmode, "completed ...") ) # final update before continuing
+        slog = stmv_logfile(p=p, flag= paste("Fast Interpolation correlation basis phase", p$runmode, "completed ...") ) # final update before continuing
       }
-      message( paste( "Time used for <interpolations", ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
+      message( paste( "Time used for <Fast interpolations", ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
       p = p0
     }
 
