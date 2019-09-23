@@ -6,7 +6,7 @@
 
     # --------------------------
     if (!exists("stmvSaveDir", p)) {
-      p$stmvSaveDir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
+      p$stmvSaveDir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial_domain )
     }
 
     if (DS %in% "filenames" ) {
@@ -54,7 +54,7 @@
           p$saved_state_fn$P0sd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd0", "rdata", sep="." ) )
         }
 
-      if (p$storage.backend == "bigmemory.filebacked" ) {
+      if (p$storage_backend == "bigmemory.filebacked" ) {
         p$bm = p$cache
         for ( i in names(p$bm) ) {
           if ( i=="Pcov" ) {
@@ -65,7 +65,7 @@
         }
       }
 
-      if (p$storage.backend == "bigmemory.ram" ) {
+      if (p$storage_backend == "bigmemory.ram" ) {
         p$bm=list() # initial storage of ram objects
       }
 
@@ -121,7 +121,7 @@
       }
 
       # data:
-      Y = stmv_attach(  p$storage.backend, p$ptr$Y )
+      Y = stmv_attach(  p$storage_backend, p$ptr$Y )
       hasdata = 1:length(Y)
       bad = which( !is.finite( Y[]))
       if (length(bad)> 0 ) hasdata[bad] = NA
@@ -129,7 +129,7 @@
       # covariates (independent vars)
       if ( exists( "COV", p$variables) ) {
         if (length(p$variables$COV) > 0) {
-          Ycov = stmv_attach(  p$storage.backend, p$ptr$Ycov )
+          Ycov = stmv_attach(  p$storage_backend, p$ptr$Ycov )
           if ( length( p$variables$COV ) == 1 ) {
             bad = which( !is.finite( Ycov[]) )
           } else {
@@ -140,7 +140,7 @@
       }
 
       ii = na.omit(hasdata)
-      Yloc = stmv_attach(  p$storage.backend, p$ptr$Yloc )
+      Yloc = stmv_attach(  p$storage_backend, p$ptr$Yloc )
       yplon = round( ( Yloc[ii,1] - p$origin[1] )/p$pres) + 1
       yplat = round( ( Yloc[ii,2] - p$origin[2] )/p$pres) + 1
       uu = unique( array_map( "2->1", cbind(yplon, yplat), c(p$nplons, p$nplats) ) )
@@ -152,7 +152,7 @@
       boundary=list( polygon = non_convex_hull( ww, alpha=p$stmv_nonconvexhull_alpha, plot=FALSE ) )
 
       # statistical output locations
-      Sloc = stmv_attach(  p$storage.backend, p$ptr$Sloc )
+      Sloc = stmv_attach(  p$storage_backend, p$ptr$Sloc )
       boundary$inside.polygon = point.in.polygon( Sloc[,1], Sloc[,2],
           boundary$polygon[,1], boundary$polygon[,2], mode.checked=TRUE )
 
@@ -330,7 +330,7 @@
       shallower = NULL
       if ( exists("stmv_filter_depth_m", p) && is.finite( p$stmv_filter_depth_m) ) {
         if ( "z" %in% p$variables$COV ){
-          depths = stmv_attach( p$storage.backend, p$ptr$Pcov[["z"]] )[]
+          depths = stmv_attach( p$storage_backend, p$ptr$Pcov[["z"]] )[]
           ii = which( depths[] < p$stmv_filter_depth_m )
           if (length(ii) > 0) shallower = ii
           ii= depths=NULL
@@ -349,11 +349,11 @@
           FUNC= function( ip=NULL, p, shallower ) {
             if (exists( "libs", p)) RLibrary( p$libs )
             if (is.null(ip)) ip = 1:p$nruns
-            PP = stmv_attach( p$storage.backend, p$ptr$P )
-            PPsd = stmv_attach( p$storage.backend, p$ptr$Psd )
+            PP = stmv_attach( p$storage_backend, p$ptr$P )
+            PPsd = stmv_attach( p$storage_backend, p$ptr$Psd )
               if (p$stmv_global_modelengine !="none" ) {
-                P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
-                P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )
+                P0 = stmv_attach( p$storage_backend, p$ptr$P0 )
+                P0sd = stmv_attach( p$storage_backend, p$ptr$P0sd )
               }
             vv = ncol(PP)
             for (it in ip) {
@@ -419,11 +419,11 @@
       } else {
         # serial run only ...
 
-        PP = stmv_attach( p$storage.backend, p$ptr$P )
-        PPsd = stmv_attach( p$storage.backend, p$ptr$Psd )
+        PP = stmv_attach( p$storage_backend, p$ptr$P )
+        PPsd = stmv_attach( p$storage_backend, p$ptr$Psd )
           if (p$stmv_global_modelengine !="none" ) {
-            P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
-            P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )
+            P0 = stmv_attach( p$storage_backend, p$ptr$P0 )
+            P0sd = stmv_attach( p$storage_backend, p$ptr$P0sd )
           }
 
         P = PP[]
@@ -467,9 +467,9 @@
 
       # prediction.stats .. warp to same resolution
 
-      Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
-      S = stmv_attach( p$storage.backend, p$ptr$S )
-      Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
+      Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
+      S = stmv_attach( p$storage_backend, p$ptr$S )
+      Sloc = stmv_attach( p$storage_backend, p$ptr$Sloc )
       # system size
       #nr = nx
       #nc = ny
@@ -540,7 +540,7 @@
 
       if(0) {
         i = 1
-        Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+        Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
         Z = smooth.2d( Y=P[], x=Ploc[], ncol=p$nplats, nrow=p$nplons, cov.function=stationary.cov, Covariance="Matern", range=p$stmv_lowpass_phi, nu=p$stmv_lowpass_nu )
         dev.new(); image(Z)
         dev.new();lattice::levelplot( P[] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
@@ -560,47 +560,47 @@
 
       # named differently to avoid collisions
       if ( "P" %in% datasubset ) {
-        sP = stmv_attach( p$storage.backend, p$ptr$P )[]
+        sP = stmv_attach( p$storage_backend, p$ptr$P )[]
         save( sP, file=paste(p$saved_state_fn$P, runmode, sep="."), compress=TRUE )
         sP = NULL
 
       }
       if ( "P0" %in% datasubset ) {
         if (p$stmv_global_modelengine !="none" ) {
-          sP0 = stmv_attach( p$storage.backend, p$ptr$P0 )[]
+          sP0 = stmv_attach( p$storage_backend, p$ptr$P0 )[]
           save( sP0,   file=paste(p$saved_state_fn$P0, runmode, sep="."),   compress=TRUE )
           sP0 = NULL
         }
       }
 
       if ( "Psd" %in% datasubset ) {
-        sPsd = stmv_attach( p$storage.backend, p$ptr$Psd )[]
+        sPsd = stmv_attach( p$storage_backend, p$ptr$Psd )[]
         save( sPsd, file=paste(p$saved_state_fn$Psd, runmode, sep="."), compress=TRUE )
         sPsd = NULL
       }
 
       if ( "P0sd" %in% datasubset ) {
         if (p$stmv_global_modelengine !="none" ) {
-            sP0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )[]
+            sP0sd = stmv_attach( p$storage_backend, p$ptr$P0sd )[]
             save( sP0sd, file=paste(p$saved_state_fn$P0sd, runmode, sep="."),   compress=TRUE )
             sP0sd = NULL
           }
       }
 
       if ( "Pn" %in% datasubset ) {
-        sPn = stmv_attach( p$storage.backend, p$ptr$Pn )[]
+        sPn = stmv_attach( p$storage_backend, p$ptr$Pn )[]
         save( sPn, file=paste(p$saved_state_fn$Pn, runmode, sep="."), compress=TRUE )
         sPn = NULL
       }
 
       if ( "S" %in% datasubset ) {
-        sS = stmv_attach( p$storage.backend, p$ptr$S )[]
+        sS = stmv_attach( p$storage_backend, p$ptr$S )[]
         save( sS, file=paste(p$saved_state_fn$stats, runmode, sep="."), compress=TRUE )
         sS = NULL
       }
 
       if ( "Sflag" %in% datasubset ) {
-        sSflag = stmv_attach( p$storage.backend, p$ptr$Sflag )[]
+        sSflag = stmv_attach( p$storage_backend, p$ptr$Sflag )[]
         save( sSflag, file=paste(p$saved_state_fn$sflag, runmode, sep="."), compress=TRUE )
         sSflag = NULL
       }
@@ -620,7 +620,7 @@
 
       # named differently to avoid collisions
       if ( "P" %in% datasubset ) {
-        P = stmv_attach( p$storage.backend, p$ptr$P )
+        P = stmv_attach( p$storage_backend, p$ptr$P )
         sP = matrix( NaN, nrow=nrow(P), ncol=ncol(P) )
         if (file.exists(paste( p$saved_state_fn$P, runmode, sep="."))) {
           load( paste( p$saved_state_fn$P, runmode, sep=".") )
@@ -634,7 +634,7 @@
 
       if ( "P0" %in% datasubset ) {
         if (p$stmv_global_modelengine !="none" ) {
-          P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
+          P0 = stmv_attach( p$storage_backend, p$ptr$P0 )
           sP0 = matrix( NaN, nrow=nrow(P0), ncol=ncol(P0) )
           if (file.exists(paste( p$saved_state_fn$P0, runmode, sep="."))) {
             load( paste( p$saved_state_fn$P0, runmode, sep=".") )
@@ -648,7 +648,7 @@
       }
 
       if ( "Psd" %in% datasubset ) {
-        Psd = stmv_attach( p$storage.backend, p$ptr$Psd )
+        Psd = stmv_attach( p$storage_backend, p$ptr$Psd )
         sPsd = matrix( NaN, nrow=nrow(Psd), ncol=ncol(Psd) )
         if (file.exists(paste( p$saved_state_fn$Psd, runmode, sep="."))) {
           load( paste( p$saved_state_fn$Psd, runmode, sep=".") )
@@ -662,7 +662,7 @@
 
       if ( "P0sd" %in% datasubset ) {
         if (p$stmv_global_modelengine !="none" ) {
-          P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd )
+          P0sd = stmv_attach( p$storage_backend, p$ptr$P0sd )
           sP0sd = matrix( NaN, nrow=nrow(P0sd), ncol=ncol(P0sd) )
           if (file.exists(paste( p$saved_state_fn$P0sd, runmode, sep="."))) {
             load( paste( p$saved_state_fn$P0sd, runmode, sep=".") )
@@ -676,7 +676,7 @@
       }
 
       if ( "Pn" %in% datasubset ) {
-        Pn = stmv_attach( p$storage.backend, p$ptr$Pn )
+        Pn = stmv_attach( p$storage_backend, p$ptr$Pn )
         sPn = matrix( NaN, nrow=nrow(Pn), ncol=ncol(Pn) )
         if (file.exists(paste( p$saved_state_fn$Pn, runmode, sep="."))) {
           load( paste( p$saved_state_fn$Pn, runmode, sep=".") )
@@ -690,7 +690,7 @@
 
 
       if ( "S" %in% datasubset ) {
-        S = stmv_attach( p$storage.backend, p$ptr$S )
+        S = stmv_attach( p$storage_backend, p$ptr$S )
         sS = matrix( NaN, nrow=nrow(S), ncol=ncol(S) )
         if (file.exists(paste( p$saved_state_fn$stats, runmode, sep="."))) {
           load( paste( p$saved_state_fn$stats, runmode, sep=".") )
@@ -700,8 +700,8 @@
           stats = NULL
           load(fn)
           if (is.null(stats)) stop ("stmv.stats empty")
-          Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
-          Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+          Sloc = stmv_attach( p$storage_backend, p$ptr$Sloc )
+          Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
           nx = length(seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ))
           ny = length(seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ) )
           if (nx*ny != nrow(S) ) stop( "stmv.statistics has the wrong dimensionality/size" )
@@ -722,7 +722,7 @@
       }
 
       if ( "Sflag" %in% datasubset ) {
-        Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
+        Sflag = stmv_attach( p$storage_backend, p$ptr$Sflag )
         sSflag = matrix( NaN, nrow=nrow(Sflag), ncol=ncol(Sflag) )
         if (file.exists(paste( p$saved_state_fn$sflag, runmode, sep="."))) {
           load( paste( p$saved_state_fn$sflag, runmode, sep=".") )

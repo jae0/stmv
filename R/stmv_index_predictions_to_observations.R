@@ -1,8 +1,8 @@
 
   stmv_index_predictions_to_observations = function(p) {
 
-    Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
-    Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
+    Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
+    Yloc = stmv_attach( p$storage_backend, p$ptr$Yloc )
     coo = Yloc[]
     coo[,1] = round( coo[,1] / p$pres  ) * p$pres
     coo[,2] = round( coo[,2] / p$pres  ) * p$pres
@@ -16,11 +16,11 @@
       # nothing to do
     }
     if ( p$stmv_dimensionality =="space-year" ) {
-      Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )
+      Ytime = stmv_attach( p$storage_backend, p$ptr$Ytime )
       iYP = cbind(iYP, match( trunc(Ytime[]), p$yrs ) )
     }
     if ( p$stmv_dimensionality =="space-year-season" ) {
-      Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )
+      Ytime = stmv_attach( p$storage_backend, p$ptr$Ytime )
       yrs = trunc(Ytime[])
       dyear = Ytime[] - yrs
       dyear_breaks = c(p$dyears, p$dyears[length(p$dyears)]+ diff(p$dyears)[1] )

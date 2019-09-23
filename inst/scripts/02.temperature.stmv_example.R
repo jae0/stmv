@@ -12,17 +12,17 @@ scale_ram_required_main_process = 0.8 # GB twostep / fft -- 5 min
 scale_ram_required_per_process  = 1.25 # twostep / fft /fields vario ..  (mostly 0.5 GB, but up to 5 GB) -- 20 hrs
 scale_ncpus = min( parallel::detectCores(), floor( (ram_local()- scale_ram_required_main_process) / scale_ram_required_per_process ) )
 
-# about 4 hrs
+# about 32 hrs !
 interpolate_ram_required_main_process = 2.5 # GB twostep / fft  -- 4 hrs
-interpolate_ram_required_per_process  = 5 # 1 GB seems enough for twostep / fft /fields vario .. but make 2 in case
+interpolate_ram_required_per_process  = 5 # 1 GB seems enough for twostep / fft /fields vario .. but can take more
 interpolate_ncpus = min( parallel::detectCores(), floor( (ram_local()- interpolate_ram_required_main_process) / interpolate_ram_required_per_process ) )
 
 
 # p = aegis.temperature::temperature_parameters( yrs=yrs )  # these are default years
 
 # prep input data:
-p0 = aegis::spatial_parameters( spatial.domain="temperature_test",
-  internal.crs="+proj=utm +ellps=WGS84 +zone=20 +units=km",
+p0 = aegis::spatial_parameters( spatial_domain="temperature_test",
+  aegis_proj4string_planar_km="+proj=utm +ellps=WGS84 +zone=20 +units=km",
   dres=1/60/4, pres=0.5, lon0=-64, lon1=-62, lat0=44, lat1=45, psignif=2 )
 # or:  p0 = stmv_test_data( "aegis.test.paramaters")
 
@@ -35,7 +35,7 @@ DATA = list(
     )
   )
 )
-DATA$input = lonlat2planar( DATA$input, p0$internal.crs )
+DATA$input = lonlat2planar( DATA$input, p0$aegis_proj4string_planar_km )
 DATA$input = DATA$input[, c("plon", "plat", "tiyr", "z", "t")]   ## yr, cos.w and sin.w are note required as they are computed internally
 
 
@@ -45,11 +45,11 @@ dev.new(); fields::surface( fields::as.image( Z=DATA$input$t, x=DATA$input[, c("
 
 p = aegis.temperature::temperature_parameters(
   p=p0,  # start with spatial settings of input data
-  project.mode="stmv",
+  project_class="stmv",
   data_root = file.path(work_root, "temperature_test"),
   DATA = DATA,
-  spatial.domain = p0$spatial.domain,
-  spatial.domain.subareas =NULL,  # prevent subgrid estimation
+  spatial_domain = p0$spatial_domain,
+  spatial_domain_subareas =NULL,  # prevent subgrid estimation
   inputdata_spatial_discretization_planar_km = 1 / 10, # 0.5==p$pres; controls resolution of data prior to modelling (km .. ie 20 linear units smaller than the final discretization pres)
   yrs = year.start:year.assessment,
   stmv_dimensionality="space-year-season",
@@ -57,39 +57,40 @@ p = aegis.temperature::temperature_parameters(
   stmv_local_modelengine = "twostep" ,
   stmv_local_modelformula_time = formula( paste(
     't',
-    '~ s( yr, k=', round(nyrs*0.25), ', bs="ts") + s(cos.w, k=3, bs="ts") + s(sin.w, k=3, bs="ts")  ',
-    '+ s( yr, cos.w, sin.w, k=', round(nyrs*0.25), ', bs="ts") ',
+    '~ s( yr, k=', round(nyrs*0.3), ', bs="ts") + s(cos.w, k=3, bs="ts") + s(sin.w, k=3, bs="ts")  ',
+    '+ s( yr, cos.w, sin.w, k=', round(nyrs*0.3), ', bs="ts") ',
     '+ s( log(z), k=3, bs="ts") + s( plon, k=3, bs="ts") + s( plat, k=3, bs="ts")  ',
     '+ s( log(z), plon, plat, k=6, bs="ts")  '
     ) ),
   stmv_twostep_time = "gam",
   stmv_twostep_space = "fft",  # everything else is too slow ...
 #  stmv_fft_filter="lowpass matern tapered modelled fast_predictions",  # options for fft method: also matern, krige (very slow), lowpass, lowpass_matern, stmv_variogram_resolve_time
-  stmv_fft_filter="lowpass matern tapered modelled fast_predictions",  # options for fft method: also matern, krige (very slow), lowpass, lowpass_matern, stmv_variogram_resolve_time
+  stmv_fft_filter="lowpass matern tapered modelled exhaustive_predictions",  # options for fft method: also matern, krige (very slow), lowpass, lowpass_matern, stmv_variogram_resolve_time,
+   # exhaustive_predictions required as data density is variable and low
   stmv_lowpass_nu = 0.5,  # 0.5=exponential, 1=gaussian
   stmv_lowpass_phi = stmv::matern_distance2phi( distance=0.5, nu=0.5, cor=0.1 ),  # note: p$pres = 0.5
   stmv_variogram_method = "fft",
-  stmv_autocorrelation_fft_taper = 0.8,  # benchmark from which to taper .. user level control of smoothness
-  stmv_autocorrelation_localrange = 0.1,  # for reporting
-  stmv_autocorrelation_interpolation = c(  0.2, 0.1, 0.05, 0.01, 0.001 ),  # range finding
+  stmv_autocorrelation_fft_taper = 0.75,  # benchmark from which to taper .. user level control of smoothness
+  stmv_autocorrelation_localrange = 0.1,  # for reporting in stats
+  stmv_autocorrelation_basis_interpolation = c(  0.3, 0.2, 0.1, 0.01, 0.001 ),  # range finding
   stmv_local_model_distanceweighted = TRUE,
   stmv_filter_depth_m = 5, # the depth covariate is input as units of depth (m) so, choose stats locations with elevation > 10m as being on land
   stmv_rsquared_threshold = 0.001, # lower thindreshold for timeseries model
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
   stmv_distance_scale = c( 2, 5, 10, 15, 20, 40, 80  ), # km ... approx guess of 95% AC range, the range also determine limits of localrange
   stmv_distance_basis_interpolation = c( 5, 10, 15, 20, 40, 80  ) , # range of permissible predictions km (i.e 1/2 stats grid to upper limit) .. in this case 5, 10, 20
-  stmv_distance_prediction_limits =c( 2.5, 12.5 ), # range of permissible predictions km (i.e 1/2 stats grid to upper limit) .. in this case 5, 10, 20
-  stmv_nmin = 100,  # min number of unit spatial locations req before attempting to model in a localized space .. control no error in local model
-  stmv_nmax = 100*nyrs, # no real upper bound.. just speed / RAM limits  .. can go up to 10 GB / core if too large
+  stmv_distance_prediction_limits =c( 2.5, 5 ), # range of permissible predictions km (i.e 1/2 stats grid to upper limit) .. in this case 5, 10, 20
+  stmv_nmin = 120,  # min number of unit spatial locations req before attempting to model in a localized space .. control no error in local model
+  stmv_nmax = 120*(nyrs/2), # no real upper bound.. just speed / RAM limits  .. can go up to 10 GB / core if too large
   stmv_tmin = round( nyrs * 1.25 ),
   stmv_force_complete_method = "linear",
   stmv_runmode = list(
     scale = rep("localhost", scale_ncpus),  # 7 min
     interpolate = list(
       c1 = rep("localhost", interpolate_ncpus),  # ncpus for each runmode
-      c2 = rep("localhost", max(1, interpolate_ncpus-1)),
+      c2 = rep("localhost", max(1, interpolate_ncpus)),
       c3 = rep("localhost", max(1, interpolate_ncpus-1)),
-      c4 = rep("localhost", max(1, interpolate_ncpus-1)),
+      c4 = rep("localhost", max(1, interpolate_ncpus-2)),
       c5 = rep("localhost", max(1, interpolate_ncpus-2))
     ),
     # if a good idea of autocorrelation is missing, forcing via explicit distance limits is an option

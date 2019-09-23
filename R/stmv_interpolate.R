@@ -23,21 +23,19 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
   if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
 
 
-
-
   #---------------------
   # data for modelling
-  S = stmv_attach( p$storage.backend, p$ptr$S )
-  Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
+  S = stmv_attach( p$storage_backend, p$ptr$S )
+  Sflag = stmv_attach( p$storage_backend, p$ptr$Sflag )
   E = stmv_error_codes()
 
-  Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
-  Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
+  Sloc = stmv_attach( p$storage_backend, p$ptr$Sloc )
+  Yloc = stmv_attach( p$storage_backend, p$ptr$Yloc )
 
-  Y = stmv_attach( p$storage.backend, p$ptr$Y )
+  Y = stmv_attach( p$storage_backend, p$ptr$Y )
 
-  if (p$nloccov > 0) Ycov = stmv_attach( p$storage.backend, p$ptr$Ycov )
-  if ( exists("TIME", p$variables) ) Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )
+  if (p$nloccov > 0) Ycov = stmv_attach( p$storage_backend, p$ptr$Ycov )
+  if ( exists("TIME", p$variables) ) Ytime = stmv_attach( p$storage_backend, p$ptr$Ytime )
 
   # misc intermediate calcs to be done outside of parallel loops
 
@@ -189,10 +187,15 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     if (p$nloccov > 0) dat[,icov] = Ycov[data_subset$data_index, icov_local] # no need for other dim checks as this is user provided
     if (exists("TIME", p$variables)) {
       dat[, itime_cov] = as.matrix(stmv_timecovars( vars=ti_cov, ti=Ytime[data_subset$data_index,] ) )
-      dat[, which(dat_names==p$variables$TIME) ] = Ytime[data_subset$data_index,] # not sure if this is needed ?...
+      dat[, which(dat_names==p$variables$TIME) ] = Ytime[data_subset$data_index,]
+      # crude check of number of time slices
+      n_time_slices = stmv_discretize_coordinates( coo=dat[, p$variables$TIME], ntarget=p$nt, minresolution=p$minresolution[3], method="thin"  )
+      if ( length(n_time_slices) < p$stmv_tmin )  next()
     }
     dat = as.data.frame(dat)
     names(dat) = dat_names
+    dat_range = range( dat[,iY], na.rm=TRUE )
+
 
     # remember that these are crude mean/discretized estimates
     if (debugging) {
@@ -213,6 +216,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     windowsize.half = 1L + round( prediction_area / p$pres )
     # construct data (including covariates) for prediction locations (pa)
     pa = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=windowsize.half ) )
+
     if (is.null(pa)) {
       Sflag[Si] = E[["prediction_area"]]
       if (debugging) message( Si )
@@ -231,9 +235,9 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
       dev.new()
       # check that position indices are working properly
-      Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
-      Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
-      Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
+      Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
+      Sloc = stmv_attach( p$storage_backend, p$ptr$Sloc )
+      Yloc = stmv_attach( p$storage_backend, p$ptr$Yloc )
       plot( Yloc[data_subset$data_index,2] ~ Yloc[data_subset$data_index,1], col="red", pch=".",
         ylim=range(c(Yloc[data_subset$data_index,2], Sloc[Si,2], Ploc[pa$i,2]) ),
         xlim=range(c(Yloc[data_subset$data_index,1], Sloc[Si,1], Ploc[pa$i,1]) ) ) # all data
@@ -267,7 +271,6 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       )
     )
 
-    dat_range = range( dat[,iY], na.rm=TRUE )
 
     dat =  NULL
     pa  =  NULL
@@ -299,7 +302,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       next()
     }
 
-    if (length(which( is.finite(res$predictions$mean ))) < 5) {
+    if (length(which( is.finite(res$predictions$mean ))) < 1) {
       Sflag[Si] =  E[["prediction_error"]]   # modelling / prediction did not complete properly
       res = NULL
       if (debugging) {

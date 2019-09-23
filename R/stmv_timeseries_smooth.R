@@ -15,7 +15,7 @@ stmv_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvarso
     if (p$nloccov > 0) {
       for (ci in 1:p$nloccov) {
         vn = p$variables$local_cov[ci]
-        pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
+        pu = stmv_attach( p$storage_backend, p$ptr$Pcov[[vn]] )
         nts = ncol(pu)
         if ( nts==1 ) tokeep = c(tokeep, vn )
       }
@@ -28,7 +28,7 @@ stmv_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvarso
     # add temporal grid
     if ( exists("TIME", p$variables) ) {
       datgridded = cbind( datgridded[ rep.int(1:datgridded_n, p$nt), ],
-                      rep.int(p$prediction.ts, rep(datgridded_n, p$nt )) )
+                      rep.int(p$prediction_ts, rep(datgridded_n, p$nt )) )
       names(datgridded)[ ncol(datgridded) ] = p$variables$TIME
       datgridded = cbind( datgridded, stmv_timecovars ( vars=p$variables$local_all, ti=datgridded[,p$variables$TIME]  ) )
     }
@@ -37,7 +37,7 @@ stmv_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvarso
       # add time-varying covars .. not necessary except when covars are modelled locally
       for (ci in 1:p$nloccov) {
         vn = p$variables$local_cov[ci]
-        pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
+        pu = stmv_attach( p$storage_backend, p$ptr$Pcov[[vn]] )
         nts = ncol(pu)
         if ( nts== 1) {
           # static vars are retained in the previous step
@@ -81,7 +81,7 @@ stmv_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvarso
     adims = c(p$nt, pa_w_n, pa_w_n )
     datgridded$id = array_map( "3->1",
       coords = round( cbind(
-        ( (datgridded[,p$variables$TIME ] - p$prediction.ts[1] ) / p$tres) + 1 ,
+        ( (datgridded[,p$variables$TIME ] - p$prediction_ts[1] ) / p$tres) + 1 ,
         ( windowsize.half + (datgridded[,p$variables$LOCS[1]] - sloc[1]) / p$pres) + 1,
         ( windowsize.half + (datgridded[,p$variables$LOCS[2]] - sloc[2]) / p$pres) + 1)),
       dims=adims )
@@ -117,7 +117,7 @@ stmv_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvarso
         for (ci in 1:p$nloccov) {
           vn = p$variables$local_cov[ci]
           pu = NULL
-          pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
+          pu = stmv_attach( p$storage_backend, p$ptr$Pcov[[vn]] )
           nts = ncol(pu)
           if ( nts== 1 ) {
             pvars = c( pvars, vn )
@@ -133,7 +133,7 @@ stmv_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvarso
         for (ci in 1:p$nloccov) {
           vn = p$variables$local_cov[ci]
           pu = NULL
-          pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
+          pu = stmv_attach( p$storage_backend, p$ptr$Pcov[[vn]] )
           nts = ncol(pu)
           if ( nts == p$ny )  {
             datgridded$iy = datgridded$yr - p$yrs[1] + 1 #yr index

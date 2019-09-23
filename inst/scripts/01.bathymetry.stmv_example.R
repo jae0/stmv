@@ -17,8 +17,8 @@ interpolate_ram_required_per_process  = 1.5 # twostep / fft /fields vario ..
 interpolate_ncpus = min( parallel::detectCores(), floor( (ram_local()- interpolate_ram_required_main_process) / interpolate_ram_required_per_process ) )
 
 
-p0 = aegis::spatial_parameters( spatial.domain="bathymetry_example",
-  internal.crs="+proj=utm +ellps=WGS84 +zone=20 +units=km",
+p0 = aegis::spatial_parameters( spatial_domain="bathymetry_example",
+  aegis_proj4string_planar_km="+proj=utm +ellps=WGS84 +zone=20 +units=km",
   dres=1/60/4, pres=0.5, lon0=-64, lon1=-62, lat0=44, lat1=45, psignif=2 )
 # or:  p0 = stmv_test_data( "aegis.test.paramaters")
 
@@ -27,27 +27,27 @@ DATA = list(
   output = list( LOCS = spatial_grid(p0) )
 )
 
-DATA$input = lonlat2planar( DATA$input, p0$internal.crs )
+DATA$input = lonlat2planar( DATA$input, p0$aegis_proj4string_planar_km )
 DATA$input = DATA$input[, c("plon", "plat", "z")]
 
 p = aegis.bathymetry::bathymetry_parameters(
   p=p0,  # start with spatial settings of input data
-  project.mode="stmv",
+  project_class="stmv",
   data_root = file.path(work_root, "bathymetry_example"),
   DATA = DATA,
-  spatial.domain = p0$spatial.domain,
+  spatial_domain = p0$spatial_domain,
   inputdata_spatial_discretization_planar_km = p0$pres,
   stmv_dimensionality="space",
   variables = list(Y="z"),  # required as fft has no formulae
   stmv_global_modelengine = "none",  # too much data to use glm as an entry into link space ... use a direct transformation
   stmv_local_modelengine="fft",
-  stmv_fft_filter = "matern tapered lowpass modelled fast_predictions", #  matern with taper
+  stmv_fft_filter = "matern tapered lowpass modelled fast_predictions", #  matern with taper, fast predictions are sufficient as data density is high
   stmv_lowpass_nu = 0.5,
   stmv_lowpass_phi = stmv::matern_distance2phi( distance=0.2, nu=0.5, cor=0.1 ),  # note: p$pres = 0.2
   stmv_variogram_method = "fft",
   stmv_autocorrelation_fft_taper = 0.75,  # benchmark from which to taper .. high data density truncate local predictions to capture heterogeneity
   stmv_autocorrelation_localrange = 0.1,
-  stmv_autocorrelation_interpolation = c(0.5, 0.25, 0.1, 0.01, 0.001),  # start with smaller localrange estimates and expand
+  stmv_autocorrelation_basis_interpolation = c(0.5, 0.25, 0.1, 0.01, 0.001),  # start with smaller localrange estimates and expand
   stmv_filter_depth_m = FALSE,  # need data above sea level to get coastline
   stmv_Y_transform =list(
     transf = function(x) {log10(x + 2500)} ,
@@ -86,7 +86,7 @@ p = aegis.bathymetry::bathymetry_parameters(
   )  # ncpus for each runmode
 )
 
-p$spatial.domain.subareas =NULL
+p$spatial_domain_subareas =NULL
 
 if (0) {
   # to force serial mode

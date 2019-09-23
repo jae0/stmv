@@ -90,13 +90,13 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
 
     if (is.null(p)) p = stmv_test_data( "aegis.test.paramaters")
 
-    pb = bathymetry_parameters( project.mode="stmv" )
-    B = bathymetry.db( p=pb,  DS="stmv.inputs")$input  # this is a subset of "complete" with depths filtered
-    B = planar2lonlat( B, proj.type=pb$internal.crs )
+    pb = bathymetry_parameters( project_class="stmv" )
+    B = bathymetry.db( p=pb,  DS="stmv_inputs")$input  # this is a subset of "complete" with depths filtered
+    B = planar2lonlat( B, proj.type=pb$aegis_proj4string_planar_km )
     # B = B[,c( "lon", "lat", "z")]
     B = B[ which( B$lon > p$corners$lon[1] & B$lon < p$corners$lon[2]  & B$lat > p$corners$lat[1] & B$lat < p$corners$lat[2] ), ]
 
-    ps = substrate_parameters( project.mode="stmv" )
+    ps = substrate_parameters( project_class="stmv" )
     S = substrate.db( p=ps, DS="lonlat.highres" )
 
     S = S[ which( S$lon > p$corners$lon[1] & S$lon < p$corners$lon[2] & S$lat > p$corners$lat[1] & S$lat < p$corners$lat[2] ) , ]
@@ -104,7 +104,7 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
     S = S[ ,c("lon", "lat", "substrate.grainsize" )]
     S$plon = NULL
     S$plat = NULL
-    S = lonlat2planar( S, proj.type=p$internal.crs )
+    S = lonlat2planar( S, proj.type=p$aegis_proj4string_planar_km )
     S$lon = NULL
     S$lat = NULL
     S$plon = round(S$plon/discret  )* discret
@@ -112,7 +112,7 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
     dups = which(duplicated( paste( S$plon, S$plat) ) )
     if (length(dups) > 0 ) S = S[ -dups , ]
 
-    B = lonlat2planar( B, proj.type=p$internal.crs )
+    B = lonlat2planar( B, proj.type=p$aegis_proj4string_planar_km )
     B$lon = NULL
     B$lat = NULL
     B$plon = round(B$plon/discret ) * discret
@@ -121,7 +121,7 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
     if (length(dups) > 0 ) B = B[ -dups , ]
 
     out = merge( B[,c("plon", "plat", "z")], S[, c("plon", "plat", "substrate.grainsize")], by=c("plon", "plat"), all.x=TRUE, all.y=TRUE )
-    out = planar2lonlat( out, proj.type=p$internal.crs )
+    out = planar2lonlat( out, proj.type=p$aegis_proj4string_planar_km )
     out$plon = out$plat = NULL
 
     save(out, file=fn, compress=TRUE)
@@ -141,7 +141,7 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
       return(out)
     }
 
-    p = temperature_parameters( spatial.domain="SSE" )
+    p = temperature_parameters( spatial_domain="SSE" )
 
     out = temperature.db( p=p, DS="bottom.all"  )
     out = out[ which( out$lon > p$corners$lon[1] & out$lon < p$corners$lon[2] & out$lat > p$corners$lat[1] & out$lat < p$corners$lat[2] ) , ]
@@ -177,7 +177,7 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
       return(out)
     }
 
-    pb = bathymetry_parameters( spatial.domain="SSE" )
+    pb = bathymetry_parameters( spatial_domain="SSE" )
     B = bathymetry.db( p=pb, DS="complete"  )
 
     # output locations
@@ -202,7 +202,7 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
 
   if ( datasource == "aegis.test.paramaters" ) {
       # dres  is the 15 second grid from CHS  .. default use highest resolution
-    p = aegis::spatial_parameters( spatial.domain="testing", internal.crs="+proj=utm +ellps=WGS84 +zone=20 +units=km", dres=1/60/4, pres=0.5, lon0=-64, lon1=-62, lat0=44, lat1=45, psignif=2 )
+    p = aegis::spatial_parameters( spatial_domain="testing", aegis_proj4string_planar_km="+proj=utm +ellps=WGS84 +zone=20 +units=km", dres=1/60/4, pres=0.5, lon0=-64, lon1=-62, lat0=44, lat1=45, psignif=2 )
     return(p)
   }
 
@@ -216,7 +216,7 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
 
   if (0) {
 
-    p = aegis::spatial_parameters( spatial.domain="testing", internal.crs="+proj=utm +ellps=WGS84 +zone=20 +units=km", dres=1/60/4, pres=0.5, lon0=-64, lon1=-62, lat0=44, lat1=45, psignif=2 )
+    p = aegis::spatial_parameters( spatial_domain="testing", aegis_proj4string_planar_km="+proj=utm +ellps=WGS84 +zone=20 +units=km", dres=1/60/4, pres=0.5, lon0=-64, lon1=-62, lat0=44, lat1=45, psignif=2 )
     # or:  p = stmv_test_data( "aegis.test.paramaters")
 
     PREDLOCS = spatial_grid(p)

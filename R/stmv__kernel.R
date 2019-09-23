@@ -38,8 +38,8 @@ stmv__kernel = function( p=NULL, dat=NULL, pa=NULL, phi=NULL, nu=NULL, varObs=NU
   for ( ti in 1:p$nt ) {
 
     if ( exists("TIME", p$variables) ) {
-      xi   = which( dat[ , p$variables$TIME] == p$prediction.ts[ti] )
-      pa_i = which( pa[, p$variables$TIME] == p$prediction.ts[ti] )
+      xi   = which( dat[ , p$variables$TIME] == p$prediction_ts[ti] )
+      pa_i = which( pa[, p$variables$TIME] == p$prediction_ts[ti] )
       if (length(xi) < 5 ) {
         # print( ti)
         next()

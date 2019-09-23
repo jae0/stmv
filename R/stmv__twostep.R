@@ -18,10 +18,6 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
 
   if (variablelist)  return( c() )
 
-  # crude check of number of time slices
-  n_time_slices = stmv_discretize_coordinates( coo=dat[, p$variables$TIME], ntarget=p$nt, minresolution=p$minresolution[3], method="thin"  )
-  if ( length(n_time_slices) < p$stmv_tmin )  return(NULL)
-
   px = dat # only the static parts .. time has to be a uniform grid so reconstruct below
 
   ids = array_map( "xy->1", px[, c("plon", "plat")], gridparams=p$gridparams ) # 100X faster than paste / merge
@@ -35,7 +31,7 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
   if (p$nloccov > 0) {
     for (ci in 1:p$nloccov) {
       vn = p$variables$local_cov[ci]
-      pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
+      pu = stmv_attach( p$storage_backend, p$ptr$Pcov[[vn]] )
       nts = ncol(pu)
       if ( nts==1 ) tokeep = c(tokeep, vn )
     }
@@ -47,7 +43,7 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
   # add temporal grid
   if ( exists("TIME", p$variables) ) {
     px = cbind( px[ rep.int(1:px_n, p$nt), ],
-                    rep.int(p$prediction.ts, rep(px_n, p$nt )) )
+                    rep.int(p$prediction_ts, rep(px_n, p$nt )) )
     names(px)[ ncol(px) ] = p$variables$TIME
     px = cbind( px, stmv_timecovars ( vars=p$variables$local_all, ti=px[,p$variables$TIME]  ) )
   }
@@ -56,7 +52,7 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
     # add time-varying covars .. not necessary except when covars are modelled locally
     for (ci in 1:p$nloccov) {
       vn = p$variables$local_cov[ci]
-      pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
+      pu = stmv_attach( p$storage_backend, p$ptr$Pcov[[vn]] )
       nts = ncol(pu)
       if ( nts== 1) {
         # static vars are retained in the previous step
@@ -114,7 +110,7 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
   if(0){
       # debugging plots
       for (ti in 1:p$nt){
-        xi = which( pxts[ , p$variables$TIME ] == p$prediction.ts[ti] )
+        xi = which( pxts[ , p$variables$TIME ] == p$prediction_ts[ti] )
         mbas = MBA::mba.surf( pxts[xi, c( p$variables$LOCS, p$variables$Y) ], 300, 300, extend=TRUE)$xyz.est
         image(mbas)
       }

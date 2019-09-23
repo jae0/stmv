@@ -25,8 +25,8 @@ stmv__constant = function( p=NULL,  dat=NULL, pa=NULL,  variablelist=FALSE, ... 
   for ( ti in 1:p$nt ) {
 
     if ( exists("TIME", p$variables) ) {
-      xi   = which( dat[ , p$variables$TIME] == p$prediction.ts[ti] )
-      pa_i = which( pa[, p$variables$TIME] == p$prediction.ts[ti] )
+      xi   = which( dat[ , p$variables$TIME] == p$prediction_ts[ti] )
+      pa_i = which( pa[, p$variables$TIME] == p$prediction_ts[ti] )
       if (length(xi) < 5 ) {
         # print( ti)
         next()

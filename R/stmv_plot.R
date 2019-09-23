@@ -10,9 +10,9 @@
 
     pp = grep("datalocation", obj )
       if ( length(pp) > 0 ) {
-        Y = stmv_attach( p$storage.backend, p$ptr$Y )
-        Y0 = stmv_attach( p$storage.backend, p$ptr$Y0 )
-        Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
+        Y = stmv_attach( p$storage_backend, p$ptr$Y )
+        Y0 = stmv_attach( p$storage_backend, p$ptr$Y0 )
+        Yloc = stmv_attach( p$storage_backend, p$ptr$Yloc )
         lattice::levelplot( Y0 ~ Yloc[,1] + Yloc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
       }
 
@@ -20,8 +20,8 @@
 
       pp = grep("statistics", obj )
       if ( length(pp) > 0 ) {
-        S = stmv_attach( p$storage.backend, p$ptr$S )
-        Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
+        S = stmv_attach( p$storage_backend, p$ptr$S )
+        Sloc = stmv_attach( p$storage_backend, p$ptr$Sloc )
         # vname = "ar_timerange"
         v = which( p$statsvars == vname)
         lattice::levelplot( (S[,v]) ~ Sloc[,1] + Sloc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
@@ -29,9 +29,9 @@
 
       pp = grep("predictions", obj )
       if ( length(pp) > 0 ) {
-        P = stmv_attach( p$storage.backend, p$ptr$P )
-        # P0 = stmv_attach( p$storage.backend, p$ptr$P0 )
-        Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+        P = stmv_attach( p$storage_backend, p$ptr$P )
+        # P0 = stmv_attach( p$storage_backend, p$ptr$P0 )
+        Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
         lattice::levelplot( (P[,100]) ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
       }
 

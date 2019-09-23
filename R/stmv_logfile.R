@@ -36,7 +36,7 @@ stmv_logfile = function(p, flag="default"){
   nclusters = 1
   if (exists("clusters", p)) nclusters = length(p$clusters)
 
-  cat( paste( "---", p$data_root, p$variables$Y, p$spatial.domain, "--- \n\n"), file=fn, append=FALSE )
+  cat( paste( "---", p$data_root, p$variables$Y, p$spatial_domain, "--- \n\n"), file=fn, append=FALSE )
   cat( paste( "Runmode : ", flag, "\n"), file=fn, append=TRUE )
   cat( paste( "Start time :", p$time_start, "\n"), file=fn, append=TRUE )
   cat( paste( "Start time of current runmode : ", time_runmode, "\n"), file=fn, append=TRUE )

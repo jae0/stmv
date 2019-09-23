@@ -15,11 +15,11 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
   p = parallel_run( p=p, runindex=list( time_index=1:p$nt )  )
   ip = 1:p$nruns
 
-  S = stmv_attach( p$storage.backend, p$ptr$S )
+  S = stmv_attach( p$storage_backend, p$ptr$S )
 
-  P = stmv_attach( p$storage.backend, p$ptr$P )
-  Psd = stmv_attach( p$storage.backend, p$ptr$Psd )
-  Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+  P = stmv_attach( p$storage_backend, p$ptr$P )
+  Psd = stmv_attach( p$storage_backend, p$ptr$Psd )
+  Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
 
   dx = dy = p$pres
   nr = p$nplons

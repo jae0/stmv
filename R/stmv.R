@@ -91,7 +91,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   if ( !exists("stmv_tmin", p))  p$stmv_tmin = max(1, floor( p$nt / 5) )  # min no of time slices in twostep modelling
 
   # prediction times for space.annual methods, treat time as independent timeslices
-  if ( !exists("prediction.ts", p)) p$prediction.ts = 1
+  if ( !exists("prediction_ts", p)) p$prediction_ts = 1
 
   message( "\n")
   message( "||| Initializing temporary storage of data and output files... ")
@@ -108,16 +108,16 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
 
   if (exists("stmv_Y_transform", p)) Ydata = p$stmv_Y_transform$transf( Ydata )
-  if (p$storage.backend == "bigmemory.ram" ) {
+  if (p$storage_backend == "bigmemory.ram" ) {
     tmp_Y = big.matrix( nrow=nrow(Ydata), ncol=1, type="double"  )
     tmp_Y[] = Ydata[]
     p$ptr$Y  = bigmemory::describe( tmp_Y )
   }
-  if (p$storage.backend == "bigmemory.filebacked" ) {
+  if (p$storage_backend == "bigmemory.filebacked" ) {
     p$ptr$Y  = p$cache$Y
     bigmemory::as.big.matrix( Ydata, type="double", backingfile=basename(p$bm$Y), descriptorfile=basename(p$cache$Y), backingpath=p$stmvSaveDir )
   }
-  if (p$storage.backend == "ff" ) {
+  if (p$storage_backend == "ff" ) {
     p$ptr$Y = ff( Ydata, dim=dim(Ydata), file=p$cache$Y, overwrite=TRUE )
   }
 
@@ -153,7 +153,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         ub = which( Ydata > Yq_link[2])
         if (length(lb) > 0) Ydata[lb] = Yq_link[1]
         if (length(ub) > 0) Ydata[ub] = Yq_link[2]
-      Y = stmv_attach( p$storage.backend, p$ptr$Y )
+      Y = stmv_attach( p$storage_backend, p$ptr$Y )
       Y[] = Ydata[]
       Ydata = NULL
       gc()
@@ -164,16 +164,16 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
   # data coordinates
   Yloc = as.matrix( DATA$input[, p$variables$LOCS ])
-  if (p$storage.backend == "bigmemory.ram" ) {
+  if (p$storage_backend == "bigmemory.ram" ) {
     tmp_Yloc = big.matrix( nrow=nrow(Yloc), ncol=ncol(Yloc), type="double" )
     tmp_Yloc[] = Yloc[]
     p$ptr$Yloc = bigmemory::describe( tmp_Yloc )
   }
-  if (p$storage.backend == "bigmemory.filebacked" ) {
+  if (p$storage_backend == "bigmemory.filebacked" ) {
     p$ptr$Yloc  = p$cache$Yloc
     bigmemory::as.big.matrix( Yloc, type="double", backingfile=basename(p$bm$Yloc), descriptorfile=basename(p$cache$Yloc), backingpath=p$stmvSaveDir )
   }
-  if (p$storage.backend == "ff" ) {
+  if (p$storage_backend == "ff" ) {
     p$ptr$Yloc = ff( Yloc, dim=dim(Yloc), file=p$cache$Yloc, overwrite=TRUE )
   }
   Yloc = NULL
@@ -182,16 +182,16 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   if (exists("COV", p$variables)) {
     if (length(p$variables$COV) > 0) {
       Ycov = as.matrix(  DATA$input[ , p$variables$COV ] )
-      if (p$storage.backend == "bigmemory.ram" ) {
+      if (p$storage_backend == "bigmemory.ram" ) {
         tmp_Ycov = big.matrix( nrow=nrow(Ycov), ncol=ncol(Ycov), type="double")
         tmp_Ycov[] = Ycov[]
         p$ptr$Ycov  = bigmemory::describe( tmp_Ycov )
       }
-      if (p$storage.backend == "bigmemory.filebacked" ) {
+      if (p$storage_backend == "bigmemory.filebacked" ) {
         p$ptr$Ycov  = p$cache$Ycov
         bigmemory::as.big.matrix( Ycov, type="double", backingfile=basename(p$bm$Ycov), descriptorfile=basename(p$cache$Ycov), backingpath=p$stmvSaveDir )
       }
-      if (p$storage.backend == "ff" ) {
+      if (p$storage_backend == "ff" ) {
         p$ptr$Ycov = ff( Ycov, dim=dim(Ycov), file=p$cache$Ycov, overwrite=TRUE )
       }
       Ycov= NULL
@@ -201,24 +201,24 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   # data times
   if ( exists("TIME", p$variables) ) {
     Ytime = as.matrix(  DATA$input[, p$variables$TIME ] )
-    if (p$storage.backend == "bigmemory.ram" ) {
+    if (p$storage_backend == "bigmemory.ram" ) {
       tmp_Ytime = big.matrix( nrow=nrow(Ytime), ncol=ncol(Ytime), type="double"  )
       tmp_Ytime[] = Ytime[]
       p$ptr$Ytime  = bigmemory::describe( tmp_Ytime )
     }
-    if (p$storage.backend == "bigmemory.filebacked" ) {
+    if (p$storage_backend == "bigmemory.filebacked" ) {
       p$ptr$Ytime  = p$cache$Ytime
       bigmemory::as.big.matrix( Ytime, type="double", backingfile=basename(p$bm$Ytime), descriptorfile=basename(p$cache$Ytime), backingpath=p$stmvSaveDir )
     }
-    if (p$storage.backend == "ff" ) {
+    if (p$storage_backend == "ff" ) {
       p$ptr$Ytime = ff( Ytime, dim=dim(Ytime), file=p$cache$Ytime, overwrite=TRUE )
     }
     Ytime =NULL;
   }
 
 
-  Y = stmv_attach( p$storage.backend, p$ptr$Y )
-  Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
+  Y = stmv_attach( p$storage_backend, p$ptr$Y )
+  Yloc = stmv_attach( p$storage_backend, p$ptr$Yloc )
   Yi = 1:length(Y) # index with useable data
   bad = which( !is.finite( Y[]))
   if (length(bad)> 0 ) Yi[bad] = NA
@@ -230,7 +230,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   # data locations
   if (exists("COV", p$variables)) {
     if (length(p$variables$COV) > 0) {
-      Ycov = stmv_attach( p$storage.backend, p$ptr$Ycov )
+      Ycov = stmv_attach( p$storage_backend, p$ptr$Ycov )
       if (length(p$variables$COV)==1) {
         bad = which( !is.finite( Ycov[] ))
       } else {
@@ -243,7 +243,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
   # data locations
   if (exists("TIME", p$variables)) {
-    Ytime = stmv_attach( p$storage.backend, p$ptr$Ytime )
+    Ytime = stmv_attach( p$storage_backend, p$ptr$Ytime )
     bad = which( !is.finite( Ytime[] ))
     if (length(bad)> 0 ) Yi[bad] = NA
     Yi = na.omit(Yi)
@@ -251,16 +251,16 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   bad = NULL
 
   Yi = as.matrix(Yi)
-  if (p$storage.backend == "bigmemory.ram" ) {
+  if (p$storage_backend == "bigmemory.ram" ) {
     tmp_Yi = big.matrix( nrow=nrow(Yi), ncol=ncol(Yi), type="double" )
     tmp_Yi[] = Yi[]
     p$ptr$Yi  = bigmemory::describe( tmp_Yi )
   }
-  if (p$storage.backend == "bigmemory.filebacked" ) {
+  if (p$storage_backend == "bigmemory.filebacked" ) {
     p$ptr$Yi  = p$cache$Yi
     bigmemory::as.big.matrix( Yi, type="double", backingfile=basename(p$bm$Yi), descriptorfile=basename(p$cache$Yi), backingpath=p$stmvSaveDir )
   }
-  if (p$storage.backend == "ff" ) {
+  if (p$storage_backend == "ff" ) {
     p$ptr$Yi = ff( Yi, dim=dim(Yi), file=p$cache$Yi, overwrite=TRUE )
   }
   Yi=NULL
@@ -279,16 +279,16 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   Sloc = as.matrix( expand_grid_fast( sbox$plons, sbox$plats ))
   nSloc = nrow(Sloc)
 
-  if (p$storage.backend == "bigmemory.ram" ) {
+  if (p$storage_backend == "bigmemory.ram" ) {
     tmp_Sloc = big.matrix(nrow=nSloc, ncol=ncol(Sloc), type="double"  )
     tmp_Sloc[] = Sloc[]
     p$ptr$Sloc  = bigmemory::describe( tmp_Sloc  )
   }
-  if (p$storage.backend == "bigmemory.filebacked" ) {
+  if (p$storage_backend == "bigmemory.filebacked" ) {
     p$ptr$Sloc  = p$cache$Sloc
     bigmemory::as.big.matrix( Sloc, type="double", backingfile=basename(p$bm$Sloc), descriptorfile=basename(p$cache$Sloc), backingpath=p$stmvSaveDir )
   }
-  if (p$storage.backend == "ff" ) {
+  if (p$storage_backend == "ff" ) {
     p$ptr$Sloc = ff( Sloc, dim=dim(Sloc), file=p$cache$Sloc, overwrite=TRUE )
   }
   Sloc = NULL
@@ -296,32 +296,32 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
 
   sS = matrix( NaN, nrow=nSloc, ncol=length( p$statsvars ) ) # NA forces into logical
-  if (p$storage.backend == "bigmemory.ram" ) {
+  if (p$storage_backend == "bigmemory.ram" ) {
     tmp_S = big.matrix(nrow=nSloc, ncol=length( p$statsvars ), type="double"  )
     tmp_S[] = sS[]
     p$ptr$S  = bigmemory::describe( tmp_S )
   }
-  if (p$storage.backend == "bigmemory.filebacked" ) {
+  if (p$storage_backend == "bigmemory.filebacked" ) {
     p$ptr$S  = p$cache$S
     bigmemory::as.big.matrix( sS, type="double", backingfile=basename(p$bm$S), descriptorfile=basename(p$cache$S), backingpath=p$stmvSaveDir )
   }
-  if (p$storage.backend == "ff" ) {
+  if (p$storage_backend == "ff" ) {
     p$ptr$S = ff( sS, dim=dim(sS), file=p$cache$S, overwrite=TRUE )
   }
   sS = NULL
 
 
   sSflag = matrix( stmv_error_codes()[["todo"]], nrow=nSloc, ncol=1 )
-  if (p$storage.backend == "bigmemory.ram" ) {
+  if (p$storage_backend == "bigmemory.ram" ) {
     tmp_Sflag = big.matrix(nrow=length(sSflag), ncol=1, type="double" )
     tmp_Sflag[] = sSflag[]
     p$ptr$Sflag  = bigmemory::describe( tmp_Sflag )
   }
-  if (p$storage.backend == "bigmemory.filebacked" ) {
+  if (p$storage_backend == "bigmemory.filebacked" ) {
     p$ptr$Sflag  = p$cache$Sflag
     bigmemory::as.big.matrix( sSflag, type="double", backingfile=basename(p$bm$Sflag), descriptorfile=basename(p$cache$Sflag), backingpath=p$stmvSaveDir )
   }
-  if (p$storage.backend == "ff" ) {
+  if (p$storage_backend == "ff" ) {
     p$ptr$Sflag = ff( sSflag, dim=dim(sSflag), file=p$cache$Sflag, overwrite=TRUE )
   }
   sSflag = NULL
@@ -347,16 +347,16 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
           stop()
         }
         attr( Pcovdata, "dimnames" ) = NULL
-        if (p$storage.backend == "bigmemory.ram" ) {
+        if (p$storage_backend == "bigmemory.ram" ) {
           tmp_Pcov[[covname]] = big.matrix( nrow=nPcovloc, ncol=ncol(Pcovdata), type="double"  )
           tmp_Pcov[[covname]][] = Pcovdata[]
           p$ptr$Pcov[[covname]]  = bigmemory::describe( tmp_Pcov[[covname]] )
         }
-        if (p$storage.backend == "bigmemory.filebacked" ) {
+        if (p$storage_backend == "bigmemory.filebacked" ) {
           p$ptr$Pcov[[covname]]  = p$cache$Pcov[[covname]]
           bigmemory::as.big.matrix( Pcovdata, type="double", backingfile=basename(p$bm$Pcov[[covname]]), descriptorfile=basename(p$cache$Pcov[[covname]]), backingpath=p$stmvSaveDir )
         }
-        if (p$storage.backend == "ff" ) {
+        if (p$storage_backend == "ff" ) {
           p$ptr$Pcov[[covname]] = ff( Pcovdata, dim=dim(Pcovdata), file=p$cache$Pcov[[covname]], overwrite=TRUE )
         }
         Pcovdata = NULL
@@ -371,16 +371,16 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
   # predictions and associated stats
   sP = matrix( NaN, nrow=nPloc, ncol=p$nt )
-  if (p$storage.backend == "bigmemory.ram" ) {
+  if (p$storage_backend == "bigmemory.ram" ) {
     tmp_P = big.matrix( nrow=nrow(sP), ncol=ncol(sP), type="double" )
     tmp_P[] = sP[]
     p$ptr$P  = bigmemory::describe( tmp_P )
   }
-  if (p$storage.backend == "bigmemory.filebacked" ) {
+  if (p$storage_backend == "bigmemory.filebacked" ) {
     p$ptr$P  = p$cache$P
     bigmemory::as.big.matrix( sP, type="double", backingfile=basename(p$bm$P), descriptorfile=basename(p$cache$P), backingpath=p$stmvSaveDir )
   }
-  if (p$storage.backend == "ff" ) {
+  if (p$storage_backend == "ff" ) {
     p$ptr$P = ff( sP, dim=dim(sP), file=p$cache$P, overwrite=TRUE )
   }
   sP = NULL
@@ -388,32 +388,32 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
   # count of prediction estimates
   sPn = matrix( NaN, nrow=nPloc, ncol=p$nt )
-  if (p$storage.backend == "bigmemory.ram" ) {
+  if (p$storage_backend == "bigmemory.ram" ) {
     tmp_Pn = big.matrix( nrow=nrow(sPn), ncol=ncol(sPn), type="double" )
     tmp_Pn[] = sPn[]
     p$ptr$Pn = bigmemory::describe( tmp_Pn )
   }
-  if (p$storage.backend == "bigmemory.filebacked" ) {
+  if (p$storage_backend == "bigmemory.filebacked" ) {
     p$ptr$Pn  = p$cache$Pn
     bigmemory::as.big.matrix( sPn, type="double", backingfile=basename(p$bm$Pn), descriptorfile=basename(p$cache$Pn), backingpath=p$stmvSaveDir )
   }
-  if (p$storage.backend == "ff" ) {
+  if (p$storage_backend == "ff" ) {
     p$ptr$Pn = ff( sPn, dim=dim(sPn), file=p$cache$Pn, overwrite=TRUE )
   }
   sPn = NULL
 
   # sd of prediction estimates
   sPsd = matrix( NaN, nrow=nPloc, ncol=p$nt )
-  if (p$storage.backend == "bigmemory.ram" ) {
+  if (p$storage_backend == "bigmemory.ram" ) {
     tmp_Psd = big.matrix( nrow=nrow(sPsd), ncol=ncol(sPsd), type="double" )
     tmp_Psd[] = sPsd[]
     p$ptr$Psd =bigmemory::describe( tmp_Psd )
   }
-  if (p$storage.backend == "bigmemory.filebacked" ) {
+  if (p$storage_backend == "bigmemory.filebacked" ) {
     p$ptr$Psd  = p$cache$Psd
     bigmemory::as.big.matrix( sPsd, type="double", backingfile=basename(p$bm$Psd), descriptorfile=basename(p$cache$Psd), backingpath=p$stmvSaveDir )
   }
-  if (p$storage.backend == "ff" ) {
+  if (p$storage_backend == "ff" ) {
     p$ptr$Psd = ff( sPsd, dim=dim(sPsd), file=p$cache$Psd, overwrite=TRUE )
   }
   sPsd = NULL
@@ -422,16 +422,16 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   # prediction coordinates
   Ploc = as.matrix( DATA$output$LOCS )
   attr( Ploc, "dimnames" ) = NULL
-  if (p$storage.backend == "bigmemory.ram" ) {
+  if (p$storage_backend == "bigmemory.ram" ) {
     tmp_Ploc = big.matrix( nrow=nrow(Ploc), ncol=ncol(Ploc), type="double" )
     tmp_Ploc[] = Ploc[]
     p$ptr$Ploc  = bigmemory::describe( tmp_Ploc )
   }
-  if (p$storage.backend == "bigmemory.filebacked" ) {
+  if (p$storage_backend == "bigmemory.filebacked" ) {
     p$ptr$Ploc  = p$cache$Ploc
     bigmemory::as.big.matrix( Ploc, type="double", backingfile=basename(p$bm$Ploc), descriptorfile=basename(p$cache$Ploc), backingpath=p$stmvSaveDir )
   }
-  if (p$storage.backend == "ff" ) {
+  if (p$storage_backend == "ff" ) {
     p$ptr$Ploc = ff( Ploc, dim=dim(Ploc), file=p$cache$Ploc, overwrite=TRUE )
   }
   Ploc = NULL;
@@ -444,16 +444,16 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
     if (p$stmv_global_modelengine !="none" ) {
       sP0 = matrix( NaN, nrow=nPloc, ncol=p$nt )
       if (!is.null(sP0)) {
-        if (p$storage.backend == "bigmemory.ram" ) {
+        if (p$storage_backend == "bigmemory.ram" ) {
           tmp_P0= big.matrix( nrow=nrow(sP0), ncol=ncol(sP0) , type="double" )
           tmp_P0[] = sP0[]
           p$ptr$P0 = bigmemory::describe(tmp_P0 )
         }
-        if (p$storage.backend == "bigmemory.filebacked" ) {
+        if (p$storage_backend == "bigmemory.filebacked" ) {
           p$ptr$P0  = p$cache$P0
           bigmemory::as.big.matrix( sP0, type="double", backingfile=basename(p$bm$P0), descriptorfile=basename(p$cache$P0), backingpath=p$stmvSaveDir )
         }
-        if (p$storage.backend == "ff" ) {
+        if (p$storage_backend == "ff" ) {
           p$ptr$P0 = ff( sP0, dim=dim(sP0), file=p$cache$P0, overwrite=TRUE )
         }
         sP0 = NULL
@@ -461,16 +461,16 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
       sP0sd = matrix( NaN, nrow=nPloc, ncol=p$nt )
       if (!is.null(sP0sd)) {
-        if (p$storage.backend == "bigmemory.ram" ) {
+        if (p$storage_backend == "bigmemory.ram" ) {
           tmp_P0sd= big.matrix( nrow=nrow(sP0sd), ncol=ncol(sP0sd) , type="double" )
           tmp_P0sd[] = sP0sd[]
           p$ptr$P0sd = bigmemory::describe(tmp_P0sd )
         }
-        if (p$storage.backend == "bigmemory.filebacked" ) {
+        if (p$storage_backend == "bigmemory.filebacked" ) {
           p$ptr$P0sd  = p$cache$P0sd
           bigmemory::as.big.matrix( sP0sd, type="double", backingfile=basename(p$bm$P0sd), descriptorfile=basename(p$cache$P0sd), backingpath=p$stmvSaveDir )
         }
-        if (p$storage.backend == "ff" ) {
+        if (p$storage_backend == "ff" ) {
           p$ptr$P0sd = ff( sP0sd, dim=dim(sP0sd), file=p$cache$P0sd, overwrite=TRUE )
         }
         sP0sd=NULL;
@@ -562,7 +562,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
       if (length(lb) > 0) Ydata[lb] = Yq_link[1]
       if (length(ub) > 0) Ydata[ub] = Yq_link[2]
 
-      Y = stmv_attach( p$storage.backend, p$ptr$Y )
+      Y = stmv_attach( p$storage_backend, p$ptr$Y )
       Y[] = Ydata[]  # update "Ydata" ... ( residuals)
       Ydata = NULL
       global_model = NULL
@@ -605,9 +605,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
       p$time_start_runmode = Sys.time()
       p$stmv_interpolation_basis = "correlation"
       p0 = p
-      for ( j in 1:length(p$stmv_autocorrelation_interpolation) ) {
+      for ( j in 1:length(p$stmv_autocorrelation_basis_interpolation) ) {
         p = p0 #reset
-        p$stmv_interpolation_basis_correlation = p$stmv_autocorrelation_interpolation[j]
+        p$stmv_interpolation_basis_correlation = p$stmv_autocorrelation_basis_interpolation[j]
         p$runmode = paste("interpolate_correlation_basis_", p$stmv_interpolation_basis_correlation, sep="")
         p$clusters = p$stmv_runmode[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
 
@@ -643,8 +643,8 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
     if(0) {
       stmv_db(p=p, DS="load_saved_state", runmode="interpolate" )
       stmv_db(p=p, DS="save_current_state", runmode="interpolate")
-      P = stmv_attach( p$storage.backend, p$ptr$P )
-      Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+      P = stmv_attach( p$storage_backend, p$ptr$P )
+      Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
       if (length(dim(P)) > 1 ) {
         for (i in 1:p$nt) print(lattice::levelplot( P[,i] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso" ))
       } else {
@@ -690,8 +690,8 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
     if(0) {
       stmv_db(p=p, DS="load_saved_state", runmode="interpolate" )
       stmv_db(p=p, DS="save_current_state", runmode="interpolate")
-      P = stmv_attach( p$storage.backend, p$ptr$P )
-      Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+      P = stmv_attach( p$storage_backend, p$ptr$P )
+      Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
       if (length(dim(P)) > 1 ) {
         for (i in 1:p$nt) print(lattice::levelplot( P[,i] ~ Ploc[,1] + Ploc[,2], col.regions=heat.colors(100), scale=list(draw=FALSE), aspect="iso" ))
       } else {
@@ -722,9 +722,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         }
         p$time_start_runmode = Sys.time()
         p0 = p
-        for ( j in 1:length(p$stmv_autocorrelation_interpolation) ) {
+        for ( j in 1:length(p$stmv_autocorrelation_basis_interpolation) ) {
           p = p0 #reset
-          p$local_interpolation_correlation = p$stmv_autocorrelation_interpolation[j]
+          p$local_interpolation_correlation = p$stmv_autocorrelation_basis_interpolation[j]
           p$runmode = paste("interpolate_hybrid_boost_", p$local_interpolation_correlation, sep="")
           p$clusters = p$stmv_runmode[["interpolate_hybrid_boost"]][[j]] # as ram reqeuirements increase drop cpus
           message( "\n||| Entering <", p$runmode, "> stage: ", format(Sys.time()) , "\n" )
@@ -773,7 +773,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
 
   if ("cleanup.all" %in% runmode) {
-    if ( p$storage.backend !="bigmemory.ram" ) {
+    if ( p$storage_backend !="bigmemory.ram" ) {
       resp = readline( "||| Delete temporary files? Type to confirm <YES>:  ")
       if (resp=="YES")  stmv_db( p=p, DS="cleanup.all" )
     }

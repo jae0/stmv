@@ -19,8 +19,8 @@ stmv_predict_globalmodel = function( ip=NULL, p, Yq_link=NULL, global_model=NULL
   if (is.null(ooo))  ooo = 1:p$nt
 
 
-  P0 = stmv_attach( p$storage.backend, p$ptr$P0 )  # remember this is on link scale
-  P0sd = stmv_attach( p$storage.backend, p$ptr$P0sd ) # and this too
+  P0 = stmv_attach( p$storage_backend, p$ptr$P0 )  # remember this is on link scale
+  P0sd = stmv_attach( p$storage_backend, p$ptr$P0sd ) # and this too
 
   if (is.null(global_model)) global_model = stmv_db( p=p, DS="global_model")
   if (is.null(global_model)) stop("Global model not found.")
@@ -32,7 +32,7 @@ stmv_predict_globalmodel = function( ip=NULL, p, Yq_link=NULL, global_model=NULL
     pa = NULL # construct prediction surface
     if ( length(p$variables$COV) > 0 ) {
       for (i in p$variables$COV ) {
-        pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[i]] )
+        pu = stmv_attach( p$storage_backend, p$ptr$Pcov[[i]] )
         nc = ncol(pu)
         if ( nc== 1 ) {
           pa = cbind( pa, pu[] ) # ie. a static variable (space)
@@ -56,7 +56,7 @@ stmv_predict_globalmodel = function( ip=NULL, p, Yq_link=NULL, global_model=NULL
     }
 
     if ( any( p$variables$LOCS %in%  p$variables$global_cov ) ) {
-      Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+      Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
       pa = cbind(pa, Ploc[])
       names(pa) = c( p$variables$COV, p$variables$LOCS )
     }
@@ -69,7 +69,7 @@ stmv_predict_globalmodel = function( ip=NULL, p, Yq_link=NULL, global_model=NULL
 
     if ( "dyear" %in% p$variables$global_cov ) {
       npa = names(pa)
-      pa = cbind(pa, p$prediction.dyear )
+      pa = cbind(pa, p$prediction_dyear )
       names(pa) = c( npa, "dyear" )
     }
 
@@ -160,7 +160,7 @@ stmv_predict_globalmodel = function( ip=NULL, p, Yq_link=NULL, global_model=NULL
 
     if (0) {
       if ("all nt time slices in stored predictions P") {
-        Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+        Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
         # pa comes from stmv_interpolate ... not carried here
         for (i in 1:p$nt) {
           i = 1
@@ -168,7 +168,7 @@ stmv_predict_globalmodel = function( ip=NULL, p, Yq_link=NULL, global_model=NULL
         }
       }
       if ("no time slices in P") {
-        Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+        Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
           print( lattice::levelplot( P0[] ~ Ploc[,1] + Ploc[ , 2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
       }
     }

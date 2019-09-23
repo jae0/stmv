@@ -6,9 +6,9 @@ stmv_predictions_update = function(p, preds ) {
   # update means: inverse-variance weighting
   # see https://en.wikipedia.org/wiki/Inverse-variance_weighting
 
-  P = stmv_attach( p$storage.backend, p$ptr$P )
-  Pn = stmv_attach( p$storage.backend, p$ptr$Pn )
-  Psd = stmv_attach( p$storage.backend, p$ptr$Psd )
+  P = stmv_attach( p$storage_backend, p$ptr$P )
+  Pn = stmv_attach( p$storage_backend, p$ptr$Pn )
+  Psd = stmv_attach( p$storage_backend, p$ptr$Psd )
 
   sflag = "good"
 
@@ -52,7 +52,7 @@ stmv_predictions_update = function(p, preds ) {
       # locations of P to modify
       ui = sort(unique(preds$i[u]))
       nc = ncol(P)
-      if (p$storage.backend == "ff" ) {
+      if (p$storage_backend == "ff" ) {
         add.ff(Pn, 1, ui, 1:nc ) # same as Pn[ui,] = Pn[ui]+1 but 2X faster
       } else {
         Pn[ui,] = Pn[ui,] + 1
@@ -109,14 +109,14 @@ stmv_predictions_update = function(p, preds ) {
         }
       }
       if ("all nt time slices in stored predictions P") {
-        Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+        Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
         # pa comes from stmv_interpolate ... not carried here
         for (i in 1:p$nt) {
           print( lattice::levelplot( P[pa$i,i] ~ Ploc[pa$i,1] + Ploc[ pa$i, 2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
         }
       }
       if ("no time slices in P") {
-        Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+        Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
           print( lattice::levelplot( P[pa$i] ~ Ploc[pa$i,1] + Ploc[ pa$i, 2], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
       }
     }

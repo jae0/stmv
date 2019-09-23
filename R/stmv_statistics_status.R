@@ -1,7 +1,7 @@
 stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NULL  ) {
 
   E = stmv_error_codes()
-  Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
+  Sflag = stmv_attach( p$storage_backend, p$ptr$Sflag )
 
   out = list()
 
@@ -19,8 +19,8 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NUL
       # create location specific flags for analysis, etc..
 
       # flag areas overlapping with prediction locations:
-      Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
-      Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
+      Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
+      Sloc = stmv_attach( p$storage_backend, p$ptr$Sloc )
 
       pidP = array_map( "xy->1", Ploc, gridparams=p$gridparams )
       pidS = array_map( "xy->1", Sloc, gridparams=p$gridparams )
@@ -51,12 +51,12 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NUL
         # additionaldepth-based filter:
         # assuming that there is depth information in Pcov, match Sloc's and filter out locations that fall on land
         if ( "z" %in% p$variables$COV ){
-          z = stmv_attach( p$storage.backend, p$ptr$Pcov[["z"]] )[]
+          z = stmv_attach( p$storage_backend, p$ptr$Pcov[["z"]] )[]
           Pabove = which( z < p$stmv_filter_depth_m ) # negative = above land:: depth = - height
           Pbelow = which( z >= p$stmv_filter_depth_m )
 
-          Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
-          Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
+          Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
+          Sloc = stmv_attach( p$storage_backend, p$ptr$Sloc )
 
           pidA = array_map( "xy->1", Ploc[Pabove,], gridparams=p$gridparams )
           pidB = array_map( "xy->1", Ploc[Pbelow,], gridparams=p$gridparams )
@@ -72,7 +72,7 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NUL
           above = below = NULL
 
           if (0) {
-            Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
+            Yloc = stmv_attach( p$storage_backend, p$ptr$Yloc )
             plot( Yloc[], pch=".", col="grey" ) # data locations
             bnds = try( stmv_db( p=p, DS="boundary" ) )
             if (!is.null(bnds)) {
@@ -92,21 +92,21 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NUL
     if ( grepl("complete", reset)) {
       # statistics locations where estimations need to be redone
 
-      P = stmv_attach( p$storage.backend, p$ptr$P )
+      P = stmv_attach( p$storage_backend, p$ptr$P )
       if (ncol(P) == 1 ) {
         yesP = which( is.finite( P[]) )
       } else {
         yesP = which( is.finite( rowSums( P[])) )
       }
 
-      Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
+      Sloc = stmv_attach( p$storage_backend, p$ptr$Sloc )
       sbox = list(
         plats = seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ),
         plons = seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ) )
       # statistics coordinates
       Sloc_nplat = length(sbox$plats)
       Sloc_nplon = length(sbox$plons)
-      Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+      Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
       uS = array_map( "2->1", round( cbind(Sloc[,1]-p$origin[1], Sloc[,2]-p$origin[2])/p$stmv_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
 
       if( length(yesP) > 0 ) {
@@ -132,21 +132,21 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NUL
     if ( grepl("incomplete", reset)) {
       # statistics locations where estimations need to be redone
 
-      P = stmv_attach( p$storage.backend, p$ptr$P )
+      P = stmv_attach( p$storage_backend, p$ptr$P )
       if (ncol(P) == 1 ) {
         noP = which( !is.finite( P[]) )
       } else {
         noP = which( !is.finite( rowSums( P[])) )
       }
 
-      Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
+      Sloc = stmv_attach( p$storage_backend, p$ptr$Sloc )
       sbox = list(
         plats = seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ),
         plons = seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ) )
       # statistics coordinates
       Sloc_nplat = length(sbox$plats)
       Sloc_nplon = length(sbox$plons)
-      Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+      Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
       uS = array_map( "2->1", round( cbind(Sloc[,1]-p$origin[1], Sloc[,2]-p$origin[2])/p$stmv_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
 
       if( length(noP) > 0 ) {
@@ -165,7 +165,7 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NUL
         gc()
 
         # # catch strange missing values ..
-        # S = stmv_attach( p$storage.backend, p$ptr$S  )
+        # S = stmv_attach( p$storage_backend, p$ptr$S  )
         # ii = which( !is.finite(S[, match("localrange", p$statsvars ) ]) )
         # if ( length(ii) > 0 ) Sflag[ii] = E[["unknown"]]
 
@@ -215,12 +215,13 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NUL
   out$n.total = length(Sflag)
 
   out$prop_incomp = round( out$n.todo / ( out$n.total - out$n.outside_bounds ), 3)
-  message( paste("||| Proportion to do:", out$prop_incomp, "\n" ))
+  message( paste("||| Proportion to do:", out$prop_incomp, " (", out$n.todo, ") ", "\n" ))
+  message( paste("||| Proportion completed:", round( out$n.complete / ( out$n.total - out$n.outside_bounds ), 3), " (", out$n.complete, ") ", "\n" ))
 
   if (plotdata) {
     dev.new()
-    Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
-    Sloc = stmv_attach( p$storage.backend, p$ptr$Sloc )
+    Yloc = stmv_attach( p$storage_backend, p$ptr$Yloc )
+    Sloc = stmv_attach( p$storage_backend, p$ptr$Sloc )
 
     plot( Yloc[], pch=".", col="grey" ) # data locations
     bnds = try( stmv_db( p=p, DS="boundary" ) )

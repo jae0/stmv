@@ -14,10 +14,10 @@ stmv_predictionarea = function(p, sloc, windowsize.half ) {
                    iplat = rep.int(iwplat, rep.int(pa_w_n, pa_w_n)) )
 
   tokeep = which( pa$iplon >= 1 & pa$iplon <= p$nplons & pa$iplat >= 1 & pa$iplat <= p$nplats )
-  if (length(tokeep) < 5 ) return(NULL)
+  if (length(tokeep) < 1 ) return(NULL)
   pa = pa[tokeep,]
 
-  Ploc = stmv_attach( p$storage.backend, p$ptr$Ploc )
+  Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
   ploc_ids = array_map( "xy->1", Ploc[], gridparams=p$gridparams )
   pa_ids = array_map( "2->1", pa[, c("iplon", "iplat")], gridparams=p$gridparams )
 
@@ -27,7 +27,7 @@ stmv_predictionarea = function(p, sloc, windowsize.half ) {
   pa_ids = NULL
 
   tokeep = which( is.finite(pa$i) )
-  if (length(tokeep) < 5 ) return(NULL)
+  if (length(tokeep) < 1 ) return(NULL)
   pa = pa[tokeep,]
   pa_n = nrow(pa)
 
@@ -41,7 +41,7 @@ stmv_predictionarea = function(p, sloc, windowsize.half ) {
     for (ci in 1:p$nloccov) {
       vn = p$variables$local_cov[ci]
       pu = NULL
-      pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
+      pu = stmv_attach( p$storage_backend, p$ptr$Pcov[[vn]] )
       nts = ncol(pu)
       if ( nts== 1 ) {
         pvars = c( pvars, vn )
@@ -53,7 +53,7 @@ stmv_predictionarea = function(p, sloc, windowsize.half ) {
 
   if ( exists("TIME", p$variables) ) {
     pa = cbind( pa[ rep.int(1:pa_n, p$nt), ],
-                    rep.int(p$prediction.ts, rep(pa_n, p$nt )) )
+                    rep.int(p$prediction_ts, rep(pa_n, p$nt )) )
     names(pa) = c( pvars, p$variables$TIME )
 
     pa = cbind( pa, stmv_timecovars ( vars=p$variables$local_all, ti=pa[,p$variables$TIME]  ) )
@@ -63,7 +63,7 @@ stmv_predictionarea = function(p, sloc, windowsize.half ) {
       for (ci in 1:p$nloccov) {
         vn = p$variables$local_cov[ci]
         pu = NULL
-        pu = stmv_attach( p$storage.backend, p$ptr$Pcov[[vn]] )
+        pu = stmv_attach( p$storage_backend, p$ptr$Pcov[[vn]] )
         nts = ncol(pu)
         if ( nts == p$ny )  {
           pa$iy = pa$yr - p$yrs[1] + 1 #yr index

@@ -27,14 +27,14 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps = 1e-6, ... ) {
 
   #---------------------
   # data for modelling
-  S = stmv_attach( p$storage.backend, p$ptr$S )
-  Sflag = stmv_attach( p$storage.backend, p$ptr$Sflag )
+  S = stmv_attach( p$storage_backend, p$ptr$S )
+  Sflag = stmv_attach( p$storage_backend, p$ptr$Sflag )
   E = stmv_error_codes()
 
-  Yloc = stmv_attach( p$storage.backend, p$ptr$Yloc )
-  Y = stmv_attach( p$storage.backend, p$ptr$Y )
+  Yloc = stmv_attach( p$storage_backend, p$ptr$Yloc )
+  Y = stmv_attach( p$storage_backend, p$ptr$Y )
 
-  if (p$nloccov > 0) Ycov = stmv_attach( p$storage.backend, p$ptr$Ycov )
+  if (p$nloccov > 0) Ycov = stmv_attach( p$storage_backend, p$ptr$Ycov )
 
   # misc intermediate calcs to be done outside of parallel loops
 
@@ -277,7 +277,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps = 1e-6, ... ) {
       if (0) {
         # stats
         # p$statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "phi", "nu", "localrange" )
-        S = stmv_attach( p$storage.backend, p$ptr$S )
+        S = stmv_attach( p$storage_backend, p$ptr$S )
         sbox = list(
           plats = seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ),
           plons = seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ) )

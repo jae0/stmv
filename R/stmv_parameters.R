@@ -9,7 +9,7 @@ stmv_parameters = function( p=list(), ... ) {
   i = which(duplicated(names(p), fromLast=TRUE))
   if ( length(i) > 0 ) p = p[-i] # give any passed parameters a higher priority, overwriting pre-existing variable
 
-  if (!exists("stmvSaveDir", p)) p$stmvSaveDir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial.domain )
+  if (!exists("stmvSaveDir", p)) p$stmvSaveDir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial_domain )
   if ( !file.exists(p$stmvSaveDir)) dir.create( p$stmvSaveDir, recursive=TRUE, showWarnings=FALSE )
 
   if (!exists("stmv_current_status", p))  p$stmv_current_status = file.path( p$stmvSaveDir, "stmv_current_status" )
@@ -25,10 +25,10 @@ stmv_parameters = function( p=list(), ... ) {
   }
 
 
-  if( !exists( "storage.backend", p))  p$storage.backend="bigmemory.ram"
+  if( !exists( "storage_backend", p))  p$storage_backend="bigmemory.ram"
 
   if( !exists( "stmv_variogram_method", p)) p$stmv_variogram_method = "fft"   # note GP methods are slow when there is too much data
-  if( !exists( "stmv_variogram_nbreaks_totry", p)) p$stmv_variogram_nbreaks_totry = c( 16, 21, 32, 47, 63, 77, 51, 13 )  # different numbers of nbreaks can influence variogram stabilty
+  if( !exists( "stmv_variogram_nbreaks_totry", p)) p$stmv_variogram_nbreaks_totry = c( 16, 32, 64, 47, 39, 21, 13 )  # different numbers of nbreaks can influence variogram stabilty
 
   if( !exists( "stmv_autocorrelation_localrange", p)) p$stmv_autocorrelation_localrange = 0.1   # auto-correlation at which to compute range distance
   if( !exists( "stmv_autocorrelation_fft_taper", p))  p$stmv_autocorrelation_fft_taper = 0.75   # scale at which to mark tapering
@@ -38,7 +38,7 @@ stmv_parameters = function( p=list(), ... ) {
   if (!exists( "boundary", p)) p$boundary = FALSE
   if (!exists( "stmv_filter_depth_m", p)) p$stmv_filter_depth_m = FALSE # if !FALSE .. depth is given as m so, choose andy stats locations with elevation > 1 m as being on land
 
-  if (!exists( "stmv_nmin_downsize_factor", p)) p$stmv_nmin_downsize_factor = c(1.0, 0.9, 0.8, 0.7)
+  if (!exists( "stmv_nmin_downsize_factor", p)) p$stmv_nmin_downsize_factor = c(1.0, 0.9, 0.8, 0.7, 0.6)
 
   if (!exists( "stmv_lowpass_nu", p)) p$stmv_lowpass_nu = 0.5 # this is exponential covar
   if (!exists( "stmv_lowpass_phi", p)) p$stmv_lowpass_phi = stmv::matern_distance2phi( distance=ifelse(exists("pres", p), p$pres, stop("'p$pres' needs to be defined")), nu=p$stmv_lowpass_nu, cor=p$stmv_autocorrelation_localrange ) # FFT based method when operating gloablly
@@ -83,10 +83,10 @@ stmv_parameters = function( p=list(), ... ) {
 
   # determine storage format
   p$libs = unique( c( p$libs, "sp", "rgdal", "parallel" ) )
-  if (!exists("storage.backend", p)) p$storage.backend = storage.backend
-  if (any( grepl ("ff", p$storage.backend)))         p$libs = c( p$libs, "ff", "ffbase" )
-  if (any( grepl ("bigmemory", p$storage.backend)))  p$libs = c( p$libs, "bigmemory" )
-  if (p$storage.backend=="bigmemory.ram") {
+  if (!exists("storage_backend", p)) p$storage_backend = storage_backend
+  if (any( grepl ("ff", p$storage_backend)))         p$libs = c( p$libs, "ff", "ffbase" )
+  if (any( grepl ("bigmemory", p$storage_backend)))  p$libs = c( p$libs, "bigmemory" )
+  if (p$storage_backend=="bigmemory.ram") {
     if ( length( unique(p$clusters)) > 1 ) {
       stop( "||| More than one unique cluster server was specified .. the bigmemory RAM-based method only works within one server." )
     }
@@ -120,8 +120,6 @@ stmv_parameters = function( p=list(), ... ) {
 
   p$nloccov = 0
   if (exists("local_cov", p$variables)) p$nloccov = length(p$variables$local_cov)
-
-  if ( !exists("stmv_distance_prediction_fraction", p)) p$stmv_distance_prediction_fraction = 0.95  # 95% of the localrange
 
   if ( !exists("stmv_force_complete_method", p)) p$stmv_force_complete_method = "linear"  # moving average
 

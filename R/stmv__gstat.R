@@ -18,8 +18,8 @@ stmv__gstat = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varObs=NUL
   for ( ti in 1:p$nt ) {
 
     if ( exists("TIME", p$variables) ) {
-      xi = which( dat[ , p$variables$TIME ] == p$prediction.ts[ti] )
-      pa_i = which( pa[, p$variables$TIME]==p$prediction.ts[ti])
+      xi = which( dat[ , p$variables$TIME ] == p$prediction_ts[ti] )
+      pa_i = which( pa[, p$variables$TIME]==p$prediction_ts[ti])
     } else {
       xi = 1:nrow(dat) # all data as p$nt==1
       pa_i = 1:nrow(pa)
