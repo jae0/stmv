@@ -151,11 +151,11 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps = 1e-6, ... ) {
 
 
     # temporal
-    if (p$stmv_dimensionality =="space") {
+    if (p$aegis_dimensionality =="space") {
        # nothing to do
     }
 
-    if (p$stmv_dimensionality =="space-year") {
+    if (p$aegis_dimensionality =="space-year") {
 
       if (0) {
 
@@ -208,7 +208,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps = 1e-6, ... ) {
       }
     }
 
-    if (p$stmv_dimensionality=="space-year-season")  {
+    if (p$aegis_dimensionality=="space-year-season")  {
 
       if (0) {
 

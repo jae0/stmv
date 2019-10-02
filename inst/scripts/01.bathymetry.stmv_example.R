@@ -37,7 +37,7 @@ p = aegis.bathymetry::bathymetry_parameters(
   DATA = DATA,
   spatial_domain = p0$spatial_domain,
   inputdata_spatial_discretization_planar_km = p0$pres,
-  stmv_dimensionality="space",
+  aegis_dimensionality="space",
   variables = list(Y="z"),  # required as fft has no formulae
   stmv_global_modelengine = "none",  # too much data to use glm as an entry into link space ... use a direct transformation
   stmv_local_modelengine="fft",
