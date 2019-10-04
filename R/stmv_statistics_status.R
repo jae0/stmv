@@ -214,9 +214,10 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NUL
   out$n.unknown = length(out$unknown)
   out$n.total = length(Sflag)
 
-  out$prop_incomp = round( out$n.todo / ( out$n.total - out$n.outside_bounds ), 3)
-  message( paste("||| Proportion to do:", out$prop_incomp, " (", out$n.todo, ") ", "\n" ))
-  message( paste("||| Proportion completed:", round( out$n.complete / ( out$n.total - out$n.outside_bounds ), 3), " (", out$n.complete, ") ", "\n" ))
+  proportion_incomplete = round( out$n.todo / ( out$n.total - out$n.outside_bounds ), 3)
+  proportion_complete = round( out$n.complete / ( out$n.total - out$n.outside_bounds ), 3)
+  message( paste("||| Number [ to do| complete | total ]:", out$n.todo, "|", out$n.complete, "|", out$n.total  ))
+  message( paste("||| Proportion [ incomplete | complete ]:", proportion_incomplete, "|", "proportion_complete", "\n" ))
 
   if (plotdata) {
     dev.new()
