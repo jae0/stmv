@@ -3,10 +3,8 @@ Title: Spatiotemporal models of variability
 Version: 0.1
 Authors@R: c( person("Jae", "Choi", email="choi.jae.seok@gmail.com", role=c("aut", "cre")) )
 Description: Spatio-temporal models using constrained kernel-based approximations to estimate and develop statistical inference of space-time hierarchical models. This package interacts with aegis.* projects.
-Depends: R (>= 3.0.0), mvtnorm, truncnorm, sp, fftw, fftwtools
-Imports:
-  lubridate, alphahull, bigmemory, fields, gstat, geoR, lattice, mgcv, parallel, RandomFields, RandomFieldsUtils, rgdal, sp, aegis, INLA
-Suggests: aegis
+Depends: R (>= 3.5.0), mvtnorm, truncnorm, sp, fftw, fftwtools
+Suggests: lubridate, alphahull, bigmemory, fields, gstat, geoR, lattice, mgcv, parallel, RandomFields, RandomFieldsUtils, rgdal, sp, aegis, INLA, aegis
 NeedsCompilation: no
 ByteCompile: TRUE
 License: MIT
