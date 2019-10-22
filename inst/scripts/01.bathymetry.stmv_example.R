@@ -36,14 +36,14 @@ p = aegis.bathymetry::bathymetry_parameters(
   data_root = file.path(work_root, "bathymetry_example"),
   DATA = DATA,
   spatial_domain = p0$spatial_domain,
-  inputdata_spatial_discretization_planar_km = p0$pres,
+  inputdata_spatial_discretization_planar_km = p0$pres,  # pres = 0.5
   aegis_dimensionality="space",
   variables = list(Y="z"),  # required as fft has no formulae
   stmv_global_modelengine = "none",  # too much data to use glm as an entry into link space ... use a direct transformation
   stmv_local_modelengine="fft",
   stmv_fft_filter = "matern tapered lowpass modelled fast_predictions", #  matern with taper, fast predictions are sufficient as data density is high
   stmv_lowpass_nu = 0.5,
-  stmv_lowpass_phi = stmv::matern_distance2phi( distance=0.2, nu=0.5, cor=0.1 ),  # note: p$pres = 0.2
+  stmv_lowpass_phi = stmv::matern_distance2phi( distance=0.2, nu=0.5, cor=0.1 ),  # note: p$pres = 0.5
   stmv_variogram_method = "fft",
   stmv_autocorrelation_fft_taper = 0.75,  # benchmark from which to taper .. high data density truncate local predictions to capture heterogeneity
   stmv_autocorrelation_localrange = 0.1,
