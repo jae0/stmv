@@ -88,7 +88,7 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
 
     discret = 0.5 # km
 
-    if (is.null(p)) p = stmv_test_data( "aegis.test.paramaters")
+    if (is.null(p)) p = stmv_test_data( "aegis.test.parameters")
 
     pb = bathymetry_parameters( project_class="stmv" )
     B = bathymetry.db( p=pb,  DS="stmv_inputs")$input  # this is a subset of "complete" with depths filtered
@@ -200,7 +200,7 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
 
 
 
-  if ( datasource == "aegis.test.paramaters" ) {
+  if ( datasource == "aegis.test.parameters" ) {
       # dres  is the 15 second grid from CHS  .. default use highest resolution
     p = aegis::spatial_parameters( spatial_domain="testing", aegis_proj4string_planar_km="+proj=utm +ellps=WGS84 +zone=20 +units=km", dres=1/60/4, pres=0.5, lon0=-64, lon1=-62, lat0=44, lat1=45, psignif=2 )
     return(p)
@@ -209,7 +209,7 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
   if ( datasource == "aegis.prediction.locations" ) {
       # dres  is the 15 second grid from CHS  .. default use highest resolution
       ## 1 km resolution!,
-    if (is.null(p)) p = stmv_test_data( "aegis.test.paramaters")
+    if (is.null(p)) p = stmv_test_data( "aegis.test.parameters")
     LOCS = spatial_grid(p)
     return(LOCS)
   }
@@ -217,7 +217,7 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
   if (0) {
 
     p = aegis::spatial_parameters( spatial_domain="testing", aegis_proj4string_planar_km="+proj=utm +ellps=WGS84 +zone=20 +units=km", dres=1/60/4, pres=0.5, lon0=-64, lon1=-62, lat0=44, lat1=45, psignif=2 )
-    # or:  p = stmv_test_data( "aegis.test.paramaters")
+    # or:  p = stmv_test_data( "aegis.test.parameters")
 
     PREDLOCS = spatial_grid(p)
 

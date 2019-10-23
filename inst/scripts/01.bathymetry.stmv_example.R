@@ -20,7 +20,7 @@ interpolate_ncpus = min( parallel::detectCores(), floor( (ram_local()- interpola
 p0 = aegis::spatial_parameters( spatial_domain="bathymetry_example",
   aegis_proj4string_planar_km="+proj=utm +ellps=WGS84 +zone=20 +units=km",
   dres=1/60/4, pres=0.5, lon0=-64, lon1=-62, lat0=44, lat1=45, psignif=2 )
-# or:  p0 = stmv_test_data( "aegis.test.paramaters")
+# or:  p0 = stmv_test_data( "aegis.test.parameters")
 
 DATA = list(
   input = stmv::stmv_test_data( datasource="aegis.space", p=p0),
