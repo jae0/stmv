@@ -75,7 +75,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   if (is.null(DATA)) stop( "||| something went wrong with DATA inputs ... ")
   if (class(DATA) != "list") stop( "||| DATA should a list ... ")
 
-  testvars = c(p$variables$Y, p$variables$COV, p$variables$TIME, p$variables$LOC)
+  testvars = c(p$stmv_variables$Y, p$stmv_variables$COV, p$stmv_variables$TIME, p$stmv_variables$LOC)
   withdata = which(is.finite( (rowSums(DATA$input[, testvars] )) ) )
   if (length(withdata) < 1) stop( "Missing data or insufficient data")
   DATA$input = DATA$input[withdata, ]
@@ -101,7 +101,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   stmv_db( p=p, DS="cleanup" )
 
 
-  Ydata = as.matrix( DATA$input[, p$variables$Y ] )
+  Ydata = as.matrix( DATA$input[, p$stmv_variables$Y ] )
   Ydata_datarange = range( Ydata, na.rm=TRUE )
   if (!is.null(robustify_quantiles)) Ydata_datarange = quantile( Ydata, probs=robustify_quantiles, na.rm=TRUE )
   Yq_link = p$stmv_global_family$linkfun( Ydata_datarange ) # convert raw data range to link range
@@ -163,7 +163,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
 
   # data coordinates
-  Yloc = as.matrix( DATA$input[, p$variables$LOCS ])
+  Yloc = as.matrix( DATA$input[, p$stmv_variables$LOCS ])
   if (p$storage_backend == "bigmemory.ram" ) {
     tmp_Yloc = big.matrix( nrow=nrow(Yloc), ncol=ncol(Yloc), type="double" )
     tmp_Yloc[] = Yloc[]
@@ -178,10 +178,10 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   }
   Yloc = NULL
 
-  # independent variables/ covariate
-  if (exists("COV", p$variables)) {
-    if (length(p$variables$COV) > 0) {
-      Ycov = as.matrix(  DATA$input[ , p$variables$COV ] )
+  # independent stmv_variables/ covariate
+  if (exists("COV", p$stmv_variables)) {
+    if (length(p$stmv_variables$COV) > 0) {
+      Ycov = as.matrix(  DATA$input[ , p$stmv_variables$COV ] )
       if (p$storage_backend == "bigmemory.ram" ) {
         tmp_Ycov = big.matrix( nrow=nrow(Ycov), ncol=ncol(Ycov), type="double")
         tmp_Ycov[] = Ycov[]
@@ -199,8 +199,8 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   }
 
   # data times
-  if ( exists("TIME", p$variables) ) {
-    Ytime = as.matrix(  DATA$input[, p$variables$TIME ] )
+  if ( exists("TIME", p$stmv_variables) ) {
+    Ytime = as.matrix(  DATA$input[, p$stmv_variables$TIME ] )
     if (p$storage_backend == "bigmemory.ram" ) {
       tmp_Ytime = big.matrix( nrow=nrow(Ytime), ncol=ncol(Ytime), type="double"  )
       tmp_Ytime[] = Ytime[]
@@ -228,10 +228,10 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   if (length(bad)> 0 ) Yi[bad] = NA
 
   # data locations
-  if (exists("COV", p$variables)) {
-    if (length(p$variables$COV) > 0) {
+  if (exists("COV", p$stmv_variables)) {
+    if (length(p$stmv_variables$COV) > 0) {
       Ycov = stmv_attach( p$storage_backend, p$ptr$Ycov )
-      if (length(p$variables$COV)==1) {
+      if (length(p$stmv_variables$COV)==1) {
         bad = which( !is.finite( Ycov[] ))
       } else {
         bad = which( !is.finite( rowSums(Ycov[])))
@@ -242,7 +242,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   }
 
   # data locations
-  if (exists("TIME", p$variables)) {
+  if (exists("TIME", p$stmv_variables)) {
     Ytime = stmv_attach( p$storage_backend, p$ptr$Ytime )
     bad = which( !is.finite( Ytime[] ))
     if (length(bad)> 0 ) Yi[bad] = NA
@@ -329,13 +329,13 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
   nPloc = nrow(DATA$output$LOCS)
 
-  if (exists("COV", p$variables)) {
-    if (length(p$variables$COV) > 0) {
+  if (exists("COV", p$stmv_variables)) {
+    if (length(p$stmv_variables$COV) > 0) {
       # this needs to be done as Prediction covars need to be structured as lists
       p$ptr$Pcov = list()
       tmp_Pcov = list()
       nc_cov =NULL
-      for ( covname in p$variables$COV ) {
+      for ( covname in p$stmv_variables$COV ) {
         Pcovdata = as.matrix( DATA$output$COV[[covname]] )
         nc_cov = c( nc_cov,  ncol(Pcovdata) )  # test no. cols
         nPcovloc = nrow(Pcovdata)
@@ -494,8 +494,8 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   # check if resetimation is required
 
   niterations = 1  # default .. no global model nor no covariates
-  if ( exists("COV", p$variables )) {
-    if (length(p$variables$COV) > 0) {
+  if ( exists("COV", p$stmv_variables )) {
+    if (length(p$stmv_variables$COV) > 0) {
       niterations = niter
     }
   }
@@ -538,7 +538,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
           # return to user scale (that of Y)
           inputdata = p$stmv_global_family$linkinv( inputdata )
         }
-        global_model$model[, p$variables$Y ] = global_model$model[, p$variables$Y ] - inputdata  # update to current estimate of fixed effects
+        global_model$model[, p$stmv_variables$Y ] = global_model$model[, p$stmv_variables$Y ] - inputdata  # update to current estimate of fixed effects
         inputdata = global_model$model
         global_model = NULL
         gc()

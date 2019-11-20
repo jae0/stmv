@@ -1,5 +1,5 @@
 
-stmv_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvarsout=c("id", p$variables$TIME, p$variables$LOCS, p$variables$Y)) {
+stmv_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvarsout=c("id", p$stmv_variables$TIME, p$stmv_variables$LOCS, p$stmv_variables$Y)) {
 
   # static vars .. don't need to look up
     datgridded = dat # only the static parts .. time has to be a uniform grid so reconstruct below
@@ -9,12 +9,12 @@ stmv_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvarso
     if (length(todrop>0)) datgridded = datgridded[-todrop,]
     ids=todrop=NULL
 
-    tokeep = c(p$variables$LOCS )
+    tokeep = c(p$stmv_variables$LOCS )
     if (exists("weights", dat) ) tokeep = c(tokeep, "weights")
 
     if (p$nloccov > 0) {
       for (ci in 1:p$nloccov) {
-        vn = p$variables$local_cov[ci]
+        vn = p$stmv_variables$local_cov[ci]
         pu = stmv_attach( p$storage_backend, p$ptr$Pcov[[vn]] )
         nts = ncol(pu)
         if ( nts==1 ) tokeep = c(tokeep, vn )
@@ -26,17 +26,17 @@ stmv_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvarso
     nts = vn = NULL
 
     # add temporal grid
-    if ( exists("TIME", p$variables) ) {
+    if ( exists("TIME", p$stmv_variables) ) {
       datgridded = cbind( datgridded[ rep.int(1:datgridded_n, p$nt), ],
                       rep.int(p$prediction_ts, rep(datgridded_n, p$nt )) )
-      names(datgridded)[ ncol(datgridded) ] = p$variables$TIME
-      datgridded = cbind( datgridded, stmv_timecovars ( vars=p$variables$local_all, ti=datgridded[,p$variables$TIME]  ) )
+      names(datgridded)[ ncol(datgridded) ] = p$stmv_variables$TIME
+      datgridded = cbind( datgridded, stmv_timecovars ( vars=p$stmv_variables$local_all, ti=datgridded[,p$stmv_variables$TIME]  ) )
     }
 
     if (p$nloccov > 0) {
       # add time-varying covars .. not necessary except when covars are modelled locally
       for (ci in 1:p$nloccov) {
-        vn = p$variables$local_cov[ci]
+        vn = p$stmv_variables$local_cov[ci]
         pu = stmv_attach( p$storage_backend, p$ptr$Pcov[[vn]] )
         nts = ncol(pu)
         if ( nts== 1) {
@@ -60,7 +60,7 @@ stmv_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvarso
     if (ts_gam$stmv_stats$rsquared < p$stmv_rsquared_threshold ) return(NULL)
 
     # range checks
-    rY = range( dat[,p$variables$Y], na.rm=TRUE)
+    rY = range( dat[,p$stmv_variables$Y], na.rm=TRUE)
     toosmall = which( ts_gam$predictions$mean < rY[1] )
     toolarge = which( ts_gam$predictions$mean > rY[2] )
     if (length(toosmall) > 0) ts_gam$predictions$mean[toosmall] =  NA
@@ -71,8 +71,8 @@ stmv_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvarso
     rownames(datgridded) = NULL
     ts_gam = NULL
 
-    names(datgridded)[which(names(datgridded)=="mean")] = p$variables$Y
-    names(datgridded)[which(names(datgridded)=="sd")] = paste(p$variables$Y, "sd", sep=".")
+    names(datgridded)[which(names(datgridded)=="mean")] = p$stmv_variables$Y
+    names(datgridded)[which(names(datgridded)=="sd")] = paste(p$stmv_variables$Y, "sd", sep=".")
 
     windowsize.half = round(distance/p$pres) + 1L
     pa_w = -windowsize.half : windowsize.half # default window size
@@ -81,9 +81,9 @@ stmv_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvarso
     adims = c(p$nt, pa_w_n, pa_w_n )
     datgridded$id = array_map( "3->1",
       coords = round( cbind(
-        ( (datgridded[,p$variables$TIME ] - p$prediction_ts[1] ) / p$tres) + 1 ,
-        ( windowsize.half + (datgridded[,p$variables$LOCS[1]] - sloc[1]) / p$pres) + 1,
-        ( windowsize.half + (datgridded[,p$variables$LOCS[2]] - sloc[2]) / p$pres) + 1)),
+        ( (datgridded[,p$stmv_variables$TIME ] - p$prediction_ts[1] ) / p$tres) + 1 ,
+        ( windowsize.half + (datgridded[,p$stmv_variables$LOCS[1]] - sloc[1]) / p$pres) + 1,
+        ( windowsize.half + (datgridded[,p$stmv_variables$LOCS[2]] - sloc[2]) / p$pres) + 1)),
       dims=adims )
     o = which( datgridded$id > prod(adims)  | datgridded$id <= 0 ) # remove the area outside the aoi
     if (length(o) > 0 ) datgridded = datgridded[-o,]
@@ -94,11 +94,11 @@ stmv_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvarso
       dups = unique(datgridded$id[ddup])
       for ( i in dups ) {
         j = which( datgridded$id== i)
-        meanvalue = mean( datgridded[j, p$variable$Y], na.rm=TRUE)
-        datgridded[j, p$variable$Y] = NA
-        datgridded[j[1], p$variable$Y] = meanvalue
+        meanvalue = mean( datgridded[j, p$stmv_variables$Y], na.rm=TRUE)
+        datgridded[j, p$stmv_variables$Y] = NA
+        datgridded[j[1], p$stmv_variables$Y] = meanvalue
       }
-      datgridded = datgridded[ which(is.finite(datgridded[, p$variable$Y]) ) , ]
+      datgridded = datgridded[ which(is.finite(datgridded[, p$stmv_variables$Y]) ) , ]
     }
 
     out = list()
@@ -106,7 +106,7 @@ stmv_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvarso
     out$windowsize.half = windowsize.half
     out$adims = adims
     out$xM = array( NA, dim=adims )
-    out$xM[datgridded$id] = datgridded[,p$variables$Y]
+    out$xM[datgridded$id] = datgridded[,p$stmv_variables$Y]
 
     if(0){
     # ignore this for now .. as it is unlikely to be used ..
@@ -115,7 +115,7 @@ stmv_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvarso
       if (p$nloccov > 0) {
         # .. not necessary except when covars are modelled locally
         for (ci in 1:p$nloccov) {
-          vn = p$variables$local_cov[ci]
+          vn = p$stmv_variables$local_cov[ci]
           pu = NULL
           pu = stmv_attach( p$storage_backend, p$ptr$Pcov[[vn]] )
           nts = ncol(pu)
@@ -126,12 +126,12 @@ stmv_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvarso
         }
       }
       datgridded = datgridded[, pvars]
-      datgridded = cbind( datgridded, stmv_timecovars ( vars=p$variables$local_all, ti=datgridded[,p$variables$TIME]  ) )
+      datgridded = cbind( datgridded, stmv_timecovars ( vars=p$stmv_variables$local_all, ti=datgridded[,p$stmv_variables$TIME]  ) )
 
       if (p$nloccov > 0) {
         # add time-varying covars .. not necessary except when covars are modelled locally
         for (ci in 1:p$nloccov) {
-          vn = p$variables$local_cov[ci]
+          vn = p$stmv_variables$local_cov[ci]
           pu = NULL
           pu = stmv_attach( p$storage_backend, p$ptr$Pcov[[vn]] )
           nts = ncol(pu)

@@ -34,12 +34,12 @@ stmv_predictionarea = function(p, sloc, windowsize.half ) {
   pa$plon = Ploc[ pa$i, 1 ]
   pa$plat = Ploc[ pa$i, 2 ]
 
-  # prediction covariates i.e., independent variables/ covariates
+  # prediction covariates i.e., independent stmv_variables/ covariates
   pvars = c("plon", "plat", "i")
   if (p$nloccov > 0) {
     # .. not necessary except when covars are modelled locally
     for (ci in 1:p$nloccov) {
-      vn = p$variables$local_cov[ci]
+      vn = p$stmv_variables$local_cov[ci]
       pu = NULL
       pu = stmv_attach( p$storage_backend, p$ptr$Pcov[[vn]] )
       nts = ncol(pu)
@@ -51,17 +51,17 @@ stmv_predictionarea = function(p, sloc, windowsize.half ) {
   }
   pa = pa[, pvars]
 
-  if ( exists("TIME", p$variables) ) {
+  if ( exists("TIME", p$stmv_variables) ) {
     pa = cbind( pa[ rep.int(1:pa_n, p$nt), ],
                     rep.int(p$prediction_ts, rep(pa_n, p$nt )) )
-    names(pa) = c( pvars, p$variables$TIME )
+    names(pa) = c( pvars, p$stmv_variables$TIME )
 
-    pa = cbind( pa, stmv_timecovars ( vars=p$variables$local_all, ti=pa[,p$variables$TIME]  ) )
+    pa = cbind( pa, stmv_timecovars ( vars=p$stmv_variables$local_all, ti=pa[,p$stmv_variables$TIME]  ) )
 
     if (p$nloccov > 0) {
       # add time-varying covars .. not necessary except when covars are modelled locally
       for (ci in 1:p$nloccov) {
-        vn = p$variables$local_cov[ci]
+        vn = p$stmv_variables$local_cov[ci]
         pu = NULL
         pu = stmv_attach( p$storage_backend, p$ptr$Pcov[[vn]] )
         nts = ncol(pu)

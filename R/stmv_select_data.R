@@ -22,7 +22,7 @@ stmv_select_data = function( p, Si, localrange ) {
   } else if (ndata > p$stmv_nmax) {
     # try to trim
     iU = NULL
-    if ( exists("TIME", p$variables)) {
+    if ( exists("TIME", p$stmv_variables)) {
       if ( grepl("stmv_variogram_resolve_time", p$stmv_fft_filter)) {
         Ytime = stmv_attach( p$storage_backend, p$ptr$Ytime )
         iU = stmv_discretize_coordinates( coo=cbind(Yloc[Yi[U],], Ytime[Yi[U]]), ntarget=floor(p$stmv_nmax*p$stmv_tmax), minresolution=p$minresolution, method="thin" )

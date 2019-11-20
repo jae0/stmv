@@ -10,6 +10,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps = 1e-6, ... ) {
     p$runmode = "scale"
     ip = 1:p$nruns
     debugging=TRUE
+    eps = 1e-6
   }
 
 
@@ -39,11 +40,11 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps = 1e-6, ... ) {
   # misc intermediate calcs to be done outside of parallel loops
 
   # pre-calculate indices and dim for data to use inside the loop
-  dat_names = unique( c(  p$variables$Y, p$variable$LOCS, p$variables$local_all,  "weights") )  # excludes p$variables$TIME
+  dat_names = unique( c(  p$stmv_variables$Y, p$variable$LOCS, p$stmv_variables$local_all,  "weights") )  # excludes p$stmv_variables$TIME
   # unless it is an explicit covariate and not a seasonal component there is no need for it
   # .. prediction grids create these from a time grid on the fly
   dat_nc = length( dat_names )
-  iY = which(dat_names== p$variables$Y)
+  iY = which(dat_names== p$stmv_variables$Y)
   ilocs = which( dat_names %in% p$variable$LOCS )
 
   if (length(ip) < 100) {
@@ -164,10 +165,10 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps = 1e-6, ... ) {
         ar_1 = NA
 
         pac = res$predictions[ pac_i, ]
-        pac$dyr = pac[, p$variables$TIME] - trunc(pac[, p$variables$TIME] )
+        pac$dyr = pac[, p$stmv_variables$TIME] - trunc(pac[, p$stmv_variables$TIME] )
         piid = which( zapsmall( pac$dyr - p$dyear_centre) == 0 )
-        pac = pac[ piid, c(p$variables$TIME, "mean")]
-        pac = pac[ order(pac[,p$variables$TIME]),]
+        pac = pac[ piid, c(p$stmv_variables$TIME, "mean")]
+        pac = pac[ order(pac[,p$stmv_variables$TIME]),]
         if (length(piid) > 5 ) {
           ts.stat = NULL
           ts.stat = try( stmv_timeseries( pac$mean, method="fft" ) )
@@ -217,10 +218,10 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps = 1e-6, ... ) {
         ar_1 = NA
 
         pac = res$predictions[ pac_i, ]
-        pac$dyr = pac[, p$variables$TIME] - trunc(pac[, p$variables$TIME] )
+        pac$dyr = pac[, p$stmv_variables$TIME] - trunc(pac[, p$stmv_variables$TIME] )
         piid = which( zapsmall( pac$dyr - p$dyear_centre) == 0 )
-        pac = pac[ piid, c(p$variables$TIME, "mean")]
-        pac = pac[ order(pac[,p$variables$TIME]),]
+        pac = pac[ piid, c(p$stmv_variables$TIME, "mean")]
+        pac = pac[ order(pac[,p$stmv_variables$TIME]),]
         if (length(piid) > 5 ) {
           ts.stat = NULL
           ts.stat = try( stmv_timeseries( pac$mean, method="fft" ) )

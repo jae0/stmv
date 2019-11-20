@@ -7,7 +7,7 @@ stmv__bayesx = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
   #  logzinc ~  sx( x,y, bs="te")  # more detail .. "te" is preferred
   if (variablelist)  return( c() )
 
-  sdTotal=sd(dat[,p$variable$Y], na.rm=T)
+  sdTotal=sd(dat[, p$stmv_variables$Y], na.rm=T)
 
   if ( !exists( "stmv_local_model_bayesxmethod", p) ) p$stmv_local_model_bayesxmethod="MCMC"  # slightly more smoothing than the REML method
 
@@ -17,7 +17,7 @@ stmv__bayesx = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
   if ( "try-error" %in% class(hmod) ) return( NULL )
 
   px = predict(hmod)
-  ss = summary(lm( px ~ dat[, p$variables$Y ], na.action="na.omit" ))
+  ss = summary(lm( px ~ dat[, p$stmv_variables$Y ], na.action="na.omit" ))
   if (ss$r.squared < p$stmv_rsquared_threshold ) return(NULL)
 
   out = try( predict( hmod, newdata=pa, type="response" ) )

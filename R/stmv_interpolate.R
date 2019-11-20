@@ -35,31 +35,31 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
   Y = stmv_attach( p$storage_backend, p$ptr$Y )
 
   if (p$nloccov > 0) Ycov = stmv_attach( p$storage_backend, p$ptr$Ycov )
-  if ( exists("TIME", p$variables) ) Ytime = stmv_attach( p$storage_backend, p$ptr$Ytime )
+  if ( exists("TIME", p$stmv_variables) ) Ytime = stmv_attach( p$storage_backend, p$ptr$Ytime )
 
   # misc intermediate calcs to be done outside of parallel loops
 
   # pre-calculate indices and dim for data to use inside the loop
-  dat_names = unique( c(  p$variables$Y, p$variable$LOCS, p$variables$local_all,  "weights") )  # excludes p$variables$TIME
+  dat_names = unique( c(  p$stmv_variables$Y, p$variable$LOCS, p$stmv_variables$local_all,  "weights") )  # excludes p$stmv_variables$TIME
   # if (p$stmv_local_modelengine %in% c("fft", "tps", "twostep") ) {
-    if ( exists("TIME", p$variables)) {
-      dat_names = c(dat_names, p$variables$TIME)
+    if ( exists("TIME", p$stmv_variables)) {
+      dat_names = c(dat_names, p$stmv_variables$TIME)
     }
   # }
   # unless it is an explicit covariate and not a seasonal component there is no need for it
   # .. prediction grids create these from a time grid on the fly
 
   dat_nc = length( dat_names )
-  iY = which(dat_names== p$variables$Y)
+  iY = which(dat_names== p$stmv_variables$Y)
   ilocs = which( dat_names %in% p$variable$LOCS )
   # iwei = which( dat_names %in% "weights" )
 
   if (p$nloccov > 0) {
-    icov = which( dat_names %in% p$variables$local_cov )
-    icov_local = which( p$variables$COV %in% p$variables$local_cov )
+    icov = which( dat_names %in% p$stmv_variables$local_cov )
+    icov_local = which( p$stmv_variables$COV %in% p$stmv_variables$local_cov )
   }
-  if (exists("TIME", p$variables)) {
-    ti_cov = setdiff(p$variables$local_all, c(p$variables$Y, p$variables$LOCS, p$variables$local_cov ) )
+  if (exists("TIME", p$stmv_variables)) {
+    ti_cov = setdiff(p$stmv_variables$local_all, c(p$stmv_variables$Y, p$stmv_variables$LOCS, p$stmv_variables$local_cov ) )
     itime_cov = which(dat_names %in% ti_cov)
   }
 
@@ -185,11 +185,11 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     dat[,ilocs] = Yloc[data_subset$data_index,] + localrange_interpolation * runif(2*ndata, -dist_error, dist_error)
 
     if (p$nloccov > 0) dat[,icov] = Ycov[data_subset$data_index, icov_local] # no need for other dim checks as this is user provided
-    if (exists("TIME", p$variables)) {
+    if (exists("TIME", p$stmv_variables)) {
       dat[, itime_cov] = as.matrix(stmv_timecovars( vars=ti_cov, ti=Ytime[data_subset$data_index,] ) )
-      dat[, which(dat_names==p$variables$TIME) ] = Ytime[data_subset$data_index,]
+      dat[, which(dat_names==p$stmv_variables$TIME) ] = Ytime[data_subset$data_index,]
       # crude check of number of time slices
-      n_time_slices = stmv_discretize_coordinates( coo=dat[, p$variables$TIME], ntarget=p$nt, minresolution=p$minresolution[3], method="thin"  )
+      n_time_slices = stmv_discretize_coordinates( coo=dat[, p$stmv_variables$TIME], ntarget=p$nt, minresolution=p$minresolution[3], method="thin"  )
       if ( length(n_time_slices) < p$stmv_tmin )  next()
     }
     dat = as.data.frame(dat)
@@ -419,9 +419,9 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
       print( str(res) )
 
-      lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==2012.05,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
+      lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$stmv_variables$TIME]==2012.05,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
       lattice::levelplot( mean ~ plon + plat, data=res$predictions, col.regions=heat.colors(100), scale=list(draw=TRUE) , aspect="iso" )
-      for( i in sort(unique(res$predictions[,p$variables$TIME])))  print(lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$variables$TIME]==i,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
+      for( i in sort(unique(res$predictions[,p$stmv_variables$TIME])))  print(lattice::levelplot( mean ~ plon + plat, data=res$predictions[res$predictions[,p$stmv_variables$TIME]==i,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
 
       dev.new()
       plot(  dat[,iY] ~ dat$yr, col="red"  )

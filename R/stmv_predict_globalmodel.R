@@ -30,8 +30,8 @@ stmv_predict_globalmodel = function( ip=NULL, p, Yq_link=NULL, global_model=NULL
 
     # downscale and warp from p(0) -> p1
     pa = NULL # construct prediction surface
-    if ( length(p$variables$COV) > 0 ) {
-      for (i in p$variables$COV ) {
+    if ( length(p$stmv_variables$COV) > 0 ) {
+      for (i in p$stmv_variables$COV ) {
         pu = stmv_attach( p$storage_backend, p$ptr$Pcov[[i]] )
         nc = ncol(pu)
         if ( nc== 1 ) {
@@ -50,24 +50,24 @@ stmv_predict_globalmodel = function( ip=NULL, p, Yq_link=NULL, global_model=NULL
         }
       }
       pa = as.data.frame( pa )
-      names(pa) = p$variables$COV
+      names(pa) = p$stmv_variables$COV
     } else {
       pa = data.frame(intercept=rep(1, length(P0)))  # just to get the size right  when constant intercept model
     }
 
-    if ( any( p$variables$LOCS %in%  p$variables$global_cov ) ) {
+    if ( any( p$stmv_variables$LOCS %in%  p$stmv_variables$global_cov ) ) {
       Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
       pa = cbind(pa, Ploc[])
-      names(pa) = c( p$variables$COV, p$variables$LOCS )
+      names(pa) = c( p$stmv_variables$COV, p$stmv_variables$LOCS )
     }
 
-    if ( "yr" %in%  p$variables$global_cov ) {
+    if ( "yr" %in%  p$stmv_variables$global_cov ) {
       npa = names(pa)
       pa = cbind(pa, p$yrs[it] )
       names(pa) = c( npa, "yr" )
     }
 
-    if ( "dyear" %in% p$variables$global_cov ) {
+    if ( "dyear" %in% p$stmv_variables$global_cov ) {
       npa = names(pa)
       pa = cbind(pa, p$prediction_dyear )
       names(pa) = c( npa, "dyear" )

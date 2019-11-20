@@ -9,7 +9,7 @@ stmv_parameters = function( p=list(), ... ) {
   i = which(duplicated(names(p), fromLast=TRUE))
   if ( length(i) > 0 ) p = p[-i] # give any passed parameters a higher priority, overwriting pre-existing variable
 
-  if (!exists("stmvSaveDir", p)) p$stmvSaveDir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial_domain )
+  if (!exists("stmvSaveDir", p)) p$stmvSaveDir = file.path(p$data_root, "modelled", p$stmv_variables$Y, p$spatial_domain )
   if ( !file.exists(p$stmvSaveDir)) dir.create( p$stmvSaveDir, recursive=TRUE, showWarnings=FALSE )
 
   if (!exists("stmv_current_status", p))  p$stmv_current_status = file.path( p$stmvSaveDir, "stmv_current_status" )
@@ -62,13 +62,13 @@ stmv_parameters = function( p=list(), ... ) {
 
 
 
-  if (!exists("variables", p)) p$variables=list()
+  if (!exists("stmv_variables", p)) p$stmv_variables=list()
 
   p = stmv_variablelist(p)
 
   # require knowledge of size of stats output which varies with a given type of analysis
   p$statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "phi", "nu", "localrange" )
-  if (exists("TIME", p$variables) )  p$statsvars = c( p$statsvars, "ar_timerange", "ar_1" )
+  if (exists("TIME", p$stmv_variables) )  p$statsvars = c( p$statsvars, "ar_timerange", "ar_1" )
   if (p$stmv_local_modelengine == "userdefined" ) {
     if (exists("stmv_local_modelengine", p) ) {
       if (exists("stmv_local_modelengine_userdefined", p) ) {
@@ -111,7 +111,7 @@ stmv_parameters = function( p=list(), ... ) {
 
 
   if ( !exists("minresolution", p)) {
-    if ( exists("TIME", p$variables)) {
+    if ( exists("TIME", p$stmv_variables)) {
       p$minresolution = c(p$pres, p$pres, p$tres)
     } else {
       p$minresolution = c(p$pres, p$pres )
@@ -119,7 +119,7 @@ stmv_parameters = function( p=list(), ... ) {
   }
 
   p$nloccov = 0
-  if (exists("local_cov", p$variables)) p$nloccov = length(p$variables$local_cov)
+  if (exists("local_cov", p$stmv_variables)) p$nloccov = length(p$stmv_variables$local_cov)
 
   if ( !exists("stmv_force_complete_method", p)) p$stmv_force_complete_method = "linear"  # moving average
 

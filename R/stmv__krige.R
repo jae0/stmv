@@ -6,7 +6,7 @@ stmv__krige = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varObs=NUL
   #\\      .. you had better have enough data in each time slice ..  essentially this is kriging
   if (variablelist)  return( c() )
 
-  sdTotal = sd(dat[,p$variable$Y], na.rm=T)
+  sdTotal = sd(dat[, p$stmv_variables$Y], na.rm=T)
 
   dat$mean = NA
   pa$mean = NA
@@ -14,31 +14,31 @@ stmv__krige = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varObs=NUL
 
   for ( ti in 1:p$nt ) {
 
-    if ( exists("TIME", p$variables) ) {
-      xi = which( dat[ , p$variables$TIME ] == p$prediction_ts[ti] )
-      pa_i = which( pa[, p$variables$TIME ] == p$prediction_ts[ti] )
+    if ( exists("TIME", p$stmv_variables) ) {
+      xi = which( dat[ , p$stmv_variables$TIME ] == p$prediction_ts[ti] )
+      pa_i = which( pa[, p$stmv_variables$TIME ] == p$prediction_ts[ti] )
     } else {
       xi = 1:nrow(dat) # all data as p$nt==1
       pa_i = 1:nrow(pa)
     }
 
-    fspmodel <- try( Krig( dat[xi, p$variables$LOCS], dat[xi, p$variables$Y],
+    fspmodel <- try( Krig( dat[xi, p$stmv_variables$LOCS], dat[xi, p$stmv_variables$Y],
       sigma2=varObs, rho=varSpatial , cov.function="stationary.cov",
       Covariance="Matern", range=phi, smoothness=nu) )
     if (inherits(fspmodel, "try-error") )  next()
     dat$mean[xi] = fspmodel$fitted.values
-    ss = lm( dat$mean[xi] ~ dat[xi,p$variables$Y], na.action=na.omit)
+    ss = lm( dat$mean[xi] ~ dat[xi,p$stmv_variables$Y], na.action=na.omit)
     if ( "try-error" %in% class( ss ) ) next()
     rsquared = summary(ss)$r.squared
     if (rsquared < p$stmv_rsquared_threshold ) next()
-    pa$mean[pa_i] = predict(fspmodel, x=pa[pa_i, p$variables$LOCS] )
-    # pa$sd[pa_i]   = predictSE(fspmodel, x=pa[pa_i, p$variables$LOCS] ) # SE estimates are slooow
+    pa$mean[pa_i] = predict(fspmodel, x=pa[pa_i, p$stmv_variables$LOCS] )
+    # pa$sd[pa_i]   = predictSE(fspmodel, x=pa[pa_i, p$stmv_variables$LOCS] ) # SE estimates are slooow
 
     if ( 0 ){
       # debugging plots
       ti = 1
-      xi = which( dat[ , p$variables$TIME ] == p$prediction_ts[ti] )
-      mbas = MBA::mba.surf( dat[xi, c( p$variables$LOCS, p$variables$Y) ], 300, 300, extend=TRUE)$xyz.est
+      xi = which( dat[ , p$stmv_variables$TIME ] == p$prediction_ts[ti] )
+      mbas = MBA::mba.surf( dat[xi, c( p$stmv_variables$LOCS, p$stmv_variables$Y) ], 300, 300, extend=TRUE)$xyz.est
       image(mbas)
 
       surface(fspmodel)
@@ -53,7 +53,7 @@ stmv__krige = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varObs=NUL
 
   # plot(pred ~ z , dat)
   # lattice::levelplot( mean ~ plon + plat, data=pa, col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
-  ss = lm( dat$mean ~ dat[,p$variables$Y], na.action=na.omit)
+  ss = lm( dat$mean ~ dat[,p$stmv_variables$Y], na.action=na.omit)
   if ( "try-error" %in% class( ss ) ) return( NULL )
   rsquared = summary(ss)$r.squared
   if (rsquared < p$stmv_rsquared_threshold ) return(NULL)

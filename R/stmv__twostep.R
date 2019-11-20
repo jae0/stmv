@@ -26,11 +26,11 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
   ids = todrop=NULL
 
   # static vars .. don't need to look up
-  tokeep = c(p$variables$LOCS )
+  tokeep = c(p$stmv_variables$LOCS )
   if (exists("weights", dat) ) tokeep = c(tokeep, "weights")
   if (p$nloccov > 0) {
     for (ci in 1:p$nloccov) {
-      vn = p$variables$local_cov[ci]
+      vn = p$stmv_variables$local_cov[ci]
       pu = stmv_attach( p$storage_backend, p$ptr$Pcov[[vn]] )
       nts = ncol(pu)
       if ( nts==1 ) tokeep = c(tokeep, vn )
@@ -41,17 +41,17 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
   nts = vn = NULL
 
   # add temporal grid
-  if ( exists("TIME", p$variables) ) {
+  if ( exists("TIME", p$stmv_variables) ) {
     px = cbind( px[ rep.int(1:px_n, p$nt), ],
                     rep.int(p$prediction_ts, rep(px_n, p$nt )) )
-    names(px)[ ncol(px) ] = p$variables$TIME
-    px = cbind( px, stmv_timecovars ( vars=p$variables$local_all, ti=px[,p$variables$TIME]  ) )
+    names(px)[ ncol(px) ] = p$stmv_variables$TIME
+    px = cbind( px, stmv_timecovars ( vars=p$stmv_variables$local_all, ti=px[,p$stmv_variables$TIME]  ) )
   }
 
   if (p$nloccov > 0) {
     # add time-varying covars .. not necessary except when covars are modelled locally
     for (ci in 1:p$nloccov) {
-      vn = p$variables$local_cov[ci]
+      vn = p$stmv_variables$local_cov[ci]
       pu = stmv_attach( p$storage_backend, p$ptr$Pcov[[vn]] )
       nts = ncol(pu)
       if ( nts== 1) {
@@ -94,7 +94,7 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
   }
 
   # range checks
-  rY = range( dat[,p$variables$Y], na.rm=TRUE)
+  rY = range( dat[,p$stmv_variables$Y], na.rm=TRUE)
   toosmall = which( ts_preds$predictions$mean < rY[1] )
   toolarge = which( ts_preds$predictions$mean > rY[2] )
   if (length(toosmall) > 0) ts_preds$predictions$mean[toosmall] =  rY[1]
@@ -104,14 +104,14 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
   rownames(pxts) = NULL
   ts_preds = NULL
 
-  names(pxts)[which(names(pxts)=="mean")] = p$variables$Y
-  names(pxts)[which(names(pxts)=="sd")] = paste(p$variables$Y, "sd", sep=".")
+  names(pxts)[which(names(pxts)=="mean")] = p$stmv_variables$Y
+  names(pxts)[which(names(pxts)=="sd")] = paste(p$stmv_variables$Y, "sd", sep=".")
 
   if(0){
       # debugging plots
       for (ti in 1:p$nt){
-        xi = which( pxts[ , p$variables$TIME ] == p$prediction_ts[ti] )
-        mbas = MBA::mba.surf( pxts[xi, c( p$variables$LOCS, p$variables$Y) ], 300, 300, extend=TRUE)$xyz.est
+        xi = which( pxts[ , p$stmv_variables$TIME ] == p$prediction_ts[ti] )
+        mbas = MBA::mba.surf( pxts[xi, c( p$stmv_variables$LOCS, p$stmv_variables$Y) ], 300, 300, extend=TRUE)$xyz.est
         image(mbas)
       }
   }
@@ -164,9 +164,9 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
   return( out )
 
   if (0) {
-    lattice::levelplot( mean ~ plon + plat, data=out$predictions[out$predictions[,p$variables$TIME]==2012.05,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
+    lattice::levelplot( mean ~ plon + plat, data=out$predictions[out$predictions[,p$stmv_variables$TIME]==2012.05,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
     lattice::levelplot( mean ~ plon + plat, data=out$predictions, col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
-    for( i in sort(unique(out$predictions[,p$variables$TIME])))  print(lattice::levelplot( mean ~ plon + plat, data=out$predictions[out$predictions[,p$variables$TIME]==i,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
+    for( i in sort(unique(out$predictions[,p$stmv_variables$TIME])))  print(lattice::levelplot( mean ~ plon + plat, data=out$predictions[out$predictions[,p$stmv_variables$TIME]==i,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
   }
 
 

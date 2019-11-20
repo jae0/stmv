@@ -29,6 +29,7 @@ DATA = list(
 
 DATA$input = lonlat2planar( DATA$input, p0$aegis_proj4string_planar_km )
 DATA$input = DATA$input[, c("plon", "plat", "z")]
+DATA$input = DATA$input[ which(is.finite(DATA$input$z)), ]
 
 p = aegis.bathymetry::bathymetry_parameters(
   p=p0,  # start with spatial settings of input data
@@ -38,7 +39,7 @@ p = aegis.bathymetry::bathymetry_parameters(
   spatial_domain = p0$spatial_domain,
   inputdata_spatial_discretization_planar_km = p0$pres,  # pres = 0.5
   aegis_dimensionality="space",
-  variables = list(Y="z"),  # required as fft has no formulae
+  stmv_variables = list(Y="z"),  # required as fft has no formulae
   stmv_global_modelengine = "none",  # too much data to use glm as an entry into link space ... use a direct transformation
   stmv_local_modelengine="fft",
   stmv_fft_filter = "matern tapered lowpass modelled fast_predictions", #  matern with taper, fast predictions are sufficient as data density is high

@@ -6,7 +6,7 @@
 
     # --------------------------
     if (!exists("stmvSaveDir", p)) {
-      p$stmvSaveDir = file.path(p$data_root, "modelled", p$variables$Y, p$spatial_domain )
+      p$stmvSaveDir = file.path(p$data_root, "modelled", p$stmv_variables$Y, p$spatial_domain )
     }
 
     if (DS %in% "filenames" ) {
@@ -22,13 +22,13 @@
       p$cache$Psd =   file.path( p$stloc, "predictions_sd.cache" )
       p$cache$Pn =    file.path( p$stloc, "predictions_n.cache" )
 
-      if ( exists( "COV", p$variables)) {
+      if ( exists( "COV", p$stmv_variables)) {
         p$cache$Ycov =  file.path( p$stloc, "input.Ycov.cache"  )
         p$cache$Pcov =  list()
-        for (cov in p$variables$COV) p$cache$Pcov[[cov]] = file.path( p$stloc, paste("predictions_cov", cov, "cache", sep=".") )
+        for (cov in p$stmv_variables$COV) p$cache$Pcov[[cov]] = file.path( p$stloc, paste("predictions_cov", cov, "cache", sep=".") )
       }
 
-      if (exists( "TIME", p$variables)){
+      if (exists( "TIME", p$stmv_variables)){
         p$cache$Ytime = file.path( p$stloc, "input.Ytime.cache" )
       }
 
@@ -58,7 +58,7 @@
         p$bm = p$cache
         for ( i in names(p$bm) ) {
           if ( i=="Pcov" ) {
-            for (j in p$variables$COV) p$bm$Pcov[[j]] = gsub(".cache$", ".bigmemory", p$bm$Pcov[[j]] )
+            for (j in p$stmv_variables$COV) p$bm$Pcov[[j]] = gsub(".cache$", ".bigmemory", p$bm$Pcov[[j]] )
           } else {
             p$bm[[i]] = gsub(".cache$", ".bigmemory", p$bm[[i]] )
           }
@@ -127,10 +127,10 @@
       if (length(bad)> 0 ) hasdata[bad] = NA
 
       # covariates (independent vars)
-      if ( exists( "COV", p$variables) ) {
-        if (length(p$variables$COV) > 0) {
+      if ( exists( "COV", p$stmv_variables) ) {
+        if (length(p$stmv_variables$COV) > 0) {
           Ycov = stmv_attach(  p$storage_backend, p$ptr$Ycov )
-          if ( length( p$variables$COV ) == 1 ) {
+          if ( length( p$stmv_variables$COV ) == 1 ) {
             bad = which( !is.finite( Ycov[]) )
           } else {
             bad = which( !is.finite( rowSums(Ycov[])) )
@@ -189,10 +189,10 @@
         }
       }
 
-      if ( length( p$variables$COV ) > 0 ) {
-        good = which( is.finite (rowSums(B[ , c(p$variables$Y,p$variables$COV) ])) )
+      if ( length( p$stmv_variables$COV ) > 0 ) {
+        good = which( is.finite (rowSums(B[ , c(p$stmv_variables$Y,p$stmv_variables$COV) ])) )
       } else {
-        good = which( is.finite (B[,p$variables$Y ] ) )
+        good = which( is.finite (B[,p$stmv_variables$Y ] ) )
       }
 
       ngood = length(good)
@@ -309,7 +309,7 @@
     if (DS %in% c("stmv.results", "stmv.prediction", "stmv.stats") )  {
 
       if (DS=="stmv.prediction") {
-        if (! exists("TIME", p$variables)) {
+        if (! exists("TIME", p$stmv_variables)) {
           fn = file.path( p$stmvSaveDir, paste("stmv.prediction",  ret, "rdata", sep="." ) )
         } else {
           fn = file.path( p$stmvSaveDir, paste("stmv.prediction",  ret, yr, "rdata", sep="." ) )
@@ -329,7 +329,7 @@
 
       shallower = NULL
       if ( exists("stmv_filter_depth_m", p) && is.finite( p$stmv_filter_depth_m) ) {
-        if ( "z" %in% p$variables$COV ){
+        if ( "z" %in% p$stmv_variables$COV ){
           depths = stmv_attach( p$storage_backend, p$ptr$Pcov[["z"]] )[]
           ii = which( depths[] < p$stmv_filter_depth_m )
           if (length(ii) > 0) shallower = ii
@@ -337,7 +337,7 @@
         }
       }
 
-      if ( exists("TIME", p$variables)) {
+      if ( exists("TIME", p$stmv_variables)) {
 
         p0 = p
         p$clusters = p$stmv_runmode[["interpolate"]][[1]]

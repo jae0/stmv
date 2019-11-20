@@ -5,7 +5,7 @@ stmv__glm = function(p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
   #\\ operating upon link scale ... family for the local model is forced to be gaussian("identity")
   if (variablelist)  return( c() )
 
-  sdTotal=sd(dat[,p$variable$Y], na.rm=T)
+  sdTotal=sd(dat[,p$stmv_variables$Y], na.rm=T)
 
   if ( exists("stmv_local_model_distanceweighted", p) ) {
     if (p$stmv_local_model_distanceweighted) {

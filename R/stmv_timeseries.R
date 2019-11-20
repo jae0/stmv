@@ -7,9 +7,9 @@ stmv_timeseries  = function( x, method="spec.pgram", quant=0.95, taper=0.05, ker
     # with spec.pgram, default is to taper 0.1 and remove linear trend
     u = spec.pgram ( x, detrend=TRUE, plot=FALSE, na.action=na.omit, taper=taper  )
   }
- 
+
   if (method=="spec.ar") {
-    # with spec.ar -- parametric AR fit/smooth via AIC then compute FFT on modeled results .. z must be ts 
+    # with spec.ar -- parametric AR fit/smooth via AIC then compute FFT on modeled results .. z must be ts
     if (! is.ts(x) ) warning( "Data must be a ts for this to work" )
     u = spec.ar ( x , plot=FALSE, na.action=na.omit )
   }
@@ -20,7 +20,7 @@ stmv_timeseries  = function( x, method="spec.pgram", quant=0.95, taper=0.05, ker
     u = list()
     nx = length(z)
     nx2 = floor(nx/2)  # make even
-    I = Mod(fft(z))^2 /nx 
+    I = Mod(fft(z))^2 /nx
     I[1L] = 0
     u$spec = (4/nx)*I[1:nx2]    # "scaled periodogram"
     u$freq = (0:(nx2-1))*freq/nx
@@ -33,7 +33,7 @@ stmv_timeseries  = function( x, method="spec.pgram", quant=0.95, taper=0.05, ker
     y <- Mod(fft(z))^2/length(z)
     y[1L] <- 0
     n <- length(z)
-    z <- (0:(n/2)) * frequency(x)/n  
+    z <- (0:(n/2)) * frequency(x)/n
     if (length(z)%%2 == 0) {
         n <- length(z) - 1
         y <- y[1L:n]
@@ -58,29 +58,29 @@ stmv_timeseries  = function( x, method="spec.pgram", quant=0.95, taper=0.05, ker
     nw0 = nw + 1
 
     #    preds_ydata = list()
-    #       preds_ydata[[ p$variables$Y ]] = NA ## ie. to predict
+    #       preds_ydata[[ p$stmv_variables$Y ]] = NA ## ie. to predict
     #      PREDS = inla.stack( tag="preds", data=preds_ydata, A=preds_A, effects=preds_eff, remove.unused=FALSE )
     #DATA = inla.stack(DATA, PREDS )
     #    preds_stack_index = inla.stack.index( DATA, "preds")$data  # indices of predictions in stacked data
-          
+
     r = inla( y ~ 0 + f( x, model="ar1" ), data = dat )
     dat$predictions =  r$summary.random$x[["mean"]]
     ar.pred =  r$summary.hyperpar["Rho for x", "mean" ]
     mm = glm( predictions~y, data=dat )
-   
+
     # xmean = RES$summary.fitted.values[ stack_index, "mean"]
-   
+
   }
 
   u$powerPr = cumsum( u$spec ) / sum( u$spec )
   u$quantileFreq = u$freq[ min( which( u$powerPr >= quant ) ) ]
-  u$quantilePeriod = 1 / u$quantileFreq 
+  u$quantilePeriod = 1 / u$quantileFreq
 
-  if (plotdata) { 
+  if (plotdata) {
     plot ( u$powerPr ~ u$freq, type="l" )
     abline( v=u$quantileFreq )
     abline( h=quant )
-    legend( "bottomright", legend= paste( "Period =", round( u$quantilePeriod, digits=3 ) )) 
+    legend( "bottomright", legend= paste( "Period =", round( u$quantilePeriod, digits=3 ) ))
   }
 
   if ( 0 & is.ts( x ) ) {
@@ -90,12 +90,12 @@ stmv_timeseries  = function( x, method="spec.pgram", quant=0.95, taper=0.05, ker
     oldpty <- par(pty = "s")
     on.exit(par(oldpty))
      ci.col = "blue"
-    plot(z, cumsum(y)/sum(y), type = "s", xlim = c(0, xm), ylim = c(0, 
+    plot(z, cumsum(y)/sum(y), type = "s", xlim = c(0, xm), ylim = c(0,
         1), xaxs = "i", yaxs = "i", xlab = "frequency", ylab = "")
     lines(c(0, xm * (1 - crit)), c(crit, 1), col = ci.col, lty = 2)
     lines(c(xm * crit, xm), c(0, 1 - crit), col = ci.col, lty = 2)
   }
- 
-  return (u) 
+
+  return (u)
 
 }

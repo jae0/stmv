@@ -14,7 +14,7 @@ stmv_predictions_update = function(p, preds ) {
 
   npred = nrow(preds)
 
-  if ( ! exists("TIME", p$variables) ) {
+  if ( ! exists("TIME", p$stmv_variables) ) {
 
     u = which( is.finite( P[preds$i] ) )  # these have data already .. update
     if ( length( u ) > 1 ) {
@@ -45,7 +45,7 @@ stmv_predictions_update = function(p, preds ) {
   }
 
 
-  if ( exists("TIME", p$variables) ) {
+  if ( exists("TIME", p$stmv_variables) ) {
     u = which( is.finite( P[preds$i,1] ) )  # these have data already .. update
     u_n = length( u )
     if ( u_n > 1 ) {  # ignore if only one point .. mostly because it can cause issues with matrix form ..
@@ -92,8 +92,8 @@ stmv_predictions_update = function(p, preds ) {
 
     if (0) {
         v = preds
-        if ( exists("TIME", p$variables) ){
-          v = v[which( v[,p$variables$TIME]==2000.55),]
+        if ( exists("TIME", p$stmv_variables) ){
+          v = v[which( v[,p$stmv_variables$TIME]==2000.55),]
         }
         require(lattice)
         print(
@@ -101,11 +101,11 @@ stmv_predictions_update = function(p, preds ) {
       )
 
       if ("time slice at 2012.05") {
-        lattice::levelplot( mean ~ plon + plat, data=preds[preds[,p$variables$TIME]==2012.05,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
+        lattice::levelplot( mean ~ plon + plat, data=preds[preds[,p$stmv_variables$TIME]==2012.05,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
       }
       if ("all TIME time slices from latest predictions") {
-        for( i in sort(unique(preds[,p$variables$TIME])))  {
-          print(lattice::levelplot( mean ~ plon + plat, data=preds[preds[,p$variables$TIME]==i,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
+        for( i in sort(unique(preds[,p$stmv_variables$TIME])))  {
+          print(lattice::levelplot( mean ~ plon + plat, data=preds[preds[,p$stmv_variables$TIME]==i,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" ) )
         }
       }
       if ("all nt time slices in stored predictions P") {

@@ -50,7 +50,7 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NUL
       if ( exists("stmv_filter_depth_m", p) && is.finite(p$stmv_filter_depth_m) ) {
         # additionaldepth-based filter:
         # assuming that there is depth information in Pcov, match Sloc's and filter out locations that fall on land
-        if ( "z" %in% p$variables$COV ){
+        if ( "z" %in% p$stmv_variables$COV ){
           z = stmv_attach( p$storage_backend, p$ptr$Pcov[["z"]] )[]
           Pabove = which( z < p$stmv_filter_depth_m ) # negative = above land:: depth = - height
           Pbelow = which( z >= p$stmv_filter_depth_m )
@@ -217,7 +217,7 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NUL
   proportion_incomplete = round( out$n.todo / ( out$n.total - out$n.outside_bounds ), 3)
   proportion_complete = round( out$n.complete / ( out$n.total - out$n.outside_bounds ), 3)
   message( paste("||| Number [ to do| complete | total ]:", out$n.todo, "|", out$n.complete, "|", out$n.total  ))
-  message( paste("||| Proportion [ incomplete | complete ]:", proportion_incomplete, "|", "proportion_complete", "\n" ))
+  # message( paste("||| Proportion [ incomplete | complete ]:", proportion_incomplete, "|", "proportion_complete", "\n" ))
 
   if (plotdata) {
     dev.new()
