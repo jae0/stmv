@@ -187,9 +187,10 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     if (p$nloccov > 0) dat[,icov] = Ycov[data_subset$data_index, icov_local] # no need for other dim checks as this is user provided
     if (exists("TIME", p$stmv_variables)) {
       dat[, itime_cov] = as.matrix(stmv_timecovars( vars=ti_cov, ti=Ytime[data_subset$data_index,] ) )
-      dat[, which(dat_names==p$stmv_variables$TIME) ] = Ytime[data_subset$data_index,]
+      itt = which(dat_names==p$stmv_variables$TIME)
+      dat[, itt ] = Ytime[data_subset$data_index,]
       # crude check of number of time slices
-      n_time_slices = stmv_discretize_coordinates( coo=dat[, p$stmv_variables$TIME], ntarget=p$nt, minresolution=p$minresolution[3], method="thin"  )
+      n_time_slices = stmv_discretize_coordinates( coo=dat[, itt], ntarget=p$nt, minresolution=p$minresolution[3], method="thin"  )
       if ( length(n_time_slices) < p$stmv_tmin )  next()
     }
     dat = as.data.frame(dat)
