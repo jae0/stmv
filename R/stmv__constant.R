@@ -37,12 +37,12 @@ stmv__constant = function( p=NULL,  dat=NULL, pa=NULL,  variablelist=FALSE, ... 
     }
 
     pa$mean[pa_i] = mean( dat[xi, p$stmv_variables$Y], na.rm=TRUE )
-    pa$sd[pa_i]   = sd  ( dat[xi, p$stmv_variable$Y ], na.rm=TRUE )  # just a crude guess for each timeslice
+    pa$sd[pa_i]   = sd  ( dat[xi, p$stmv_variables$Y ], na.rm=TRUE )  # just a crude guess for each timeslice
 
-    dat[ xi, p$stmv_variable$LOCS ] = round( dat[ xi, p$stmv_variable$LOCS ] / p$pres  ) * p$pres
+    dat[ xi, p$stmv_variables$LOCS ] = round( dat[ xi, p$stmv_variables$LOCS ] / p$pres  ) * p$pres
     iYP = match(
-      stmv::array_map( "xy->1", dat[ xi, p$stmv_variable$LOCS ], gridparams=p$gridparams ),
-      stmv::array_map( "xy->1", pa[ pa_i , p$stmv_variable$LOCS ], gridparams=p$gridparams )
+      stmv::array_map( "xy->1", dat[ xi, p$stmv_variables$LOCS ], gridparams=p$gridparams ),
+      stmv::array_map( "xy->1", pa[ pa_i , p$stmv_variables$LOCS ], gridparams=p$gridparams )
     )
     dat$mean[xi] = pa$mean[pa_i][iYP]
 

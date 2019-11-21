@@ -40,12 +40,12 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps = 1e-6, ... ) {
   # misc intermediate calcs to be done outside of parallel loops
 
   # pre-calculate indices and dim for data to use inside the loop
-  dat_names = unique( c(  p$stmv_variables$Y, p$variable$LOCS, p$stmv_variables$local_all,  "weights") )  # excludes p$stmv_variables$TIME
+  dat_names = unique( c(  p$stmv_variables$Y, p$stmv_variables$LOCS, p$stmv_variables$local_all,  "weights") )  # excludes p$stmv_variables$TIME
   # unless it is an explicit covariate and not a seasonal component there is no need for it
   # .. prediction grids create these from a time grid on the fly
   dat_nc = length( dat_names )
   iY = which(dat_names== p$stmv_variables$Y)
-  ilocs = which( dat_names %in% p$variable$LOCS )
+  ilocs = which( dat_names %in% p$stmv_variables$LOCS )
 
   if (length(ip) < 100) {
     nlogs = length(ip) / 5

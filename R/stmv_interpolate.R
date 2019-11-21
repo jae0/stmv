@@ -16,7 +16,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
   p_add = list(...)
   if (length(p_add) > 0 ) p = c(p, p_add)
   i = which(duplicated(names(p), fromLast=TRUE))
-  if ( length(i) > 0 ) p = p[-i] # give any passed parameters a higher priority, overwriting pre-existing variable
+  if ( length(i) > 0 ) p = p[-i] # give any passed parameters a higher priority, overwriting pre-existing stmv_variables
 
   if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
 
@@ -40,7 +40,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
   # misc intermediate calcs to be done outside of parallel loops
 
   # pre-calculate indices and dim for data to use inside the loop
-  dat_names = unique( c(  p$stmv_variables$Y, p$variable$LOCS, p$stmv_variables$local_all,  "weights") )  # excludes p$stmv_variables$TIME
+  dat_names = unique( c(  p$stmv_variables$Y, p$stmv_variables$LOCS, p$stmv_variables$local_all,  "weights") )  # excludes p$stmv_variables$TIME
   # if (p$stmv_local_modelengine %in% c("fft", "tps", "twostep") ) {
     if ( exists("TIME", p$stmv_variables)) {
       dat_names = c(dat_names, p$stmv_variables$TIME)
@@ -51,7 +51,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
 
   dat_nc = length( dat_names )
   iY = which(dat_names== p$stmv_variables$Y)
-  ilocs = which( dat_names %in% p$variable$LOCS )
+  ilocs = which( dat_names %in% p$stmv_variables$LOCS )
   # iwei = which( dat_names %in% "weights" )
 
   if (p$nloccov > 0) {
