@@ -1,5 +1,5 @@
 # 1. stmv interpolations assuming some seasonal pattern
-# twostep:  ~ 160+ hrs
+# twostep:  ~ 36 hrs :( .. consider shoter time range and less exhaustive settings
 
 
 year.assessment = 2018
@@ -72,7 +72,7 @@ p = aegis.temperature::temperature_parameters(
   stmv_variogram_method = "fft",
   stmv_autocorrelation_fft_taper = 0.75,  # benchmark from which to taper .. user level control of smoothness
   stmv_autocorrelation_localrange = 0.1,  # for reporting in stats
-  stmv_autocorrelation_basis_interpolation = c(  0.3, 0.2, 0.1, 0.01, 0.001 ),  # range finding
+  stmv_autocorrelation_basis_interpolation = c(  0.3, 0.2, 0.1, 0.01 ),  # range finding
   stmv_local_model_distanceweighted = TRUE,
   stmv_filter_depth_m = 5, # the depth covariate is input as units of depth (m) so, choose stats locations with elevation > 10m as being on land
   stmv_rsquared_threshold = 0.001, # lower thindreshold for timeseries model
@@ -83,7 +83,7 @@ p = aegis.temperature::temperature_parameters(
   stmv_nmin = 120,  # min number of unit spatial locations req before attempting to model in a localized space .. control no error in local model
   stmv_nmax = 120*(nyrs/2), # no real upper bound.. just speed / RAM limits  .. can go up to 10 GB / core if too large
   stmv_tmin = round( nyrs * 1.25 ),
-  stmv_force_complete_method = "linear",
+  stmv_force_complete_method = "fft",
   stmv_runmode = list(
     scale = rep("localhost", scale_ncpus),  # 7 min
     interpolate = list(

@@ -590,12 +590,13 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
 
 
+
     # -----------------------------------------------------
     if ("interpolate" %in% runmode ) {
 
       invisible( stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" ))
       if ( "restart_load" %in% runmode ) {
-        invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolate", datasubset="predictions" ) )
+        invisible( stmv_db(p=p, DS="load_saved_state", runmode=p$restart_load, datasubset="predictions" ) )
         invisible( stmv_statistics_status( p=p, reset=c( "all") ) ) # required to start as scale determination uses Sflags too
         invisible( stmv_statistics_status( p=p, reset=c( "complete" ) ) )
         invisible( stmv_statistics_status( p=p, reset=c( "incomplete" ) ) )
@@ -637,7 +638,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
       }
       message( paste( "Time used for <interpolations", ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
+      stmv_db(p=p, DS="save_current_state", runmode="interpolate", datasubset="predictions")
       p = p0
+
     }
 
     if(0) {
@@ -659,7 +662,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
       invisible( stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" ))
       if ( "restart_load" %in% runmode ) {
-        invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolate", datasubset="predictions" ) )
+        invisible( stmv_db(p=p, DS="load_saved_state", runmode=p$restart_load, datasubset="predictions" ) )
         invisible( stmv_statistics_status( p=p, reset=c( "all") ) ) # required to start as scale determination uses Sflags too
         invisible( stmv_statistics_status( p=p, reset=c( "complete" ) ) )
         invisible( stmv_statistics_status( p=p, reset=c( "incomplete" ) ) )
@@ -684,12 +687,13 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         slog = stmv_logfile(p=p, flag= paste("Interpolation distance basis phase", p$runmode, "completed ...") ) # final update before continuing
       }
       message( paste( "Time used for <interpolations", ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
+      stmv_db(p=p, DS="save_current_state", runmode="interpolate_distance_basis" )
       p = p0
     }
 
     if(0) {
-      stmv_db(p=p, DS="load_saved_state", runmode="interpolate" )
-      stmv_db(p=p, DS="save_current_state", runmode="interpolate")
+      stmv_db(p=p, DS="load_saved_state", runmode="interpolate_distance_basis" )
+      stmv_db(p=p, DS="save_current_state", runmode="interpolate_distance_basis" )
       P = stmv_attach( p$storage_backend, p$ptr$P )
       Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
       if (length(dim(P)) > 1 ) {
@@ -714,7 +718,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         # NOTE:: no covariates are used
         invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolate", datasubset="predictions" ) )
         if ( "restart_load" %in% runmode ) {
-          invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolate_hybrid_boost", datasubset="predictions" ) )
+          invisible( stmv_db(p=p, DS="load_saved_state", runmode=p$restart_load, datasubset="predictions" ) )
           invisible( stmv_statistics_status( p=p, reset=c( "all") ) ) # required to start as scale determination uses Sflags too
           invisible( stmv_statistics_status( p=p, reset=c( "complete" ) ) )
           invisible( stmv_statistics_status( p=p, reset=c( "incomplete" ) ) )
@@ -733,15 +737,14 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
           if ( currentstatus$n.todo == 0 ) break()
           if ( currentstatus$n.todo < (2*length(p$clusters)) ) p$clusters = p$clusters[1] # drop to serial mode
           invisible( parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  ) )
-          stmv_db(p=p, DS="save_current_state", runmode="interpolate_hybrid_boost", datasubset="predictions")
+          stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="predictions")
           invisible( stmv_statistics_status( p=p ) ) # quick update before logging
           slog = stmv_logfile(p=p, flag= paste("Interpolation phase", p$runmode, "completed ...") ) # final update
         }
         message( paste( "Time used for <interpolate_hybrid_boost", j, ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
-        p = p0
+        stmv_db(p=p, DS="save_current_state", runmode="interpolate_hybrid_boost")  # final save for this runmode
         # stmv_db(p=p, DS="load_saved_state", runmode="interpolate_hybrid_boost" )
-        # stmv_db(p=p, DS="save_current_state", runmode="interpolate_hybrid_boost")
-
+        p = p0
     }
   }
 
@@ -750,12 +753,15 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
 
   if ("interpolate_force_complete" %in% runmode) {
-    message( "\n||| Entering <interpolate force complete> stage: ", format(Sys.time()),  "\n" )
-    currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
-    if ( !exists("stmv_force_complete_method", p) ) p$stmv_force_complete_method = "linear"
-    if ( currentstatus$n.todo > 0 ) invisible( stmv_interpolate_force_complete( p=p ) )
-    stmv_db(p=p, DS="save_current_state", runmode="interpolate_force_complete", datasubset="predictions")  # not needed as this is a terminal step .. but to be consistent
-    # stmv_db(p=p, DS="load_saved_state", runmode="interpolate_force_complete", datasubset="predictions")  # not needed as this is a terminal step .. but to be consistent
+    if (p$interpolate_force_complete) {
+      message( "\n||| Entering <interpolate force complete> stage: ", format(Sys.time()),  "\n" )
+      invisible( stmv_statistics_status( p=p, reset=c( "complete" ) ) )
+      currentstatus = stmv_statistics_status( p=p, reset="incomplete" )
+      if ( !exists("stmv_force_complete_method", p) ) p$stmv_force_complete_method = "fft"
+      if ( currentstatus$n.todo > 0 ) invisible( stmv_interpolate_force_complete( p=p ) )
+      stmv_db(p=p, DS="save_current_state", runmode="interpolate_force_complete", datasubset="predictions")  # not needed as this is a terminal step .. but to be consistent
+      # stmv_db(p=p, DS="load_saved_state", runmode="interpolate_force_complete", datasubset="predictions")  # not needed as this is a terminal step .. but to be consistent
+    }
   }
 
 

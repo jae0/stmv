@@ -40,40 +40,40 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
 
 
   if (p$stmv_force_complete_method=="linear") {
-    # fastest .. but extrapolation is not possible .. can cause very unexpected results
+    require(interp)
+    # fastest .. but extrapolation is not possible
+    # .. can cause very unexpected results
     for ( iip in ip ) {
       ww = p$runs[ iip, "time_index" ]
       # means
+      withdata = which( is.finite( P[,ww] ) )
       tofill = which( ! is.finite( P[,ww] ) )
       if (length( tofill) > 0 ) {
         rY = range( P[,ww], na.rm=TRUE )
-        X = matrix(NA, ncol=nc, nrow=nr )
-        X[ind] = P[,ww]
-        X = fields::interp.surface( list(x=p$plons, y=p$plats,z=X), loc=Ploc[,] ) # linear interpolation
+        X = interp::interp( x=Ploc[withdata,1], y=Ploc[withdata,2], z= P[withdata,ww], xo=Ploc[tofill,1], yo=Ploc[tofill,2],
+          input="points", output="points", method="linear", extrap=TRUE )
         lb = which( X < rY[1] )
         if (length(lb) > 0) X[lb] = rY[1]
         lb = NULL
         ub = which( X > rY[2] )
         if (length(ub) > 0) X[ub] = rY[2]
         ub = NULL
-        P[tofill,ww] = X[ tofill ]
+        P[tofill,ww] = X
       }
 
       ## SD
       tofill = which( ! is.finite( Psd[,ww] ) )
       if (length( tofill) > 0 ) {
         rY = range( Psd[,ww], na.rm=TRUE )
-        X = matrix(NA, ncol=nc, nrow=nr )
-        X[ind] = Psd[,ww]
-        X = fields::interp.surface( list(x=p$plons, y=p$plats,z=X), loc=Ploc[,] ) # linear interpolation
-        # image(X)
+        X = interp::interp( x=Ploc[withdata,1], y=Ploc[withdata,2], z= Psd[withdata,ww], xo=Ploc[tofill,1], yo=Ploc[tofill,2],
+          input="points", output="points", method="linear", extrap=TRUE )
         lb = which( X < rY[1] )
         if (length(lb) > 0) X[lb] = rY[1]
         lb = NULL
         ub = which( X > rY[2] )
         if (length(ub) > 0) X[ub] = rY[2]
         ub = NULL
-        Psd[tofill,ww]  = X[ tofill ]
+        Psd[tofill,ww]  = X
       }
     }
     return( "complete" )
@@ -129,8 +129,7 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
 
 
   if (p$stmv_force_complete_method=="akima") {
-    # basic cubic interpolation, but using all predicted fields rather than only data
-    # slow .. esp on large problems
+    # basic linear interpolation --- too slow to be useful
     require(akima)
     for ( iip in ip ) {
       ww = p$runs[ iip, "time_index" ]
@@ -140,7 +139,7 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
       if (length( tofill) > 0 ) {
         rY = range( P[,ww], na.rm=TRUE )
         X = interp( x=Ploc[withdata,1], y=Ploc[withdata,2], z=P[withdata,ww],
-          xo=p$plons, yo=p$plats, linear=FALSE, extrap=TRUE, duplicate="mean" )$z  # cannot extrapolate with linear, using cubic spline
+          xo=p$plons, yo=p$plats, linear=TRUE, extrap=FALSE, duplicate="mean" )$z  # cannot extrapolate with linear
         withdata = NULL
         lb = which( X < rY[1] )
         if (length(lb) > 0) X[lb] = rY[1]
@@ -160,7 +159,7 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
       if (length( tofill) > 0 ) {
         rY = range( Psd[,ww], na.rm=TRUE )
         X = interp( x=Ploc[withdata,1], y=Ploc[withdata,2], z=Psd[withdata,ww],
-          xo=p$plons, yo=p$plats, linear=FALSE, extrap=TRUE, duplicate="mean" )$z  # cannot extrapolate with linear, using cubic spline
+          xo=p$plons, yo=p$plats, linear=TRUE, extrap=FALSE, duplicate="mean" )$z  # cannot extrapolate with linear, using cubic spline
         withdata = NULL
         lb = which( X < rY[1] )
         if (length(lb) > 0) X[lb] = rY[1]
@@ -289,8 +288,12 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
         if (length(ub) > 0) X[ub] = rY[2]
 
         # image(X)
-        X[ X > P_qn[2] ]=P_qn[2]
-        X[ X < P_qn[1] ]=P_qn[1]
+        ooo = which( X > P_qn[2] )
+        if (length(ooo) > 0) X[ ooo ] = P_qn[2]
+
+        ooo = which( X < P_qn[1] )
+        if (length(ooo) > 0) X[ ooo ] = P_qn[1]
+
         P[tofill,ww] = X[ ind[tofill] ]
       }
 
@@ -339,6 +342,13 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
 
         X[ X > Psd_qn[2] ]=NA
         X[ X < 0 ]=NA
+
+        ooo = which( X > Psd_qn[2] )
+        if (length(ooo) > 0) X[ ooo ] = NA
+
+        ooo = which( X < 0 )
+        if (length(ooo) > 0) X[ ooo ] = NA
+
         Psd[tofill,ww] = X[ ind[tofill] ]
       }
 
