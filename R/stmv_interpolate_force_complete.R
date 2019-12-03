@@ -39,9 +39,52 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
   ind = as.matrix(array_map( "xy->2", coords=Ploc[], origin=origin, res=res ))
 
 
-  if (p$stmv_force_complete_method=="linear") {
+
+  if (p$stmv_force_complete_method=="linear_gstat") {
+    require(gstat)
+    # way too slow  .. but extrapolation is not possible
+    # .. can cause very unexpected results
+    locs = SpatialPoints( Ploc[] )
+
+    for ( iip in ip ) {
+      ww = p$runs[ iip, "time_index" ]
+      # means
+      withdata = which( is.finite( P[,ww] ) )
+      tofill = which( ! is.finite( P[,ww] ) )
+      if (length( tofill) > 0 ) {
+        rY = range( P[,ww], na.rm=TRUE )
+        X = gstat::idw( P[withdata,ww] ~ 1, locs[withdata,], newdata=locs[tofill,], idp=1.0 ) [,1]  # linear interpolation
+        lb = which( X < rY[1] )
+        if (length(lb) > 0) X[lb] = rY[1]
+        lb = NULL
+        ub = which( X > rY[2] )
+        if (length(ub) > 0) X[ub] = rY[2]
+        ub = NULL
+        P[tofill,ww] = X
+      }
+
+      ## SD
+      tofill = which( ! is.finite( Psd[,ww] ) )
+      if (length( tofill) > 0 ) {
+        rY = range( Psd[,ww], na.rm=TRUE )
+        X = gstat::idw( Psd[withdata,ww] ~ 1, locs[withdata,], newdata=locs[tofill,], idp=1.0 ) [,1]  # linear interpolation
+        lb = which( X < rY[1] )
+        if (length(lb) > 0) X[lb] = rY[1]
+        lb = NULL
+        ub = which( X > rY[2] )
+        if (length(ub) > 0) X[ub] = rY[2]
+        ub = NULL
+        Psd[tofill,ww]  = X
+      }
+    }
+    return( "complete" )
+  }
+
+
+
+  if (p$stmv_force_complete_method=="linear_interp") {
     require(interp)
-    # fastest .. but extrapolation is not possible
+    # way too slow  .. but extrapolation is not possible
     # .. can cause very unexpected results
     for ( iip in ip ) {
       ww = p$runs[ iip, "time_index" ]

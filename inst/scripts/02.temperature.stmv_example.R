@@ -102,7 +102,7 @@ p = aegis.temperature::temperature_parameters(
     #   d5 = rep("localhost", max(1, interpolate_ncpus-2)),
     #   d6 = rep("localhost", max(1, interpolate_ncpus-2))
     # ),
-    # interpolate_force_complete = rep("localhost", max(1, interpolate_ncpus-2)),
+    # interpolate_predictions = TRUE,
     globalmodel = FALSE,
     restart_load = FALSE,  # FALSE means redo all, TRUE means update currently saved  instance
     save_completed_data = TRUE # just a dummy variable with the correct name

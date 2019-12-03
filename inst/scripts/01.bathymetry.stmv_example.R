@@ -80,7 +80,7 @@ p = aegis.bathymetry::bathymetry_parameters(
     #   d5 = rep("localhost", max(1, interpolate_ncpus-2)),
     #   d6 = rep("localhost", max(1, interpolate_ncpus-2))
     # ),
-    interpolate_force_complete = rep("localhost", max(1, interpolate_ncpus-2)),
+    interpolate_predictions = TRUE,
     globalmodel = FALSE,
     restart_load = FALSE,
     save_completed_data = TRUE # just a dummy variable with the correct name
@@ -94,7 +94,7 @@ if (0) {
    p$stmv_runmode = list(
     scale=rep("localhost", scale_ncpus),
     interpolate = rep("localhost", 1),
-    interpolate_force_complete = rep("localhost", max(1, interpolate_ncpus-2)),
+    interpolate_predictions = TRUE,
     globalmodel = FALSE,
     save_intermediate_results = FALSE,
     save_completed_data = TRUE # just a dummy variable with the correct name

@@ -150,6 +150,8 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       }
     }
 
+    if (!exists("stmv_interpolation_basis", p)) p$stmv_interpolation_basis = "correlation"
+
     if (p$stmv_interpolation_basis == "correlation")  {
       localrange_interpolation = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_interpolation_basis_correlation )
     } else if (p$stmv_interpolation_basis == "distance")  {
