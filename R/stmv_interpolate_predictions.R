@@ -100,7 +100,7 @@ stmv_interpolate_predictions = function( ip=NULL, p, debugging=FALSE, ... ) {
       if (length(subdomain_withoutdata) == 0) next()
       if (length(subdomain_withdata) < 5 ) next()
 
-      X = interp::interp(
+      X = try ( interp::interp(
         x=loc[ subdomain_withdata, 1 ],
         y=loc[ subdomain_withdata, 2 ],
         z= dat[ subdomain_withdata  ],
@@ -110,14 +110,14 @@ stmv_interpolate_predictions = function( ip=NULL, p, debugging=FALSE, ... ) {
         output="points",
         method="linear",
         extrap=TRUE
-      )$z
-
+      )$z, silent =TRUE )
+      if ( inherits(X, "try-error") ) next()
       P[ ee[subdomain_withoutdata], ti ] = X
 
       dat = Psd[ pa_i ]
       subdomain_withdata = which(is.finite( dat ))
       subdomain_withoutdata = which(!is.finite( dat ))
-      X = interp::interp(
+      X = try( interp::interp(
         x=loc[ subdomain_withdata, 1 ],
         y=loc[ subdomain_withdata, 2 ],
         z= dat[ subdomain_withdata  ],
@@ -127,7 +127,8 @@ stmv_interpolate_predictions = function( ip=NULL, p, debugging=FALSE, ... ) {
         output="points",
         method="linear",
         extrap=TRUE
-      )$z
+      )$z, silent =TRUE )
+      if ( inherits(X, "try-error") ) next()
       Psd[ ee[subdomain_withoutdata], ti ] = X
 
       X = NULL
