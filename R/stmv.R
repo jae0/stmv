@@ -753,7 +753,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
 
   if ("interpolate_predictions" %in% runmode) {
-    if (p$interpolate_predictions) {
+    if (p$stmv_runmode$interpolate_predictions) {
 
       message( "\n||| Entering <interpolate force complete> stage: ", format(Sys.time()),  "\n" )
 
