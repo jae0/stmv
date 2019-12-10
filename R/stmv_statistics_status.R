@@ -214,8 +214,8 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NUL
   out$n.unknown = length(out$unknown)
   out$n.total = length(Sflag)
 
-  proportion_incomplete = round( out$n.todo / ( out$n.total - out$n.outside_bounds ), 3)
-  proportion_complete = round( out$n.complete / ( out$n.total - out$n.outside_bounds ), 3)
+  out$proportion_incomplete = round( out$n.todo / ( out$n.total - out$n.outside_bounds ), 3)
+  out$proportion_complete = round( out$n.complete / ( out$n.total - out$n.outside_bounds ), 3)
 
 
   if (plotdata) {

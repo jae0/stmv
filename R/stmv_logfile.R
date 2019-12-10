@@ -22,7 +22,8 @@ stmv_logfile = function(p, flag="default"){
     "n.prediction_update_error",
     "n.statistics_update_error",
     "n.complete",
-    "prop_incomp" )
+    "proportion_complete",
+    "proportion_incomplete" )
   header = paste( c( varstoout) )
   currentstatus = stmv_statistics_status( p=p )
   currentstatus = c( unlist( currentstatus[ varstoout ] ) )
