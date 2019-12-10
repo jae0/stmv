@@ -216,8 +216,7 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NUL
 
   proportion_incomplete = round( out$n.todo / ( out$n.total - out$n.outside_bounds ), 3)
   proportion_complete = round( out$n.complete / ( out$n.total - out$n.outside_bounds ), 3)
-  if (verbose)  message( paste("||| Number [ to do| complete | total ]:", out$n.todo, "|", out$n.complete, "|", out$n.total  ))
-  # message( paste("||| Proportion [ incomplete | complete ]:", proportion_incomplete, "|", "proportion_complete", "\n" ))
+
 
   if (plotdata) {
     dev.new()
@@ -243,6 +242,11 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NUL
     points( Sloc[which( Sflag[]== E[["statistics_update_error"]]),], pch=".", col="green3", cex=5 )
     points( Sloc[which( Sflag[]== E[["unknown"]]),], pch=".", col="magenta", cex=5 )
   }
+
+  if (!verbose)  return(NULL)
+
+  message( paste("||| Number [ to do| complete | total ]:", out$n.todo, "|", out$n.complete, "|", out$n.total  ))
+  # message( paste("||| Proportion [ incomplete | complete ]:", proportion_incomplete, "|", "proportion_complete", "\n" ))
 
   return( out )
 
