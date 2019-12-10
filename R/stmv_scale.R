@@ -87,12 +87,6 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps = 1e-6, ... ) {
       if ( unique_spatial_locations >= ntarget ) break() # middle loop
     }
 
-    if (unique_spatial_locations < p$stmv_nmin ) {
-      Sflag[Si] = E[["insufficient_data"]]
-      if (debugging) print( paste("index =", iip, ";  insufficient data"  ) )
-      next()   #not enough data
-    }
-
     # if (p$stmv_variogram_method=="inla_nonseparable") {
     #   # TODO
     #   return()

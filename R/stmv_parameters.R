@@ -38,7 +38,7 @@ stmv_parameters = function( p=list(), ... ) {
   if (!exists( "boundary", p)) p$boundary = FALSE
   if (!exists( "stmv_filter_depth_m", p)) p$stmv_filter_depth_m = FALSE # if !FALSE .. depth is given as m so, choose andy stats locations with elevation > 1 m as being on land
 
-  if (!exists( "stmv_nmin_downsize_factor", p)) p$stmv_nmin_downsize_factor = c(1.0, 0.9, 0.8, 0.7, 0.6)
+  if (!exists( "stmv_nmin_downsize_factor", p)) p$stmv_nmin_downsize_factor = c(1.0, 0.8, 0.6, 0.4, 0.2, 0.1)
 
   if (!exists( "stmv_lowpass_nu", p)) p$stmv_lowpass_nu = 0.5 # this is exponential covar
   if (!exists( "stmv_lowpass_phi", p)) p$stmv_lowpass_phi = stmv::matern_distance2phi( distance=ifelse(exists("pres", p), p$pres, stop("'p$pres' needs to be defined")), nu=p$stmv_lowpass_nu, cor=p$stmv_autocorrelation_localrange ) # FFT based method when operating gloablly

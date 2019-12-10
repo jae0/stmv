@@ -1,4 +1,4 @@
-stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NULL  ) {
+stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NULL, verbose=TRUE  ) {
 
   E = stmv_error_codes()
   Sflag = stmv_attach( p$storage_backend, p$ptr$Sflag )
@@ -216,7 +216,7 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NUL
 
   proportion_incomplete = round( out$n.todo / ( out$n.total - out$n.outside_bounds ), 3)
   proportion_complete = round( out$n.complete / ( out$n.total - out$n.outside_bounds ), 3)
-  message( paste("||| Number [ to do| complete | total ]:", out$n.todo, "|", out$n.complete, "|", out$n.total  ))
+  if (verbose)  message( paste("||| Number [ to do| complete | total ]:", out$n.todo, "|", out$n.complete, "|", out$n.total  ))
   # message( paste("||| Proportion [ incomplete | complete ]:", proportion_incomplete, "|", "proportion_complete", "\n" ))
 
   if (plotdata) {
