@@ -765,8 +765,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         p = p0 #reset
         p$stmv_interpolation_basis_distance = p$stmv_distance_scale[j]
         p$runmode = "interpolate_predictions"
-        nj = min( length(p$stmv_runmode[["interpolate"]]), j )
-        p$clusters = p$stmv_runmode[["interpolate"]][[nj]] # as ram reqeuirements increase drop cpus
+        p$clusters = p$stmv_runmode[["interpolate_predictions"]][[j]] # as ram reqeuirements increase drop cpus
         stmv_statistics_status( p=p, reset=c( "complete" ), verbose=FALSE )
         currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
         if ( currentstatus$n.todo == 0 ) break()
@@ -774,9 +773,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         invisible( parallel_run( stmv_interpolate_predictions, p=p, runindex=list( locs=sample( currentstatus$todo )) ) )
         stmv_statistics_status( p=p, verbose=FALSE ) # quick update before logging
         slog = stmv_logfile(p=p, flag= paste("Exhaustive Interpolation correlation basis phase", p$runmode, "completed ...") ) # final update before continuing
+        stmv_db(p=p, DS="save_current_state", runmode="interpolate_predictions", datasubset="predictions")
       }
       message( paste( "Time used for <interpolations", ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
-      stmv_db(p=p, DS="save_current_state", runmode="interpolate_predictions", datasubset="predictions")
       p = p0
     }
   }
