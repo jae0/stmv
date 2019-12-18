@@ -114,7 +114,7 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NUL
         toreset = unique(toreset)
         yesP = NULL
         inrange = which( (toreset >= min(uS, na.rm=TRUE)) & (toreset <= max(uS, na.rm=TRUE)) )
-        if (length( inrange) > 0) toreset = toreset[inrange]
+        toreset = toreset[inrange]
         if ( !is.null(toreset) && length(toreset) > 0) {
           E_not_to_alter = E[ c("outside_bounds", "too_shallow") ]
           ignore = which( Sflag[] %in% unlist(E_not_to_alter) )
@@ -154,7 +154,7 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NUL
         toreset = unique(toreset)
         noP = NULL
         inrange = which( (toreset >= min(uS, na.rm=TRUE)) & (toreset <= max(uS, na.rm=TRUE)) )
-        if (length( inrange) > 0) toreset = toreset[inrange]
+        toreset = toreset[inrange]
         if ( !is.null(toreset) && length(toreset) > 0) {
           E_not_to_alter =  E[ c("outside_bounds", "too_shallow") ]
           ignore = which( Sflag[] %in% unlist(E_not_to_alter) )
