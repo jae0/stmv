@@ -755,7 +755,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
 
   if ("interpolate_predictions" %in% runmode) {
-    if (p$stmv_runmode$interpolate_predictions) {
 
       message( "\n||| Entering <interpolate force complete> stage: ", format(Sys.time()),  "\n" )
 
@@ -777,7 +776,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
       }
       message( paste( "Time used for <interpolations", ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
       p = p0
-    }
   }
 
 
