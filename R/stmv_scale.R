@@ -72,13 +72,13 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps = 1e-6, ... ) {
     # obtain indices of data locations withing a given spatial range, optimally determined via variogram
     # find data nearest Sloc[Si,] and with sufficient data
     ndata = 0
+    unique_spatial_locations = 0
 
     for ( ntarget in stmv_ntarget ) {
       for ( stmv_distance_cur in stmv_distances )  {
         # print(stmv_distance_cur)
         data_subset = NULL
         data_subset = stmv_select_data( p=p, Si=Si, localrange=stmv_distance_cur )
-
         if (is.null( data_subset )) next()
         unique_spatial_locations = data_subset$unique_spatial_locations
         ndata = length(data_subset$data_index)

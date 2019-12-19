@@ -158,13 +158,13 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       localrange_interpolation = p$stmv_interpolation_basis_distance
     }
 
+    unique_spatial_locations = 0
     data_subset = stmv_select_data( p=p, Si=Si, localrange=localrange_interpolation )
     if (is.null( data_subset )) {
       Sflag[Si] = E[["insufficient_data"]]
       next()
     }
     unique_spatial_locations = data_subset$unique_spatial_locations
-
     if (unique_spatial_locations < p$stmv_nmin) {
       data_subset = NULL;
       Sflag[Si] = E[["insufficient_data"]]
