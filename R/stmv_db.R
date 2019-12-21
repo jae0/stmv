@@ -488,12 +488,8 @@
       stats = matrix( NaN, ncol=length( p$statsvars ), nrow=nrow( Ploc) )  # output data .. ff does not handle NA's .. using NaN for now
       colnames(stats) = p$statsvars
 
-      x_r = range(Ploc[,1])
-      x_c = range(Ploc[,2])
-      origin=c( x_r[1], x_c[1] )
-
       Sres=c(p$stmv_distance_statsgrid, p$stmv_distance_statsgrid)
-      Sind = as.matrix(array_map( "xy->2", coords=Sloc[], origin=origin, res=Sres ))  # map Stats Locs to Plocs
+      Sind = as.matrix(array_map( "xy->2", coords=Sloc[], origin=p$origin, res=Sres ))  # map Stats Locs to Plocs
 
       for ( i in 1:length( p$statsvars ) ) {
         # print(i)
