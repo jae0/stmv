@@ -93,6 +93,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   # prediction times for space.annual methods, treat time as independent timeslices
   if ( !exists("prediction_ts", p)) p$prediction_ts = 1
 
+  global_model_do = FALSE
+  if (p$stmv_global_modelengine !="none" ) global_model_do = TRUE
+
   message( "\n")
   message( "||| Initializing temporary storage of data and output files... ")
   message( "||| These are large files (4 to 6 X 5GB), it will take a minute ... ")
@@ -123,7 +126,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
   # if there is a global model overwrite Ydata with residuals
   if ( any(grepl("globalmodel", runmode) ) ) {
-    if ( p$stmv_global_modelengine !="none" ) {
+    if ( global_model_do ) {
       stmv_db( p=p, DS="global_model.redo", B=DATA$input )
       if ( any(grepl("globalmodel.only", runmode)))  return( stmv_db( p=p, DS="global_model" ) )
       # model complete .. now predict to get residuals
@@ -441,7 +444,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   ################
 
 
-    if (p$stmv_global_modelengine !="none" ) {
+    if (global_model_do ) {
       sP0 = matrix( NaN, nrow=nPloc, ncol=p$nt )
       if (!is.null(sP0)) {
         if (p$storage_backend == "bigmemory.ram" ) {
@@ -517,7 +520,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
     #
     message( "Iteration ", nn, " of ", niterations, "\n" )
 
-    if (p$stmv_global_modelengine !="none" ) {
+    if ( global_model_do ) {
       # create prediction suface .. additive offsets
       # test to see if all covars are static as this can speed up the initial predictions
       message ( "\n", "||| Entering Predicting global effect of covariates at each prediction location: ", format(Sys.time()) , "\n" )
@@ -552,8 +555,8 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
       gc()
       message("Creating fixed effects predictons")
       parallel_run( FUNC=stmv_predict_globalmodel, p=p, runindex=list( pnt=1:p$nt ), Yq_link=Yq_link, global_model=global_model )
-      stmv_db(p=p, DS="save_current_state", runmode="interpolate", datasubset="P0")
-      stmv_db(p=p, DS="save_current_state", runmode="interpolate", datasubset="P0sd")
+      stmv_db(p=p, DS="save_current_state", runmode="meanprocess", datasubset="P0")
+      stmv_db(p=p, DS="save_current_state", runmode="meanprocess", datasubset="P0sd")
 
       Ydata  = residuals(global_model, type="working") # ie. internal (link) scale
 
@@ -598,7 +601,11 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
       invisible( stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" ))
       if ( "restart_load" %in% runmode ) {
-        invisible( stmv_db(p=p, DS="load_saved_state", runmode=p$restart_load, datasubset="predictions" ) )
+        invisible( stmv_db(p=p, DS="load_saved_state", runmode=p$restart_load, datasubset="P" ) )
+        invisible( stmv_db(p=p, DS="load_saved_state", runmode=p$restart_load, datasubset="Psd" ) )
+        invisible( stmv_db(p=p, DS="load_saved_state", runmode=p$restart_load, datasubset="Pn" ) )
+        if ( global_model_do ) invisible( stmv_db(p=p, DS="load_saved_state", runmode="meanprocess",  datasubset="P0" ) )
+        if ( global_model_do ) invisible( stmv_db(p=p, DS="load_saved_state", runmode="meanprocess",  datasubset="P0sd" ) )
         stmv_statistics_status( p=p, reset=c( "all"), verbose=FALSE  ) # required to start as scale determination uses Sflags too
         stmv_statistics_status( p=p, reset=c( "complete" ), verbose=FALSE  )
         stmv_statistics_status( p=p, reset=c( "incomplete" ), verbose=FALSE  )
@@ -623,7 +630,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
             if ( currentstatus$n.todo == 0 ) break()
             if ( currentstatus$n.todo < (2*length(p$clusters)) ) p$clusters = p$clusters[1] # drop to serial mode
             invisible( parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) ) )
-            stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="predictions")
+            invisible( stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="P" ) )
+            invisible( stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="Psd" ) )
+            invisible( stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="Pn" ) )
             stmv_statistics_status( p=p, verbose=FALSE ) # quick update before logging
             slog = stmv_logfile(p=p, flag= paste("Fast Interpolation correlation basis phase", p$runmode, "completed ...") ) # final update before continuing
             p$stmv_fft_filter = gsub( "fast_predictions", "", p$stmv_fft_filter )  # remove fast ... now moving to slow/exhaustive
@@ -634,13 +643,19 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         if ( currentstatus$n.todo == 0 ) break()
         if ( currentstatus$n.todo < (2*length(p$clusters)) ) p$clusters = p$clusters[1] # drop to serial mode
         invisible( parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) ) )
-        stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="predictions")
+        invisible( stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="P" ) )
+        invisible( stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="Psd" ) )
+        invisible( stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="Pn" ) )
         stmv_statistics_status( p=p, verbose=FALSE ) # quick update before logging
         slog = stmv_logfile(p=p, flag= paste("Exhaustive Interpolation correlation basis phase", p$runmode, "completed ...") ) # final update before continuing
 
       }
       message( paste( "Time used for <interpolations", ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
-      stmv_db(p=p, DS="save_current_state", runmode="interpolate", datasubset="predictions")
+
+      invisible( stmv_db(p=p, DS="save_current_state", runmode="interpolate", datasubset="P" ) )
+      invisible( stmv_db(p=p, DS="save_current_state", runmode="interpolate", datasubset="Psd" ) )
+      invisible( stmv_db(p=p, DS="save_current_state", runmode="interpolate", datasubset="Pn" ) )
+
       p = p0
 
     }
@@ -664,7 +679,11 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
       invisible( stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" ))
       if ( "restart_load" %in% runmode ) {
-        invisible( stmv_db(p=p, DS="load_saved_state", runmode=p$restart_load, datasubset="predictions" ) )
+        invisible( stmv_db(p=p, DS="load_saved_state", runmode=p$restart_load, datasubset="P" ) )
+        invisible( stmv_db(p=p, DS="load_saved_state", runmode=p$restart_load, datasubset="Psd" ) )
+        invisible( stmv_db(p=p, DS="load_saved_state", runmode=p$restart_load, datasubset="Pn" ) )
+        if ( global_model_do ) invisible( stmv_db(p=p, DS="load_saved_state", runmode="meanprocess",  datasubset="P0" ) )
+        if ( global_model_do ) invisible( stmv_db(p=p, DS="load_saved_state", runmode="meanprocess",  datasubset="P0sd" ) )
         stmv_statistics_status( p=p, reset=c( "all"), verbose=FALSE  ) # required to start as scale determination uses Sflags too
         stmv_statistics_status( p=p, reset=c( "complete" ), verbose=FALSE  )
         stmv_statistics_status( p=p, reset=c( "incomplete" ), verbose=FALSE  )
@@ -684,7 +703,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         if ( currentstatus$n.todo == 0 ) break()
         if ( currentstatus$n.todo < (2*length(p$clusters)) ) p$clusters = p$clusters[1] # drop to serial mode
         invisible( parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ) )  ) )
-        stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="predictions")
+        invisible( stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="P" ) )
+        invisible( stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="Psd" ) )
+        invisible( stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="Pn" ) )
         stmv_statistics_status( p=p, verbose=FALSE ) # quick update before logging
         slog = stmv_logfile(p=p, flag= paste("Interpolation distance basis phase", p$runmode, "completed ...") ) # final update before continuing
       }
@@ -718,9 +739,17 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         # finalize all interpolations where there are missing data/predictions using
         # interpolation based on data
         # NOTE:: no covariates are used
-        invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolate", datasubset="predictions" ) )
+        # invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolation", datasubset="P" ) )
+        # invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolation", datasubset="Psd" ) )
+        # invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolation", datasubset="Pn" ) )
+        # if ( global_model_do ) invisible( stmv_db(p=p, DS="load_saved_state", runmode="meanprocess",  datasubset="P0" ) )
+        # if ( global_model_do ) invisible( stmv_db(p=p, DS="load_saved_state", runmode="meanprocess",  datasubset="P0sd" ) )
         if ( "restart_load" %in% runmode ) {
-          invisible( stmv_db(p=p, DS="load_saved_state", runmode=p$restart_load, datasubset="predictions" ) )
+          invisible( stmv_db(p=p, DS="load_saved_state", runmode=p$restart_load, datasubset="P" ) )
+          invisible( stmv_db(p=p, DS="load_saved_state", runmode=p$restart_load, datasubset="Psd" ) )
+          invisible( stmv_db(p=p, DS="load_saved_state", runmode=p$restart_load, datasubset="Pn" ) )
+          if ( global_model_do ) invisible( stmv_db(p=p, DS="load_saved_state", runmode="meanprocess",  datasubset="P0" ) )
+          if ( global_model_do ) invisible( stmv_db(p=p, DS="load_saved_state", runmode="meanprocess",  datasubset="P0sd" ) )
           stmv_statistics_status( p=p, reset=c( "all"), verbose=FALSE  ) # required to start as scale determination uses Sflags too
           stmv_statistics_status( p=p, reset=c( "complete" ), verbose=FALSE  )
           stmv_statistics_status( p=p, reset=c( "incomplete" ), verbose=FALSE  )
@@ -739,7 +768,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
           if ( currentstatus$n.todo == 0 ) break()
           if ( currentstatus$n.todo < (2*length(p$clusters)) ) p$clusters = p$clusters[1] # drop to serial mode
           invisible( parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  ) )
-          stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="predictions")
+          invisible( stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="P" ) )
+          invisible( stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="Psd" ) )
+          invisible( stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="Pn" ) )
           stmv_statistics_status( p=p, verbose=FALSE ) # quick update before logging
           slog = stmv_logfile(p=p, flag= paste("Interpolation phase", p$runmode, "completed ...") ) # final update
         }
@@ -759,7 +790,11 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
       message( "\n||| Entering <interpolate force complete> stage: ", format(Sys.time()),  "\n" )
       invisible( stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" ))
       if ( "restart_load" %in% runmode ) {
-        invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolate_predictions", datasubset="predictions" ) )
+        invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolate_predictions", datasubset="P" ) )
+        invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolate_predictions", datasubset="Psd" ) )
+        invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolate_predictions", datasubset="Pn" ) )
+        if ( global_model_do ) invisible( stmv_db(p=p, DS="load_saved_state", runmode="meanprocess",  datasubset="P0" ) )
+        if ( global_model_do ) invisible( stmv_db(p=p, DS="load_saved_state", runmode="meanprocess",  datasubset="P0sd" ) )
         stmv_statistics_status( p=p, reset=c( "all"), verbose=FALSE  ) # required to start as scale determination uses Sflags too
         stmv_statistics_status( p=p, reset=c( "complete" ), verbose=FALSE  )
         stmv_statistics_status( p=p, reset=c( "incomplete" ), verbose=FALSE  )
@@ -779,7 +814,10 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         invisible( parallel_run( stmv_interpolate_predictions, p=p, runindex=list( locs=sample( currentstatus$todo )) ) )
         stmv_statistics_status( p=p, verbose=FALSE ) # quick update before logging
         slog = stmv_logfile(p=p, flag= paste("Exhaustive Interpolation correlation basis phase", p$runmode, "completed ...") ) # final update before continuing
-        stmv_db(p=p, DS="save_current_state", runmode="interpolate_predictions", datasubset="predictions")
+        invisible( stmv_db(p=p, DS="save_current_state", runmode="interpolate_predictions", datasubset="P" ) )
+        invisible( stmv_db(p=p, DS="save_current_state", runmode="interpolate_predictions", datasubset="Psd" ) )
+        invisible( stmv_db(p=p, DS="save_current_state", runmode="interpolate_predictions", datasubset="Pn" ) )
+
       }
       message( paste( "Time used for <interpolations", ">: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n" ) )
       p = p0

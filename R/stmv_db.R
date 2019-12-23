@@ -1,5 +1,5 @@
 
-  stmv_db = function( DS, p, B=NULL, yr=NULL, ret="mean", runmode=NULL, saveresults=TRUE, datasubset="all" ) {
+  stmv_db = function( DS, p, B=NULL, yr=NULL, ret="mean", runmode=NULL, saveresults=TRUE, datasubset="" ) {
     #// usage: low level function to convert data into file-based data obects to permit parallel
     #// data access and manipulation and deletes/updates
     #// B is the xyz or xytz data or the function to get the data to work upon
@@ -523,7 +523,7 @@
       save( stats, file=fn, compress=TRUE )
       message( "\n||| Saving statistics complete: ", format(Sys.time()),  "\n" )
 
-      return( )
+      return( NULL)
 
       if (0){
         #         p$statsvars
@@ -550,8 +550,6 @@
 
     if (DS %in% c("save_current_state") ) {
 
-      if ("all" %in% datasubset ) datasubset = unique( c( datasubset, "P", "Psd", "P0", "P0sd", "Pn", "S", "Sflag" ) )
-      if ("predictions" %in% datasubset ) datasubset = unique( c( datasubset, "P", "Psd", "Pn", "P0", "P0sd" ) )
       if ("statistics" %in% datasubset ) datasubset = unique( c( datasubset, "S", "Sflag" ) )
 
       # named differently to avoid collisions
@@ -610,8 +608,6 @@
     if (DS %in% c("load_saved_state") ) {
       returnflag = TRUE
 
-      if ("all" %in% datasubset ) datasubset = unique( c( datasubset, "P", "Psd",  "P0", "P0sd", "Pn", "S", "Sflag" ) )
-      if ("predictions" %in% datasubset ) datasubset = unique( c( datasubset, "P", "Psd",  "P0", "P0sd", "Pn" ) )
       if ("statistics" %in% datasubset ) datasubset = unique( c( datasubset, "S", "Sflag" ) )
 
       # named differently to avoid collisions
