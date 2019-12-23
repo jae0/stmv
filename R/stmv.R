@@ -553,7 +553,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
       message("Creating fixed effects predictons")
       parallel_run( FUNC=stmv_predict_globalmodel, p=p, runindex=list( pnt=1:p$nt ), Yq_link=Yq_link, global_model=global_model )
       stmv_db(p=p, DS="save_current_state", runmode="interpolate", datasubset="P0")
-      stmv_db(p=p, DS="save_current_state", runmode="interpolate", datasubset="P0")
+      stmv_db(p=p, DS="save_current_state", runmode="interpolate", datasubset="P0sd")
 
       Ydata  = residuals(global_model, type="working") # ie. internal (link) scale
 
@@ -757,7 +757,14 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   if ("interpolate_predictions" %in% runmode) {
 
       message( "\n||| Entering <interpolate force complete> stage: ", format(Sys.time()),  "\n" )
-
+      invisible( stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" ))
+      if ( "restart_load" %in% runmode ) {
+        invisible( stmv_db(p=p, DS="load_saved_state", runmode="interpolate_predictions", datasubset="predictions" ) )
+        stmv_statistics_status( p=p, reset=c( "all"), verbose=FALSE  ) # required to start as scale determination uses Sflags too
+        stmv_statistics_status( p=p, reset=c( "complete" ), verbose=FALSE  )
+        stmv_statistics_status( p=p, reset=c( "incomplete" ), verbose=FALSE  )
+        stmv_statistics_status( p=p, reset=c( "features" ), verbose=FALSE  ) # required to start as scale determination uses Sflags too
+      }
       p$time_start_runmode = Sys.time()
       p0 = p
       for ( j in 1:length(p$stmv_distance_scale) ) {
