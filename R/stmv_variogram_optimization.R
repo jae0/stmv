@@ -29,8 +29,8 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
 
     vario_function_phi = function(par, vgs, vxs, nu, w){
       # ie. nu is fixed
-      if (par["phi"] < 0.01) return(1e12)
-      if (par["phi"] > 5 ) return(1e12)
+      if (par["phi"] < 0.001) return(0.001)
+      if (par["phi"] > 5 ) return(5)
       vgm = par["total.var"] *( (1 -par["sigma.sq.fraction"])  +  par["sigma.sq.fraction"]*( 1-stmv_matern(distance=vxs, mRange=par["phi"], mSmooth=nu ) ) )
       # vgm = par["tau.sq"] + par["sigma.sq"]*{ 1-stmv_matern(distance=vxs, mRange=par["phi"], mSmooth=nu) }
       obj = sum( w * (vgs - vgm)^2, na.rm=TRUE) # vario normal errors, no weights , etc.. just the line
@@ -39,8 +39,8 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
 
 
     par = c(total.var=1, sigma.sq.fraction=0.75, phi=0.9 )
-    lower =c(0.75, 0, 0.1 )
-    upper =c(1.25, 1, 5)
+    lower =c(0.5, 0, 0.001 )
+    upper =c(1.5, 1, 5)
 
     fit = try( optim( par=par, vgs=vgs, vxs=vxs, nu=nu, w=w, method="Nelder-Meads", fn=vario_function_phi ) )
 
@@ -66,10 +66,10 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
 
     vario_function_phi_nu = function(par, vgs, vxs, w){
       # ie. nu and phi are both estimated
-      if (par["nu"] < 0.01) return(1e12)
-      if (par["phi"] <= 0 ) return(1e12)
-      if (par["nu"] > 5 ) return(1e12)
-      if (par["phi"] > 5 ) return(1e12)
+      if (par["nu"] < 0.01) return(0.01)
+      if (par["phi"] <= 0.001 ) return(0.001)
+      if (par["nu"] > 5 ) return(5)
+      if (par["phi"] > 5 ) return(5)
 
       vgm = par["total.var"] *( (1 -par["sigma.sq.fraction"])  +  par["sigma.sq.fraction"]*( 1-stmv_matern(distance=vxs, mRange=par["phi"], mSmooth=par["nu"]) ) )
       obj = sum( w * (vgs - vgm)^2, na.rm=TRUE) # vario normal errors, no weights , etc.. just the line
@@ -78,8 +78,8 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
 
 
     par = c(total.var=1, sigma.sq.fraction=0.5, phi=1.1, nu=0.9)
-    lower =c(0.75, 0, 0.1, 0.1 )
-    upper =c(1.25, 1, 5,    5)
+    lower =c(0.5, 0, 0.001, 0.01 )
+    upper =c(1.5, 1, 5,     5)
 
     fit = try( optim( par=par, vgs=vgs, vxs=vxs, w=w, method="L-BFGS-B", lower=lower, upper=upper, fn=vario_function_phi_nu, control=control ))
       if ( !inherits(fit, "try-error")) if ( fit$convergence != 0 ) class(fit) = "try-error"
