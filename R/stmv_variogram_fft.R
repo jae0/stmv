@@ -209,7 +209,7 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
       mm = lm( mz ~ 1 )
       XYZ$z = residuals( mm)
       XYZ=XYZ[c("x","y","z")]
-      x11()
+      dev.new()
       oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=nx, plotdata=TRUE, add.interpolation=TRUE,
         stmv_fft_filter="matern_tapered_modelled", stmv_autocorrelation_fft_taper=0.05 )
 
@@ -224,7 +224,7 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
       XYZ = stmv_test_data( datasource="meuse" )
       XYZ$z = log(XYZ$elev)
       XYZ=XYZ[, c("x","y","z") ]
-      x11()
+      dev.new()
       oo = stmv_variogram_fft( XYZ[c("x","y","z")], nx=nx, ny=ny, nbreaks=nx, plotdata=TRUE,  add.interpolation=TRUE,
         stmv_fft_filter="matern_tapered_modelled", stmv_autocorrelation_fft_taper=0.25  )
 
@@ -260,14 +260,14 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
     nu = gr[[variomethod]]$nu
     phi = gr[[variomethod]]$phi
     fit  =  Krig(XYZ[, c("x", "y")], XYZ[,"z"], theta=phi)
-    x11(); surface( fit, type="C") # look at the surface
+    dev.new(); surface( fit, type="C") # look at the surface
 
     mba.int  =  mba.surf( XYZ[, c("x", "y", "z")], nx, ny, extend=TRUE)$xyz.est
-    x11(); surface(mba.int, xaxs="r", yaxs="r")
+    dev.new(); surface(mba.int, xaxs="r", yaxs="r")
 
     str(fields::RMprecip)
     fit <- smooth.2d( RMprecip$y, x=RMprecip$x, theta=.25)
-    x11()
+    dev.new()
     image( fit )
     points( RMprecip$x, pch=".")
 
