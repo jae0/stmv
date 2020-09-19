@@ -9,7 +9,7 @@ ah2sp <- function(x, increment=360, rnd=10, proj4strvalue=CRS(as.character(NA)))
   }
   # Extract the edges from the ahull object as a dataframe
   xdf <- as.data.frame(x$arcs)
-  # Remove all cases where the coordinates are all the same      
+  # Remove all cases where the coordinates are all the same
   xdf <- subset(xdf,xdf$r > 0)
   res <- NULL
   if (nrow(xdf) > 0){
@@ -70,16 +70,16 @@ ah2sp <- function(x, increment=360, rnd=10, proj4strvalue=CRS(as.character(NA)))
     # Convert lines to polygons
     # Pull out Lines slot and check which lines have start and end points that are the same
     lns <- slot(lspl, "lines")
-    polys <- sapply(lns, function(x) { 
+    polys <- sapply(lns, function(x) {
       crds <- slot(slot(x, "Lines")[[1]], "coords")
       identical(crds[1, ], crds[nrow(crds), ])
-    }) 
+    })
     # Select those that do and convert to SpatialPolygons
     polyssl <- lspl[polys]
     list_of_Lines <- slot(polyssl, "lines")
-    sppolys <- SpatialPolygons(list(Polygons(lapply(list_of_Lines, 
-      function(x) { Polygon(slot(slot(x, "Lines")[[1]], "coords")) }), ID = "1")), 
-      proj4string=proj4strvalue)  
+    sppolys <- SpatialPolygons(list(Polygons(lapply(list_of_Lines,
+      function(x) { Polygon(slot(slot(x, "Lines")[[1]], "coords")) }), ID = "1")),
+      proj4string=proj4strvalue)
     # Create a set of ids in a dataframe, then promote to SpatialPolygonsDataFrame
     hid <- sapply(slot(sppolys, "polygons"), function(x) slot(x, "ID"))
     areas <- sapply(slot(sppolys, "polygons"), function(x) slot(x, "area"))
@@ -87,8 +87,8 @@ ah2sp <- function(x, increment=360, rnd=10, proj4strvalue=CRS(as.character(NA)))
     names(df) <- c("HID","Area")
     rownames(df) <- df$HID
     res <- SpatialPolygonsDataFrame(sppolys, data=df)
-    res <- res[which(res@data$Area > 0),] 
-  }  
+    res <- res[which( slot(res, "data")[, "Area"] > 0),]
+  }
   return(res)
 }
 
