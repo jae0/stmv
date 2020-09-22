@@ -213,7 +213,7 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
     if (exists("stmv_distance_prediction_limits", p)) {
       prediction_area = min( max( localrange_interpolation, min(p$stmv_distance_prediction_limits) ), max(p$stmv_distance_prediction_limits), na.rm=TRUE )
     }
-    windowsize.half = 1L + round( prediction_area / p$pres )
+    windowsize.half =  floor( prediction_area / p$pres ) + 1L
     # construct data (including covariates) for prediction locations (pa)
     pa = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=windowsize.half ) )
 
@@ -245,8 +245,10 @@ stmv_interpolate = function( ip=NULL, p, debugging=FALSE, ... ) {
       points( Sloc[Si,2] ~ Sloc[Si,1], col="blue" ) # statistical locations
       # statistical output locations
       grids= spatial_grid(p, DS="planar.coords" )
-      points( grids$plat[round( (Sloc[Si,2]-p$origin[2])/p$pres) + 1]
-            ~ grids$plon[round( (Sloc[Si,1]-p$origin[1])/p$pres) + 1] , col="purple", pch=25, cex=5 )
+
+      points( grids$plat[floor( (Sloc[Si,2]-p$origin[2])/p$pres) + 1]
+            ~ grids$plon[floor( (Sloc[Si,1]-p$origin[1])/p$pres) + 1] , col="purple", pch=25, cex=5 )
+
       points( Ploc[pa$i,2] ~ Ploc[ pa$i, 1] , col="black", pch=6, cex=0.7 ) # check on pa$i indexing -- prediction locations
     }
 

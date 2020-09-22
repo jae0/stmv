@@ -22,14 +22,8 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
   Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
 
   dx = dy = p$pres
-  nr = p$nplons
-  nc = p$nplats
- # system size
-  #nr = nx
-  #nc = ny
-
-  # nr .. x/plon
-  # nc .. y/plat
+  nr = p$nplons  # (nr == nx) .. x/plon
+  nc = p$nplats  # (nc == ny) .. y/plat
 
   x_r = range(Ploc[,1])
   x_c = range(Ploc[,2])
@@ -37,7 +31,6 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
   origin=c(x_r[1], x_c[1])
   res=c(p$pres, p$pres)
   ind = as.matrix(array_map( "xy->2", coords=Ploc[], origin=origin, res=res ))
-
 
 
   if (p$stmv_force_complete_method=="linear_gstat") {
@@ -234,10 +227,6 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
 
     dr = dx
     dc = dy
-
-    # dr = ( diff(x_r) + diff(x_c) ) / 2  # system size in user units
-    # nr = round( diff(x_r)/p$pres ) + 1
-    # nc = round( diff(x_c)/p$pres ) + 1
 
     nr2 = 2 * nr
     nc2 = 2 * nc

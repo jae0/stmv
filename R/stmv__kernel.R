@@ -20,9 +20,8 @@ stmv__kernel = function( p=NULL, dat=NULL, pa=NULL, phi=NULL, nu=NULL, varObs=NU
     x_c = range(dat[,p$stmv_variables$LOCS[2]])
   }
 
-
-  nr = round( diff(x_r)/p$pres +1 )
-  nc = round( diff(x_c)/p$pres +1 )
+  nr = floor( diff(x_r)/p$pres + 1L )
+  nc = floor( diff(x_c)/p$pres + 1L )
 
   dat$mean = NA
   pa$mean = NA
@@ -73,8 +72,7 @@ stmv__kernel = function( p=NULL, dat=NULL, pa=NULL, phi=NULL, nu=NULL, varObs=NU
       X = X_i = NULL
     }
 
-
-    dat[ xi, p$stmv_variables$LOCS ] = round( dat[ xi, p$stmv_variables$LOCS ] / p$pres  ) * p$pres
+    # dat[ xi, p$stmv_variables$LOCS ] = floor( dat[ xi, p$stmv_variables$LOCS ] / p$pres + 1L ) * p$pres
     iYP = match(
       stmv::array_map( "xy->1", dat[ xi, p$stmv_variables$LOCS ], gridparams=p$gridparams ),
       stmv::array_map( "xy->1", pa[ pa_i , p$stmv_variables$LOCS ], gridparams=p$gridparams )

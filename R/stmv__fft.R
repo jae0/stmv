@@ -66,8 +66,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
   rr = diff(x_r)
   rc = diff(x_c)
 
-  nr = round( rr/dx ) + 1
-  nc = round( rc/dy ) + 1
+  nr = floor( rr/dx ) + 1L
+  nc = floor( rc/dy ) + 1L
 
   dr = rr/(nr-1) # == dx
   dc = rc/(nc-1) # == dy
@@ -352,8 +352,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
       pa$sd[pa_i] = OT[ti, match("sdSpatial", p$statsvars )]
     }
 
-
-    dat[ xi, p$stmv_variables$LOCS ] = round( dat[ xi, p$stmv_variables$LOCS ] / p$pres  ) * p$pres
+    # dat[ xi, p$stmv_variables$LOCS ] = floor( dat[ xi, p$stmv_variables$LOCS ] / p$pres + 1L ) * p$pres
     iYP = match(
       stmv::array_map( "xy->1", dat[ xi, p$stmv_variables$LOCS ], gridparams=p$gridparams ),
       stmv::array_map( "xy->1", pa[ pa_i , p$stmv_variables$LOCS ], gridparams=p$gridparams )
