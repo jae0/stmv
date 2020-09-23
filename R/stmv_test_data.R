@@ -91,13 +91,13 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
     if (is.null(p)) p = stmv_test_data( "aegis.test.parameters")
 
     pb = bathymetry_parameters( project_class="stmv" )
-    B = bathymetry.db( p=pb,  DS="stmv_inputs")$input  # this is a subset of "complete" with depths filtered
+    B = bathymetry_db( p=pb,  DS="stmv_inputs")$input  # this is a subset of "complete" with depths filtered
     B = planar2lonlat( B, proj.type=pb$aegis_proj4string_planar_km )
     # B = B[,c( "lon", "lat", "z")]
     B = B[ which( B$lon > p$corners$lon[1] & B$lon < p$corners$lon[2]  & B$lat > p$corners$lat[1] & B$lat < p$corners$lat[2] ), ]
 
     ps = substrate_parameters( project_class="stmv" )
-    S = substrate.db( p=ps, DS="lonlat.highres" )
+    S = substrate_db( p=ps, DS="lonlat.highres" )
 
     S = S[ which( S$lon > p$corners$lon[1] & S$lon < p$corners$lon[2] & S$lat > p$corners$lat[1] & S$lat < p$corners$lat[2] ) , ]
     S$substrate.grainsize = S$grainsize
@@ -143,7 +143,7 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
 
     p = temperature_parameters( spatial_domain="SSE" )
 
-    out = temperature.db( p=p, DS="bottom.all"  )
+    out = temperature_db( p=p, DS="bottom.all"  )
     out = out[ which( out$lon > p$corners$lon[1] & out$lon < p$corners$lon[2] & out$lat > p$corners$lat[1] & out$lat < p$corners$lat[2] ) , ]
     out = out[ which(out$yr %in% c(1980:2010)), ]
     out$tiyr = lubridate::decimal_date ( out$date )
@@ -178,7 +178,7 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
     }
 
     pb = bathymetry_parameters( spatial_domain="SSE" )
-    B = bathymetry.db( p=pb, DS="complete"  )
+    B = bathymetry_db( p=pb, DS="complete"  )
 
     # output locations
     u = list(
