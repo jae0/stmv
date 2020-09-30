@@ -6,7 +6,7 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
     require(geostatsp)
     data(swissRain)
     # head(swissBorder) # SpatialPolygonsDataFrame
-    out = as.data.frame( swissRain )
+    out = as.data.table( swissRain )
     out$swissLandType = sp::over( as(swissRain, "SpatialPoints"), as(swissLandType, "SpatialGridDataFrame"), fn = mean)[,1]
     out$swissLandType  = as.factor( out$swissLandType )
     out$altitude = sp::over( as(swissRain, "SpatialPoints"), as(swissAltitude, "SpatialGridDataFrame"), fn = mean)[,1]
@@ -18,7 +18,7 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
   if ( datasource == "meuse" ) {
     require(sp)
     data(meuse)
-    out = as.data.frame( meuse )
+    out = as.data.table( meuse )
     out$z = residuals( lm( log( meuse$zinc ) ~ sqrt( meuse$dist ), data=out ) )
     return(out)
   }
@@ -33,7 +33,7 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
     out$ncases=floor(rnorm(length(out$rain), mean=0.5, sd=0.1) * out$rain)
     out$ntot=floor( out$rain)
     out$X=rep(0,out$N)
-    out$dist=as.matrix( dist( as.data.frame( out[c("x","y")] )) )
+    out$dist=as.matrix( dist( as.data.table( out[c("x","y")] )) )
     out$eps = 1e-6
     out$COVFN=1
     return(out)
@@ -49,7 +49,7 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
     out$ncases=floor(rnorm(length(out$rain), mean=0.5, sd=0.1) * out$rain)
     out$ntot=floor( out$rain)
     out$X=rep(0,out$N)
-    out$dist=as.matrix( dist( as.data.frame( out[c("x","y")] )) )
+    out$dist=as.matrix( dist( as.data.table( out[c("x","y")] )) )
     out$eps = 1e-6
     out$COVFN=1
     return(out)
@@ -67,7 +67,7 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
     out$ntot=floor( out$rain)
     out$Y=out$rain_alt
     out$X=rep(0,out$N)
-    out$dist=as.matrix( dist( as.data.frame( out[c("x","y")] )) )
+    out$dist=as.matrix( dist( as.data.table( out[c("x","y")] )) )
     out$eps = 1e-6
     out$COVFN=1
     return(out)

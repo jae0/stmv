@@ -2,7 +2,6 @@
 
 stmv_predictionarea = function(p, sloc, windowsize.half ) {
 
-
   pa_w = -windowsize.half : windowsize.half # default window size
   pa_w_n = length(pa_w)
 
@@ -10,7 +9,7 @@ stmv_predictionarea = function(p, sloc, windowsize.half ) {
   iwplon = floor( (sloc[1]-p$origin[1]) /p$pres + 1L) + pa_w
   iwplat = floor( (sloc[2]-p$origin[2]) /p$pres + 1L) + pa_w
 
-  pa = data.frame( iplon = rep.int(iwplon, pa_w_n) ,
+  pa = data.table( iplon = rep.int(iwplon, pa_w_n) ,
                    iplat = rep.int(iwplat, rep.int(pa_w_n, pa_w_n)) )
 
   tokeep = which( pa$iplon >= 1 & pa$iplon <= p$nplons & pa$iplat >= 1 & pa$iplat <= p$nplats )

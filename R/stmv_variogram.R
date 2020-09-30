@@ -35,6 +35,10 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
         family=gaussian(link="identity")
         range_correlation=0.1
 
+        discretized_n=64
+        nbreaks = 32
+        range_correlation=0.1
+        stmv_autocorrelation_fft_taper=0
 
         microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="fft", plotdata=FALSE )}, times= 10 )  # 63 milli sec
         gr = stmv_variogram( xy, z, methods="fft", plotdata=TRUE ) # nls
@@ -460,14 +464,14 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
 
       # spatial discretization only
       XYZ = stmv_discretize_coordinates(coo=xy, z=z, discretized_n=discretized_n, method="aggregate", FUNC=mean, na.rm=TRUE)
+      names(XYZ) =  c("plon", "plat", "z" ) # arbitrary
 
       maxdist = out$range_crude   # begin with this (diagonal)
 
       # gives a fast stable empirical variogram using nl least squares
 
-      XYZ[,1] = XYZ[,1] / out$stmv_internal_scale  # keeps things smaller in value to avoid floating point issues
-      XYZ[,2] = XYZ[,2] / out$stmv_internal_scale  # keeps things smaller in value to avoid floating point issues
-      names(XYZ) =  c("plon", "plat", "z" ) # arbitrary
+      XYZ$plon = XYZ$plon / out$stmv_internal_scale  # keeps things smaller in value to avoid floating point issues
+      XYZ$plat = XYZ$plat / out$stmv_internal_scale  # keeps things smaller in value to avoid floating point issues
 
       # empirical variogram
       vEm = gstat::variogram( z ~ 1, locations=~plon+plat, data=XYZ, cutoff=maxdist/out$stmv_internal_scale, width=maxdist/out$stmv_internal_scale/nbreaks, cressie=FALSE )
@@ -1136,6 +1140,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
     m = tapply( X=z, INDEX=list(xy_blocked[,1], xy_blocked[,2]),
         FUN = function(w) {mean(w, na.rm=TRUE)},
         simplify=TRUE )
+
     xyz = as.data.frame( as.table (m) )
     xyz[,1] = as.numeric(as.character( xyz[,1] ))
     xyz[,2] = as.numeric(as.character( xyz[,2] ))

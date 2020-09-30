@@ -121,12 +121,15 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
   breaks = seq( 0, dmax, length.out=nr)
   db = breaks[2] - breaks[1]
   # angles = atan2( xy[,2], xy[,1])  # not used
-  zz = cut( distances, breaks=c(breaks, max(breaks)+db), label=breaks+(db/2) )
+  acs = data.table( dst=as.numeric(as.character(cut( distances, breaks=c(breaks, max(breaks)+db), label=breaks+(db/2) )))  )
+
   xy = NULL
   distances = NULL
   breaks = NULL
 
-  coo = as.matrix(array_map( "xy->2", coords=dat[, p$stmv_variables$LOCS], origin=origin, res=res ))
+  coo = data.table(array_map( "xy->2", coords=dat[, p$stmv_variables$LOCS], origin=origin, res=res ))
+  names(coo) = c("x", "y")
+
   good = which(coo[,1] >= 1 & coo[,1] <= nr & coo[,2] >= 1  & coo[,2] )
   if (length(good) > 0) {
     coo = coo[good,]
@@ -186,16 +189,16 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
     # correlation spectroscopy. Journal of biomedical optics, 17(8), 080801. doi:10.1117/1.JBO.17.8.080801
     # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3414238/
 
-    yy = tapply( X=X, INDEX=list(coo[xi,1], coo[xi,2]), FUN = function(w) {mean(w, na.rm=TRUE)}, simplify=TRUE )
-    nn = tapply( X=X, INDEX=list(coo[xi,1], coo[xi,2]), FUN = function(w) {length(w)}, simplify=TRUE )
-    if (length (dimnames(yy)[[1]]) < 5 ) next()
+    coo$X = c(X)
+    yy = coo[xi, mean(X, na.rm=TRUE), by=.(x, y) ]
+    nn = coo[xi, .N, by=.(x, y) ]
+    if ( nrow(yy) < 5 ) return( out )
 
     fY = matrix(0, nrow = nr2, ncol = nc2)
     fN = matrix(0, nrow = nr2, ncol = nc2)
-
-    fY[as.numeric(dimnames(yy)[[1]]),as.numeric(dimnames(yy)[[2]])] = yy
-    fN[as.numeric(dimnames(nn)[[1]]),as.numeric(dimnames(nn)[[2]])] = nn
-    yy = nn =  NULL
+    fY[ cbind(yy[[1]], yy[[2]]) ] = yy[[3]]
+    fN[ cbind(nn[[1]], nn[[2]]) ] = nn[[3]]
+    yy = nn = NULL
 
     fY[!is.finite(fY)] = 0
     fN[!is.finite(fN)] = 0
@@ -219,12 +222,13 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
         X = rbind( X[((nr+1):nr2), (1:nc2)], X[(1:nr), (1:nc2)] )  # swap_up_down
         X = cbind( X[1:nr2, ((nc+1):nc2)], X[1:nr2, 1:nc])  # swap_left_right
         # zz (distance breaks) precomputed outside of loop
-
-        vgm = as.data.frame.table(tapply( X=X, INDEX=zz, FUN=mean, na.rm=TRUE ))
+        acs$X = c(X)
+        vgm = acs[, mean(X, na.rm=TRUE), by=dst ][order(dst)]
         names(vgm) = c("distances", "ac")
-        vgm$distances = as.numeric(vgm$distances)
+        vgm= vgm[is.finite(distances) & is.finite(ac)]
+
         X = NULL
-        vgm$distances = as.numeric( as.character(vgm$distances))
+
         vgm$sv =  zvar * (1-vgm$ac^2) # each sv are truly orthogonal
 
       # plot(ac ~ distances, data=vgm   )

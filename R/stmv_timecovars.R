@@ -14,7 +14,7 @@ stmv_timecovars = function( vars, ti) {
     #   b1/b2 = tan(b)
     #   b = arctan(b1/b2)
     # more than 3 harmonics would not be advisable .. but you would add them here..
-  out = data.frame( ti=ti )
+  out = data.table( ti=ti )
   if ("yr" %in% vars)     out$yr = floor( ti )
   if ("dyear" %in% vars)  out$dyear = ti - out$yr  # fractional year
   if ("cos.w" %in% vars)  out$cos.w  = cos( ti )
@@ -23,6 +23,7 @@ stmv_timecovars = function( vars, ti) {
   if ("sin.w2" %in% vars) out$sin.w2 = sin( 2*ti )
   if ("cos.w3" %in% vars) out$cos.w3 = cos( 3*ti )
   if ("sin.w3" %in% vars) out$sin.w3 = sin( 3*ti )
-  out$ti = NULL
+  out[,ti:=NULL]  # drop ti, faster
+  # out = $ti = NULL
   return(out)
 }

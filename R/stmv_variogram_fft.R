@@ -73,13 +73,15 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
   out$res  = res = c(dr, dc)
 
   #  Nadaraya/Watson normalization for missing values s
-  coo = as.matrix(array_map( "xy->2", coords=xyz[,c("x", "y")], origin=origin, res=res ))
+  coo = data.table(array_map( "xy->2", coords=xyz[,c("x", "y")], origin=origin, res=res ))
+  names(coo) = c("x", "y")
+  coo$z = z
+  yy = coo[, mean(z, na.rm=TRUE), by=.(x, y) ]
+  nn = coo[, .N, by=.(x, y) ]
 
-  yy = tapply( X=z, INDEX=list(coo[,1], coo[,2]),  FUN = function(w) {mean(w, na.rm=TRUE)}, simplify=TRUE )
-  nn = tapply( X=z, INDEX=list(coo[,1], coo[,2]), FUN = function(w) {length(w)}, simplify=TRUE )
-  if (length (dimnames(yy)[[1]]) < 5 ) return( out )
-  fY[as.numeric(dimnames(yy)[[1]]),as.numeric(dimnames(yy)[[2]])] = yy
-  fN[as.numeric(dimnames(nn)[[1]]),as.numeric(dimnames(nn)[[2]])] = nn
+  if ( nrow(yy) < 5 ) return( out )
+  fY[ cbind(yy[[1]], yy[[2]]) ] = yy[[3]]
+  fN[ cbind(nn[[1]], nn[[2]]) ] = nn[[3]]
   yy = nn = NULL
   coo = NULL
 
@@ -111,20 +113,21 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
   # radial representation
   xy = expand_grid_fast( c(-(nr-1):0, 0:(nr-1)) * dr,  c(-(nc-1):0, 0:(nc-1)) * dc )
   distances = sqrt(xy[,1]^2 + xy[,2]^2)
+  # angles = atan2( xy[,2], xy[,1])  # not used
+  xy = NULL
+
   dmax = max(distances, na.rm=TRUE ) * 0.4  # approx nyquist distance (<0.5 as corners exist)
   breaks = seq( 0, dmax, length.out=nr)
   db = breaks[2] - breaks[1]
-  # angles = atan2( xy[,2], xy[,1])  # not used
 
-
-  zz = cut( distances, breaks=c(breaks, max(breaks)+db), label=breaks+(db/2) )
-  distances = NULL
-  xy = NULL
-
-  vgm = as.data.frame.table(tapply( X=X, INDEX=zz, FUN=mean, na.rm=TRUE ))
+  acs = data.table( dst=as.numeric(as.character(cut( distances, breaks=c(breaks, max(breaks)+db), label=breaks+(db/2) ))), X=c(X) )
+  vgm = acs[, mean(X, na.rm=TRUE), by=dst ][order(dst)]
   names(vgm) = c("distances", "ac")
+  vgm= vgm[is.finite(distances) & is.finite(ac)]
+
+  distances = NULL
   X = NULL
-  zz = NULL
+  acs =NULL
   gc()
 
   vgm$distances = as.numeric( as.character(vgm$distances))
