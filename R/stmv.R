@@ -28,7 +28,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
     TF = c( sapply(p$stmv_runmode, is.logical ))
     o[TF] = p$stmv_runmode[TF]
     s_runmode = s_runmode[ unlist(o) ]
-    runmode = intersect(s_runmode, c( "globalmodel", "scale", "interpolate_fast_predictions", "interpolate", "interpolate_distance_basis", "interpolate_predictions", "save_completed_data", "restart_load") )
+    runmode = intersect(s_runmode, c( "globalmodel", "scale", "interpolate_fast_predictions", "interpolate", "interpolate_distance_basis", "interpolate_predictions", "save_completed_data", "restart_load", "carstm" ) )
   }
   message( "Runmodes: ", paste(runmode, ", ", sep=" ")  )
 
@@ -576,6 +576,27 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
     }
 
 
+
+    # -----------------------------------------------------
+    if ("carstm" %in% runmode ) {
+      # this models, and predicts in same step (via inla)
+      message ( "\n", "||| Entering carstm areal unit modelling: ", format(Sys.time())  )
+      if ( "restart_load" %in% runmode ) {
+        invisible( stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" ) )
+      }
+      p$time_start_runmode = Sys.time()
+      p$runmode = "carstm"
+      p$clusters = p$stmv_runmode[["scale"]] # as ram reqeuirements increase drop cpus
+      currentstatus = stmv_statistics_status( p=p, reset="flags", reset_flags=c("insufficient_data",  "unknown" ) )
+      parallel_run( stmv_interpolate_carstm, p=p, runindex=list( locs=sample( currentstatus$todo )) )
+      stmv_db(p=p, DS="save_current_state", runmode="carstm", datasubset="statistics") # temp save to disk
+      stmv_statistics_status( p=p, verbose=FALSE ) # quick update before logging
+      slog = stmv_logfile(p=p, flag= paste("Carstm phase", p$runmode, "completed ...") ) # final update before continuing
+      message( "||| Time used for carstm estimation: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n"  )
+    }
+
+
+
     # -----------------------------------------------------
     if ( "scale" %in% runmode ) {
       message ( "\n", "||| Entering spatial scale (variogram) determination: ", format(Sys.time())  )
@@ -592,7 +613,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
       slog = stmv_logfile(p=p, flag= paste("Interpolation phase", p$runmode, "completed ...") ) # final update before continuing
       message( "||| Time used for scale estimation: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n"  )
     }
-
 
 
 
@@ -727,7 +747,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
     }
 
 
-  }
+  }  #end loop
 
   # --------------------
 

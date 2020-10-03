@@ -36,3 +36,4 @@ stmv__glm = function(p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
 
   return( list( predictions=pa, stmv_stats=stmv_stats ) )
 }
+

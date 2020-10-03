@@ -57,22 +57,33 @@ stmv_interpolate_predictions = function( ip=NULL, p, debugging=FALSE, ... ) {
     }
 
     windowsize.half = floor( prediction_area / p$pres ) + 1L
-    # construct data (including covariates) for prediction locations (pa)
+    # construct data (including static covariates) for prediction locations (pa)
     pa = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=windowsize.half ) )
-
-    if (is.null(pa)) {
+    if ( is.null(pa) ) {
       Sflag[Si] = E[["prediction_area"]]
-      if (debugging) message( Si )
-      if (debugging) message("Error: prediction grid ... null .. this should not happen")
-      pa = NULL
       next()
     }
+
     if ( inherits(pa, "try-error") ) {
       pa = NULL
       Sflag[Si] = E[["prediction_area"]]
-      if (debugging) message("Error: prediction grid ... try-error .. this should not happen")
+      if (debugging) message("Error: prediction grid ... try-error .. this should not happen.  check this")
       next()
     }
+
+    if ( exists("TIME", p$stmv_variables) )  pa = try( stmv_predictiontime( p=p, pa=pa ) ) # add time to pa and time varying covars
+    if ( is.null(pa) ) {
+      Sflag[Si] = E[["prediction_time"]]
+      next()
+    }
+
+    if ( inherits(pa, "try-error") ) {
+      pa = NULL
+      Sflag[Si] = E[["prediction_time"]]
+      if (debugging) message("Error: prediction grid ... try-error .. this should not happen.  check this")
+      next()
+    }
+
 
     #direct interpolation upon P ..
 
