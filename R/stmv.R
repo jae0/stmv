@@ -1,7 +1,7 @@
 
 
 stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
-  debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE, robustify_quantiles=c(0.0005, 0.9995), ... ) {
+  debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE, robustify_quantiles=c(0.0005, 0.9995), global_sppoly=NULL, ... ) {
 
   if (0) {
     runmode = NULL
@@ -269,65 +269,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   Yi=NULL
 
 
-  ##############
-
-
-  # init output data objects
-  # statistics storage matrix ( aggregation window, coords ) .. no inputs required
-  sbox = Sloc = NULL
-  sbox = list(
-    plats = seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ),
-    plons = seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ) )
-  # statistics coordinates
-  Sloc = as.matrix( expand_grid_fast( sbox$plons, sbox$plats ))
-  nSloc = nrow(Sloc)
-
-  if (p$storage_backend == "bigmemory.ram" ) {
-    tmp_Sloc = big.matrix(nrow=nSloc, ncol=ncol(Sloc), type="double"  )
-    tmp_Sloc[] = Sloc[]
-    p$ptr$Sloc  = bigmemory::describe( tmp_Sloc  )
-  }
-  if (p$storage_backend == "bigmemory.filebacked" ) {
-    p$ptr$Sloc  = p$cache$Sloc
-    bigmemory::as.big.matrix( Sloc, type="double", backingfile=basename(p$bm$Sloc), descriptorfile=basename(p$cache$Sloc), backingpath=p$stmvSaveDir )
-  }
-  if (p$storage_backend == "ff" ) {
-    p$ptr$Sloc = ff( Sloc, dim=dim(Sloc), file=p$cache$Sloc, overwrite=TRUE )
-  }
-  Sloc = NULL
-  sbox = NULL
-
-
-  sS = matrix( NaN, nrow=nSloc, ncol=length( p$statsvars ) ) # NA forces into logical
-  if (p$storage_backend == "bigmemory.ram" ) {
-    tmp_S = big.matrix(nrow=nSloc, ncol=length( p$statsvars ), type="double"  )
-    tmp_S[] = sS[]
-    p$ptr$S  = bigmemory::describe( tmp_S )
-  }
-  if (p$storage_backend == "bigmemory.filebacked" ) {
-    p$ptr$S  = p$cache$S
-    bigmemory::as.big.matrix( sS, type="double", backingfile=basename(p$bm$S), descriptorfile=basename(p$cache$S), backingpath=p$stmvSaveDir )
-  }
-  if (p$storage_backend == "ff" ) {
-    p$ptr$S = ff( sS, dim=dim(sS), file=p$cache$S, overwrite=TRUE )
-  }
-  sS = NULL
-
-
-  sSflag = matrix( stmv_error_codes()[["todo"]], nrow=nSloc, ncol=1 )
-  if (p$storage_backend == "bigmemory.ram" ) {
-    tmp_Sflag = big.matrix(nrow=length(sSflag), ncol=1, type="double" )
-    tmp_Sflag[] = sSflag[]
-    p$ptr$Sflag  = bigmemory::describe( tmp_Sflag )
-  }
-  if (p$storage_backend == "bigmemory.filebacked" ) {
-    p$ptr$Sflag  = p$cache$Sflag
-    bigmemory::as.big.matrix( sSflag, type="double", backingfile=basename(p$bm$Sflag), descriptorfile=basename(p$cache$Sflag), backingpath=p$stmvSaveDir )
-  }
-  if (p$storage_backend == "ff" ) {
-    p$ptr$Sflag = ff( sSflag, dim=dim(sSflag), file=p$cache$Sflag, overwrite=TRUE )
-  }
-  sSflag = NULL
+  #############
 
 
   nPloc = nrow(DATA$output$LOCS)
@@ -481,6 +423,8 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
     }
 
 
+
+
   # --------------------------------
   # completed data structures .. save params and clear up RAM
 
@@ -502,6 +446,88 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
       niterations = niter
     }
   }
+
+  ##############
+
+
+  # init output data objects
+  # statistics storage matrix ( aggregation window, coords ) .. no inputs required
+  sbox = Sloc = NULL
+  sbox = list(
+    plats = seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ),
+    plons = seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ) )
+  # statistics coordinates
+  Sloc = as.matrix( expand_grid_fast( sbox$plons, sbox$plats ))
+  nSloc = nrow(Sloc)
+
+  if (p$storage_backend == "bigmemory.ram" ) {
+    tmp_Sloc = big.matrix(nrow=nSloc, ncol=ncol(Sloc), type="double"  )
+    tmp_Sloc[] = Sloc[]
+    p$ptr$Sloc  = bigmemory::describe( tmp_Sloc  )
+  }
+  if (p$storage_backend == "bigmemory.filebacked" ) {
+    p$ptr$Sloc  = p$cache$Sloc
+    bigmemory::as.big.matrix( Sloc, type="double", backingfile=basename(p$bm$Sloc), descriptorfile=basename(p$cache$Sloc), backingpath=p$stmvSaveDir )
+  }
+  if (p$storage_backend == "ff" ) {
+    p$ptr$Sloc = ff( Sloc, dim=dim(Sloc), file=p$cache$Sloc, overwrite=TRUE )
+  }
+  Sloc = NULL
+  sbox = NULL
+
+
+  sSflag = matrix( stmv_error_codes()[["todo"]], nrow=nSloc, ncol=1 )
+  if (p$storage_backend == "bigmemory.ram" ) {
+    tmp_Sflag = big.matrix(nrow=length(sSflag), ncol=1, type="double" )
+    tmp_Sflag[] = sSflag[]
+    p$ptr$Sflag  = bigmemory::describe( tmp_Sflag )
+  }
+  if (p$storage_backend == "bigmemory.filebacked" ) {
+    p$ptr$Sflag  = p$cache$Sflag
+    bigmemory::as.big.matrix( sSflag, type="double", backingfile=basename(p$bm$Sflag), descriptorfile=basename(p$cache$Sflag), backingpath=p$stmvSaveDir )
+  }
+  if (p$storage_backend == "ff" ) {
+    p$ptr$Sflag = ff( sSflag, dim=dim(sSflag), file=p$cache$Sflag, overwrite=TRUE )
+  }
+  sSflag = NULL
+
+  # determine stats to retain / expect
+  res = NULL
+  res = stmv_data_modeltest( p=p, global_sppoly=global_sppoly  )
+  if (!is.null(res)) {
+    p$statsvars = names(res$stmv_stats )
+  } else {
+    # require knowledge of size of stats output which varies with a given type of analysis
+    p$statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "phi", "nu", "localrange" )
+    if (exists("TIME", p$stmv_variables) )  p$statsvars = c( p$statsvars, "ar_timerange", "ar_1" )
+    if (p$stmv_local_modelengine == "userdefined" ) {
+      if (exists("stmv_local_modelengine", p) ) {
+        if (exists("stmv_local_modelengine_userdefined", p) ) {
+          if (class(p$stmv_local_modelengine_userdefined) == "function" ) {
+            oo = NULL
+            oo = try( p$stmv_local_modelengine_userdefined(variablelist=TRUE), silent=TRUE )
+            if ( ! inherits(oo, "try-error") ) p$statsvars = unique( c( p$statsvars, oo ) )
+          }
+        }
+      }
+    }
+  }
+
+  sS = matrix( NaN, nrow=nSloc, ncol=length( p$statsvars ) ) # NA forces into logical
+  if (p$storage_backend == "bigmemory.ram" ) {
+    tmp_S = big.matrix(nrow=nSloc, ncol=length( p$statsvars ), type="double"  )
+    tmp_S[] = sS[]
+    p$ptr$S  = bigmemory::describe( tmp_S )
+  }
+  if (p$storage_backend == "bigmemory.filebacked" ) {
+    p$ptr$S  = p$cache$S
+    bigmemory::as.big.matrix( sS, type="double", backingfile=basename(p$bm$S), descriptorfile=basename(p$cache$S), backingpath=p$stmvSaveDir )
+  }
+  if (p$storage_backend == "ff" ) {
+    p$ptr$S = ff( sS, dim=dim(sS), file=p$cache$S, overwrite=TRUE )
+  }
+  sS = NULL
+
 
   stmv_statistics_status( p=p, reset="features", verbose=FALSE ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
 
@@ -582,13 +608,13 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
       # this models, and predicts in same step (via inla)
       message ( "\n", "||| Entering carstm areal unit modelling: ", format(Sys.time())  )
       if ( "restart_load" %in% runmode ) {
-        invisible( stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" ) )
+        invisible( stmv_db(p=p, DS="load_saved_state", runmode="carstm", datasubset="statistics" ) )
       }
       p$time_start_runmode = Sys.time()
       p$runmode = "carstm"
-      p$clusters = p$stmv_runmode[["scale"]] # as ram reqeuirements increase drop cpus
+      p$clusters = p$stmv_runmode[["carstm"]] # as ram reqeuirements increase drop cpus
       currentstatus = stmv_statistics_status( p=p, reset="flags", reset_flags=c("insufficient_data",  "unknown" ) )
-      parallel_run( stmv_interpolate_carstm, p=p, runindex=list( locs=sample( currentstatus$todo )) )
+      parallel_run( stmv_interpolate, p=p, runmode="carstm", global_sppoly=global_sppoly, runindex=list( locs=sample( currentstatus$todo )) )
       stmv_db(p=p, DS="save_current_state", runmode="carstm", datasubset="statistics") # temp save to disk
       stmv_statistics_status( p=p, verbose=FALSE ) # quick update before logging
       slog = stmv_logfile(p=p, flag= paste("Carstm phase", p$runmode, "completed ...") ) # final update before continuing

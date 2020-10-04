@@ -106,6 +106,14 @@ if (0) {
   dev.new(); surface( as.image( Z=DATA$input$z, x=DATA$input[, c("plon", "plat")], nx=p$nplons, ny=p$nplats, na.rm=TRUE) )
 
 
+# p$statsvars = c("sdTotal", "ndata", "fixed_mean", "fixed_sd", "dic", "dic_p_eff",
+#   "waic", "waic_p_eff", "mlik", "Expectected__number_of_parameters",
+#   "Stdev_of_the_number_of_parameters", "Number_of_equivalent_replicates",
+#   "Precision_for_the_Gaussian_observations", "Precision_for_aui",
+#   "Phi_for_aui", "Precision_for_the_Gaussian_observations_sd", "Precision_for_aui_sd", "Phi_for_aui_sd"
+# )
+
+
 stmv( p=p  )  # This will take from a few minutes, depending upon system
 # stmv_db( p=p, DS="cleanup.all" )
 

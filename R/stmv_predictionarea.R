@@ -48,7 +48,7 @@ stmv_predictionarea = function(p, sloc, windowsize.half ) {
       }
     }
   }
-  pa = pa[, pvars]
+  pa = as.data.frame(pa[, ..pvars])
   rownames(pa) = NULL
   return(pa)
 }

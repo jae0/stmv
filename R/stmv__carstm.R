@@ -1,5 +1,5 @@
 
-stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, sppoly=NULL, variablelist=FALSE, ... ) {
+stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, sppoly=NULL, variablelist=FALSE, improve.hyperparam.estimates=FALSE, ... ) {
 
 
     if (0) {
@@ -7,20 +7,26 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, sppoly=NULL, variablelist=FA
       varSpatial = S[Si, i_sdSpatial]^2
       sloc = Sloc[Si,]
       eps = 1e-9
+      improve.hyperparam.estimates=FALSE
+      variablelist=FALSE
     }
 
-    if (variablelist)  return( c() )
+    if (variablelist)  {
+      return( varnames )
+    }
+
 
     params = list(...)
 
-    sdTotal = sd(dat[,p$stmv_variables$Y], na.rm=T)
+    sdTotal = sd( dat[[p$stmv_variables$Y]], na.rm=T)
 
     # system size
     #nr = nx # nr .. x/plon
     #nc = ny # nc .. y/plat
 
     locnm = p$stmv_variables$LOCS  # for data.table., this has to be a simple variable
-    dat$AUID = over( spTransform( SpatialPoints( dat[, ..locnm ], CRS(p$aegis_proj4string_planar_km) ), CRS(proj4string(sppoly))), sppoly )$AUID # match each datum to an area
+    datcoords = spTransform( SpatialPoints( as.matrix(dat[, ..locnm ]), CRS(p$aegis_proj4string_planar_km ) ),  CRS(proj4string(sppoly) ) )
+    dat$AUID = over( datcoords, sppoly )$AUID # match each datum to an area
 
     dat = dat[  !is.na(dat$AUID)]
     dat$tag = "observations"
@@ -55,7 +61,7 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, sppoly=NULL, variablelist=FA
     gc()
 
     fit  = NULL
-    assign("fit", eval(parse(text=paste( "try(", p$carstm_modelcall, ")" ) ) ))
+    assign("fit", eval(parse(text=paste( "try(", p$stmv_local_modelformula, ")" ) ) ))
     if (is.null(fit)) warning("model fit error")
     if ("try-error" %in% class(fit) ) warning("model fit error")
 
@@ -65,16 +71,16 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, sppoly=NULL, variablelist=FA
 
     # results container
     # initial prediction container
-
+    hyp_pars =  c( fit$summary.hyperpar$mean, fit$summary.hyperpar$sd )
+    names( hyp_pars ) =  gsub( " ", "_",  c( rownames(fit$summary.hyperpar), paste( rownames(fit$summary.hyperpar), "_sd", sep="" ) ) )
     res = list( dat=dat, dimensionality = p$aegis_dimensionality )
 
-    res$predictions = data.table( i=pa$i)
-    res$stmv_stats = list( sdTotal=sdTotal, rsquared=rsquared, ndata=nrow(dat) )
+    mlik_p_eff = c(fit$neffp)
+    names(mlik_p_eff) = gsub( " ", "_", rownames(fit$neffp) )
 
-    hyp_pars =  c( fit$summary.hyperpar$mean, fit$summary.hyperpar$sd )
-    names( hyp_pars ) = c( rownames(fit$summary.hyperpar), paste( rownames(fit$summary.hyperpar), "_sd", sep="" ) )
-    # == p$statvars = ...
-    res$stmv_localstats = c(
+    res$stmv_stats = c(
+      sdTotal=sdTotal,
+      ndata=nrow(dat),
       fixed_mean = fit$summary.fixed$mean,
       fixed_sd = fit$summary.fixed$sd,
       dic = fit$dic$dic,
@@ -82,10 +88,12 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, sppoly=NULL, variablelist=FA
       waic = fit$waic$waic, #1
       waic_p_eff = fit$waic$p.eff, #1
       mlik = fit$mlik[[2,1]], #1
-      mlik_p_eff = fit$neffp, ## 3 elements
+      mlik_p_eff,
       hyp_pars
     )
-    # 8 vars, plus hyper .. variable #
+
+
+    res$predictions = data.table( i=pa$i)
 
     # row indices for predictions
     if ( p$aegis_dimensionality == "space") {

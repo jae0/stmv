@@ -1,0 +1,226 @@
+stmv_data_modeltest = function(p, runmode="default", global_sppoly=NULL ) {
+
+  # purpose: to obtain param names from a model run
+  # param names vary depending upon the model form
+  # only possible to run a model to see waht gets exported ..
+  # this is essentially a minimal form of stmv_interpolate  that stops once a solution with params are found
+
+  S = stmv_attach( p$storage_backend, p$ptr$S )
+  Sloc = stmv_attach( p$storage_backend, p$ptr$Sloc )
+
+  Yloc = stmv_attach( p$storage_backend, p$ptr$Yloc )
+  Y = stmv_attach( p$storage_backend, p$ptr$Y )
+
+  if (p$nloccov > 0) Ycov = stmv_attach( p$storage_backend, p$ptr$Ycov )
+  if ( exists("TIME", p$stmv_variables) ) Ytime = stmv_attach( p$storage_backend, p$ptr$Ytime )
+
+
+  # pre-calculate indices and dim for data to use inside the loop
+  dat_names = unique( c(  p$stmv_variables$Y, p$stmv_variables$LOCS, p$stmv_variables$local_all, "weights" ) )  # excludes p$stmv_variables$TIME
+    # if (p$stmv_local_modelengine %in% c("fft", "tps", "twostep") ) {
+    if ( exists("TIME", p$stmv_variables)) {
+      dat_names = c(dat_names, p$stmv_variables$TIME)
+    }
+  # }
+
+  # unless it is an explicit covariate and not a seasonal component there is no need for it
+  # .. prediction grids create these from a time grid on the fly
+  dat_nc = length( dat_names )
+
+  iY = which(dat_names== p$stmv_variables$Y)
+  ilocs = which( dat_names %in% p$stmv_variables$LOCS )
+  i_ndata = match( "ndata", p$statsvars )
+
+  if (runmode=="default") {
+    # iwei = which( dat_names %in% "weights" )
+    i_rsquared = match("rsquared", p$statsvars )
+    i_localrange = match("localrange", p$statsvars )
+    i_nu = match("nu",   p$statsvars)
+    i_phi = match("phi",   p$statsvars)
+    i_sdSpatial = match("sdSpatial",   p$statsvars)
+    i_sdObs = match("sdObs",   p$statsvars)
+
+    distance_limits = range( p$stmv_distance_scale )    # for range estimate
+
+    # error (km) to add to locations to force solutions that are affected by duplicated locations
+    dist_error = 1e-6
+    if ( exists( "stmv_lowpass_nu", p) & exists( "stmv_lowpass_phi", p) ) {
+      dist_error_target = matern_phi2distance( phi=p$stmv_lowpass_phi, nu=p$stmv_lowpass_nu, cor=p$stmv_autocorrelation_localrange )
+      if (is.finite(dist_error_target)) dist_error = dist_error_target
+    }
+
+    local_fn = ifelse (p$stmv_local_modelengine=="userdefined", p$stmv_local_modelengine_userdefined, stmv_interpolation_function( p$stmv_local_modelengine ) )
+
+  }
+
+
+  if (p$nloccov > 0) {
+    icov = which( dat_names %in% p$stmv_variables$local_cov )
+    icov_local = which( p$stmv_variables$COV %in% p$stmv_variables$local_cov )
+  }
+  if (exists("TIME", p$stmv_variables)) {
+    ti_cov = setdiff(p$stmv_variables$local_all, c(p$stmv_variables$Y, p$stmv_variables$LOCS, p$stmv_variables$local_cov ) )
+    itime_cov = which(dat_names %in% ti_cov)
+  }
+
+# main loop over each output location in S (stats output locations)
+  currentstatus = stmv_statistics_status( p=p )
+  p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) )
+  ip = 1:p$nruns
+
+
+  for ( iip in ip ) {
+
+    Si = p$runs[ iip, "locs" ]
+
+
+    if (runmode=="default") {
+
+      nu    = S[Si, i_nu]
+      phi   = S[Si, i_phi]
+      localrange = S[Si, i_localrange]   # attached to p$stmv_autocorrelation_localrange
+
+      # range checks
+      if ( any( !is.finite( c(localrange, nu, phi) ) ) )  {
+        Sflag[Si] %in% E[["variogram_failure"]]
+        s1 = abs( Sloc[Si,1] - Sloc[,1] )
+        s2 = abs( Sloc[Si,2] - Sloc[,2] )
+
+        ii = NULL
+        if ( !is.finite( localrange ) ) {
+          # obtain estimate of localrange from adjoining areas
+          localrange = max( distance_limits ) #initial guess
+          ii = which( ( s1 <= localrange ) & ( s2 <= localrange ) )
+          if (length( ii ) < 1)  next()
+          localrange = median( S[ii, i_localrange ], na.rm=TRUE ) # initial local estimate
+          ii = which( ( s1 <= localrange ) & ( s2 <= localrange ) )
+          if (length( ii ) < 1)  next()
+          localrange = median( S[ii, i_localrange ], na.rm=TRUE )  # refined local estimate
+        }
+        if ( !is.finite( localrange ) ) next()  # last check
+
+        # the above forces localrange to always be available
+        if ( !is.finite(nu) )  {
+          if (is.null(ii))  ii = which( ( s1 <= localrange ) & ( s2 <= localrange ) ) # update
+          nu =  median( S[ii, i_nu ], na.rm=TRUE )
+        }
+        if ( !is.finite(nu) ) next()  # last check
+
+        # phi meaningful only with some given nu .. restimate from localrange
+        if ( !is.finite(phi) ) phi = matern_distance2phi( dis=localrange, nu=nu, cor=p$stmv_autocorrelation_localrange )
+        if ( !is.finite(phi) ) next() # last check
+
+        s1 = NULL
+        s2 = NULL
+        ii = NULL
+        gc()
+      }
+
+      if ( Sflag[Si] != E[["todo"]] ) {
+        if (exists("stmv_rangecheck", p)) {
+          if (p$stmv_rangecheck=="paranoid") {
+            if ( Sflag[Si] %in% c( E[["variogram_range_limit"]], E[["variogram_failure"]]) ) {
+              if (debugging) message("Error: stmv_rangecheck paranoid")
+                next()
+            }
+          }
+        }
+      }
+
+      if (!exists("stmv_interpolation_basis", p)) p$stmv_interpolation_basis = "correlation"
+
+      if (p$stmv_interpolation_basis == "correlation")  {
+        localrange_interpolation = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_interpolation_basis_correlation )
+      } else if (p$stmv_interpolation_basis == "distance")  {
+        localrange_interpolation = p$stmv_interpolation_basis_distance
+      }
+
+    } else if ( runmode=="carstm" ) {
+
+       localrange_interpolation = ifelse( !exists("stmv_interpolation_basis_distance", p), p$stmv_distance_statsgrid *1.5, p$stmv_interpolation_basis_distance )
+
+    }
+
+
+    data_subset = stmv_select_data( p=p, Si=Si, localrange=localrange_interpolation )
+    if (is.null( data_subset )) next()
+
+    unique_spatial_locations = data_subset$unique_spatial_locations
+    ndata = length(data_subset$data_index)
+    if (unique_spatial_locations < p$stmv_nmin) next()
+
+    dat = matrix( 1, nrow=ndata, ncol=dat_nc )
+    dat[,iY] = Y[data_subset$data_index] # these are residuals if there is a global model
+       dat[,ilocs] = Yloc[data_subset$data_index,]
+    if (runmode=="default") {
+      dat[,ilocs] = dat[,ilocs] + localrange_interpolation * runif(2*ndata, -dist_error, dist_error)
+    }
+
+    if (p$nloccov > 0) dat[,icov] = Ycov[data_subset$data_index, icov_local] # no need for other dim checks as this is user provided
+    if (exists("TIME", p$stmv_variables)) {
+      dat[, itime_cov] = as.matrix(stmv_timecovars( vars=ti_cov, ti=Ytime[data_subset$data_index,] ) )
+      itt = which(dat_names==p$stmv_variables$TIME)
+      dat[, itt ] = Ytime[data_subset$data_index,]
+      # crude check of number of time slices
+      n_time_slices = stmv_discretize_coordinates( coo=dat[, itt], ntarget=p$nt, minresolution=p$minresolution[3], method="thin"  )
+      if ( length(n_time_slices) < p$stmv_tmin )  next()
+    }
+    dat = data.table(dat)
+    names(dat) = dat_names
+    dat_range = range( dat[,..iY], na.rm=TRUE )  # used later
+
+    # construct prediction/output grid area ('pa')
+     if (runmode=="default") {
+# convert distance to discretized increments of row/col indices;
+      if (exists("stmv_distance_prediction_limits", p)) {
+        prediction_area = min( max( localrange_interpolation, min(p$stmv_distance_prediction_limits) ), max(p$stmv_distance_prediction_limits), na.rm=TRUE )
+      }
+    } else if ( runmode=="carstm" ) {
+        prediction_area = localrange_interpolation
+    }
+
+    windowsize.half =  floor( prediction_area / p$pres ) + 1L
+    # construct data (including covariates) for prediction locations (pa)
+    pa = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=windowsize.half ) )
+    if ( is.null(pa) ) next()
+    if ( inherits(pa, "try-error") ) next()
+
+    if ( "carstm" %in% runmode ) {
+      # determine spatial polygons for prediction .. pa is for space only at this point .. note pa only has static vars and covars
+      sppoly = stmv_predictionarea_polygon( pa=pa, dx=p$pres, dy=p$pres, pa_coord_names=p$stmv_variables$LOCS[1:2], pa_proj4string_planar_km=p$aegis_proj4string_planar_km, global_sppoly=global_sppoly )
+     }
+
+    if ( exists("TIME", p$stmv_variables) )  pa = try( stmv_predictiontime( p=p, pa=pa ) ) # add time to pa and time varying covars
+
+    if ( is.null(pa) )  next()
+    if ( inherits(pa, "try-error") )  next()
+
+    res =NULL
+
+    if ( runmode=="default" ) {
+      res = try(
+        local_fn (
+          p=p,
+          dat=dat,
+          pa=pa,
+          nu=nu,
+          phi=phi,
+          localrange=localrange_interpolation,
+          varObs = S[Si, i_sdObs]^2,
+          varSpatial = S[Si, i_sdSpatial]^2,
+          sloc = Sloc[Si,]
+        )
+      )
+    } else if ( runmode=="carstm" ) {
+      res = local_fn( p=p, dat=dat, pa=pa, sppoly=sppoly  )
+    }
+
+    if ( is.null(res))  next()
+    if ( inherits(res, "try-error") ) next()
+    if (!exists("predictions", res))  next()
+    if (!exists("mean", res$predictions)) next()
+    if (length(which( is.finite(res$predictions$mean ))) < 1) next()
+
+    return( names(res$stmv_stats ))
+
+}

@@ -16,6 +16,7 @@ stmv_interpolation_function = function( modelengine ) {
     kernel = stmv__kernel,
     linear = stmv__linear,
     tps = stmv__tps,
+    carstm = stmv__carstm,
     twostep = stmv__twostep
   )
   return( local_fn )

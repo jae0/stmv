@@ -57,6 +57,7 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=3
       if ( method=="aggregate" ) {
         # basic aggregation in 2D
         if (is.null(z)) stop("z is required if aggregating")
+        names(coo) = c("x"  )
         coo$z = z
         res = coo[, FUNC(z), by=x]
         names(res) =c("x", "z")
@@ -66,6 +67,7 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=3
 
       if (method=="thin") {
         if (is.null(minresolution)) stop("minresolution is required")
+        names(coo) = c("x"  )
         coo$z = icoo
         res = coo[, .N, by=x]
         names(res) =c("x", "n")
@@ -114,6 +116,7 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=3
     if ( method=="aggregate" ) {
       # basic aggregation in 2D
       if (is.null(z)) stop("z is required if aggregating")
+      names(coo) = c("x", "y" )
       coo$z = z
       res = coo[, FUNC(z), by=.(x, y)]
       names(res) =c("x", "y", "z")
@@ -123,7 +126,8 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=3
 
     if (method=="thin") {
       if (is.null(minresolution)) stop("minresolution is required")
-      coo$z = z
+      names(coo) = c("x", "y" )
+      coo$z = icoo
       res = coo[, .N, by=.(x, y)]
       names(res) =c("x", "y", "n")
       ressum = sum(res$n, na.rm=TRUE)
@@ -174,6 +178,7 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=3
       if ( method=="aggregate" ) {
         # basic aggregation in 2D
         if (is.null(z)) stop("z is required if aggregating")
+        names(coo) = c("x", "y", "t")
         coo$z = z
         res = coo[, FUNC(z), by=.(x, y, t)]
         names(res) =c("x", "y", "t", "z")
@@ -182,7 +187,8 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=3
 
 
       if (method=="thin") {
-        coo$z = z
+        names(coo) = c("x", "y", "t")
+        coo$z = icoo
         res = coo[, .N, by=.(x, y, t)]
         names(res) =c("x", "y", "t", "n")
         ressum = sum(res$n, na.rm=TRUE)
