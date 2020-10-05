@@ -539,6 +539,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   }
   sS = NULL
 
+  # debug(stmv_statistics_status)
 
   stmv_statistics_status( p=p, reset="features", verbose=FALSE ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
 

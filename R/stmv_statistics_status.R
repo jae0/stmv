@@ -22,8 +22,8 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NUL
       Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
       Sloc = stmv_attach( p$storage_backend, p$ptr$Sloc )
 
-      pidP = array_map( "xy->1", Ploc, gridparams=p$gridparams )
-      pidS = array_map( "xy->1", Sloc, gridparams=p$gridparams )
+      pidP = array_map( "xy->1", Ploc[], gridparams=p$gridparams )
+      pidS = array_map( "xy->1", Sloc[], gridparams=p$gridparams )
       overlap = match( pidS, pidP )
       outside_bounds = which( !is.finite( overlap ))
 
