@@ -22,7 +22,7 @@
         # data_subset = NULL
       sppoly = sf::st_as_sf( pa, coords=pa_coord_names )
       sf::st_crs(sppoly) = sf::st_crs( pa_proj4string_planar_km )
-      sp_grid = raster( sppoly, nrows=nr, ncols=nc )
+      sp_grid = raster::raster( sppoly, nrows=nr, ncols=nc )
       sppoly = as(sp_grid, "SpatialPolygonsDataFrame")
 
       if (exists("i", slot(sppoly, "data")) ) {
