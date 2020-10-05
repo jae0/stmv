@@ -17,7 +17,7 @@
 
     if (method=="ts->2") {
       # time, season index, identical to xy->2
-      return( floor( cbind(
+      return( aegis_floor( cbind(
         (coords[,1]-origin[1])/res[1], # year index
         (coords[,2]-origin[2])/res[2]  # season index
         # as.numeric( cut( B$dyear, breaks=dyears_cuts , include.lowest=T, ordered_result=TRUE ) ), #season
@@ -26,7 +26,7 @@
 
     if (method=="ts->1") {
       # time, season index, same as xy->1, except order
-      ij = floor( cbind(
+      ij = aegis_floor( cbind(
         (coords[,1]-origin[1])/res[1], # year index
         (coords[,2]-origin[2])/res[2]  # season index
         # as.numeric( cut( B$dyear, breaks=dyears_cuts , include.lowest=T, ordered_result=TRUE ) ), #season
@@ -36,11 +36,11 @@
 
 
     if (method=="xy->2") {
-      return( floor( cbind( (coords[,1]-origin[1])/res[1] , (coords[,2]-origin[2])/res[2]) ) +1L  ) # do NOT use floor FP issues cause error
+      return( aegis_floor( cbind( (coords[,1]-origin[1])/res[1] , (coords[,2]-origin[2])/res[2]) ) +1L  ) # do NOT use aegis_floor FP issues cause error
     }
 
     if (method=="xy->1") {
-      ij = floor( cbind( (coords[,1]-origin[1])/res[1], (coords[,2]-origin[2])/res[2] ) )  # same as "xy->2"
+      ij = aegis_floor( cbind( (coords[,1]-origin[1])/res[1], (coords[,2]-origin[2])/res[2] ) )  # same as "xy->2"
       return( c( ij[,1] + ij[,2]*dims[1] +1L) ) # same as 2->1; c makes it a vector
     }
 

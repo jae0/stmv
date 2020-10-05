@@ -141,8 +141,8 @@
 
       ii = na.omit(hasdata)
       Yloc = stmv_attach(  p$storage_backend, p$ptr$Yloc )
-      yplon = floor( ( Yloc[ii,1] - p$origin[1] )/p$pres) + 1L
-      yplat = floor( ( Yloc[ii,2] - p$origin[2] )/p$pres) + 1L
+      yplon = aegis_floor( ( Yloc[ii,1] - p$origin[1] )/p$pres) + 1L
+      yplat = aegis_floor( ( Yloc[ii,2] - p$origin[2] )/p$pres) + 1L
       uu = unique( array_map( "2->1", cbind(yplon, yplat), c(p$nplons, p$nplats) ) )
       vv = array_map( "1->2", uu, c(p$nplons, p$nplats) )
 

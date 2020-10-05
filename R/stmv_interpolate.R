@@ -14,22 +14,6 @@ stmv_interpolate = function( ip=NULL, p, runmode="default", debugging=FALSE, glo
     runmode = "carstm"
     stmv_interpolation_basis_distance = 2 * p$stmv_distance_statsgrid  # fixed distance
 
-    require(INLA)
-    p$carstm_modelcall = paste(
-          'inla(
-            formula = ', p$stmv_variables$Y, ' ~ 1
-              + f(aui, model="bym2", graph=slot(sppoly, "nb"), scale.model=TRUE, constr=TRUE, hyper=H$bym2),
-            family = "normal",
-            data= dat,
-            control.compute=list(dic=TRUE, waic=TRUE, cpo=FALSE, config=FALSE),  # config=TRUE if doing posterior simulations
-            control.results=list(return.marginals.random=TRUE, return.marginals.predictor=TRUE ),
-            control.predictor=list(compute=FALSE, link=1 ),
-            control.fixed=H$fixed,  # priors for fixed effects, generic is ok
-            control.inla = list(h=1e-4, tolerance=1e-9, cmin=0), # restart=3), # restart a few times in case posteriors are poorly defined
-            verbose=TRUE
-          ) '
-    )
-
   }
 
   # ---------------------
@@ -252,7 +236,7 @@ stmv_interpolate = function( ip=NULL, p, runmode="default", debugging=FALSE, glo
         prediction_area = localrange_interpolation
     }
 
-    windowsize.half =  floor( prediction_area / p$pres ) + 1L
+    windowsize.half =  aegis_floor( prediction_area / p$pres ) + 1L
     # construct data (including covariates) for prediction locations (pa)
     pa = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=windowsize.half ) )
     if ( is.null(pa) ) {
@@ -302,8 +286,8 @@ stmv_interpolate = function( ip=NULL, p, runmode="default", debugging=FALSE, glo
       # statistical output locations
       grids= spatial_grid(p, DS="planar.coords" )
 
-      points( grids$plat[floor( (Sloc[Si,2]-p$origin[2])/p$pres) + 1]
-            ~ grids$plon[floor( (Sloc[Si,1]-p$origin[1])/p$pres) + 1] , col="purple", pch=25, cex=5 )
+      points( grids$plat[aegis_floor( (Sloc[Si,2]-p$origin[2])/p$pres) + 1]
+            ~ grids$plon[aegis_floor( (Sloc[Si,1]-p$origin[1])/p$pres) + 1] , col="purple", pch=25, cex=5 )
 
       points( Ploc[pa$i,2] ~ Ploc[ pa$i, 1] , col="black", pch=6, cex=0.7 ) # check on pa$i indexing -- prediction locations
     }

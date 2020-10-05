@@ -10,6 +10,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
     DATA=NULL
     debug_plot_variable_index=1
     robustify_quantiles=c(0.0005, 0.9995)
+    global_sppoly=NULL
     # runmode=c("interpolate", "globalmodel")
     # runmode=c("interpolate")
   }
@@ -88,7 +89,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
     if (exists( "nw", p)) p$nt = p$nt * p$nw  # sub-annual time slices
   }
 
-  if ( !exists("stmv_tmin", p))  p$stmv_tmin = max(1, floor( p$nt / 5) )  # min no of time slices in twostep modelling
+  if ( !exists("stmv_tmin", p))  p$stmv_tmin = max(1, aegis_floor( p$nt / 5) )  # min no of time slices in twostep modelling
 
   # prediction times for space.annual methods, treat time as independent timeslices
   if ( !exists("prediction_ts", p)) p$prediction_ts = 1
@@ -493,7 +494,8 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
   # determine stats to retain / expect
   res = NULL
-  res = stmv_data_modeltest( p=p, global_sppoly=global_sppoly  )
+  rmod = ifelse( any(grepl("carstm", names(p$stmv_runmode))), "carstm", "default")
+  res = stmv_data_modeltest( p=p, runmode=rmod, global_sppoly=global_sppoly  )
   if (!is.null(res)) {
     p$statsvars = names(res$stmv_stats )
   } else {

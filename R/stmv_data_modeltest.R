@@ -5,7 +5,6 @@ stmv_data_modeltest = function(p, runmode="default", global_sppoly=NULL ) {
   # only possible to run a model to see waht gets exported ..
   # this is essentially a minimal form of stmv_interpolate  that stops once a solution with params are found
 
-  S = stmv_attach( p$storage_backend, p$ptr$S )
   Sloc = stmv_attach( p$storage_backend, p$ptr$Sloc )
 
   Yloc = stmv_attach( p$storage_backend, p$ptr$Yloc )
@@ -29,7 +28,6 @@ stmv_data_modeltest = function(p, runmode="default", global_sppoly=NULL ) {
 
   iY = which(dat_names== p$stmv_variables$Y)
   ilocs = which( dat_names %in% p$stmv_variables$LOCS )
-  i_ndata = match( "ndata", p$statsvars )
 
   if (runmode=="default") {
     # iwei = which( dat_names %in% "weights" )
@@ -63,84 +61,15 @@ stmv_data_modeltest = function(p, runmode="default", global_sppoly=NULL ) {
     itime_cov = which(dat_names %in% ti_cov)
   }
 
-# main loop over each output location in S (stats output locations)
-  currentstatus = stmv_statistics_status( p=p )
-  p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) )
-  ip = 1:p$nruns
 
+  p = parallel_run( p=p, runindex=list( locs=sample( stmv_statistics_status( p=p )$todo )) )
+  ip = 1:100
 
   for ( iip in ip ) {
 
     Si = p$runs[ iip, "locs" ]
 
-
-    if (runmode=="default") {
-
-      nu    = S[Si, i_nu]
-      phi   = S[Si, i_phi]
-      localrange = S[Si, i_localrange]   # attached to p$stmv_autocorrelation_localrange
-
-      # range checks
-      if ( any( !is.finite( c(localrange, nu, phi) ) ) )  {
-        Sflag[Si] %in% E[["variogram_failure"]]
-        s1 = abs( Sloc[Si,1] - Sloc[,1] )
-        s2 = abs( Sloc[Si,2] - Sloc[,2] )
-
-        ii = NULL
-        if ( !is.finite( localrange ) ) {
-          # obtain estimate of localrange from adjoining areas
-          localrange = max( distance_limits ) #initial guess
-          ii = which( ( s1 <= localrange ) & ( s2 <= localrange ) )
-          if (length( ii ) < 1)  next()
-          localrange = median( S[ii, i_localrange ], na.rm=TRUE ) # initial local estimate
-          ii = which( ( s1 <= localrange ) & ( s2 <= localrange ) )
-          if (length( ii ) < 1)  next()
-          localrange = median( S[ii, i_localrange ], na.rm=TRUE )  # refined local estimate
-        }
-        if ( !is.finite( localrange ) ) next()  # last check
-
-        # the above forces localrange to always be available
-        if ( !is.finite(nu) )  {
-          if (is.null(ii))  ii = which( ( s1 <= localrange ) & ( s2 <= localrange ) ) # update
-          nu =  median( S[ii, i_nu ], na.rm=TRUE )
-        }
-        if ( !is.finite(nu) ) next()  # last check
-
-        # phi meaningful only with some given nu .. restimate from localrange
-        if ( !is.finite(phi) ) phi = matern_distance2phi( dis=localrange, nu=nu, cor=p$stmv_autocorrelation_localrange )
-        if ( !is.finite(phi) ) next() # last check
-
-        s1 = NULL
-        s2 = NULL
-        ii = NULL
-        gc()
-      }
-
-      if ( Sflag[Si] != E[["todo"]] ) {
-        if (exists("stmv_rangecheck", p)) {
-          if (p$stmv_rangecheck=="paranoid") {
-            if ( Sflag[Si] %in% c( E[["variogram_range_limit"]], E[["variogram_failure"]]) ) {
-              if (debugging) message("Error: stmv_rangecheck paranoid")
-                next()
-            }
-          }
-        }
-      }
-
-      if (!exists("stmv_interpolation_basis", p)) p$stmv_interpolation_basis = "correlation"
-
-      if (p$stmv_interpolation_basis == "correlation")  {
-        localrange_interpolation = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_interpolation_basis_correlation )
-      } else if (p$stmv_interpolation_basis == "distance")  {
-        localrange_interpolation = p$stmv_interpolation_basis_distance
-      }
-
-    } else if ( runmode=="carstm" ) {
-
-       localrange_interpolation = ifelse( !exists("stmv_interpolation_basis_distance", p), p$stmv_distance_statsgrid *1.5, p$stmv_interpolation_basis_distance )
-
-    }
-
+    localrange_interpolation = ifelse( !exists("stmv_interpolation_basis_distance", p), p$stmv_distance_statsgrid *1.5, p$stmv_interpolation_basis_distance )
 
     data_subset = stmv_select_data( p=p, Si=Si, localrange=localrange_interpolation )
     if (is.null( data_subset )) next()
@@ -169,17 +98,12 @@ stmv_data_modeltest = function(p, runmode="default", global_sppoly=NULL ) {
     names(dat) = dat_names
     dat_range = range( dat[,..iY], na.rm=TRUE )  # used later
 
-    # construct prediction/output grid area ('pa')
-     if (runmode=="default") {
-# convert distance to discretized increments of row/col indices;
-      if (exists("stmv_distance_prediction_limits", p)) {
-        prediction_area = min( max( localrange_interpolation, min(p$stmv_distance_prediction_limits) ), max(p$stmv_distance_prediction_limits), na.rm=TRUE )
-      }
-    } else if ( runmode=="carstm" ) {
-        prediction_area = localrange_interpolation
+    prediction_area = localrange_interpolation
+    if (exists("stmv_distance_prediction_limits", p)) {
+      prediction_area = min( max( localrange_interpolation, min(p$stmv_distance_prediction_limits) ), max(p$stmv_distance_prediction_limits), na.rm=TRUE )
     }
 
-    windowsize.half =  floor( prediction_area / p$pres ) + 1L
+    windowsize.half =  aegis_floor( prediction_area / p$pres ) + 1L
     # construct data (including covariates) for prediction locations (pa)
     pa = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=windowsize.half ) )
     if ( is.null(pa) ) next()
@@ -198,16 +122,17 @@ stmv_data_modeltest = function(p, runmode="default", global_sppoly=NULL ) {
     res =NULL
 
     if ( runmode=="default" ) {
+      vartot = var(dat[,iY], na.rm=TRUE)
       res = try(
         local_fn (
           p=p,
           dat=dat,
           pa=pa,
-          nu=nu,
-          phi=phi,
+          nu=0.5,
+          phi=localrange_interpolation/sqrt(8),
           localrange=localrange_interpolation,
-          varObs = S[Si, i_sdObs]^2,
-          varSpatial = S[Si, i_sdSpatial]^2,
+          varObs = vartot/2,
+          varSpatial = vartot/2,
           sloc = Sloc[Si,]
         )
       )
@@ -223,4 +148,5 @@ stmv_data_modeltest = function(p, runmode="default", global_sppoly=NULL ) {
 
     return( names(res$stmv_stats ))
 
+  }
 }

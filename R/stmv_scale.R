@@ -100,7 +100,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps = 1e-6, ... ) {
         z=Y[data_subset$data_index,],
         methods=p$stmv_variogram_method,
         distance_cutoff=stmv_distance_cur,
-        discretized_n = floor(stmv_distance_cur / p$pres),
+        discretized_n = aegis_floor(stmv_distance_cur / p$pres),
         nbreaks=p$stmv_variogram_nbreaks_totry[ss]
       ) )
       if ( !is.null(o)) {
@@ -155,7 +155,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps = 1e-6, ... ) {
         ar_1 = NA
 
         pac = res$predictions[ pac_i, ]
-        pac$dyr = pac[, p$stmv_variables$TIME] - floor(pac[, p$stmv_variables$TIME] )
+        pac$dyr = pac[, p$stmv_variables$TIME] - aegis_floor(pac[, p$stmv_variables$TIME] )
         piid = which( zapsmall( pac$dyr - p$dyear_centre) == 0 )
         pac = pac[ piid, c(p$stmv_variables$TIME, "mean")]
         pac = pac[ order(pac[,p$stmv_variables$TIME]),]
@@ -208,7 +208,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps = 1e-6, ... ) {
         ar_1 = NA
 
         pac = res$predictions[ pac_i, ]
-        pac$dyr = pac[, p$stmv_variables$TIME] - floor(pac[, p$stmv_variables$TIME] )
+        pac$dyr = pac[, p$stmv_variables$TIME] - aegis_floor(pac[, p$stmv_variables$TIME] )
         piid = which( zapsmall( pac$dyr - p$dyear_centre) == 0 )
         pac = pac[ piid, c(p$stmv_variables$TIME, "mean")]
         pac = pac[ order(pac[,p$stmv_variables$TIME]),]

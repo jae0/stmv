@@ -32,7 +32,7 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
   z = (xyz$z - zmean) / zsd # zscore -- making it mean 0 removes the DC component
 
   if (is.null(nx)) {
-    nx = ny = floor( nbreaks * 2.35 )
+    nx = ny = aegis_floor( nbreaks * 2.35 )
   }
 
   # system size

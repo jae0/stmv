@@ -1,4 +1,4 @@
-  stmv_predictionarea_polygon = function( p, pa, dx, dy, pa_proj4string_planar_km, pa_coord_names=c("plon", "plat"), global_sppoly ) {
+  stmv_predictionarea_polygon = function( p, pa, dx, dy, pa_proj4string_planar_km, pa_coord_names=c("plon", "plat"), global_sppoly=NULL ) {
 
 
     if (is.null(global_sppoly)) {
@@ -12,8 +12,8 @@
       rr = diff(x_r)
       rc = diff(x_c)
 
-      nr = floor( rr/dx ) + 1L
-      nc = floor( rc/dy ) + 1L
+      nr = aegis_floor( rr/dx ) + 1L
+      nc = aegis_floor( rc/dy ) + 1L
 
       # check:
       #dr = rr/(nr-1) # == dx  ;; dc = rc/(nc-1) # == dy
@@ -22,7 +22,8 @@
         # data_subset = NULL
       sppoly = sf::st_as_sf( pa, coords=pa_coord_names )
       sf::st_crs(sppoly) = sf::st_crs( pa_proj4string_planar_km )
-      st_geometry(sppoly) = st_geometry( sf::st_make_grid( sppoly, cellsize=c(dx, dy), n=c(nr, nc)) )
+      sp_grid = raster( sppoly, resolution=c(dx, dy), n=c(nr, nc))
+      st_geometry(sppoly) = st_geometry( sp_grid )
       sppoly = as(sppoly, "Spatial")
       if (exists("i", slot(sppoly, "data")) ) {
         sppoly$AUID = sppoly$i
@@ -52,7 +53,7 @@
 
     }  else if (is.character(global_sppoly)) {
 
-      if (global_sppoly="fast_dummy") {
+      if (global_sppoly == "fast_dummy") {
         # a large fast polygon for fast variable testing
         nr = 2
         nc = 2

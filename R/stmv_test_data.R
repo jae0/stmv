@@ -30,8 +30,8 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
     out = as.list(out)
     out$N=length(out$rain)
     out$Np= 0
-    out$ncases=floor(rnorm(length(out$rain), mean=0.5, sd=0.1) * out$rain)
-    out$ntot=floor( out$rain)
+    out$ncases=aegis_floor(rnorm(length(out$rain), mean=0.5, sd=0.1) * out$rain)
+    out$ntot=aegis_floor( out$rain)
     out$X=rep(0,out$N)
     out$dist=as.matrix( dist( as.data.table( out[c("x","y")] )) )
     out$eps = 1e-6
@@ -46,8 +46,8 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
     out = as.list(out)
     out$N=length(out$rain)
     out$Np=0
-    out$ncases=floor(rnorm(length(out$rain), mean=0.5, sd=0.1) * out$rain)
-    out$ntot=floor( out$rain)
+    out$ncases=aegis_floor(rnorm(length(out$rain), mean=0.5, sd=0.1) * out$rain)
+    out$ntot=aegis_floor( out$rain)
     out$X=rep(0,out$N)
     out$dist=as.matrix( dist( as.data.table( out[c("x","y")] )) )
     out$eps = 1e-6
@@ -63,8 +63,8 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
     out = as.list(out)
     out$N=length(out$rain)
     out$Np=0
-    out$ncases=floor(rnorm(length(out$rain), mean=0.5, sd=0.1) * out$rain)
-    out$ntot=floor( out$rain)
+    out$ncases=aegis_floor(rnorm(length(out$rain), mean=0.5, sd=0.1) * out$rain)
+    out$ntot=aegis_floor( out$rain)
     out$Y=out$rain_alt
     out$X=rep(0,out$N)
     out$dist=as.matrix( dist( as.data.table( out[c("x","y")] )) )
@@ -107,16 +107,16 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
     S = lonlat2planar( S, proj.type=p$aegis_proj4string_planar_km )
     S$lon = NULL
     S$lat = NULL
-    S$plon = floor(S$plon/discret +1L )* discret
-    S$plat = floor(S$plat/discret +1L) * discret
+    S$plon = aegis_floor(S$plon/discret +1L )* discret
+    S$plat = aegis_floor(S$plat/discret +1L) * discret
     dups = which(duplicated( paste( S$plon, S$plat) ) )
     if (length(dups) > 0 ) S = S[ -dups , ]
 
     B = lonlat2planar( B, proj.type=p$aegis_proj4string_planar_km )
     B$lon = NULL
     B$lat = NULL
-    B$plon = floor(B$plon/discret +1L) * discret
-    B$plat = floor(B$plat/discret +1L) * discret
+    B$plon = aegis_floor(B$plon/discret +1L) * discret
+    B$plat = aegis_floor(B$plat/discret +1L) * discret
     dups = which( duplicated( paste( B$plon, B$plat) ) )
     if (length(dups) > 0 ) B = B[ -dups , ]
 

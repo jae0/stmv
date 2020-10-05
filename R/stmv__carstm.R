@@ -61,7 +61,7 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, sppoly=NULL, variablelist=FA
     gc()
 
     fit  = NULL
-    assign("fit", eval(parse(text=paste( "try(", p$stmv_local_modelformula, ")" ) ) ))
+    assign("fit", eval(parse(text=paste( "try(", p$stmv_local_modelcall, ")" ) ) ))
     if (is.null(fit)) warning("model fit error")
     if ("try-error" %in% class(fit) ) warning("model fit error")
 

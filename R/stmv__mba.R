@@ -13,8 +13,8 @@ stmv__kernel = function( p=NULL, dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) 
   x_r = range(dat[,p$stmv_variables$LOCS[1]])
   x_c = range(dat[,p$stmv_variables$LOCS[2]])
 
-  nr = floor( diff(x_r)/p$pres + 1L )
-  nc = floor( diff(x_c)/p$pres + 1L )
+  nr = aegis_floor( diff(x_r)/p$pres + 1L )
+  nc = aegis_floor( diff(x_c)/p$pres + 1L )
 
   dat$mean = NA
   pa$mean = NA
@@ -48,7 +48,7 @@ stmv__kernel = function( p=NULL, dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) 
 
     X_i = NULL
 
-    # dat[ xi, p$stmv_variables$LOCS ] = floor( dat[ xi, p$stmv_variables$LOCS ] / p$pres  ) * p$pres + 1L
+    # dat[ xi, p$stmv_variables$LOCS ] = aegis_floor( dat[ xi, p$stmv_variables$LOCS ] / p$pres  ) * p$pres + 1L
     iYP = match(
       stmv::array_map( "xy->1", dat[ xi, p$stmv_variables$LOCS ], gridparams=p$gridparams ),
       stmv::array_map( "xy->1", pa[ pa_i , p$stmv_variables$LOCS ], gridparams=p$gridparams )

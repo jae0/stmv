@@ -11,8 +11,8 @@ stmv__linear = function( p=NULL,  dat=NULL, pa=NULL,  variablelist=FALSE, ...  )
   x_r = range(pa[,p$stmv_variables$LOCS[1]])
   x_c = range(pa[,p$stmv_variables$LOCS[2]])
 
-  nr = floor( diff(x_r)/p$pres + 1L )
-  nc = floor( diff(x_c)/p$pres + 1L )
+  nr = aegis_floor( diff(x_r)/p$pres + 1L )
+  nc = aegis_floor( diff(x_c)/p$pres + 1L )
 
   xo = seq(x_r[1], x_r[2], length.out = nr )
   yo = seq(x_c[1], x_c[2], length.out = nc )
@@ -58,7 +58,7 @@ stmv__linear = function( p=NULL,  dat=NULL, pa=NULL,  variablelist=FALSE, ...  )
 
     pa$sd[pa_i] = sd(dat[ xi, p$stmv_variables$Y ], na.rm=TRUE)  # just a crude guess for each timeslice
 
-    # dat[ xi, p$stmv_variables$LOCS ] = floor( dat[ xi, p$stmv_variables$LOCS ] / p$pres + 1L ) * p$pres
+    # dat[ xi, p$stmv_variables$LOCS ] = aegis_floor( dat[ xi, p$stmv_variables$LOCS ] / p$pres + 1L ) * p$pres
     iYP = match(
       stmv::array_map( "xy->1", dat[ xi, p$stmv_variables$LOCS ], gridparams=p$gridparams ),
       stmv::array_map( "xy->1", pa[ pa_i , p$stmv_variables$LOCS ], gridparams=p$gridparams )

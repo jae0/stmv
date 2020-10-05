@@ -10,12 +10,17 @@ stmv_variablelist = function( p ) {
         oo = all.vars( p$stmv_local_modelformula )
         if (length(oo) > 0) {
           p$stmv_variables$local_all = unique(c(p$stmv_variables$local_all, oo))
-        }
-        oo = all.vars( p$stmv_local_modelformula[[3]] )
-        if (length(oo) > 0) {
-          pp = unique( c( grep("cos.w", oo), grep("sin.w", oo), which(oo %in% c(p$stmv_variables$LOCS, "yr") ) ) )
-          if (length(pp) > 0) oo = oo[-pp]
-          p$stmv_variables$local_cov = unique(c(p$stmv_variables$local_cov, oo))
+          uu = all.vars( p$stmv_local_modelformula[[3]] )
+          if (length(uu) > 0) {
+            pp = unique( c( grep("cos.w", uu), grep("sin.w", uu), which(uu %in% c(p$stmv_variables$LOCS, "yr") ) ) )
+            if (length(pp) > 0) uu = uu[-pp]
+            p$stmv_variables$local_cov = unique(c(p$stmv_variables$local_cov, uu))
+          }
+        } else if (length(oo) == 0) {
+          if ( p$stmv_local_modelengine=="carstm" ) {
+            if (p$stmv_local_all_carstm !="") p$stmv_variables$local_all = p$stmv_local_all_carstm
+            if (p$stmv_local_covariates_carstm !="") p$stmv_variables$local_cov = p$stmv_local_covariates_carstm
+          }
         }
       }
     }

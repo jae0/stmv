@@ -25,7 +25,7 @@ stmv_select_data = function( p, Si, localrange ) {
     if ( exists("TIME", p$stmv_variables)) {
       if ( grepl("stmv_variogram_resolve_time", p$stmv_fft_filter)) {
         Ytime = stmv_attach( p$storage_backend, p$ptr$Ytime )
-        iU = stmv_discretize_coordinates( coo=cbind(Yloc[Yi[U],], Ytime[Yi[U]]), ntarget=floor(p$stmv_nmax*p$stmv_tmax), minresolution=p$minresolution, method="thin" )
+        iU = stmv_discretize_coordinates( coo=cbind(Yloc[Yi[U],], Ytime[Yi[U]]), ntarget=aegis_floor(p$stmv_nmax*p$stmv_tmax), minresolution=p$minresolution, method="thin" )
       }
     }
     if (is.null(iU)) iU = stmv_discretize_coordinates( coo=Yloc[Yi[U],], ntarget=p$stmv_nmax, minresolution=p$minresolution, method="thin" )

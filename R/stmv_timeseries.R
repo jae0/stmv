@@ -19,7 +19,7 @@ stmv_timeseries  = function( x, method="spec.pgram", quant=0.95, taper=0.05, ker
     z = spec.taper(scale(x, TRUE, FALSE), p=taper )
     u = list()
     nx = length(z)
-    nx2 = floor(nx/2)  # make even
+    nx2 = aegis_floor(nx/2)  # make even
     I = Mod(fft(z))^2 /nx
     I[1L] = 0
     u$spec = (4/nx)*I[1:nx2]    # "scaled periodogram"
