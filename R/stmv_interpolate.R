@@ -12,7 +12,7 @@ stmv_interpolate = function( ip=NULL, p, runmode="default", debugging=FALSE, glo
 
 
     runmode = "carstm"
-    stmv_interpolation_basis_distance = 2 * p$stmv_distance_statsgrid  # fixed distance
+    # p$stmv_interpolation_basis_distance = 2 * p$stmv_distance_statsgrid  # fixed distance
 
   }
 
@@ -379,13 +379,17 @@ stmv_interpolate = function( ip=NULL, p, runmode="default", debugging=FALSE, glo
       if (!is.na( res$stmv_localstats )) {
         # only produced when: if ( grepl("stmv_variogram_resolve_time", p$stmv_fft_filter))
         lss = colMeans( res$stmv_localstats, na.rm=TRUE ) ## only with fft method ...  ..
-        names(lss) = p$statvars
+        names(lss) = p$statsvars
         message( "flag: stmv_variogram_resolve_time used in p$stmv_fft_filter ... time-varying variogram parameters ... need to create as system to store/use this properly! .. incomplete")
       }
     }
 
 
-    for ( vn in p$statvars ) if (is.finite(res$stmv_stats[[ vn ]])) S[Si, i_nu] = res$stmv_stats[[ vn ]]
+    for ( vv in 1:length(p$statsvars) ) {
+      vn = p$statsvars[vv]
+      vi = match(vn, p$statsvars)
+      if ( is.finite(res$stmv_stats[[ vn ]] ) ) S[Si, vi] = res$stmv_stats[[ vn ]]
+    }
 
     sf = try( stmv_predictions_update(p=p, preds=res$predictions ) )
 

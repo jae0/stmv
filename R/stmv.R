@@ -496,6 +496,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   res = NULL
   rmod = ifelse( any(grepl("carstm", names(p$stmv_runmode))), "carstm", "default")
   res = stmv_data_modeltest( p=p, runmode=rmod, global_sppoly=global_sppoly  )
+  str( res )
+  str(res$stmv_stats)
+
   if (!is.null(res)) {
     p$statsvars = names(res$stmv_stats )
   } else {

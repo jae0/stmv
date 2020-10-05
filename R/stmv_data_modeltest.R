@@ -47,9 +47,9 @@ stmv_data_modeltest = function(p, runmode="default", global_sppoly=NULL ) {
       if (is.finite(dist_error_target)) dist_error = dist_error_target
     }
 
-    local_fn = ifelse (p$stmv_local_modelengine=="userdefined", p$stmv_local_modelengine_userdefined, stmv_interpolation_function( p$stmv_local_modelengine ) )
-
   }
+
+  local_fn = ifelse (p$stmv_local_modelengine=="userdefined", p$stmv_local_modelengine_userdefined, stmv_interpolation_function( p$stmv_local_modelengine ) )
 
 
   if (p$nloccov > 0) {
@@ -61,6 +61,7 @@ stmv_data_modeltest = function(p, runmode="default", global_sppoly=NULL ) {
     itime_cov = which(dat_names %in% ti_cov)
   }
 
+  message("testing a run of the model to check for output")
 
   p = parallel_run( p=p, runindex=list( locs=sample( stmv_statistics_status( p=p )$todo )) )
   ip = 1:100
@@ -146,7 +147,7 @@ stmv_data_modeltest = function(p, runmode="default", global_sppoly=NULL ) {
     if (!exists("mean", res$predictions)) next()
     if (length(which( is.finite(res$predictions$mean ))) < 1) next()
 
-    return( names(res$stmv_stats ))
+    return( res )
 
   }
 }
