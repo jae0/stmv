@@ -518,6 +518,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
     }
   }
 
+  res = NULL
+
+
   sS = matrix( NaN, nrow=nSloc, ncol=length( p$statsvars ) ) # NA forces into logical
   if (p$storage_backend == "bigmemory.ram" ) {
     tmp_S = big.matrix(nrow=nSloc, ncol=length( p$statsvars ), type="double"  )
