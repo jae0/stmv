@@ -122,6 +122,8 @@ stmv_data_modeltest = function(p, runmode="default", global_sppoly=NULL ) {
 
     res =NULL
 
+browser()
+
     if ( runmode=="default" ) {
       vartot = var(dat[,iY], na.rm=TRUE)
       res = try(
