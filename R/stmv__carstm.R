@@ -76,7 +76,7 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, sppoly=NULL, variablelist=FA
     for (ll in 1:length(control.inla.variations)) {
       inlacall = gsub(
         "verbose=TRUE",
-        paste( "control.inla=", deparse( control.inla.variations[[ll]] ), ", verbose=TRUE ", sep=" " ),
+        paste( "control.inla=", deparse( control.inla.variations[[ll]] , width.cutoff=500), ", verbose=TRUE ", sep=" " ),
         p$stmv_local_modelcall
       )
       assign("fit", eval(parse(text=paste( "try(", inlacall, ")" ) ) ))

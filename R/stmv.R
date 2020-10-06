@@ -619,15 +619,35 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
       message ( "\n", "||| Entering carstm areal unit modelling: ", format(Sys.time())  )
       if ( "restart_load" %in% runmode ) {
         invisible( stmv_db(p=p, DS="load_saved_state", runmode="carstm", datasubset="statistics" ) )
+        invisible( stmv_db(p=p, DS="load_saved_state", runmode="carstm", datasubset="P" ) )
+        invisible( stmv_db(p=p, DS="load_saved_state", runmode="carstm", datasubset="Psd" ) )
+        invisible( stmv_db(p=p, DS="load_saved_state", runmode="carstm", datasubset="Pn" ) )
+        if ( global_model_do ) invisible( stmv_db(p=p, DS="load_saved_state", runmode="meanprocess",  datasubset="P0" ) )
+        if ( global_model_do ) invisible( stmv_db(p=p, DS="load_saved_state", runmode="meanprocess",  datasubset="P0sd" ) )
+        stmv_statistics_status( p=p, reset=c( "all"), verbose=FALSE  ) # required to start as scale determination uses Sflags too
+        stmv_statistics_status( p=p, reset=c( "complete" ), verbose=FALSE  )
+        stmv_statistics_status( p=p, reset=c( "incomplete" ), verbose=FALSE  )
+        stmv_statistics_status( p=p, reset=c( "features" ), verbose=FALSE  ) # required to start as scale determination uses Sflags too
       }
+
       p$time_start_runmode = Sys.time()
-      p$runmode = "carstm"
-      p$clusters = p$stmv_runmode[["carstm"]] # as ram reqeuirements increase drop cpus
-      currentstatus = stmv_statistics_status( p=p, reset="flags", reset_flags=c("insufficient_data",  "unknown" ) )
-      parallel_run( stmv_interpolate, p=p, runmode="carstm", global_sppoly=global_sppoly, runindex=list( locs=sample( currentstatus$todo )) )
-      stmv_db(p=p, DS="save_current_state", runmode="carstm", datasubset="statistics") # temp save to disk
-      stmv_statistics_status( p=p, verbose=FALSE ) # quick update before logging
-      slog = stmv_logfile(p=p, flag= paste("Carstm phase", p$runmode, "completed ...") ) # final update before continuing
+      for ( j in 1:length(p$stmv_interpolation_basis_distance_choices) ) {
+        p = p0 #reset
+        p$stmv_interpolation_basis_distance = p$stmv_interpolation_basis_distance_choices[j]
+        # p$runmode = paste("carstm_distance_basis_", p$stmv_interpolation_basis_correlation, sep="")
+        # p$clusters = p$stmv_runmode[["carstm"]][[j]] # as ram reqeuirements increase drop cpus
+        p$runmode = "carstm"
+        p$clusters = p$stmv_runmode[["carstm"]] # as ram reqeuirements increase drop cpus
+        currentstatus = stmv_statistics_status( p=p, reset="flags", reset_flags=c("insufficient_data",  "unknown" ) )
+        parallel_run( stmv_interpolate, p=p, runmode="carstm", global_sppoly=global_sppoly, runindex=list( locs=sample( currentstatus$todo )) )
+        invisible( stmv_db(p=p, DS="save_current_state", runmode="carstm", datasubset="statistics") )# temp save to disk
+        invisible( stmv_db(p=p, DS="save_current_state", runmode="carstm", datasubset="P" ) )
+        invisible( stmv_db(p=p, DS="save_current_state", runmode="carstm", datasubset="Psd" ) )
+        invisible( stmv_db(p=p, DS="save_current_state", runmode="carstm", datasubset="Pn" ) )
+        stmv_statistics_status( p=p, verbose=FALSE ) # quick update before logging
+        slog = stmv_logfile(p=p, flag= paste("Carstm phase", p$runmode, "completed ...") ) # final update before continuing
+      }
+
       message( "||| Time used for carstm estimation: ", format(difftime(  Sys.time(), p$time_start_runmode )), "\n"  )
     }
 
