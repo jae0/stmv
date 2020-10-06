@@ -19,7 +19,7 @@ stmv__gam = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
     hmod = try( gam( p$stmv_local_modelformula, data=dat, na.action="na.omit" ) )  # try again just with defaults of gam
   }
 
-  if ( inherits(hmod, "try-error") return( NULL )
+  if ( inherits(hmod, "try-error") ) return( NULL )
 
   ss = summary(hmod)
 #  if (ss$r.sq < p$stmv_rsquared_threshold ) return(NULL)  # smooth/flat surfaces are ok ..
