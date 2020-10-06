@@ -66,7 +66,9 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, sppoly=NULL, variablelist=FA
       list( optimise.strategy='smart', stupid.search=FALSE, strategy='adaptive'), # default h=0.02
       list( optimise.strategy='smart', h=0.1 ),
       list( optimise.strategy='smart', stupid.search=FALSE, strategy='adaptive', h=0.05, cmin=0, tolerance=1e-9),
-      list( optimise.strategy='smart', stupid.search=FALSE, strategy='laplace', fast=FALSE, step.factor=0.1)
+      list( optimise.strategy='smart', stupid.search=FALSE, strategy='laplace', fast=FALSE, step.factor=0.1),
+      list( optimise.strategy='smart', h=0.01 ),
+      list( optimise.strategy='smart', h=0.001 )
     )
 
     for (ll in 1:length(variations)) {
@@ -76,15 +78,14 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, sppoly=NULL, variablelist=FA
         p$stmv_local_modelcall
       )
       assign("fit", eval(parse(text=paste( "try(", inlacall, ")" ) ) ))
-      if (! class(fit) %in% "try-error") break()
+      if ( !is.null(res)) if (! class(fit) %in% "try-error") break()
     }
 
+    if ( is.null(res) )  return(NULL)
     if (! class(fit) %in% "try-error") return(NULL)
-
 
     # to improve hyper param estimates..
     if (improve.hyperparam.estimates) fit = inla.hyperpar(fit, dz=0.25, diff.logdens=18 )  # get improved estimates for the hyperparameters
-
 
     # results container
     # initial prediction container
