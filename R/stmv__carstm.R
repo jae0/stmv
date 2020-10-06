@@ -62,19 +62,20 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, sppoly=NULL, variablelist=FA
 
     fit  = NULL
 
-    variations = list(
+    control.inla.variations = list(
       list( optimise.strategy='smart', stupid.search=FALSE, strategy='adaptive'), # default h=0.02
-      list( optimise.strategy='smart', h=0.1 ),
       list( optimise.strategy='smart', stupid.search=FALSE, strategy='adaptive', h=0.05, cmin=0, tolerance=1e-9),
+      list( optimise.strategy='smart', stupid.search=FALSE, strategy='adaptive', h=0.1,  cmin=0, tolerance=1e-6),
       list( optimise.strategy='smart', stupid.search=FALSE, strategy='laplace', fast=FALSE, step.factor=0.1),
-      list( optimise.strategy='smart', h=0.01 ),
-      list( optimise.strategy='smart', h=0.001 )
+      list( optimise.strategy='smart', stupid.search=TRUE, h=0.1 ),
+      list( optimise.strategy='smart', stupid.search=TRUE, h=0.01 ),
+      list( optimise.strategy='smart', stupid.search=TRUE, h=0.001 )
     )
 
-    for (ll in 1:length(variations)) {
+    for (ll in 1:length(control.inla.variations)) {
       inlacall = gsub(
         "verbose=TRUE",
-        paste( "control.inla=", deparse( variations[[ll]] ), ", verbose=TRUE ", sep=" " ),
+        paste( "control.inla=", deparse( control.inla.variations[[ll]] ), ", verbose=TRUE ", sep=" " ),
         p$stmv_local_modelcall
       )
       assign("fit", eval(parse(text=paste( "try(", inlacall, ")" ) ) ))
