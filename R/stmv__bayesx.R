@@ -14,7 +14,7 @@ stmv__bayesx = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
   hmod = try( bayesx( p$stmv_local_modelformula, data=dat, method=p$stmv_local_model_bayesxmethod,
                      family="gaussian" ) )
 
-  if ( "try-error" %in% class(hmod) ) return( NULL )
+  if ( inherits(hmods, "try-error") ) return( NULL )
 
   px = predict(hmod)
   ss = summary(lm( px ~ dat[, p$stmv_variables$Y ], na.action="na.omit" ))
@@ -26,7 +26,7 @@ stmv__bayesx = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
   # summary(hmod)
   # lattice::levelplot( out ~ plon+plat, data=k, aspect="iso" )
 
-  if (!inherits(out, "try-error")) return( NULL )
+  if ( inherits(out, "try-error")) return( NULL )
 
   pa$mean = as.vector( out )
   pa$sd = 1 # no option right now to estim posterior prediction errors .. may be possible with type="terms" but would be slow to simulate  and do not know how to do it yet .. please fix this ..

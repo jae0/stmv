@@ -51,7 +51,7 @@ stmv__constant = function( p=NULL,  dat=NULL, pa=NULL,  variablelist=FALSE, ... 
   # plot(pred ~ z , dat)
   # lattice::levelplot( mean ~ plon + plat, data=pa, col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
   ss = lm( dat$mean ~ dat[,p$stmv_variables$Y], na.action=na.omit)
-  if ( "try-error" %in% class( ss ) ) return( NULL )
+  if ( inherits(ss, "try-error") ) return( NULL )
   rsquared = summary(ss)$r.squared
   if (rsquared < p$stmv_rsquared_threshold ) return(NULL)
 

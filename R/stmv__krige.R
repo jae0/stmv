@@ -22,13 +22,13 @@ stmv__krige = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varObs=NUL
       pa_i = 1:nrow(pa)
     }
 
-    fspmodel <- try( Krig( dat[xi, p$stmv_variables$LOCS], dat[xi, p$stmv_variables$Y],
+    fspmodel = try( Krig( dat[xi, p$stmv_variables$LOCS], dat[xi, p$stmv_variables$Y],
       sigma2=varObs, rho=varSpatial , cov.function="stationary.cov",
       Covariance="Matern", range=phi, smoothness=nu) )
     if (inherits(fspmodel, "try-error") )  next()
     dat$mean[xi] = fspmodel$fitted.values
-    ss = lm( dat$mean[xi] ~ dat[xi,p$stmv_variables$Y], na.action=na.omit)
-    if ( "try-error" %in% class( ss ) ) next()
+    ss = try( lm( dat$mean[xi] ~ dat[xi,p$stmv_variables$Y], na.action=na.omit) )
+    if ( inherits(ss, "try-error") ) next()
     rsquared = summary(ss)$r.squared
     if (rsquared < p$stmv_rsquared_threshold ) next()
     pa$mean[pa_i] = predict(fspmodel, x=pa[pa_i, p$stmv_variables$LOCS] )
@@ -53,8 +53,8 @@ stmv__krige = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varObs=NUL
 
   # plot(pred ~ z , dat)
   # lattice::levelplot( mean ~ plon + plat, data=pa, col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
-  ss = lm( dat$mean ~ dat[,p$stmv_variables$Y], na.action=na.omit)
-  if ( "try-error" %in% class( ss ) ) return( NULL )
+  ss = try( lm( dat$mean ~ dat[,p$stmv_variables$Y], na.action=na.omit) )
+  if ( inherits(ss, "try-error") ) return( NULL )
   rsquared = summary(ss)$r.squared
   if (rsquared < p$stmv_rsquared_threshold ) return(NULL)
 

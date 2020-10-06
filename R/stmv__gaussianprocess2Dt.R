@@ -72,7 +72,7 @@ stmv__gaussianprocess2Dt = function(p=NULL, dat=NULL, pa=NULL, localrange=NULL, 
 
   # plot(pred ~ z , dat)
   ss = lm( dat$mean ~ dat[,p$stmv_variables$Y], na.action=na.omit)
-  if ( "try-error" %in% class( ss ) ) return( NULL )
+  if ( inherits(ss, "try-error") ) return( NULL )
   rsquared = summary(ss)$r.squared
   if (rsquared < p$stmv_rsquared_threshold ) return(NULL)
 

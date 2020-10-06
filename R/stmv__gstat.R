@@ -31,8 +31,8 @@ stmv__gstat = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varObs=NUL
     # this step adds a lot of time ..
     preds = predict(gs, newdata=xy[xi,] )
     dat$mean[xi] = as.vector( preds[,1] )
-    ss = lm( dat$mean[xi] ~ dat[xi,p$stmv_variables$Y], na.action=na.omit)
-    if ( "try-error" %in% class( ss ) ) next()
+    ss = try( lm( dat$mean[xi] ~ dat[xi,p$stmv_variables$Y], na.action=na.omit))
+    if ( inherits(ss, "try-error") ) next()
     rsquared = summary(ss)$r.squared
     if (rsquared < p$stmv_rsquared_threshold ) next()
     gsp = predict(gs, newdata=pa[pa_i,] ) # slow for large n
@@ -43,8 +43,8 @@ stmv__gstat = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varObs=NUL
 
   # plot(pred ~ z , dat)
   # lattice::levelplot( mean ~ plon + plat, data=pa, col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
-  ss = lm( dat$mean ~ dat[,p$stmv_variables$Y], na.action=na.omit)
-  if ( "try-error" %in% class( ss ) ) return( NULL )
+  ss = try( lm( dat$mean ~ dat[,p$stmv_variables$Y], na.action=na.omit))
+  if ( inherits(ss, "try-error") ) return( NULL )
   rsquared = summary(ss)$r.squared
   if (rsquared < p$stmv_rsquared_threshold ) return(NULL)
 

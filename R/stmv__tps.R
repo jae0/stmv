@@ -29,8 +29,8 @@ stmv__tps = function( p=NULL, dat=NULL, pa=NULL, lambda=NULL, variablelist=FALSE
     ftpsmodel = try( Tps(x=dat[xi, p$stmv_variables$LOCS], Y=dat[xi, p$stmv_variables$Y], lambda=lambda ) )
     if (inherits(ftpsmodel, "try-error") )  next()
     dat$mean[xi] = ftpsmodel$fitted.values
-    ss = lm( dat$mean[xi] ~ dat[xi,p$stmv_variables$Y], na.action=na.omit)
-    if ( "try-error" %in% class( ss ) ) next()
+    ss = try( lm( dat$mean[xi] ~ dat[xi,p$stmv_variables$Y], na.action=na.omit) )
+    if ( inherits(ss, "try-error") ) next()
     rsquared = summary(ss)$r.squared
     if (rsquared < p$stmv_rsquared_threshold ) next()
     pa$mean[pa_i] = predict(ftpsmodel, x=pa[pa_i, p$stmv_variables$LOCS] )
@@ -46,8 +46,8 @@ stmv__tps = function( p=NULL, dat=NULL, pa=NULL, lambda=NULL, variablelist=FALSE
 
   # plot(pred ~ z , dat)
   # lattice::levelplot( mean ~ plon + plat, data=pa, col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
-  ss = lm( dat$mean ~ dat[,p$stmv_variables$Y], na.action=na.omit)
-  if ( "try-error" %in% class( ss ) ) return( NULL )
+  ss = try( lm( dat$mean ~ dat[,p$stmv_variables$Y], na.action=na.omit) )
+  if ( inherits(ss, "try-error") ) return( NULL )
   rsquared = summary(ss)$r.squared
   if (rsquared < p$stmv_rsquared_threshold ) return(NULL)
 

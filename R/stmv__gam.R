@@ -15,18 +15,18 @@ stmv__gam = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
     }
   }
 
-  if ( "try-error" %in% class(hmod) ) {
+  if ( inherits(hmod, "try-error") ) {
     hmod = try( gam( p$stmv_local_modelformula, data=dat, na.action="na.omit" ) )  # try again just with defaults of gam
   }
 
-  if ( "try-error" %in% class(hmod) ) return( NULL )
+  if ( inherits(hmod, "try-error") return( NULL )
 
   ss = summary(hmod)
 #  if (ss$r.sq < p$stmv_rsquared_threshold ) return(NULL)  # smooth/flat surfaces are ok ..
 
   out = try( predict( hmod, newdata=pa, type="response", se.fit=TRUE ) )
 
-  if ( "try-error" %in% class( out ) ) return( NULL )
+  if ( inherits(out, "try-error") ) return( NULL )
 
   pa$mean = as.vector(out$fit)
   pa$sd = as.vector(out$se.fit) # this is correct: se.fit== stdev of the mean fit: eg:  https://stat.ethz.ch/pipermail/r-help/2005-July/075856.html

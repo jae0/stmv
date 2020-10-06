@@ -17,7 +17,7 @@ stmv__glm = function(p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
       hmod = try( glm( p$stmv_local_modelformula, data=dat ) )
   }
 
-  if ( "try-error" %in% class(hmod) ) return( NULL )
+  if ( inherits(hmod, "try-error") ) return( NULL )
 
   ss = summary(hmod)
   rsq = 1 - (ss$deviance/ss$null.deviance)
@@ -25,7 +25,7 @@ stmv__glm = function(p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
 
   out = try( predict( hmod, newdata=pa, type="response", se.fit=TRUE ) )  # already on link scale
 
-  if ( "try-error" %in% class( out ) ) return( NULL )
+  if ( inherits(out, "try-error") ) return( NULL )
 
   pa$mean = as.vector(out$fit)
   pa$sd = as.vector(out$se.fit) # this is correct: se.fit== stdev of the mean fit: eg:  https://stat.ethz.ch/pipermail/r-help/2005-July/075856.html

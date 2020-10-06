@@ -375,9 +375,9 @@ stmv_interpolate = function( ip=NULL, p, runmode="default", debugging=FALSE, glo
     # update in stats .. if there are updates
     if ( runmode=="default" ) {
 
-      if (!is.na( res$stmv_localstats )) {
+      if (!is.na( res$stmv_stats_by_time )) {
         # only produced when: if ( grepl("stmv_variogram_resolve_time", p$stmv_fft_filter))
-        lss = colMeans( res$stmv_localstats, na.rm=TRUE ) ## only with fft method ...  ..
+        lss = colMeans( res$stmv_stats_by_time, na.rm=TRUE ) ## only with fft method ...  ..
         names(lss) = p$statsvars
         message( "flag: stmv_variogram_resolve_time used in p$stmv_fft_filter ... time-varying variogram parameters ... need to create as system to store/use this properly! .. incomplete")
       }

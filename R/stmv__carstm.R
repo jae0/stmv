@@ -42,6 +42,7 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, sppoly=NULL, variablelist=FA
     vn = setdiff( names( pa ), c("i", p$stmv_variables$LOCS  ) )
 
     dat = rbind( dat[, ..vn], pa[, ..vn] )
+
     sppoly_df = NULL
 
     dat$aui  = as.numeric( factor(dat$AUID) )  # for inla
@@ -63,13 +64,13 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, sppoly=NULL, variablelist=FA
     fit  = NULL
 
     control.inla.variations = list(
-      list( optimise.strategy='smart', stupid.search=FALSE, strategy='adaptive'), # default h=0.02
-      list( optimise.strategy='smart', stupid.search=FALSE, strategy='adaptive', h=0.05, cmin=0, tolerance=1e-9),
-      list( optimise.strategy='smart', stupid.search=FALSE, strategy='adaptive', h=0.1,  cmin=0, tolerance=1e-6),
-      list( optimise.strategy='smart', stupid.search=FALSE, strategy='laplace', fast=FALSE, step.factor=0.1),
-      list( optimise.strategy='smart', stupid.search=TRUE, h=0.1 ),
-      list( optimise.strategy='smart', stupid.search=TRUE, h=0.01 ),
-      list( optimise.strategy='smart', stupid.search=TRUE, h=0.001 )
+      list( optimise.strategy="smart", stupid.search=FALSE, strategy="adaptive") ,
+      list( optimise.strategy="smart", stupid.search=FALSE, strategy="adaptive", h=0.05, cmin=0, tolerance=1e-9),
+      list( optimise.strategy="smart", stupid.search=FALSE, strategy="adaptive", h=0.1,  cmin=0, tolerance=1e-6),
+      list( optimise.strategy="smart", stupid.search=FALSE, strategy="laplace", fast=FALSE, step.factor=0.1),
+      list( optimise.strategy="smart", stupid.search=TRUE, h=0.1 ),
+      list( optimise.strategy="smart", stupid.search=TRUE, h=0.01 ),
+      list( optimise.strategy="smart", stupid.search=TRUE, h=0.001 )
     )
 
     for (ll in 1:length(control.inla.variations)) {
@@ -79,11 +80,11 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, sppoly=NULL, variablelist=FA
         p$stmv_local_modelcall
       )
       assign("fit", eval(parse(text=paste( "try(", inlacall, ")" ) ) ))
-      if ( !is.null(res)) if (! class(fit) %in% "try-error") break()
+      if ( !is.null(fit)) if (! inherits(fit, "try-error") ) break()
     }
 
-    if ( is.null(res) )  return(NULL)
-    if (! class(fit) %in% "try-error") return(NULL)
+    if ( is.null(fit) )  return(NULL)
+    if ( inherits(fit, "try-error") ) return(NULL)
 
     # to improve hyper param estimates..
     if (improve.hyperparam.estimates) fit = inla.hyperpar(fit, dz=0.25, diff.logdens=18 )  # get improved estimates for the hyperparameters
@@ -93,6 +94,14 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, sppoly=NULL, variablelist=FA
     hyp_pars =  c( fit$summary.hyperpar$mean, fit$summary.hyperpar$sd )
     names( hyp_pars ) =  gsub( " ", "_",  c( rownames(fit$summary.hyperpar), paste( rownames(fit$summary.hyperpar), "_sd", sep="" ) ) )
     res = list( dat=dat, dimensionality = p$aegis_dimensionality )
+    res$predictions = data.table( i=pa$i)
+    pa = NULL
+
+    oo = cbind( dat[ tag ="predictions", p$stmv_variables$Y], fit$summary.fitted.values[ which(dat$tag=="observations"), "mean" ] )
+    names(oo) = c("obs", "preds")
+    oores = try( lm( preds~obs, oo, , na.action=na.omit) )
+    rsquared = ifelse( inherits(oores, "try-error"), NA,  summary(oores)$r.squared )
+    oo = oores = NULL
 
     mlik_p_eff = c(fit$neffp)
     names(mlik_p_eff) = gsub( " ", "_", rownames(fit$neffp) )
@@ -100,6 +109,7 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, sppoly=NULL, variablelist=FA
     res$stmv_stats = c(
       sdTotal=sdTotal,
       ndata=nrow(dat),
+      rsquared =rsquared,
       fixed_mean = fit$summary.fixed$mean,
       fixed_sd = fit$summary.fixed$sd,
       dic = fit$dic$dic,
@@ -112,7 +122,6 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, sppoly=NULL, variablelist=FA
     )
 
 
-    res$predictions = data.table( i=pa$i)
 
     # row indices for predictions
     if ( p$aegis_dimensionality == "space") {
@@ -151,9 +160,9 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, sppoly=NULL, variablelist=FA
       dat$dyear = as.character( discretize_data( dat$dyear, p$discretization[["dyear"]] ) )
 
       res$i_preds = which(
-        M$tag=="predictions" &
-        M$AUID %in% AUID &
-        M$year %in% year
+        dat$tag=="predictions" &
+        dat$AUID %in% AUID &
+        dat$year %in% year
       )  # filter by AUID and years in case additional data in other areas and times are used in the input data
       res$AUID = AUID
       res$year = year
@@ -166,6 +175,10 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, sppoly=NULL, variablelist=FA
     # finish predictions
       res$predictions$mean = reformat_to_array( input=fit$summary.fitted.values[ res$i_preds, "mean" ], matchfrom=res$matchfrom, matchto=res$matchto )
       res$predictions$sd = reformat_to_array( input=fit$summary.fitted.values[ res$i_preds, "sd" ], matchfrom=res$matchfrom, matchto=res$matchto )
+
+
+
+
     ## --------- predictions complete ------
 
 

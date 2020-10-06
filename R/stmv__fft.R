@@ -139,9 +139,9 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
   xi   = 1:nrow(dat) # all data as p$nt==1
   pa_i = 1:nrow(pa)
 
-  OT = NA
+  stmv_stats_by_time = NA
   if ( grepl("stmv_variogram_resolve_time", p$stmv_fft_filter)) {
-      OT = matrix( NA, ncol=length(p$statsvars), nrow=p$nt )  # container to hold time-specific results
+      stmv_stats_by_time = matrix( NA, ncol=length(p$statsvars), nrow=p$nt )  # container to hold time-specific results
   }
 
   # things to do outside of the time loop
@@ -247,7 +247,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
           localrange = fit$summary$localrange,
           ndata=length(xi)
         )
-        OT[ti, match( names(statsvars_scale), p$statsvars )] = statsvars_scale
+        stmv_stats_by_time[ti, match( names(statsvars_scale), p$statsvars )] = statsvars_scale
         uu = NULL
         statsvars_scale = NULL
 
@@ -353,7 +353,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
 
 
     if ( grepl("stmv_variogram_resolve_time", p$stmv_fft_filter)) {
-      pa$sd[pa_i] = OT[ti, match("sdSpatial", p$statsvars )]
+      pa$sd[pa_i] = stmv_stats_by_time[ti, match("sdSpatial", p$statsvars )]
     }
 
     # dat[ xi, p$stmv_variables$LOCS ] = aegis_floor( dat[ xi, p$stmv_variables$LOCS ] / p$pres + 1L ) * p$pres
@@ -365,7 +365,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
   }
 
   ss = lm( dat$mean ~ dat[,p$stmv_variables$Y], na.action=na.omit)
-  rsquared = ifelse( "try-error" %in% class( ss ), NA,  summary(ss)$r.squared )
+  rsquared = ifelse( inherits(ss, "try-error"), NA,  summary(ss)$r.squared )
 
   if (exists("stmv_rsquared_threshold", p)) {
     if (! is.finite(rsquared) ) return(NULL)
@@ -376,12 +376,12 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
   stmv_stats = list( sdTotal=sdTotal, rsquared=rsquared, ndata=nrow(dat) )
 
   if ( grepl("stmv_variogram_resolve_time", p$stmv_fft_filter)) {
-    stmv_stats = as.list(colMeans(OT, na.rm=TRUE))
+    stmv_stats = as.list(colMeans(stmv_stats_by_time, na.rm=TRUE))
   }
 
   # lattice::levelplot( mean ~ plon + plat, data=pa, col.regions=heat.colors(100), scale=list(draw=TRUE) , aspect="iso" )
 
-  return( list( predictions=pa, stmv_stats=stmv_stats, stmv_localstats=OT ) )
+  return( list( predictions=pa, stmv_stats=stmv_stats, stmv_stats_by_time=stmv_stats_by_time ) )
 
 }
 
