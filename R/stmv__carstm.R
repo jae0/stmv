@@ -97,7 +97,8 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, sppoly=NULL, variablelist=FA
     res$predictions = data.table( i=pa$i)
     pa = NULL
 
-    oo = cbind( dat[ tag ="predictions", p$stmv_variables$Y], fit$summary.fitted.values[ which(dat$tag=="observations"), "mean" ] )
+    vnm = p$stmv_variables$Y
+    oo = cbind( dat[ tag=="observations", ..vnm], fit$summary.fitted.values[ which(dat$tag=="observations"), "mean" ] )
     names(oo) = c("obs", "preds")
     oores = try( lm( preds~obs, oo, , na.action=na.omit) )
     rsquared = ifelse( inherits(oores, "try-error"), NA,  summary(oores)$r.squared )
