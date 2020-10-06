@@ -72,10 +72,9 @@ stmv_interpolate = function( ip=NULL, p, runmode="default", debugging=FALSE, glo
       dist_error_target = matern_phi2distance( phi=p$stmv_lowpass_phi, nu=p$stmv_lowpass_nu, cor=p$stmv_autocorrelation_localrange )
       if (is.finite(dist_error_target)) dist_error = dist_error_target
     }
-
-    local_fn = ifelse (p$stmv_local_modelengine=="userdefined", p$stmv_local_modelengine_userdefined, stmv_interpolation_function( p$stmv_local_modelengine ) )
-
   }
+
+  local_fn = ifelse (p$stmv_local_modelengine=="userdefined", p$stmv_local_modelengine_userdefined, stmv_interpolation_function( p$stmv_local_modelengine ) )
 
   if (p$nloccov > 0) {
     icov = which( dat_names %in% p$stmv_variables$local_cov )
