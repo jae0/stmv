@@ -631,6 +631,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
       }
 
       p$time_start_runmode = Sys.time()
+      p0 = p
       for ( j in 1:length(p$stmv_interpolation_basis_distance_choices) ) {
         p = p0 #reset
         p$stmv_interpolation_basis_distance = p$stmv_interpolation_basis_distance_choices[j]
