@@ -9,10 +9,10 @@ stmv_parameters = function( p=list(), ... ) {
 
   if (!exists("stmv_current_status", p))  p$stmv_current_status = file.path( p$stmvSaveDir, "stmv_current_status" )
 
-  if ( !exists("stmv_distance_scale", p)) {
-    message( "||| stmv_distance_scale must be defined" )
-    stop()
-  }
+  # if ( !exists("stmv_distance_scale", p)) {
+  #   message( "||| stmv_distance_scale must be defined" )
+  #   stop()
+  # }
 
   if ( !exists("stmv_distance_statsgrid", p)) {
     message( "||| stmv_distance_statsgrid must be defined" )
@@ -21,7 +21,9 @@ stmv_parameters = function( p=list(), ... ) {
 
   if ( !exists("stmv_distance_prediction_limits", p)) {
     # range of permissible predictions km (i.e 1/2 stats grid to upper limit based upon data density)
-    if ( exists("stmv_distance_scale", p))  p$stmv_distance_prediction_limits = range( p$stmv_distance_scale )
+    if ( exists("stmv_distance_scale", p))  {
+      p$stmv_distance_prediction_limits = range( p$stmv_distance_scale )
+    }
   }
 
   if( !exists( "storage_backend", p))  p$storage_backend="bigmemory.ram"
