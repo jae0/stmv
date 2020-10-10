@@ -18,7 +18,6 @@ stmv_select_data = function( p, Si, localrange ) {
 
   if (ndata < p$stmv_nmin) {
     Sflag[Si] = E[["insufficient_data"]]
-    return(NULL)
   } else if (ndata > p$stmv_nmax) {
     # try to trim
     iU = NULL

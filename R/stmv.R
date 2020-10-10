@@ -1,7 +1,7 @@
 
 
 stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
-  debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE, robustify_quantiles=c(0.0005, 0.9995), global_sppoly=NULL, ... ) {
+  debug_plot_variable_index=1, debug_data_source="saved.state", debug_plot_log=FALSE, robustify_quantiles=c(0.0005, 0.9995), ... ) {
 
   if (0) {
     runmode = NULL
@@ -76,6 +76,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   if (is.null(DATA)) stop( "||| something went wrong with DATA inputs ... ")
   if (class(DATA) != "list") stop( "||| DATA should a list ... ")
 
+
   testvars = c(p$stmv_variables$Y, p$stmv_variables$COV, p$stmv_variables$TIME, p$stmv_variables$LOC)
   withdata = which(is.finite( (rowSums(DATA$input[, testvars] )) ) )
   if (length(withdata) < 1) stop( "Missing data or insufficient data")
@@ -104,12 +105,13 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
   stmv_db( p=p, DS="cleanup" )
 
+  global_sppoly=NULL
+  if (exists("sppoly", DATA)) global_sppoly = sppoly
 
   Ydata = as.matrix( DATA$input[, p$stmv_variables$Y ] )
   Ydata_datarange = range( Ydata, na.rm=TRUE )
   if (!is.null(robustify_quantiles)) Ydata_datarange = quantile( Ydata, probs=robustify_quantiles, na.rm=TRUE )
   Yq_link = p$stmv_global_family$linkfun( Ydata_datarange ) # convert raw data range to link range
-
 
   if (exists("stmv_Y_transform", p)) Ydata = p$stmv_Y_transform$transf( Ydata )
   if (p$storage_backend == "bigmemory.ram" ) {
@@ -125,45 +127,19 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
     p$ptr$Y = ff( Ydata, dim=dim(Ydata), file=p$cache$Y, overwrite=TRUE )
   }
 
-  # if there is a global model overwrite Ydata with residuals
+  # if there is a global model update (overwrite) Ydata with residuals
   if ( any(grepl("globalmodel", runmode) ) ) {
     if ( global_model_do ) {
-      stmv_db( p=p, DS="global_model.redo", B=DATA$input )
-      if ( any(grepl("globalmodel.only", runmode)))  return( stmv_db( p=p, DS="global_model" ) )
+      stmv_global_model( p=p, DS="global_model.redo", B=DATA$input )
+      if ( any(grepl("globalmodel.only", runmode)))  return( stmv_global_model( p=p, DS="global_model" ) )
       # model complete .. now predict to get residuals
-      if ( p$stmv_global_modelengine == "userdefined") {
-        global_model = stmv_db( p=p, DS="global_model")
-        # TODO MUST find a generic form as below
-        # # Ypreds = predict(global_model, type="link", se.fit=FALSE )  ## TODO .. keep track of the SE
-        if (!exists("predict", p$stmv_global_model)) {
-          message( "||| p$stmv_global_model$predict =' " )
-          message( "|||   predict( global_model, newdata=pa, type='link', se.fit=TRUE )' " )
-          message( "||| where 'global_model', newdata=pa' are required " )
-          stop()
-        }
-        Ypreds = try( eval(parse(text=pp$stmv_global_model$predict )) )
-        Ypreds = p$stmv_global_model$predict( global_model )  # needs to be tested. .. JC
-        Ydata  = Ydata - Ypreds # ie. internalR (link) scale
-        Ypreds = NULL
-      } else {
-        # at present only those that have a predict and residuals methods ...
-        global_model = stmv_db( p=p, DS="global_model")
-        Ydata  = residuals(global_model, type="working") # ie. internal (link) scale
-      }
-      global_model =NULL
-        # could operate upon quantiles of residuals but in poor models this can hyper inflate errors and slow down the whole estimation process
-        # truncating using data range as a crude approximation of overall residual and prediction scale
-        lb = which( Ydata < Yq_link[1])
-        ub = which( Ydata > Yq_link[2])
-        if (length(lb) > 0) Ydata[lb] = Yq_link[1]
-        if (length(ub) > 0) Ydata[ub] = Yq_link[2]
+      if ( p$stmv_global_modelengine != "userdefined" ) Ydata=NULL  # only needed with userdefined models
       Y = stmv_attach( p$storage_backend, p$ptr$Y )
-      Y[] = Ydata[]
-      Ydata = NULL
+      Y[] = stmv_global_model(p=p, DS="residuals", Yq_link=Yq_link, Ydata=Ydata)[]
       gc()
     }
   }
-
+  Ydata = NULL
 
 
   # data coordinates
@@ -451,15 +427,27 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   ##############
 
 
-  # init output data objects
-  # statistics storage matrix ( aggregation window, coords ) .. no inputs required
   sbox = Sloc = NULL
-  sbox = list(
-    plats = seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ),
-    plons = seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ) )
-  # statistics coordinates
-  Sloc = as.matrix( expand_grid_fast( sbox$plons, sbox$plats ))
-  nSloc = nrow(Sloc)
+  if ("carstm" %in% runmode ) {
+    if (!is.null(global_sppoly)) {
+      # Slocs == Plocs == centroids of global_sppoly
+      nSloc = nPloc
+      Sloc = as.matrix( coordinates( global_sppoly) )  # centroids , nominal
+      nSloc = nrow(Sloc)
+      if (nSloc != nPloc) stop( "Global polygons provided seem to have mismatched stats locations.")
+    }
+  }
+
+  if (is.null(Sloc)) {
+    # default:  statistics storage matrix ( aggregation window, coords ) .. no inputs required
+    sbox = list(
+      plats = seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid ),
+      plons = seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ) )
+    # statistics coordinates
+    Sloc = as.matrix( expand_grid_fast( sbox$plons, sbox$plats ))
+    nSloc = nrow(Sloc)
+  }
+
 
   if (p$storage_backend == "bigmemory.ram" ) {
     tmp_Sloc = big.matrix(nrow=nSloc, ncol=ncol(Sloc), type="double"  )
@@ -494,8 +482,8 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
   # determine stats to retain / expect
   res = NULL
-  rmod = ifelse( any(grepl("carstm", names(p$stmv_runmode))), "carstm", "default")
-  res = stmv_data_modeltest( p=p, runmode=rmod, global_sppoly=global_sppoly  )
+  res = stmv_interpolate_test( p=p, runmode=ifelse( any(grepl("carstm", names(p$stmv_runmode))), "carstm", "default" ), global_sppoly=global_sppoly  )
+
 
   # str( res )
   print( str(res$stmv_stats) )
@@ -562,13 +550,13 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
       message ( "\n", "||| Entering Predicting global effect of covariates at each prediction location: ", format(Sys.time()) , "\n" )
       message( "||| This can take a while (usually a few minutes but hours if complex) ... ")
       p$time_covariates_0 =  Sys.time()
-      global_model = stmv_db( p=p, DS="global_model")
+      global_model = stmv_global_model( p=p, DS="global_model")
       if (is.null(global_model)) stop("Global model not found.")
       dev = global_model$deviance
       message("Model Deviance: ", dev)
       if (nn > 1) {
         if (abs(dev - devold)/(0.1 + abs(dev)) < eps ) break() # globalmodel_converged
-        iYP = stmv_index_predictions_to_observations(p)
+        iYP = stmv_index_predictions_to_observations(p)  #### this only works for lattice mode .. areal units will require an alternate ... TO DO
         inputdata = P[ iYP ]  # P are the spatial/spatio-temporal random effects (on link scale)
         iYP = NULL
         iYP_nomatch = which(!is.finite(iYP))
@@ -583,7 +571,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         inputdata = global_model$model
         global_model = NULL
         gc()
-        global_model = stmv_db( p=p, DS="global_model.redo", B=inputdata,  savedata=FALSE )  # do not overwrite initial model
+        global_model = stmv_global_model( p=p, DS="global_model.redo", B=inputdata,  savedata=FALSE )  # do not overwrite initial model
         inputdata = NULL
       }
 
@@ -615,6 +603,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
     # -----------------------------------------------------
     if ("carstm" %in% runmode ) {
+      if (!exists("distance_reference", p)) p$distance_reference="completely_inside_boundary"
       # this models, and predicts in same step (via inla)
       message ( "\n", "||| Entering carstm areal unit modelling: ", format(Sys.time())  )
       if ( "restart_load" %in% runmode ) {
@@ -640,7 +629,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         p$runmode = "carstm"
         p$clusters = p$stmv_runmode[["carstm"]] # as ram reqeuirements increase drop cpus
         currentstatus = stmv_statistics_status( p=p, reset="flags", reset_flags=c("insufficient_data",  "unknown" ) )
-        parallel_run( stmv_interpolate, p=p, runmode="carstm", global_sppoly=global_sppoly, runindex=list( locs=sample( currentstatus$todo )) )
+        parallel_run( stmv_interpolate_polygons, p=p, runmode="carstm", global_sppoly=global_sppoly, distance_reference=p$distance_reference, runindex=list( locs=sample( currentstatus$todo )) )
         invisible( stmv_db(p=p, DS="save_current_state", runmode="carstm", datasubset="statistics") )# temp save to disk
         invisible( stmv_db(p=p, DS="save_current_state", runmode="carstm", datasubset="P" ) )
         invisible( stmv_db(p=p, DS="save_current_state", runmode="carstm", datasubset="Psd" ) )
@@ -706,7 +695,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
             currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
             if ( currentstatus$n.todo == 0 ) break()
             if ( currentstatus$n.todo < (2*length(p$clusters)) ) p$clusters = p$clusters[1] # drop to serial mode
-            invisible( parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) ) )
+            invisible( parallel_run( stmv_interpolate_lattice, p=p, runindex=list( locs=sample( currentstatus$todo )) ) )
             invisible( stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="P" ) )
             invisible( stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="Psd" ) )
             invisible( stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="Pn" ) )
@@ -719,7 +708,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
         if ( currentstatus$n.todo == 0 ) break()
         if ( currentstatus$n.todo < (2*length(p$clusters)) ) p$clusters = p$clusters[1] # drop to serial mode
-        invisible( parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo )) ) )
+        invisible( parallel_run( stmv_interpolate_lattice, p=p, runindex=list( locs=sample( currentstatus$todo )) ) )
         invisible( stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="P" ) )
         invisible( stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="Psd" ) )
         invisible( stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="Pn" ) )
@@ -779,7 +768,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
         if ( currentstatus$n.todo == 0 ) break()
         if ( currentstatus$n.todo < (2*length(p$clusters)) ) p$clusters = p$clusters[1] # drop to serial mode
-        invisible( parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ) )  ) )
+        invisible( parallel_run( stmv_interpolate_lattice, p=p, runindex=list( locs=sample( currentstatus$todo ) )  ) )
         invisible( stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="P" ) )
         invisible( stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="Psd" ) )
         invisible( stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="Pn" ) )
@@ -844,7 +833,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
           currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
           if ( currentstatus$n.todo == 0 ) break()
           if ( currentstatus$n.todo < (2*length(p$clusters)) ) p$clusters = p$clusters[1] # drop to serial mode
-          invisible( parallel_run( stmv_interpolate, p=p, runindex=list( locs=sample( currentstatus$todo ))  ) )
+          invisible( parallel_run( stmv_interpolate_lattice, p=p, runindex=list( locs=sample( currentstatus$todo ))  ) )
           invisible( stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="P" ) )
           invisible( stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="Psd" ) )
           invisible( stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="Pn" ) )

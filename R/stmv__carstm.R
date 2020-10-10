@@ -1,5 +1,5 @@
 
-stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, sppoly=NULL, variablelist=FALSE, improve.hyperparam.estimates=FALSE, ... ) {
+stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, improve.hyperparam.estimates=FALSE, ... ) {
 
 
     if (0) {
@@ -25,6 +25,9 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, sppoly=NULL, variablelist=FA
     #nc = ny # nc .. y/plat
 
     locnm = p$stmv_variables$LOCS  # for data.table., this has to be a simple variable
+
+    sppoly = attr( pa, "sppoly" )
+
     datcoords = spTransform( SpatialPoints( as.matrix(dat[, ..locnm ]), CRS(p$aegis_proj4string_planar_km ) ),  CRS(proj4string(sppoly) ) )
     dat$AUID = over( datcoords, sppoly )$AUID # match each datum to an area
 

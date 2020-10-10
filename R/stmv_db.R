@@ -1,8 +1,7 @@
 
-  stmv_db = function( DS, p, B=NULL, yr=NULL, ret="mean", runmode=NULL, saveresults=TRUE, datasubset="" ) {
+  stmv_db = function( DS, p, yr=NULL, ret="mean", runmode=NULL, datasubset="" ) {
     #// usage: low level function to convert data into file-based data obects to permit parallel
     #// data access and manipulation and deletes/updates
-    #// B is the xyz or xytz data or the function to get the data to work upon
 
     # --------------------------
     if (!exists("stmvSaveDir", p)) {
@@ -165,143 +164,6 @@
       message( "||| and re-run stmv() " )
       return( fn )
     }
-
-    # -----
-
-    if (DS %in% c("global_model", "global_model.redo") ) {
-
-      fn.global_model = file.path( p$stmvSaveDir, paste( "global_model", p$stmv_global_modelengine, "rdata", sep=".") )
-
-      if (DS =="global_model") {
-        global_model = NULL
-        if (file.exists( fn.global_model ))  load(fn.global_model)
-        return(global_model)
-      }
-
-      if ( file.exists( fn.global_model ) ) {
-        message( "||| A global model already exists. It will be overwritten in 10 seconds.")
-        message( "|||   Type <ctrl-c> or <esc> to interrupt. To reuse the saved model ")
-        message( "|||   'p$stmv_runmode$globalmodel = FALSE' ... overwriting in:")
-        for (i in 9:0) {
-          Sys.sleep(1)
-          cat( i)
-          cat(" ")
-        }
-      }
-
-      if ( length( p$stmv_variables$COV ) > 0 ) {
-        good = which( is.finite (rowSums(B[ , c(p$stmv_variables$Y,p$stmv_variables$COV) ])) )
-      } else {
-        good = which( is.finite (B[,p$stmv_variables$Y ] ) )
-      }
-
-      ngood = length(good)
-      if ( ngood > 0 ) {
-        if ( ngood < nrow(B) ) {
-          B = B[good,]
-        }
-      }
-
-
-      if ( p$stmv_global_modelengine == "userdefined" )  {
-        # need a file with predictions a function to get/return them
-        if (!(exists("run", p$stmv_global_model ))) {
-          message( "Must define functions of the form: ")
-          message( " p$stmv_global_model$run =' " )
-          message( "   gam( formula=p$stmv_global_modelformula, data=B, ")
-          message( "     optimizer= p$stmv_gam_optimizer, family=p$stmv_global_family, weights=wt )' " )
-          stop()
-        }
-        global_model = try( eval(parse(text=p$stmv_global_model$run )) )
-        if (inherits(global_model, "try-error") ) stop( "Global modelling failed")
-        print( summary( global_model ) )
-        save( global_model, file= fn.global_model, compress=TRUE )
-        return ()
-      }
-
-      # as a first pass, model the time-independent factors as a user-defined model
-      if (p$stmv_global_modelengine=="glm") {
-        warning( "glm does not have a spatial random effect, model covariates could be biased if residual errors are not iid ... ")
-        if (!exists("wt", B)) {
-          global_model = try(
-            glm( formula=p$stmv_global_modelformula, data=B, family=p$stmv_global_family ) )
-        } else {
-          global_model = try(
-            glm( formula=p$stmv_global_modelformula, data=B, family=p$stmv_global_family, weights=wt ) )
-        }
-      }
-
-      if (p$stmv_global_modelengine=="bigglm") {
-        warning( "bigglm does not have a spatial random effect, model covariates could be biased if residual errors are not iid ... ")
-        if (!exists("wt", B)) {
-          global_model = try(
-            bigglm( formula=p$stmv_global_modelformula, data=B, family=p$stmv_global_family ))
-        } else {
-          global_model = try(
-            bigglm( formula=p$stmv_global_modelformula, data=B, family=p$stmv_global_family, weights=~wt ))
-        }
-      }
-
-      if (p$stmv_global_modelengine=="gam") {
-        warning( "gam does not have a spatial random effect, model covariates could be biased if residual errors are not iid, spatial splines might help but this is not guaranteed. gamm might be a better choice. You have been warned ... ")
-        require(mgcv)
-        if (!exists("wt", B)) {
-          global_model = try(
-            gam( formula=p$stmv_global_modelformula, data=B,
-              optimizer= p$stmv_gam_optimizer, family=p$stmv_global_family) )
-        } else {
-          global_model = try(
-            gam( formula=p$stmv_global_modelformula, data=B,
-              optimizer= p$stmv_gam_optimizer, family=p$stmv_global_family, weights=wt ) )
-        }
-      }
-
-
-      if (p$stmv_global_modelengine=="gamm") {
-        warning( "gamm should include a spatial random effect, otherwise model covariates could be biased if residual errors are not iid ... ")
-        require(mgcv)
-        if (!exists("wt", B)) {
-          global_model = try(
-            gam( formula=p$stmv_global_modelformula, data=B,
-              optimizer= p$stmv_gam_optimizer, family=p$stmv_global_family) )
-        } else {
-          global_model = try(
-            gamm( formula=p$stmv_global_modelformula, data=B,
-              optimizer= p$stmv_gam_optimizer, family=p$stmv_global_family, weights=wt ) )
-        }
-      }
-
-
-      if (p$stmv_global_modelengine=="bayesx") {
-        warning( "make sure you have a spatial random effect, otherwise model covariates/predictions could be biased if residual errors are not iid ... ")
-
-        require(mgcv)
-        global_model = try(
-          bayesx( formula=p$stmv_global_modelformula, data=B, family=p$stmv_global_family ) )
-      }
-
-
-      if (p$stmv_global_modelengine=="inla") {
-        warning( "make sure you have a spatial random effect, otherwise model covariates/predictions could be biased if residual errors are not iid ... ")
-
-        require(INLA)
-        global_model = try( eval( p$stmv_global_modelformula ) )    # p$stmv_global_modelformula must contain the whole call
-
-          # inla( formula=p$stmv_global_modelformula, data=B, family=p$stmv_global_family ) )
-      }
-
-      if ( "try-error" %in% class(global_model) ) stop( "The covariate model was problematic" )
-      print( summary( global_model ) )
-
-      if (saveresults) {
-        save( global_model, file= fn.global_model, compress=TRUE )
-        global_model = NULL
-        return()
-      } else {
-        return( global_model )
-      }
-    }
-
 
     # -----
 
@@ -470,54 +332,51 @@
       Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
       S = stmv_attach( p$storage_backend, p$ptr$S )
       Sloc = stmv_attach( p$storage_backend, p$ptr$Sloc )
-      # system size
-      #nr = nx
-      #nc = ny
-      # nr .. x/plon
-      # nc .. y/plat
 
-      #nr = p$nplons
-      #nc = p$nplats
+      nPloc = nrow(Ploc)
+      nSloc = nrow(Sloc)
 
-      u = list(
-        x=seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ),
-        y=seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid )
-      )
-      u$z = matrix( NA, nrow=length(u$x), ncol=length(u$y) )
-
-      stats = matrix( NaN, ncol=length( p$statsvars ), nrow=nrow( Ploc) )  # output data .. ff does not handle NA's .. using NaN for now
-      colnames(stats) = p$statsvars
-
-      Sres=c(p$stmv_distance_statsgrid, p$stmv_distance_statsgrid)
-      Sind = as.matrix(array_map( "xy->2", coords=Sloc[], origin=p$origin, res=Sres ))  # map Stats Locs to Plocs
-
-      for ( i in 1:length( p$statsvars ) ) {
-        # print(i)
-        u$z[] = NA # reset
-        u$z[Sind] = S[,i]
-        stats[,i] = as.vector( fields::interp.surface( u, loc=Ploc[] ) ) # linear interpolation
-        if (all(!is.finite(stats[,i]))) next()
-        rY = range( stats[,i], na.rm=TRUE )
-        lb = which( stats[,i] < rY[1] )
-        if (length(lb) > 0) stats[lb,i] = rY[1]
-        lb = NULL
-        ub = which( stats[,i] > rY[2] )
-        if (length(ub) > 0) stats[ub,i] = rY[2]
-        ub = NULL
-      }
-
-      # lattice::levelplot( stats[,1] ~ Ploc[,1]+Ploc[,2])
-      boundary = try( stmv_db( p=p, DS="boundary" ) )
-      if( !("try-error" %in% class(boundary) ) ) {
-        if (!is.null(boundary)) {
-          inside.polygon = point.in.polygon( Ploc[,1], Ploc[,2],
-          boundary$polygon[,1], boundary$polygon[,2], mode.checked=TRUE )
-          o = which( inside.polygon == 0 ) # outside boundary
-          if (length(o) > 0) stats[o,] = NA
+      if (nPloc == nSloc) {
+        stats = S[]
+        names(stats) = p$statsvars
+        # nothing else to do as the dim of S and P are the same..
+      }  else {
+        # system size: nr = nx .. x/plon ..nr = p$nplons;  nc = ny .. y/plat .. nc = p$nplats
+        u = list(
+          x=seq( p$corners$plon[1], p$corners$plon[2], by=p$stmv_distance_statsgrid ),
+          y=seq( p$corners$plat[1], p$corners$plat[2], by=p$stmv_distance_statsgrid )
+        )
+        u$z = matrix( NA, nrow=length(u$x), ncol=length(u$y) )
+        stats = matrix( NaN, ncol=length( p$statsvars ), nrow=nrow( Ploc) )  # output data .. ff does not handle NA's .. using NaN for now
+        colnames(stats) = p$statsvars
+        Sres=c(p$stmv_distance_statsgrid, p$stmv_distance_statsgrid)
+        Sind = as.matrix(array_map( "xy->2", coords=Sloc[], origin=p$origin, res=Sres ))  # map Stats Locs to Plocs
+        for ( i in 1:length( p$statsvars ) ) {
+          # print(i)
+          u$z[] = NA # reset
+          u$z[Sind] = S[,i]
+          stats[,i] = as.vector( fields::interp.surface( u, loc=Ploc[] ) ) # linear interpolation
+          if (all(!is.finite(stats[,i]))) next()
+          rY = range( S[,i], na.rm=TRUE )
+          lb = which( stats[,i] < rY[1] )
+          if (length(lb) > 0) stats[lb,i] = rY[1]
+          lb = NULL
+          ub = which( stats[,i] > rY[2] )
+          if (length(ub) > 0) stats[ub,i] = rY[2]
+          ub = NULL
         }
+        # lattice::levelplot( stats[,1] ~ Ploc[,1]+Ploc[,2])
+        boundary = try( stmv_db( p=p, DS="boundary" ) )
+        if( !("try-error" %in% class(boundary) ) ) {
+          if (!is.null(boundary)) {
+            inside.polygon = point.in.polygon( Ploc[,1], Ploc[,2],
+            boundary$polygon[,1], boundary$polygon[,2], mode.checked=TRUE )
+            o = which( inside.polygon == 0 ) # outside boundary
+            if (length(o) > 0) stats[o,] = NA
+          }
+        }
+        if (length(shallower)>0) stats[shallower,] = NA
       }
-
-      if (length(shallower)>0) stats[shallower,] = NA
 
       fn = file.path( p$stmvSaveDir, paste( "stmv.statistics", "rdata", sep=".") )
       save( stats, file=fn, compress=TRUE )

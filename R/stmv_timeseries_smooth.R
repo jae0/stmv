@@ -4,7 +4,9 @@ stmv_timeseries_smooth = function(p, dat, sloc=sloc, distance=distance, datvarso
   # static vars .. don't need to look up
     datgridded = dat # only the static parts .. time has to be a uniform grid so reconstruct below
 
-    ids = array_map( "xy->1", datgridded[, c("plon", "plat")], gridparams=p$gridparams ) # 100X faster than paste / merge
+    p_coord_names = p$stmv_variables$LOCS[1:2]
+
+    ids = array_map( "xy->1", datgridded[, p_coord_names], gridparams=p$gridparams ) # 100X faster than paste / merge
     todrop = which(duplicated( ids) )
     if (length(todrop>0)) datgridded = datgridded[-todrop,]
     ids=todrop=NULL
