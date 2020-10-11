@@ -1,6 +1,6 @@
 
 
-stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE,   ... ) {
+stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE, just_testing_variablelist=FALSE,  ... ) {
   #\\ core function to interpolate (model and predict) in parallel
 
   if (0) {
@@ -11,20 +11,7 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE,   ... ) {
     debugging=TRUE
   }
 
-  # ---------------------
 
-  p = parameters_control(p, list(...), control="add") # add passed args to parameter list, priority to args
-
-  if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
-
-  if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
-
-
-  #---------------------
-  # data for modelling
-  E = stmv_error_codes()
-  Sflag = stmv_attach( p$storage_backend, p$ptr$Sflag )
-  S = stmv_attach( p$storage_backend, p$ptr$S )
   Sloc = stmv_attach( p$storage_backend, p$ptr$Sloc )
   Yloc = stmv_attach( p$storage_backend, p$ptr$Yloc )
   Y = stmv_attach( p$storage_backend, p$ptr$Y )
@@ -48,7 +35,6 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE,   ... ) {
 
   iY = which(dat_names== p$stmv_variables$Y)
   ilocs = which( dat_names %in% p$stmv_variables$LOCS )
-  i_ndata = match( "ndata", p$statsvars )
 
   # iwei = which( dat_names %in% "weights" )
   i_rsquared = match("rsquared", p$statsvars )
@@ -79,6 +65,104 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE,   ... ) {
   }
 
 
+
+  if (just_testing_variablelist) {
+
+    # purpose: to obtain param names from a model run
+    # param names vary depending upon the model form
+    # only possible to run a model to see waht gets exported ..
+    # this is essentially a minimal form of stmv_interpolate  that stops once a solution with params are found
+
+
+
+    message("testing a run of the model to check for output")
+
+    p = parallel_run( p=p, runindex=list( locs=sample( stmv_statistics_status( p=p )$todo )) )
+    ip = 1:100
+
+    for ( iip in ip ) {
+      Si = p$runs[ iip, "locs" ]
+      sloc = Sloc[Si,]
+      nu    = S[Si, i_nu]
+      phi   = S[Si, i_phi]
+      localrange = S[Si, i_localrange]   # attached to p$stmv_autocorrelation_localrange
+      varObs = S[Si, i_sdObs]^2,
+      varSpatial = S[Si, i_sdSpatial]^2,
+
+      localrange_interpolation = ifelse( !exists("stmv_interpolation_basis_distance", p), p$stmv_distance_statsgrid *1.5, p$stmv_interpolation_basis_distance )  # force a simple solution
+
+      data_subset = stmv_select_data( p=p, Si=Si, localrange=localrange_interpolation )
+      if (is.null( data_subset )) next()
+
+      unique_spatial_locations = data_subset$unique_spatial_locations
+      ndata = length(data_subset$data_index)
+      if (unique_spatial_locations < p$stmv_nmin) next()
+
+      dat = matrix( 1, nrow=ndata, ncol=dat_nc )
+      dat[,iY] = Y[data_subset$data_index] # these are residuals if there is a global model
+        dat[,ilocs] = Yloc[data_subset$data_index,]
+
+      dat[,ilocs] = dat[,ilocs] + localrange_interpolation * runif(2*ndata, -dist_error, dist_error)
+
+      if (p$nloccov > 0) dat[,icov] = Ycov[data_subset$data_index, icov_local] # no need for other dim checks as this is user provided
+      if (exists("TIME", p$stmv_variables)) {
+        dat[, itime_cov] = as.matrix(stmv_timecovars( vars=ti_cov, ti=Ytime[data_subset$data_index,] ) )
+        itt = which(dat_names==p$stmv_variables$TIME)
+        dat[, itt ] = Ytime[data_subset$data_index,]
+        # crude check of number of time slices
+        n_time_slices = stmv_discretize_coordinates( coo=dat[, itt], ntarget=p$nt, minresolution=p$minresolution[3], method="thin"  )
+        if ( length(n_time_slices) < p$stmv_tmin )  next()
+      }
+      dat = data.table(dat)
+      names(dat) = dat_names
+      dat_range = range( dat[,..iY], na.rm=TRUE )  # used later
+
+      # construct prediction/output grid area ('pa')
+      prediction_area = localrange_interpolation
+      if (exists("stmv_distance_prediction_limits", p)) {
+        prediction_area = min( max( localrange_interpolation, min(p$stmv_distance_prediction_limits) ), max(p$stmv_distance_prediction_limits), na.rm=TRUE )
+      }
+
+      windowsize.half =  aegis_floor( prediction_area / p$pres ) + 1L
+
+      pa = try( stmv_predictionarea_lattice( p=p, sloc=sloc, windowsize.half=windowsize.half ) )
+
+      if ( is.null(pa) ) next()
+      if ( inherits(pa, "try-error") ) next()
+
+      res =NULL
+      res = try(
+        local_fn ( p=p, dat=dat, pa=pa,
+          nu=nu, phi=phi, localrange=localrange_interpolation, varObs=varObs, varSpatial=varSpatial, sloc=sloc
+        )
+      )
+
+      if ( is.null(res))  next()
+      if ( inherits(res, "try-error") ) next()
+      if (!exists("predictions", res))  next()
+      if (!exists("mean", res$predictions)) next()
+      if (length(which( is.finite(res$predictions$mean ))) < 1) next()
+
+      return( res )
+    }
+  }
+
+
+  # ---------------------
+
+  p = parameters_control(p, list(...), control="add") # add passed args to parameter list, priority to args
+
+  if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
+
+  if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
+
+
+  E = stmv_error_codes()
+  Sflag = stmv_attach( p$storage_backend, p$ptr$Sflag )
+  S = stmv_attach( p$storage_backend, p$ptr$S )
+
+  i_ndata = match( "ndata", p$statsvars )
+
   if (length(ip) < 100) {
     nlogs = length(ip) / 5
   } else {
@@ -86,8 +170,7 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE,   ... ) {
   }
   logpoints  =  sort( sample( ip, round( max(1, nlogs) ) ) )  # randomize
 
-
-# main loop over each output location in S (stats output locations)
+  # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
 
     if ( iip %in% logpoints )  slog = stmv_logfile(p=p, flag= paste("Interpolation", p$runoption) )
@@ -97,11 +180,9 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE,   ... ) {
     if ( Sflag[Si] == E[["complete"]] ) next()
 
     sloc = Sloc[Si,]
-
     nu    = S[Si, i_nu]
     phi   = S[Si, i_phi]
     localrange = S[Si, i_localrange]   # attached to p$stmv_autocorrelation_localrange
-
     varObs = S[Si, i_sdObs]^2,
     varSpatial = S[Si, i_sdSpatial]^2,
 
@@ -211,7 +292,6 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE,   ... ) {
       points( Sloc[Si,2] ~ Sloc[Si,1], pch=20, cex=5, col="blue" )
     }
 
-
     # construct prediction/output grid area ('pa')
     prediction_area = localrange_interpolation
     if (exists("stmv_distance_prediction_limits", p)) {
@@ -262,16 +342,8 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE,   ... ) {
 
     res =NULL
     res = try(
-      local_fn (
-        p=p,
-        dat=dat,
-        pa=pa,
-        nu=nu,
-        phi=phi,
-        localrange=localrange_interpolation,
-        varObs = varObs,
-        varSpatial = varSpatial,
-        sloc = sloc
+      local_fn ( p=p, dat=dat, pa=pa, nu=nu, phi=phi, localrange=localrange_interpolation,
+        varObs=varObs, varSpatial=varSpatial, sloc=sloc
       )
     )
 

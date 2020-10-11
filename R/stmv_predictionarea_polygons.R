@@ -1,6 +1,6 @@
 
 
-stmv_predictionarea_polygons = function(p, sloc, global_sppoly=NULL, windowsize.half=0, buffer_links=0, distance_reference="completely_inside_boundary" ) {
+stmv_predictionarea_polygons = function(p, sloc, global_sppoly=NULL, windowsize.half=0, stmv_au_buffer_links=0, stmv_au_distance_reference="none" ) {
 
   pa_coord_names = p$stmv_variables$LOCS[1:2]
 
@@ -83,7 +83,7 @@ stmv_predictionarea_polygons = function(p, sloc, global_sppoly=NULL, windowsize.
       nnAUID = nbnames[nb[[which( nbnames == nbfocal )]]]  ## nearest neighbours
       tokeep = unique( c( nnAUID, nbfocal ) )
 
-      if ( buffer_links > 0 ) {
+      if ( stmv_au_buffer_links > 0 ) {
         # no of additional neighbourhood links ... 0 == nearest neighbours, 1 == nn + next nearest neighbours, etc
         for (i in 1:nlinks ) {
           new = NULL
@@ -97,7 +97,11 @@ stmv_predictionarea_polygons = function(p, sloc, global_sppoly=NULL, windowsize.
 
       if ( windowsize.half > 0 ) {
 
-        if (distance_reference=="centroid") {
+        if (stmv_au_distance_reference=="none") {
+          # nothing to do
+        }
+
+        if (stmv_au_distance_reference=="centroid") {
           # distance based filtering based on centroids
           aucoo = coordinates( au )
           inrange =  which( (abs(aucoo[,1] - sloc[1]) <= windowsize.half) &  (abs(aucoo[,2] - sloc[2]) <= windowsize.half) )
@@ -105,7 +109,7 @@ stmv_predictionarea_polygons = function(p, sloc, global_sppoly=NULL, windowsize.
           tokeep = setdiff( tokeep, todrop)
         }
 
-        if (distance_reference=="inside_or_touches_boundary") {
+        if (stmv_au_distance_reference=="inside_or_touches_boundary") {
           # distance based filtering based on centroids
           ausf = as( au, "sf")
           foc = st_buffer( ausf[ which(ausf$AUID==nbfocal), ], dist= windowsize.half )
@@ -114,7 +118,7 @@ stmv_predictionarea_polygons = function(p, sloc, global_sppoly=NULL, windowsize.
           tokeep = setdiff( tokeep, todrop)
         }
 
-        if (distance_reference=="completely_inside_boundary") {
+        if (stmv_au_distance_reference=="completely_inside_boundary") {
           # distance based filtering based on centroids
           ausf = as( au, "sf")
           foc = st_buffer( ausf[ which(ausf$AUID==nbfocal), ], dist= windowsize.half )
@@ -122,7 +126,6 @@ stmv_predictionarea_polygons = function(p, sloc, global_sppoly=NULL, windowsize.
           todrop = setdiff( nbnames, nbnames[inrange] )
           tokeep = setdiff( tokeep, todrop)
         }
-
 
       }
 

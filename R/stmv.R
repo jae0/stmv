@@ -482,7 +482,11 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
   # determine stats to retain / expect
   res = NULL
-  res = stmv_interpolate_test( p=p, runmode=ifelse( any(grepl("carstm", names(p$stmv_runmode))), "carstm", "default" ), global_sppoly=global_sppoly  )
+  if ( any(grepl("carstm", names(p$stmv_runmode))) ) {
+    res = stmv_interpolate_polygon( p=p, global_sppoly=global_sppoly, stmv_au_buffer_links=p$stmv_au_buffer_links, stmv_au_distance_reference=p$stmv_au_distance_reference  )
+  } else {
+    res = stmv_interpolate_lattice( p=p, just_testing_variablelist=TRUE  )
+  }
 
 
   # str( res )
@@ -603,7 +607,8 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
     # -----------------------------------------------------
     if ("carstm" %in% runmode ) {
-      if (!exists("distance_reference", p)) p$distance_reference="completely_inside_boundary"
+      if (!exists("stmv_au_distance_reference", p)) p$stmv_au_distance_reference="none"
+      if (!exists("stmv_au_buffer_links", p)) p$stmv_au_buffer_links=0
       # this models, and predicts in same step (via inla)
       message ( "\n", "||| Entering carstm areal unit modelling: ", format(Sys.time())  )
       if ( "restart_load" %in% runmode ) {
@@ -629,7 +634,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         p$runmode = "carstm"
         p$clusters = p$stmv_runmode[["carstm"]] # as ram reqeuirements increase drop cpus
         currentstatus = stmv_statistics_status( p=p, reset="flags", reset_flags=c("insufficient_data",  "unknown" ) )
-        parallel_run( stmv_interpolate_polygons, p=p, runmode="carstm", global_sppoly=global_sppoly, distance_reference=p$distance_reference, runindex=list( locs=sample( currentstatus$todo )) )
+        parallel_run( stmv_interpolate_polygons, p=p, runmode="carstm", global_sppoly=global_sppoly, stmv_au_buffer_links=p$stmv_au_buffer_links,stmv_au_distance_reference=p$stmv_au_distance_reference, runindex=list( locs=sample( currentstatus$todo )) )
         invisible( stmv_db(p=p, DS="save_current_state", runmode="carstm", datasubset="statistics") )# temp save to disk
         invisible( stmv_db(p=p, DS="save_current_state", runmode="carstm", datasubset="P" ) )
         invisible( stmv_db(p=p, DS="save_current_state", runmode="carstm", datasubset="Psd" ) )

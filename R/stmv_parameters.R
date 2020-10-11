@@ -112,5 +112,9 @@ stmv_parameters = function( p=list(), ... ) {
 
   if ( !exists("stmv_rsquared_threshold", p) ) p$stmv_rsquared_threshold = 0  # essentially ignore ..
 
+  if ( !exists("stmv_au_distance_reference", p) ) p$stmv_au_distance_reference = "none"
+
+  if ( !exists("stmv_au_buffer_links", p) ) p$stmv_au_buffer_links = 0
+
   return(p)
 }
