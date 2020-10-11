@@ -184,7 +184,7 @@ stmv_predictionarea_polygons = function(p, sloc, global_sppoly=NULL, windowsize.
 
   }
 
-  if (0)
+  if (0) {
       jj = which( card(nb) == 0)
       jj = match( tokeep, au$AUID )
       plot(sppoly)

@@ -86,8 +86,8 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE, just_testing_v
       nu    = S[Si, i_nu]
       phi   = S[Si, i_phi]
       localrange = S[Si, i_localrange]   # attached to p$stmv_autocorrelation_localrange
-      varObs = S[Si, i_sdObs]^2,
-      varSpatial = S[Si, i_sdSpatial]^2,
+      varObs = S[Si, i_sdObs]^2
+      varSpatial = S[Si, i_sdSpatial]^2
 
       localrange_interpolation = ifelse( !exists("stmv_interpolation_basis_distance", p), p$stmv_distance_statsgrid *1.5, p$stmv_interpolation_basis_distance )  # force a simple solution
 
@@ -183,8 +183,8 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE, just_testing_v
     nu    = S[Si, i_nu]
     phi   = S[Si, i_phi]
     localrange = S[Si, i_localrange]   # attached to p$stmv_autocorrelation_localrange
-    varObs = S[Si, i_sdObs]^2,
-    varSpatial = S[Si, i_sdSpatial]^2,
+    varObs = S[Si, i_sdObs]^2
+    varSpatial = S[Si, i_sdSpatial]^2
 
     # range checks
     if ( any( !is.finite( c(localrange, nu, phi) ) ) )  {
