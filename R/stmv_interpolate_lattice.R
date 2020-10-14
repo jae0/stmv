@@ -53,7 +53,8 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE, just_testing_v
     if (is.finite(dist_error_target)) dist_error = dist_error_target
   }
 
-  local_fn = ifelse (p$stmv_local_modelengine=="userdefined", p$stmv_local_modelengine_userdefined, stmv_interpolation_function( p$stmv_local_modelengine ) )
+  local_fn = ifelse (p$stmv_local_modelengine=="userdefined", p$stmv_local_modelengine_userdefined,
+    stmv_interpolate_function_lookup( p$stmv_local_modelengine ) )
 
   if (p$nloccov > 0) {
     icov = which( dat_names %in% p$stmv_variables$local_cov )
@@ -74,8 +75,7 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE, just_testing_v
     # this is essentially a minimal form of stmv_interpolate  that stops once a solution with params are found
 
 
-
-    message("testing a run of the model to check for output")
+#    message("testing a run of the model to check for output")
 
     p = parallel_run( p=p, runindex=list( locs=sample( stmv_statistics_status( p=p )$todo )) )
     ip = 1:100
@@ -150,7 +150,7 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE, just_testing_v
 
   # ---------------------
 
-  p = parameters_control(p, list(...), control="add") # add passed args to parameter list, priority to args
+  p = parameters_add(p, list(...)) # add passed args to parameter list, priority to args
 
   if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
 
@@ -419,7 +419,7 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE, just_testing_v
       if ( is.finite(res$stmv_stats[[ vn ]] ) ) S[Si, vi] = res$stmv_stats[[ vn ]]
     }
 
-    sf = try( stmv_predictions_update(p=p, preds=res$predictions ) )
+    sf = try( stmv_predict_update(p=p, preds=res$predictions ) )
 
     res = NULL
 

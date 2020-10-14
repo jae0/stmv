@@ -13,7 +13,8 @@ stmv_interpolate_polygons = function( ip=NULL, p, debugging=FALSE, global_sppoly
     stmv_au_buffer_links=1  # number of additional links to nearest neighbourhoods
   }
 
-  local_fn = ifelse (p$stmv_local_modelengine=="userdefined", p$stmv_local_modelengine_userdefined, stmv_interpolation_function( p$stmv_local_modelengine ) )
+  local_fn = ifelse (p$stmv_local_modelengine=="userdefined", p$stmv_local_modelengine_userdefined,
+    stmv_interpolate_function_lookup( p$stmv_local_modelengine ) )
 
   Sloc = stmv_attach( p$storage_backend, p$ptr$Sloc )
   Yloc = stmv_attach( p$storage_backend, p$ptr$Yloc )
@@ -57,7 +58,7 @@ stmv_interpolate_polygons = function( ip=NULL, p, debugging=FALSE, global_sppoly
     # only possible to run a model to see waht gets exported ..
     # just a simplified version of the below with no use of Sflag nor S
 
-    message("testing a run of the model to check for output")
+    # message("testing a run of the model to check for output")
 
     p = parallel_run( p=p, runindex=list( locs=sample( stmv_statistics_status( p=p )$todo )) )
     ip = 1:100
@@ -121,7 +122,7 @@ stmv_interpolate_polygons = function( ip=NULL, p, debugging=FALSE, global_sppoly
 
   # ---------------------
 
-  p = parameters_control(p, list(...), control="add") # add passed args to parameter list, priority to args
+  p = parameters_add(p, list(...)) # add passed args to parameter list, priority to args
 
   if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
 
@@ -319,7 +320,7 @@ stmv_interpolate_polygons = function( ip=NULL, p, debugging=FALSE, global_sppoly
       if ( is.finite(res$stmv_stats[[ vn ]] ) ) S[Si, vi] = res$stmv_stats[[ vn ]]
     }
 
-    sf = try( stmv_predictions_update(p=p, preds=res$predictions ) )
+    sf = try( stmv_predict_update(p=p, preds=res$predictions ) )
 
     res = NULL
 
