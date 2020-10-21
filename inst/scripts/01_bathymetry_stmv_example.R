@@ -107,7 +107,7 @@ if (0) {
 
 
 # p$statsvars = c("sdTotal", "ndata", "fixed_mean", "fixed_sd", "dic", "dic_p_eff",
-#   "waic", "waic_p_eff", "mlik", "Expectected__number_of_parameters",
+#   "waic", "waic_p_eff", "mlik", "Expected_number_of_parameters",
 #   "Stdev_of_the_number_of_parameters", "Number_of_equivalent_replicates",
 #   "Precision_for_the_Gaussian_observations", "Precision_for_aui",
 #   "Phi_for_aui", "Precision_for_the_Gaussian_observations_sd", "Precision_for_aui_sd", "Phi_for_aui_sd"
