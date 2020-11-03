@@ -26,9 +26,9 @@ stmv_predictionarea_polygons = function(p, sloc, global_sppoly=NULL, windowsize.
     sppoly = sf::st_as_sf( pa, coords=pa_coord_names )
     sf::st_crs(sppoly) = sf::st_crs( p$aegis_proj4string_planar_km )
     sp_grid = raster::raster( sppoly, nrows=nr, ncols=nc )
-    sppoly = as(sp_grid, "SpatialPolygonsDataFrame")
+    sppoly = as( as(sp_grid, "SpatialPolygonsDataFrame"), "sf")
 
-    if (exists("i", slot(sppoly, "data")) ) {
+    if (exists("i", sppoly) ) {
       sppoly$AUID = sppoly$i
     } else {
       sppoly$AUID = 1:nrow(sppoly)
@@ -67,12 +67,14 @@ stmv_predictionarea_polygons = function(p, sloc, global_sppoly=NULL, windowsize.
 
   if ( !is.null( global_sppoly )) {
 
-      au = as( global_sppoly, "SpatialPolygonsDataFrame")
+      au = as( global_sppoly, "sf")
       au$AUID = 1:nrow(au)
 
-      sloc_sp = SpatialPoints( t(sloc), sp::CRS( p$aegis_proj4string_planar_km ) )
-
-      nbfocal = over( sloc_sp, au )$AUID
+      nbfocal = st_points_in_polygons(
+        pts = st_transform( st_as_sf( t(sloc), coords=c(1,2), crs=st_crs(p$aegis_proj4string_planar_km) ), crs=st_crs(au) ),
+        polys = au[, "AUID"],
+        varname="AUID"
+      )
 
       if (is.na(nbfocal)) {
         message( "no data" )

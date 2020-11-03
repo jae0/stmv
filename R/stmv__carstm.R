@@ -27,9 +27,11 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, improve.
     locnm = p$stmv_variables$LOCS  # for data.table., this has to be a simple variable
 
     sppoly = attr( pa, "sppoly" )
-
-    datcoords = spTransform( SpatialPoints( as.matrix(dat[, ..locnm ]), CRS(p$aegis_proj4string_planar_km ) ),  CRS(proj4string(sppoly) ) )
-    dat$AUID = over( datcoords, sppoly )$AUID # match each datum to an area
+    dat$AUID = st_points_in_polygons(
+      pts = st_transform( st_as_sf( as.matrix(dat[, ..locnm ]), coords=locnm, crs=st_crs(p$aegis_proj4string_planar_km) ), crs=st_crs(sppoly) ),
+      polys = sppoly[, "AUID"],
+      varname="AUID"
+    )
 
     dat = dat[  !is.na(dat$AUID)]
     dat$tag = "observations"

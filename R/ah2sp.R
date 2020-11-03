@@ -4,6 +4,8 @@ ah2sp <- function(x, increment=360, rnd=10, proj4strvalue=CRS(as.character(NA)))
 
   require(alphahull)
   require(maptools)
+  require(sp)
+
   if (class(x) != "ahull"){
     stop("x needs to be an ahull class object")
   }
