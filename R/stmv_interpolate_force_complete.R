@@ -37,7 +37,7 @@ stmv_interpolate_force_complete = function( p, qn = c(0.005, 0.995), eps=1e-9 ) 
     require(gstat)
     # way too slow  .. but extrapolation is not possible
     # .. can cause very unexpected results
-    locs = SpatialPoints( Ploc[] )
+    locs = Ploc[]
 
     for ( iip in ip ) {
       ww = p$runs[ iip, "time_index" ]
