@@ -1134,7 +1134,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
     resx = diff(rx) / n_min
     resy = diff(ry) / n_min
     res = c(min(resx, resy), min(resx, resy))
-    xy_blocked = stmv::array_map( "xy->2", xy, res=res, origin=origin ) * res[1]
+    xy_blocked = array_map( "xy->2", xy, res=res, origin=origin ) * res[1]
     xy_blocked = xy_blocked / out$stmv_internal_scale
 
     m = tapply( X=z, INDEX=list(xy_blocked[,1], xy_blocked[,2]),

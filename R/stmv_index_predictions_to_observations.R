@@ -8,8 +8,8 @@
     coo[,2] = aegis_floor( coo[,2] / p$pres  ) * p$pres
 
     iYP = match(
-      stmv::array_map( "xy->1", coo[], gridparams=p$gridparams ),
-      stmv::array_map( "xy->1", Ploc[], gridparams=p$gridparams )
+      array_map( "xy->1", coo[], gridparams=p$gridparams ),
+      array_map( "xy->1", Ploc[], gridparams=p$gridparams )
     )
     coo = NULL
     if ( p$aegis_dimensionality =="space" ) {
