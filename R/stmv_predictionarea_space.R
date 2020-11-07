@@ -56,5 +56,6 @@ stmv_predictionarea_space = function(p, sloc, windowsize.half) {
 
   pa = as.data.frame(pa[, ..pvars])
 
+  return(pa)
 
 }

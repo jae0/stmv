@@ -25,7 +25,21 @@ stmv_predictionarea_polygons = function(p, sloc, global_sppoly=NULL, windowsize.
       # data_subset = NULL
     sppoly = sf::st_as_sf( pa, coords=pa_coord_names )
     sf::st_crs(sppoly) = sf::st_crs( p$aegis_proj4string_planar_km )
-    sppoly = as( as(fasterize::raster( sppoly, nrows=nr, ncols=nc ), "SpatialPolygonsDataFrame"), "sf")
+    sp_grid = raster::raster( sppoly, nrows=nr, ncols=nc )
+    sppoly = as( as(sp_grid, "SpatialPolygonsDataFrame"), "sf")
+
+
+if (0) {
+    # not using raster -- incomplete
+    spdf0 = sf::st_as_sf( pa, coords=pa_coord_names, crs=st_crs( p$aegis_proj4string_planar_km ) )
+    sppoly = st_as_sf( st_make_grid( spdf0, n=c(nr, nc),  what="polygons", square=TRUE ) )
+    sppoly$internal_id = 1:nrow(sppoly)
+    spdf0$internal_id = st_points_in_polygons( spdf0, sppoly, varname="internal_id" )
+    o = match( sppoly$internal_id,spdf0$internal_id )
+    sppoly[ ]
+
+}
+
 
     if (exists("i", sppoly) ) {
       sppoly$AUID = sppoly$i
