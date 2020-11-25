@@ -37,6 +37,7 @@ p = aegis.bathymetry::bathymetry_parameters(
   data_root = file.path(work_root, "bathymetry_example"),
   DATA = DATA,
   spatial_domain = p0$spatial_domain,
+  spatial_domain_subareas =NULL,
   inputdata_spatial_discretization_planar_km = p0$pres,  # pres = 0.5
   aegis_dimensionality="space",
   stmv_variables = list(Y="z"),  # required as fft has no formulae
@@ -86,8 +87,6 @@ p = aegis.bathymetry::bathymetry_parameters(
     save_completed_data = TRUE # just a dummy variable with the correct name
   )  # ncpus for each runmode
 )
-
-p$spatial_domain_subareas =NULL
 
 if (0) {
   # to force serial mode

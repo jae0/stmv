@@ -5,7 +5,7 @@ stmv__gam = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
   #\\ family is gaussian("identity") as we are operating upon the link scale by this point
   if (variablelist)  return( c() )
 
-  sdTotal=sd(dat[,p$stmv_variables$Y], na.rm=T)
+  sdTotal=sd(dat[[p$stmv_variables$Y]], na.rm=T)
 
   if ( exists("stmv_local_model_distanceweighted", p) ) {
     if (p$stmv_local_model_distanceweighted) {

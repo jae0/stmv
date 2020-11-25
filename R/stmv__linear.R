@@ -6,10 +6,13 @@ stmv__linear = function( p=NULL,  dat=NULL, pa=NULL,  variablelist=FALSE, ...  )
 
   if (variablelist)  return( c() )
 
-  sdTotal = sd(dat[,p$stmv_variables$Y], na.rm=T)
+  sdTotal = sd(dat[[ p$stmv_variables$Y ]], na.rm=T)
 
-  x_r = range(pa[,p$stmv_variables$LOCS[1]])
-  x_c = range(pa[,p$stmv_variables$LOCS[2]])
+  vns = p$stmv_variables$LOCS
+
+  x_r = range(pa[[ vns[1] ]] )
+  x_c = range(pa[[ vns[2] ]] )
+
 
   nr = aegis_floor( diff(x_r)/p$pres + 1L )
   nc = aegis_floor( diff(x_c)/p$pres + 1L )
@@ -18,14 +21,17 @@ stmv__linear = function( p=NULL,  dat=NULL, pa=NULL,  variablelist=FALSE, ...  )
   yo = seq(x_c[1], x_c[2], length.out = nc )
 
   dat$mean = NA
+
+  pa = data.table(pa)
+
   pa$mean = NA
   pa$sd = NA
 
   for ( ti in 1:p$nt ) {
 
     if ( exists("TIME", p$stmv_variables) ) {
-      xi   = which( dat[ , p$stmv_variables$TIME] == p$prediction_ts[ti] )
-      pa_i = which( pa[, p$stmv_variables$TIME] == p$prediction_ts[ti] )
+      xi   = which( dat[[ p$stmv_variables$TIME]] == p$prediction_ts[ti] )
+      pa_i = which( pa[[ p$stmv_variables$TIME]] == p$prediction_ts[ti] )
       if (length(xi) < 5 ) {
         # print( ti)
         next()
@@ -36,16 +42,16 @@ stmv__linear = function( p=NULL,  dat=NULL, pa=NULL,  variablelist=FALSE, ...  )
     }
 
     u = as.image(
-      dat[xi, p$stmv_variables$Y],
-      ind=as.matrix(array_map( "xy->2", coords=dat[xi,p$stmv_variables$LOCS], origin=origin, res=res )),
+      dat[xi] [[ p$stmv_variables$Y ]] ,
+      ind=as.matrix(array_map( "xy->2", coords=dat[xi, ..vns], origin=origin, res=res )),
       na.rm=TRUE,
       nx=nr,
       ny=nc
     )
 
-    X = as.vector( fields::interp.surface( u, loc=pa[pa_i,p$stmv_variables$LOCS] ) ) # linear interpolation
+    X = as.vector( fields::interp.surface( u, loc=pa[pa_i, ..vns] ) ) # linear interpolation
 
-    rY = range( dat[ xi, p$stmv_variables$Y ], na.rm=TRUE )
+    rY = range( dat[ xi] [[ p$stmv_variables$Y ]], na.rm=TRUE )
     lb = which( X < rY[1] )
     if (length(lb) > 0) X[lb] = rY[1]
     lb = NULL
@@ -56,12 +62,12 @@ stmv__linear = function( p=NULL,  dat=NULL, pa=NULL,  variablelist=FALSE, ...  )
     pa$mean[pa_i] = X
     X = NULL
 
-    pa$sd[pa_i] = sd(dat[ xi, p$stmv_variables$Y ], na.rm=TRUE)  # just a crude guess for each timeslice
+    pa$sd[pa_i] = sd(dat[ xi] [[ p$stmv_variables$Y ]], na.rm=TRUE)  # just a crude guess for each timeslice
 
-    # dat[ xi, p$stmv_variables$LOCS ] = aegis_floor( dat[ xi, p$stmv_variables$LOCS ] / p$pres + 1L ) * p$pres
+    # dat[ xi, ..vns ] = aegis_floor( dat[ xi, ..vns ] / p$pres + 1L ) * p$pres
     iYP = match(
-      array_map( "xy->1", dat[ xi, p$stmv_variables$LOCS ], gridparams=p$gridparams ),
-      array_map( "xy->1", pa[ pa_i , p$stmv_variables$LOCS ], gridparams=p$gridparams )
+      array_map( "xy->1", dat[ xi, ..vns ], gridparams=p$gridparams ),
+      array_map( "xy->1", pa[ pa_i , ..vns ], gridparams=p$gridparams )
     )
     dat$mean[xi] = pa$mean[pa_i][iYP]
 
@@ -69,7 +75,7 @@ stmv__linear = function( p=NULL,  dat=NULL, pa=NULL,  variablelist=FALSE, ...  )
 
   # plot(pred ~ z , dat)
   # lattice::levelplot( mean ~ plon + plat, data=pa, col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
-  ss = try( lm( dat$mean ~ dat[,p$stmv_variables$Y], na.action=na.omit) )
+  ss = try( lm( dat$mean ~ dat[[ p$stmv_variables$Y ]], na.action=na.omit) )
   if ( inherits(ss, "try-error") ) return( NULL )
   rsquared = summary(ss)$r.squared
   if (rsquared < p$stmv_rsquared_threshold ) return(NULL)

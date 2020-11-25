@@ -77,7 +77,7 @@ stmv_interpolate_polygons = function( ip=NULL, p, debugging=FALSE, global_sppoly
 
       dat = matrix( 1, nrow=ndata, ncol=dat_nc )
       dat[,iY] = Y[data_subset$data_index] # these are residuals if there is a global model
-        dat[,ilocs] = Yloc[data_subset$data_index,]
+      dat[,ilocs] = Yloc[data_subset$data_index,]
 
       if (p$nloccov > 0) dat[,icov] = Ycov[data_subset$data_index, icov_local] # no need for other dim checks as this is user provided
       if (exists("TIME", p$stmv_variables)) {

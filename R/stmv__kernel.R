@@ -8,17 +8,21 @@ stmv__kernel = function( p=NULL, dat=NULL, pa=NULL, phi=NULL, nu=NULL, varObs=NU
 
   if (variablelist)  return( c() )
 
-  sdTotal = sd(dat[,p$stmv_variables$Y], na.rm=T)
+  vns = p$stmv_variables$LOCS
+  pa = data.table(pa)
+
+  sdTotal = sd(dat[[ p$stmv_variables$Y ]], na.rm=T)
 
   if ( grepl("fast_predictions", p$stmv_fft_filter)) {
     # predict only where required
-    x_r = range(pa[,p$stmv_variables$LOCS[1]])
-    x_c = range(pa[,p$stmv_variables$LOCS[2]])
+    x_r = range(pa[[ vns[1] ]] )
+    x_c = range(pa[[ vns[2] ]] )
   } else  {
     # predict on full data subset
-    x_r = range(dat[,p$stmv_variables$LOCS[1]])
-    x_c = range(dat[,p$stmv_variables$LOCS[2]])
+    x_r = range(dat[[ vns[1] ]] )
+    x_c = range(dat[[ vns[2] ]] )
   }
+
 
   nr = aegis_floor( diff(x_r)/p$pres + 1L )
   nc = aegis_floor( diff(x_c)/p$pres + 1L )
@@ -37,8 +41,8 @@ stmv__kernel = function( p=NULL, dat=NULL, pa=NULL, phi=NULL, nu=NULL, varObs=NU
   for ( ti in 1:p$nt ) {
 
     if ( exists("TIME", p$stmv_variables) ) {
-      xi   = which( dat[ , p$stmv_variables$TIME] == p$prediction_ts[ti] )
-      pa_i = which( pa[, p$stmv_variables$TIME] == p$prediction_ts[ti] )
+      xi   = which( dat[[ p$stmv_variables$TIME ]] == p$prediction_ts[ti] )
+      pa_i = which( pa[[ p$stmv_variables$TIME ]] == p$prediction_ts[ti] )
       if (length(xi) < 5 ) {
         # print( ti)
         next()
@@ -49,8 +53,8 @@ stmv__kernel = function( p=NULL, dat=NULL, pa=NULL, phi=NULL, nu=NULL, varObs=NU
     }
 
     X = as.image(
-      dat[xi, p$stmv_variables$Y],
-      ind=as.matrix(array_map( "xy->2", coords=dat[xi,p$stmv_variables$LOCS], origin=origin, res=res )),
+      dat[xi] [[p$stmv_variables$Y]],
+      ind=as.matrix(array_map( "xy->2", coords=dat[xi,..vns], origin=origin, res=res )),
       na.rm=TRUE,
       nx=nr,
       ny=nc
@@ -63,19 +67,19 @@ stmv__kernel = function( p=NULL, dat=NULL, pa=NULL, phi=NULL, nu=NULL, varObs=NU
       # pa$sd[pa_i[tokeep]] = sd( dat[xi,p$stmv_variables$Y], na.rm=T)   ## fix
       X = NULL
     }  else  {
-      X_i = array_map( "xy->2", coords=pa[pa_i, p$stmv_variables$LOCS], origin=origin, res=res )
+      X_i = array_map( "xy->2", coords=pa[pa_i, ..vns], origin=origin, res=res )
       tokeep = which( X_i[,1] >= 1 & X_i[,2] >= 1  & X_i[,1] <= nr & X_i[,2] <= nc )
       if (length(tokeep) < 1) next()
       X_i = X_i[tokeep,]
       pa$mean[pa_i[tokeep]] = X[X_i]
-      # pa$sd[pa_i[tokeep]] = sd( dat[xi,p$stmv_variables$Y], na.rm=T)   ## fix
+      # pa$sd[pa_i[tokeep]] = sd( dat[xi] [[p$stmv_variables$Y]], na.rm=T)   ## fix
       X = X_i = NULL
     }
 
-    # dat[ xi, p$stmv_variables$LOCS ] = aegis_floor( dat[ xi, p$stmv_variables$LOCS ] / p$pres + 1L ) * p$pres
+    # dat[ xi, ..vns ] = aegis_floor( dat[ xi, ..vns ] / p$pres + 1L ) * p$pres
     iYP = match(
-      array_map( "xy->1", dat[ xi, p$stmv_variables$LOCS ], gridparams=p$gridparams ),
-      array_map( "xy->1", pa[ pa_i , p$stmv_variables$LOCS ], gridparams=p$gridparams )
+      array_map( "xy->1", dat[ xi, ..vns ], gridparams=p$gridparams ),
+      array_map( "xy->1", pa[ pa_i , ..vns ], gridparams=p$gridparams )
     )
     dat$mean[xi] = pa$mean[pa_i][iYP]
 
@@ -83,7 +87,7 @@ stmv__kernel = function( p=NULL, dat=NULL, pa=NULL, phi=NULL, nu=NULL, varObs=NU
 
   # plot(pred ~ z , dat)
   # lattice::levelplot( mean ~ plon + plat, data=pa, col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
-  ss = try( lm( dat$mean ~ dat[,p$stmv_variables$Y], na.action=na.omit) )
+  ss = try( lm( dat$mean ~ dat[[ p$stmv_variables$Y ]] , na.action=na.omit) )
   if ( inherits(ss, "try-error") ) return( NULL )
   rsquared = summary(ss)$r.squared
   if (rsquared < p$stmv_rsquared_threshold ) return(NULL)

@@ -18,6 +18,9 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
 
   if (variablelist)  return( c() )
 
+  vnt = c( p$stmv_variables$LOCS, p$stmv_variables$Y)
+  pa = data.table(pa)
+
   px = dat # only the static parts .. time has to be a uniform grid so reconstruct below
 
   ids = array_map( "xy->1", px[, c("plon", "plat")], gridparams=p$gridparams ) # 100X faster than paste / merge
@@ -94,7 +97,7 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
   }
 
   # range checks
-  rY = range( dat[,p$stmv_variables$Y], na.rm=TRUE)
+  rY = range( dat[[ p$stmv_variables$Y ]], na.rm=TRUE)
   toosmall = which( ts_preds$predictions$mean < rY[1] )
   toolarge = which( ts_preds$predictions$mean > rY[2] )
   if (length(toosmall) > 0) ts_preds$predictions$mean[toosmall] =  rY[1]
@@ -111,7 +114,7 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
       # debugging plots
       for (ti in 1:p$nt){
         xi = which( pxts[ , p$stmv_variables$TIME ] == p$prediction_ts[ti] )
-        mbas = MBA::mba.surf( pxts[xi, c( p$stmv_variables$LOCS, p$stmv_variables$Y) ], 300, 300, extend=TRUE)$xyz.est
+        mbas = MBA::mba.surf( pxts[xi, ..vnt ], 300, 300, extend=TRUE)$xyz.est
         image(mbas)
       }
   }
@@ -149,7 +152,7 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
 
   if (p$stmv_twostep_space %in% c("glm") ) {
     p$stmv_local_modelformula = p$stmv_local_modelformula_space
-    out = stmv__glm( p, dat=pxts, pa=pa,nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial   )
+    out = stmv__glm( p, dat=pxts, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial   )
   }
 
   if (p$stmv_twostep_space %in% c("bayesx") ) {

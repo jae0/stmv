@@ -83,11 +83,9 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE, just_testing_v
     for ( iip in ip ) {
       Si = p$runs[ iip, "locs" ]
       sloc = Sloc[Si,]
-      nu    = S[Si, i_nu]
-      phi   = S[Si, i_phi]
-      localrange = S[Si, i_localrange]   # attached to p$stmv_autocorrelation_localrange
-      varObs = S[Si, i_sdObs]^2
-      varSpatial = S[Si, i_sdSpatial]^2
+      nu    = p$stmv_lowpass_nu
+      phi   = p$stmv_lowpass_phi
+      localrange = p$stmv_autocorrelation_localrange   # attached to p$stmv_autocorrelation_localrange
 
       localrange_interpolation = ifelse( !exists("stmv_interpolation_basis_distance", p), p$stmv_distance_statsgrid *1.5, p$stmv_interpolation_basis_distance )  # force a simple solution
 
@@ -100,7 +98,11 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE, just_testing_v
 
       dat = matrix( 1, nrow=ndata, ncol=dat_nc )
       dat[,iY] = Y[data_subset$data_index] # these are residuals if there is a global model
-        dat[,ilocs] = Yloc[data_subset$data_index,]
+      dat[,ilocs] = Yloc[data_subset$data_index,]
+
+      # crude
+      varObs = var(dat[,iY]) /2
+      varSpatial = varObs
 
       dat[,ilocs] = dat[,ilocs] + localrange_interpolation * runif(2*ndata, -dist_error, dist_error)
 

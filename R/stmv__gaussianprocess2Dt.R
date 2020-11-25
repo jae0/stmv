@@ -13,24 +13,27 @@ stmv__gaussianprocess2Dt = function(p=NULL, dat=NULL, pa=NULL, localrange=NULL, 
   }
   if (!exists("fields.Covariance", p)) p$fields.Covariance="Exponential" # note that "Rad.cov" is TPS
 
-  sdTotal=sd(dat[,p$stmv_variables$Y], na.rm=TRUE)
+  sdTotal=sd(dat[[ p$stmv_variables$Y ]], na.rm=TRUE)
+
+  pa = data.table(pa)
 
   dat$mean = NA
   pa$mean = NA
   pa$sd = NA
 
   phi.grid = p$phi.grid * localrange
+  vns = p$stmv_variables$LOCS
 
   for ( ti in 1:p$nt ) {
 
     if ( exists("TIME", p$stmv_variables) ) {
-      xi = which( dat[ , p$stmv_variables$TIME ] == p$prediction_ts[ti] )
+      xi = which( dat[[ p$stmv_variables$TIME ]] == p$prediction_ts[ti] )
     } else {
       xi = 1:nrow(dat) # all data as p$nt==1
     }
 
-    xy = dat[xi, p$stmv_variables$LOCS]
-    z = dat[xi, p$stmv_variables$Y]
+    xy = dat[xi, ..vns]
+    z = dat[xi] [[p$stmv_variables$Y]]
 
     fsp = try( MLESpatialProcess(xy, z, cov.function=p$fields.cov.function, cov.args=p$fields.cov.args ,
       theta.grid=phi.grid, lambda.grid=p$lambda.grid, ngrid = 10, niter = 15, tol = 0.01,
@@ -43,8 +46,8 @@ stmv__gaussianprocess2Dt = function(p=NULL, dat=NULL, pa=NULL, localrange=NULL, 
       theta=fsp$pars["theta"], lambda=fsp$pars["lambda"] ) )
     if (inherits(fspmodel, "try-error") )  next()
 
-    dat$mean[xi] = as.vector( predict(fspmodel, x=dat[xi, p$stmv_variables$LOCS] ) )
-    ss = lm( dat$mean[xi] ~ dat[xi,p$stmv_variables$Y], na.action=na.omit)
+    dat$mean[xi] = as.vector( predict(fspmodel, x=dat[xi, ..vns] ) )
+    ss = lm( dat$mean[xi] ~ dat[xi][[ p$stmv_variables$Y ]], na.action=na.omit)
     if ( "try-error" %in% class( ss ) ) next()
     rsquared = summary(ss)$r.squared
     if (rsquared < p$stmv_rsquared_threshold ) next()
@@ -55,8 +58,8 @@ stmv__gaussianprocess2Dt = function(p=NULL, dat=NULL, pa=NULL, localrange=NULL, 
       pa_i = 1:nrow(pa)
     }
 
-    pa$mean[pa_i] = predict(fspmodel, x=pa[pa_, p$stmv_variables$LOCS] )
-    pa$sd[pa_i]   = predictSE(fspmodel, x=pa[pa_, p$stmv_variables$LOCS] )
+    pa$mean[pa_i] = predict(fspmodel, x=pa[pa_, ..vns] )
+    pa$sd[pa_i]   = predictSE(fspmodel, x=pa[pa_, ..vns] )
 
 
     if ( 0 ){
@@ -71,7 +74,7 @@ stmv__gaussianprocess2Dt = function(p=NULL, dat=NULL, pa=NULL, localrange=NULL, 
   }
 
   # plot(pred ~ z , dat)
-  ss = lm( dat$mean ~ dat[,p$stmv_variables$Y], na.action=na.omit)
+  ss = lm( dat$mean ~ dat[[p$stmv_variables$Y]], na.action=na.omit)
   if ( inherits(ss, "try-error") ) return( NULL )
   rsquared = summary(ss)$r.squared
   if (rsquared < p$stmv_rsquared_threshold ) return(NULL)

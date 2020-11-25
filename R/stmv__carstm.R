@@ -24,11 +24,11 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, improve.
     #nr = nx # nr .. x/plon
     #nc = ny # nc .. y/plat
 
-    locnm = p$stmv_variables$LOCS  # for data.table., this has to be a simple variable
+    vns = p$stmv_variables$LOCS  # for data.table., this has to be a simple variable
 
     sppoly = attr( pa, "sppoly" )
     dat$AUID = st_points_in_polygons(
-      pts = st_transform( st_as_sf( as.matrix(dat[, ..locnm ]), coords=locnm, crs=st_crs(p$aegis_proj4string_planar_km) ), crs=st_crs(sppoly) ),
+      pts = st_transform( st_as_sf( as.matrix(dat[, ..vns ]), coords=vns, crs=st_crs(p$aegis_proj4string_planar_km) ), crs=st_crs(sppoly) ),
       polys = sppoly[, "AUID"],
       varname="AUID"
     )

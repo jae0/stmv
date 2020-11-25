@@ -43,7 +43,11 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
 
   params = list(...)
 
-  sdTotal = sd(dat[,p$stmv_variables$Y], na.rm=T)
+  vns = p$stmv_variables$LOCS
+
+  pa = data.table(pa)
+
+  sdTotal = sd(dat[[p$stmv_variables$Y]], na.rm=T)
 
   # system size
   #nr = nx # nr .. x/plon
@@ -55,12 +59,12 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
 
   if ( grepl("fast_predictions", p$stmv_fft_filter)) {
     # predict only where required
-    x_r = range(pa[,p$stmv_variables$LOCS[1]])
-    x_c = range(pa[,p$stmv_variables$LOCS[2]])
+    x_r = range(pa[[vns[1] ]])
+    x_c = range(pa[[vns[2] ]])
   } else {
     # predict on full data subset
-    x_r = range(dat[,p$stmv_variables$LOCS[1]])
-    x_c = range(dat[,p$stmv_variables$LOCS[2]])
+    x_r = range(dat[[vns[1] ]] )
+    x_c = range(dat[[vns[2] ]] )
   }
 
   rr = diff(x_r)
@@ -127,7 +131,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
   distances = NULL
   breaks = NULL
 
-  coo = data.table(array_map( "xy->2", coords=dat[, p$stmv_variables$LOCS], origin=origin, res=res ))
+  coo = data.table(array_map( "xy->2", coords=dat[, ..vns], origin=origin, res=res ))
   names(coo) = c("x", "y")
 
   good = which(coo[,1] >= 1 & coo[,1] <= nr & coo[,2] >= 1  & coo[,2] )
@@ -153,8 +157,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
   for ( ti in 1:p$nt ) {
 
     if ( exists("TIME", p$stmv_variables) ) {
-      xi   = which( dat[ , p$stmv_variables$TIME] == p$prediction_ts[ti] )
-      pa_i = which(  pa[ , p$stmv_variables$TIME] == p$prediction_ts[ti] )
+      xi   = which( dat[[ p$stmv_variables$TIME ]] == p$prediction_ts[ti] )
+      pa_i = which(  pa[[ p$stmv_variables$TIME ]] == p$prediction_ts[ti] )
       if (length(xi) < 5 ) {
         # print( ti)
         next()
@@ -164,7 +168,9 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
     theta.Taper = NULL
 
     # bounds check: make sure predictions exist
-    z = dat[xi, p$stmv_variables$Y]
+    z = dat[xi] [[p$stmv_variables$Y]]
+
+
     zmean = mean(z, na.rm=TRUE)
     zsd = sd(z, na.rm=TRUE)
     zvar = zsd^2
@@ -175,7 +181,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
     if (0) {
       u = as.image(
         X,
-        ind=as.matrix(array_map( "xy->2", coords=dat[xi, p$stmv_variables$LOCS], origin=origin, res=res )),
+        ind=as.matrix(array_map( "xy->2", coords=dat[xi, ..vns], origin=origin, res=res )),
         na.rm=TRUE,
         nx=nr,
         ny=nc
@@ -239,7 +245,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
           stmv_internal_scale=dmax*0.75, cor=p$stmv_autocorrelation_localrange ))
 
         statsvars_scale = c(
-          sdTotal = sd(dat[xi, p$stmv_variables$Y], na.rm=T),
+          sdTotal = sd(dat[xi] [[ p$stmv_variables$Y ]] , na.rm=T),
           sdSpatial = sqrt(fit$summary$varSpatial) ,
           sdObs = sqrt(fit$summary$varObs),
           phi = fit$summary$phi,
@@ -356,15 +362,14 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
       pa$sd[pa_i] = stmv_stats_by_time[ti, match("sdSpatial", p$statsvars )]
     }
 
-    # dat[ xi, p$stmv_variables$LOCS ] = aegis_floor( dat[ xi, p$stmv_variables$LOCS ] / p$pres + 1L ) * p$pres
     iYP = match(
-      array_map( "xy->1", dat[ xi, p$stmv_variables$LOCS ], gridparams=p$gridparams ),
-      array_map( "xy->1", pa[ pa_i , p$stmv_variables$LOCS ], gridparams=p$gridparams )
+      array_map( "xy->1", dat[ xi, ..vns ], gridparams=p$gridparams ),
+      array_map( "xy->1", pa[ pa_i , ..vns ], gridparams=p$gridparams )
     )
     dat$mean[xi] = pa$mean[pa_i][iYP]
   }
 
-  ss = lm( dat$mean ~ dat[,p$stmv_variables$Y], na.action=na.omit)
+  ss = lm( dat$mean ~ dat[[p$stmv_variables$Y]], na.action=na.omit)
   rsquared = ifelse( inherits(ss, "try-error"), NA,  summary(ss)$r.squared )
 
   if (exists("stmv_rsquared_threshold", p)) {

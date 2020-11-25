@@ -6,39 +6,45 @@ stmv__krige = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varObs=NUL
   #\\      .. you had better have enough data in each time slice ..  essentially this is kriging
   if (variablelist)  return( c() )
 
-  sdTotal = sd(dat[, p$stmv_variables$Y], na.rm=T)
+  sdTotal = sd(dat[[ p$stmv_variables$Y ]], na.rm=T)
 
   dat$mean = NA
+
+  pa = data.table(pa)
+
   pa$mean = NA
   pa$sd = sqrt(varSpatial)  # leave as this as sd estimation is too expensive
+
+  vns = p$stmv_variables$LOCS
 
   for ( ti in 1:p$nt ) {
 
     if ( exists("TIME", p$stmv_variables) ) {
-      xi = which( dat[ , p$stmv_variables$TIME ] == p$prediction_ts[ti] )
-      pa_i = which( pa[, p$stmv_variables$TIME ] == p$prediction_ts[ti] )
+      xi = which( dat[[ p$stmv_variables$TIME ]] == p$prediction_ts[ti] )
+      pa_i = which( pa[[ p$stmv_variables$TIME ]] == p$prediction_ts[ti] )
     } else {
       xi = 1:nrow(dat) # all data as p$nt==1
       pa_i = 1:nrow(pa)
     }
 
-    fspmodel = try( Krig( dat[xi, p$stmv_variables$LOCS], dat[xi, p$stmv_variables$Y],
+    fspmodel = try( Krig( dat[xi, ..vns], dat[xi] [[p$stmv_variables$Y]],
       sigma2=varObs, rho=varSpatial , cov.function="stationary.cov",
       Covariance="Matern", range=phi, smoothness=nu) )
     if (inherits(fspmodel, "try-error") )  next()
     dat$mean[xi] = fspmodel$fitted.values
-    ss = try( lm( dat$mean[xi] ~ dat[xi,p$stmv_variables$Y], na.action=na.omit) )
+    ss = try( lm( dat$mean[xi] ~ dat[xi] [[p$stmv_variables$Y ]], na.action=na.omit) )
     if ( inherits(ss, "try-error") ) next()
     rsquared = summary(ss)$r.squared
     if (rsquared < p$stmv_rsquared_threshold ) next()
-    pa$mean[pa_i] = predict(fspmodel, x=pa[pa_i, p$stmv_variables$LOCS] )
-    # pa$sd[pa_i]   = predictSE(fspmodel, x=pa[pa_i, p$stmv_variables$LOCS] ) # SE estimates are slooow
+    pa$mean[pa_i] = predict(fspmodel, x=pa[pa_i, ..vns] )
+    # pa$sd[pa_i]   = predictSE(fspmodel, x=pa[pa_i, ..vns] ) # SE estimates are slooow
 
     if ( 0 ){
       # debugging plots
       ti = 1
-      xi = which( dat[ , p$stmv_variables$TIME ] == p$prediction_ts[ti] )
-      mbas = MBA::mba.surf( dat[xi, c( p$stmv_variables$LOCS, p$stmv_variables$Y) ], 300, 300, extend=TRUE)$xyz.est
+      vnt = c( p$stmv_variables$LOCS, p$stmv_variables$Y)
+      xi = which( dat[[ p$stmv_variables$TIME ]] == p$prediction_ts[ti] )
+      mbas = MBA::mba.surf( dat[xi, ..vnt ], 300, 300, extend=TRUE)$xyz.est
       image(mbas)
 
       surface(fspmodel)
