@@ -77,8 +77,12 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   if (class(DATA) != "list") stop( "||| DATA should a list ... ")
 
 
-  testvars = c(p$stmv_variables$Y, p$stmv_variables$COV, p$stmv_variables$TIME, p$stmv_variables$LOC)
-  withdata = which(is.finite( (rowSums(DATA$input[, testvars] )) ) )
+  testvars = c(p$stmv_variables$Y, p$stmv_variables$COV, p$stmv_variables$TIME, p$stmv_variables$LOCS)
+  if (length(testvars)==1 ) {
+    withdata = which( is.finite( DATA$input[, testvars]  ) )
+  } else {
+    withdata = which( is.finite( rowSums(DATA$input[, testvars] ) ) )
+  }
   if (length(withdata) < 1) stop( "Missing data or insufficient data")
   DATA$input = DATA$input[withdata, ]
   withdata=NULL

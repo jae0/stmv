@@ -23,23 +23,35 @@ stmv_predictionarea_polygons = function(p, sloc, global_sppoly=NULL, windowsize.
 
     # default behaviour .. lattice grid
       # data_subset = NULL
-    sppoly = sf::st_as_sf( pa, coords=pa_coord_names )
-    sf::st_crs(sppoly) = sf::st_crs( p$aegis_proj4string_planar_km )
-    sp_grid = raster::raster( sppoly, nrows=nr, ncols=nc )
-    sppoly = as( as(sp_grid, "SpatialPolygonsDataFrame"), "sf")
-
+    sppoly = sf::st_as_sf( pa, coords=pa_coord_names, crs=st_crs( p$aegis_proj4string_planar_km) )
 
 if (0) {
     # not using raster -- incomplete
+
+    sppoly = (
+      st_make_grid( sppoly, cellsize=areal_units_resolution_km,  what="polygons", square=TRUE )
+      %>% st_as_sf( crs=st_crs( p$aegis_proj4string_planar_km ))
+    )
     spdf0 = sf::st_as_sf( pa, coords=pa_coord_names, crs=st_crs( p$aegis_proj4string_planar_km ) )
     sppoly = st_as_sf( st_make_grid( spdf0, n=c(nr, nc),  what="polygons", square=TRUE ) )
     sppoly$internal_id = 1:nrow(sppoly)
     spdf0$internal_id = st_points_in_polygons( spdf0, sppoly, varname="internal_id" )
     o = match( sppoly$internal_id,spdf0$internal_id )
-    sppoly[ ]
+
+      sppoly = st_as_sf( st_make_grid( Z, cellsize=areal_units_resolution_km,  what="polygons", square=TRUE ) )
+      sppoly$AUID = as.character( 1:nrow(sppoly) )  # row index
+      row.names(sppoly) = sppoly$AUID
+
+      require(raster)
+      raster_template = raster::raster(extent(Z), res=areal_units_resolution_km, crs=projection(Z) ) # +1 to increase the area
+      sppoly = raster::rasterize( Z, raster_template, field=Z$z )
+      sppoly = as(sppoly, "SpatialPixelsDataFrame")
+      sppoly = as( as(sppoly, "SpatialPolygonsDataFrame"), "sf")
+      raster_template = NULL
 
 }
 
+    sppoly = as( as( raster::raster( sppoly, nrows=nr, ncols=nc ), "SpatialPolygonsDataFrame" ), "sf" )
 
     if (exists("i", sppoly) ) {
       sppoly$AUID = sppoly$i
