@@ -1,5 +1,5 @@
 
-stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, improve.hyperparam.estimates=FALSE, ... ) {
+stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, improve.hyperparam.estimates=FALSE, ... ) {
 
 
     if (0) {
@@ -9,10 +9,6 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, improve.
       eps = 1e-9
       improve.hyperparam.estimates=FALSE
       variablelist=FALSE
-    }
-
-    if (variablelist)  {
-      return( varnames )
     }
 
 

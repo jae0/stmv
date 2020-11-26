@@ -1,5 +1,5 @@
 
-stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpatial=varSpatial, variablelist=FALSE, ... ) {
+stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpatial=varSpatial, ... ) {
 
   #\\ twostep modelling time first as a simple ts and then spatial or spatio-temporal interpolation
   #\\ nu is the bessel smooth param
@@ -14,9 +14,6 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
     sloc = Sloc[Si,]
     eps = 1e-9
   }
-
-
-  if (variablelist)  return( c() )
 
   vnt = c( p$stmv_variables$LOCS, p$stmv_variables$Y)
   pa = data.table(pa)

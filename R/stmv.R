@@ -496,23 +496,13 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   # str( res )
   print( str(res$stmv_stats) )
 
+  # require knowledge of size of stats output which varies with a given type of analysis
   if (!is.null(res)) {
     p$statsvars = names(res$stmv_stats )
   } else {
-    # require knowledge of size of stats output which varies with a given type of analysis
-    p$statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "phi", "nu", "localrange" )
+    # generic list
+    p$statsvars = c( "sdTotal", "sdSpatial", "sdObs", "phi", "nu", "localrange", "rsquared", "ndata" )
     if (exists("TIME", p$stmv_variables) )  p$statsvars = c( p$statsvars, "ar_timerange", "ar_1" )
-    if (p$stmv_local_modelengine == "userdefined" ) {
-      if (exists("stmv_local_modelengine", p) ) {
-        if (exists("stmv_local_modelengine_userdefined", p) ) {
-          if (class(p$stmv_local_modelengine_userdefined) == "function" ) {
-            oo = NULL
-            oo = try( p$stmv_local_modelengine_userdefined(variablelist=TRUE), silent=TRUE )
-            if ( ! inherits(oo, "try-error") ) p$statsvars = unique( c( p$statsvars, oo ) )
-          }
-        }
-      }
-    }
   }
 
   res = NULL

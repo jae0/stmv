@@ -1,5 +1,5 @@
 
-stmv_scale = function( ip=NULL, p, debugging=FALSE, eps = 1e-6, ... ) {
+stmv_scale = function( ip=NULL, p, debugging=FALSE, eps=1e-6, ... ) {
   #\\ core function to interpolate (model variogram) in parallel
 
   if (0) {
@@ -13,9 +13,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps = 1e-6, ... ) {
     eps = 1e-6
   }
 
-
-
-  p = parameters_add(p, list(...)) # add passed args to parameter list, priority to args
+  p = parameters_add( p, list(...) ) # add passed args to parameter list, priority to args
 
   if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
 
@@ -138,7 +136,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps = 1e-6, ... ) {
       localrange = matern_phi2distance( phi=om$phi, nu=om$nu, cor=p$stmv_autocorrelation_localrange ),
       ndata=ndata
     )
-    S[Si,match( names(statvars_scale), p$statsvars )] = statvars_scale
+    S[Si, match( names(statvars_scale), p$statsvars )] = statvars_scale[p$statsvars   ]
 
 
     # temporal

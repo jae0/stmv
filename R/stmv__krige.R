@@ -1,10 +1,10 @@
 
-stmv__krige = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varObs=NULL, varSpatial=NULL, variablelist=FALSE, ... ) {
+stmv__krige = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varObs=NULL, varSpatial=NULL, ... ) {
   #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
   # \ as a 2D gaussian process (basically, simple krigimg or TPS -- time is treated as being independent)
   #\\ note: time is not being modelled and treated independently
   #\\      .. you had better have enough data in each time slice ..  essentially this is kriging
-  if (variablelist)  return( c() )
+
 
   sdTotal = sd(dat[[ p$stmv_variables$Y ]], na.rm=T)
 
@@ -64,6 +64,6 @@ stmv__krige = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varObs=NUL
   rsquared = summary(ss)$r.squared
   if (rsquared < p$stmv_rsquared_threshold ) return(NULL)
 
-  stmv_stats = list( sdTotal=sdTotal, rsquared=rsquared, ndata=nrow(dat) ) # must be same order as p$statsvars
+  stmv_stats = list( sdTotal=sdTotal, rsquared=rsquared, ndata=nrow(dat) )
   return( list( predictions=pa, stmv_stats=stmv_stats ) )
 }

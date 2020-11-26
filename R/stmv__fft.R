@@ -1,5 +1,5 @@
 
-stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=NULL, varObs=NULL, variablelist=FALSE, eps=1e-9, ... ) {
+stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=NULL, varObs=NULL, eps=1e-9, ... ) {
 
   #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
   #\\ note: time is not being modelled and treated independently
@@ -39,7 +39,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
     eps = 1e-9
   }
 
-  if (variablelist)  return( c() )
+  statsvars = c( "sdTotal", "sdSpatial", "sdObs", "phi", "nu", "localrange", "ndata" )
 
   params = list(...)
 
@@ -145,7 +145,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
 
   stmv_stats_by_time = NA
   if ( grepl("stmv_variogram_resolve_time", p$stmv_fft_filter)) {
-      stmv_stats_by_time = matrix( NA, ncol=length(p$statsvars), nrow=p$nt )  # container to hold time-specific results
+      stmv_stats_by_time = matrix( NA, ncol=length( statsvars), nrow=p$nt )  # container to hold time-specific results
   }
 
   # things to do outside of the time loop
@@ -253,7 +253,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
           localrange = fit$summary$localrange,
           ndata=length(xi)
         )
-        stmv_stats_by_time[ti, match( names(statsvars_scale), p$statsvars )] = statsvars_scale
+        stmv_stats_by_time[ti, match( names(statsvars_scale), statsvars )] = statsvars_scale
         uu = NULL
         statsvars_scale = NULL
 
@@ -349,7 +349,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
       pa$mean[pa_i] = X
       X = NULL
     } else {
-      X_i = array_map( "xy->2", coords=pa[pa_i, p$stmv_variables$LOCS], origin=origin, res=res )
+      X_i = array_map( "xy->2", coords=pa[pa_i] [[p$stmv_variables$LOCS]], origin=origin, res=res )
       tokeep = which( X_i[,1] >= 1 & X_i[,2] >= 1  & X_i[,1] <= nr & X_i[,2] <= nc )
       if (length(tokeep) < 1) next()
       X_i = X_i[tokeep,]
@@ -359,7 +359,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
 
 
     if ( grepl("stmv_variogram_resolve_time", p$stmv_fft_filter)) {
-      pa$sd[pa_i] = stmv_stats_by_time[ti, match("sdSpatial", p$statsvars )]
+      pa$sd[pa_i] = stmv_stats_by_time[ti, match("sdSpatial", statsvars )]
     }
 
     iYP = match(
@@ -377,11 +377,11 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
     if (rsquared < p$stmv_rsquared_threshold ) return(NULL)
   }
 
-
   stmv_stats = list( sdTotal=sdTotal, rsquared=rsquared, ndata=nrow(dat) )
 
   if ( grepl("stmv_variogram_resolve_time", p$stmv_fft_filter)) {
     stmv_stats = as.list(colMeans(stmv_stats_by_time, na.rm=TRUE))
+    stmv_stats[ match("rsquared", statsvars )] = rsquared
   }
 
   # lattice::levelplot( mean ~ plon + plat, data=pa, col.regions=heat.colors(100), scale=list(draw=TRUE) , aspect="iso" )

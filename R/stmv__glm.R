@@ -1,9 +1,8 @@
 
-stmv__glm = function(p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
+stmv__glm = function(p=NULL, dat=NULL, pa=NULL, ... ) {
   #\\ this is the core engine of stmv .. localised space-time modelling interpolation and prediction
   #\\ simple GAM with spatial weights (inverse distance squared) and ts harmonics
   #\\ operating upon link scale ... family for the local model is forced to be gaussian("identity")
-  if (variablelist)  return( c() )
 
   sdTotal=sd(dat[[p$stmv_variables$Y]], na.rm=T)
 
@@ -30,7 +29,7 @@ stmv__glm = function(p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
   pa$mean = as.vector(out$fit)
   pa$sd = as.vector(out$se.fit) # this is correct: se.fit== stdev of the mean fit: eg:  https://stat.ethz.ch/pipermail/r-help/2005-July/075856.html
 
-  stmv_stats = list( sdTotal=sdTotal, rsquared=rsq, ndata=nrow(dat) ) # must be same order as p$statsvars .. pseudo rsquared for logistic .. for poisson {1- logLik(mod) / logLik(mod_saturated)} might be better
+  stmv_stats = list( sdTotal=sdTotal, rsquared=rsq, ndata=nrow(dat) ) # pseudo rsquared for logistic .. for poisson {1- logLik(mod) / logLik(mod_saturated)} might be better
 
   # lattice::levelplot( mean ~ plon + plat, data=pa[pa$tiyr==2012.05,], col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
 

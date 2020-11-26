@@ -1,12 +1,10 @@
 
-stmv__kernel = function( p=NULL, dat=NULL, pa=NULL, phi=NULL, nu=NULL, varObs=NULL, varSpatial=NULL,  variablelist=FALSE, ...  ) {
+stmv__kernel = function( p=NULL, dat=NULL, pa=NULL, phi=NULL, nu=NULL, varObs=NULL, varSpatial=NULL, ...  ) {
   #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
   #\\ note: time is not being modelled and treated independently
   #\\      .. you had better have enough data in each time slice ..  essentially this is cubic b-splines interpolation
 
   library(fields)
-
-  if (variablelist)  return( c() )
 
   vns = p$stmv_variables$LOCS
   pa = data.table(pa)
@@ -92,6 +90,7 @@ stmv__kernel = function( p=NULL, dat=NULL, pa=NULL, phi=NULL, nu=NULL, varObs=NU
   rsquared = summary(ss)$r.squared
   if (rsquared < p$stmv_rsquared_threshold ) return(NULL)
 
-  stmv_stats = list( sdTotal=sdTotal, rsquared=rsquared, ndata=nrow(dat) ) # must be same order as p$statsvars
+  stmv_stats = list( sdTotal=sdTotal, rsquared=rsquared, ndata=nrow(dat) )
+
   return( list( predictions=pa, stmv_stats=stmv_stats ) )
 }

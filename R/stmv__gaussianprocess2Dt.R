@@ -1,10 +1,9 @@
 
-stmv__gaussianprocess2Dt = function(p=NULL, dat=NULL, pa=NULL, localrange=NULL,  variablelist=FALSE, ...  ) {
+stmv__gaussianprocess2Dt = function(p=NULL, dat=NULL, pa=NULL, localrange=NULL, ...  ) {
   #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
   # \ as a 2D gaussian process (basically, simple krigimg or TPS -- time is treated as being independent)
   #\\ note: time is not being modelled and treated independently
   #\\      .. you had better have enough data in each time slice ..  essentially this is kriging
-  if (variablelist)  return( c() )
 
   if (!exists("fields.cov.function", p)) p$fields.cov.function="stationary.cov"
   if (!exists("fields.cov.args", p) & p$fields.Covariance=="Matern") {
@@ -81,7 +80,7 @@ stmv__gaussianprocess2Dt = function(p=NULL, dat=NULL, pa=NULL, localrange=NULL, 
 
   # TODO:: add some more stats: eg. range estimates, nugget/sill, etc..
 
-  stmv_stats = list( sdTotal=sdTotal, rsquared=rsquared, ndata=nrow(dat) ) # must be same order as p$statsvars
+  stmv_stats = list( sdTotal=sdTotal, rsquared=rsquared, ndata=nrow(dat) )
 
   # lattice::levelplot( mean ~ plon + plat, data=pa, col.regions=heat.colors(100), scale=list(draw=FALSE) , aspect="iso" )
 

@@ -1,12 +1,10 @@
 
-stmv__akima = function( p=NULL,  dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) {
+stmv__akima = function( p=NULL,  dat=NULL, pa=NULL, ...  ) {
   #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
   #\\ note: time is not being modelled and treated independently
   #\\      .. you had better have enough data in each time slice ..  essentially this is cubic b-splines interpolation
 
   library(akima)  ### slow
-
-  if (variablelist)  return( c() )
 
   vns = p$stmv_variables$LOCS
 
@@ -23,6 +21,9 @@ stmv__akima = function( p=NULL,  dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) 
   res=c(p$pres, p$pres)
 
   dat$mean = NA
+
+  pa = data.table(pa)
+
   pa$mean = NA
   pa$sd = NA
 
@@ -79,6 +80,7 @@ stmv__akima = function( p=NULL,  dat=NULL, pa=NULL,  variablelist=FALSE, ...  ) 
   rsquared = summary(ss)$r.squared
   if (rsquared < p$stmv_rsquared_threshold ) return(NULL)
 
-  stmv_stats = list( sdTotal=sdTotal, rsquared=rsquared, ndata=nrow(dat) ) # must be same order as p$statsvars
+  stmv_stats = list( sdTotal=sdTotal, rsquared=rsquared, ndata=nrow(dat) )
+
   return( list( predictions=pa, stmv_stats=stmv_stats ) )
 }

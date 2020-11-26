@@ -105,12 +105,6 @@ if (0) {
   dev.new(); surface( as.image( Z=DATA$input$z, x=DATA$input[, c("plon", "plat")], nx=p$nplons, ny=p$nplats, na.rm=TRUE) )
 
 
-# p$statsvars = c("sdTotal", "ndata", "fixed_mean", "fixed_sd", "dic", "dic_p_eff",
-#   "waic", "waic_p_eff", "mlik", "Expected_number_of_parameters",
-#   "Stdev_of_the_number_of_parameters", "Number_of_equivalent_replicates",
-#   "Precision_for_the_Gaussian_observations", "Precision_for_aui",
-#   "Phi_for_aui", "Precision_for_the_Gaussian_observations_sd", "Precision_for_aui_sd", "Phi_for_aui_sd"
-# )
 
 
 stmv( p=p  )  # This will take from a few minutes, depending upon system
@@ -124,10 +118,19 @@ locations =  spatial_grid( p )
 # comparison
 dev.new(); surface( as.image( Z=predictions, x=locations, nx=p$nplons, ny=p$nplats, na.rm=TRUE) )
 
-(p$statsvars)
-# p$statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "phi", "nu", "localrange" )
+
+statsvars = dimnames(statistics)[[2]]
+
+# statsvars = c("sdTotal", "ndata", "fixed_mean", "fixed_sd", "dic", "dic_p_eff",
+#   "waic", "waic_p_eff", "mlik", "Expected_number_of_parameters",
+#   "Stdev_of_the_number_of_parameters", "Number_of_equivalent_replicates",
+#   "Precision_for_the_Gaussian_observations", "Precision_for_aui",
+#   "Phi_for_aui", "Precision_for_the_Gaussian_observations_sd", "Precision_for_aui_sd", "Phi_for_aui_sd"
+# )
+
+# statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "phi", "nu", "localrange" )
 dev.new(); levelplot( predictions[] ~ locations[,1] + locations[,2], aspect="iso" )
-dev.new(); levelplot( statistics[,match("nu", p$statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) # nu
-dev.new(); levelplot( statistics[,match("sdTotal", p$statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) #sd total
-dev.new(); levelplot( statistics[,match("localrange", p$statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) #localrange
+dev.new(); levelplot( statistics[,match("nu", statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) # nu
+dev.new(); levelplot( statistics[,match("sdTotal", statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) #sd total
+dev.new(); levelplot( statistics[,match("localrange", statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) #localrange
 

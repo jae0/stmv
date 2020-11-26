@@ -1,11 +1,10 @@
 
-stmv__bayesx = function( p=NULL, dat=NULL, pa=NULL, variablelist=FALSE, ... ) {
+stmv__bayesx = function( p=NULL, dat=NULL, pa=NULL, ... ) {
   #\\ this is the core engine of stmv .. localised space-time modelling interpolation and prediction .. using bayesx
 
   # EG: see: bayesx.term.options( bs="kr", method="REML" )
   #  logzinc ~  sx( x,y, nu=1.5, bs="kr")  # "kr" is perhaps overly smooth  ..  ie guassian process  .. kriging
   #  logzinc ~  sx( x,y, bs="te")  # more detail .. "te" is preferred
-  if (variablelist)  return( c() )
 
   sdTotal=sd(dat[[ p$stmv_variables$Y ]], na.rm=T)
 

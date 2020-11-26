@@ -1,10 +1,9 @@
 
-stmv__tps = function( p=NULL, dat=NULL, pa=NULL, lambda=NULL, variablelist=FALSE, ...  ) {
+stmv__tps = function( p=NULL, dat=NULL, pa=NULL, lambda=NULL, ...  ) {
   #\\ this is the core engine of stmv .. localised space (no-time) modelling interpolation
   # \ as a 2D gaussian process (basically, simple krigimg or TPS -- time is treated as being independent)
   #\\ note: time is not being modelled and treated independently
   #\\      .. you had better have enough data in each time slice ..
-  if (variablelist)  return( c() )
 
   vns = p$stmv_variables$LOCS
 
@@ -55,6 +54,7 @@ stmv__tps = function( p=NULL, dat=NULL, pa=NULL, lambda=NULL, variablelist=FALSE
   rsquared = summary(ss)$r.squared
   if (rsquared < p$stmv_rsquared_threshold ) return(NULL)
 
-  stmv_stats = list( sdTotal=sdTotal, rsquared=rsquared, ndata=nrow(dat) ) # must be same order as p$statsvars
+  stmv_stats = list( sdTotal=sdTotal, rsquared=rsquared, ndata=nrow(dat) )
+
   return( list( predictions=pa, stmv_stats=stmv_stats ) )
 }
