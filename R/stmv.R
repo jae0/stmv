@@ -494,7 +494,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
 
   # str( res )
-  print( str(res$stmv_stats) )
+#  print( str(res$stmv_stats) )
 
   # require knowledge of size of stats output which varies with a given type of analysis
   p$statsvars = c("sdTotal", "rsquared", "ndata")
