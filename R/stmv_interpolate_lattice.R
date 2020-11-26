@@ -417,10 +417,14 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE, just_testing_v
       }
     }
 
-    for ( vv in 1:length(p$statsvars) ) {
-      vn = p$statsvars[vv]
+    for ( vv in 1:length(res$stmv_stats) ) {
+      vn = names(res$stmv_stats)[vv]
       vi = match(vn, p$statsvars)
-      if ( is.finite(res$stmv_stats[[ vn ]] ) ) S[Si, vi] = res$stmv_stats[[ vn ]]
+      if (is.finite(vi) {
+        if ( is.finite(res$stmv_stats[[ vn ]] ) ) {
+          S[Si, vi] = res$stmv_stats[[ vn ]]
+        }
+      }
     }
 
     sf = try( stmv_predict_update(p=p, preds=res$predictions ) )

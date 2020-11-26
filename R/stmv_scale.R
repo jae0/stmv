@@ -137,8 +137,17 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps=1e-6, ... ) {
       localrange = matern_phi2distance( phi=om$phi, nu=om$nu, cor=p$stmv_autocorrelation_localrange ),
       ndata=ndata
     )
-    S[Si, match( names(statvars_scale), p$statsvars )] = statvars_scale[p$statsvars   ]
 
+
+    for ( vv in 1:length(statvars_scale) ) {
+      vn = names(statvars_scale)[vv]
+      vi = match(vn, p$statsvars)
+      if ( is.finite(vi)) {
+        if ( is.finite( statvars_scale[[ vn ]] ) ) {
+          S[Si, vi] = statvars_scale[[ vn ]]
+        }
+      }
+    }
 
     # temporal
     if (p$aegis_dimensionality =="space") {
