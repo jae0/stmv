@@ -317,7 +317,7 @@ stmv_interpolate_polygons = function( ip=NULL, p, debugging=FALSE, global_sppoly
     for ( vv in 1:length(res$stmv_stats) ) {
       vn = names(res$stmv_stats)[vv]
       vi = match(vn, p$statsvars)
-      if (is.finite(vi) {
+      if (is.finite(vi)) {
         if ( is.finite(res$stmv_stats[[ vn ]] ) ) {
           S[Si, vi] = res$stmv_stats[[ vn ]]
         }
