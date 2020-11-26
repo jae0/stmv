@@ -25,18 +25,15 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
 
   if (!is.null(nu)) {  # ie. nu is fixed
 
-
-
     vario_function_phi = function(par, vgs, vxs, nu, w){
       # ie. nu is fixed
-      if (par["phi"] < 0.001) return(0.001)
-      if (par["phi"] > 5 ) return(5)
+      if (par["phi"] < 0.001) par["phi"] = 0.001
+      if (par["phi"] > 5 ) par["phi"] = 5
       vgm = par["total.var"] *( (1 -par["sigma.sq.fraction"])  +  par["sigma.sq.fraction"]*( 1-stmv_matern(distance=vxs, mRange=par["phi"], mSmooth=nu ) ) )
       # vgm = par["tau.sq"] + par["sigma.sq"]*{ 1-stmv_matern(distance=vxs, mRange=par["phi"], mSmooth=nu) }
       obj = sum( w * (vgs - vgm)^2, na.rm=TRUE) # vario normal errors, no weights , etc.. just the line
       return(obj)
     }
-
 
     par = c(total.var=1, sigma.sq.fraction=0.75, phi=0.9 )
     lower =c(0.5, 0, 0.001 )
@@ -66,10 +63,10 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
 
     vario_function_phi_nu = function(par, vgs, vxs, w){
       # ie. nu and phi are both estimated
-      if (par["nu"] < 0.01) return(0.01)
-      if (par["phi"] <= 0.001 ) return(0.001)
-      if (par["nu"] > 5 ) return(5)
-      if (par["phi"] > 5 ) return(5)
+      if (par["nu"] < 0.01) par["nu"] = 0.01
+      if (par["phi"] <= 0.001 ) par["phi"] = 0.001
+      if (par["nu"] > 5 ) par["nu"] = 5
+      if (par["phi"] > 5 ) par["phi"] = 5
 
       vgm = par["total.var"] *( (1 -par["sigma.sq.fraction"])  +  par["sigma.sq.fraction"]*( 1-stmv_matern(distance=vxs, mRange=par["phi"], mSmooth=par["nu"]) ) )
       obj = sum( w * (vgs - vgm)^2, na.rm=TRUE) # vario normal errors, no weights , etc.. just the line

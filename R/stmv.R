@@ -497,12 +497,13 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   print( str(res$stmv_stats) )
 
   # require knowledge of size of stats output which varies with a given type of analysis
-  p$statsvars = c("sdTotal", "rsquared", "ndata")
-  if (!is.null(res))  p$statsvars = names(res$stmv_stats )
-  if (! "carstm" %in% runmode ) p$statsvars = c(p$statsvars,  "sdSpatial", "sdObs", "phi", "nu", "localrange" )
-  if (exists("TIME", p$stmv_variables) )  p$statsvars = c( p$statsvars, "ar_timerange", "ar_1" )
-
-  p$statsvars = unique( p$statsvars )
+  if (!is.null(res)) {
+    p$statsvars = names(res$stmv_stats )
+  } else {
+    # generic list
+    p$statsvars = c( "sdTotal", "sdSpatial", "sdObs", "phi", "nu", "localrange", "rsquared", "ndata" )
+    if (exists("TIME", p$stmv_variables) )  p$statsvars = c( p$statsvars, "ar_timerange", "ar_1" )
+  }
 
   res = NULL
 
@@ -683,7 +684,8 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         p = p0 #reset
         p$stmv_interpolation_basis_correlation = p$stmv_autocorrelation_basis_interpolation[j]
         p$runmode = paste("interpolate_correlation_basis_", p$stmv_interpolation_basis_correlation, sep="")
-        p$clusters = p$stmv_runmode[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
+        jcpu  = ifelse( j > length( p$stmv_runmode[["interpolate"]] ) , length(p$stmv_runmode[["interpolate"]] ), j)
+        p$clusters = p$stmv_runmode[["interpolate"]][[ jcpu ]] # as ram reqeuirements increase drop cpus
 
         if (exists("stmv_fft_filter", p)) {
           if (grepl("fast_and_exhaustive_predictions", p$stmv_fft_filter)) {
@@ -761,7 +763,8 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         p = p0 #reset
         p$stmv_interpolation_basis_distance = p$stmv_distance_basis_interpolation[j]
         p$runmode = paste("interpolate_distance_basis_", p$stmv_interpolation_basis_distance, sep="")
-        p$clusters = p$stmv_runmode[["interpolate_distance_basis"]][[j]] # as ram reqeuirements increase drop cpus
+        jcpu  = ifelse( j > length(p$stmv_runmode[["interpolate_distance_basis"]]), length(p$stmv_runmode[["interpolate_distance_basis"]]), j)
+        p$clusters = p$stmv_runmode[["interpolate_distance_basis"]][[jcpu]] # as ram reqeuirements increase drop cpus
         message( "\n||| Entering <", p$runmode, " > : ", format(Sys.time()) )
         currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
         if ( currentstatus$n.todo == 0 ) break()
@@ -825,7 +828,8 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
           p = p0 #reset
           p$local_interpolation_correlation = p$stmv_autocorrelation_basis_interpolation[j]
           p$runmode = paste("interpolate_hybrid_boost_", p$local_interpolation_correlation, sep="")
-          p$clusters = p$stmv_runmode[["interpolate_hybrid_boost"]][[j]] # as ram reqeuirements increase drop cpus
+          jcpu  = ifelse( j > length(p$stmv_runmode[["interpolate_hybrid_boost"]]), length(p$stmv_runmode[["interpolate_hybrid_boost"]]), j)
+          p$clusters = p$stmv_runmode[["interpolate_hybrid_boost"]][[jcpu]] # as ram reqeuirements increase drop cpus
           message( "\n||| Entering <", p$runmode, "> stage: ", format(Sys.time()) , "\n" )
           p$stmv_local_modelengine = "kernel"  # override -- no covariates, basic moving window average (weighted by inverse variance)
           currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
@@ -870,7 +874,8 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         p = p0 #reset
         p$stmv_interpolation_basis_distance = p$stmv_distance_scale[j]
         p$runmode = "interpolate_predictions"
-        p$clusters = p$stmv_runmode[["interpolate_predictions"]][[j]] # as ram reqeuirements increase drop cpus
+        jcpu  = ifelse( j > length(p$stmv_runmode[["interpolate_predictions"]]), length(p$stmv_runmode[["interpolate_predictions"]]), j)
+        p$clusters = p$stmv_runmode[["interpolate_predictions"]][[jcpu]] # as ram reqeuirements increase drop cpus
         stmv_statistics_status( p=p, reset=c( "complete" ), verbose=FALSE )
         currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
         if ( currentstatus$n.todo == 0 ) break()

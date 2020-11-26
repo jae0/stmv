@@ -129,6 +129,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps=1e-6, ... ) {
 
     statvars_scale = c(
       sdTotal =sqrt( o$varZ),
+      rsquared=NA,
       sdSpatial = sqrt(om$varSpatial) ,
       sdObs = sqrt(om$varObs),
       phi = om$phi,
