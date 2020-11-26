@@ -497,13 +497,12 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   print( str(res$stmv_stats) )
 
   # require knowledge of size of stats output which varies with a given type of analysis
-  if (!is.null(res)) {
-    p$statsvars = names(res$stmv_stats )
-  } else {
-    # generic list
-    p$statsvars = c( "sdTotal", "sdSpatial", "sdObs", "phi", "nu", "localrange", "rsquared", "ndata" )
-    if (exists("TIME", p$stmv_variables) )  p$statsvars = c( p$statsvars, "ar_timerange", "ar_1" )
-  }
+  p$statsvars = c("sdTotal", "rsquared", "ndata")
+  if (!is.null(res))  p$statsvars = names(res$stmv_stats )
+  if (! "carstm" %in% runmode ) p$statsvars = c(p$statsvars,  "sdSpatial", "sdObs", "phi", "nu", "localrange" )
+  if (exists("TIME", p$stmv_variables) )  p$statsvars = c( p$statsvars, "ar_timerange", "ar_1" )
+
+  p$statsvars = unique( p$statsvars )
 
   res = NULL
 
