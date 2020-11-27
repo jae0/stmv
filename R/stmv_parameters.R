@@ -84,9 +84,15 @@ stmv_parameters = function( p=list(), ... ) {
   if (!exists("stmv_variables", p)) p$stmv_variables=list()
   p = stmv_variablelist(p)
 
+  minresolution = c(p$pres, p$pres )
+  if ( exists("TIME", p$stmv_variables) ) minresolution = c(p$pres, p$pres, p$tres)
+
+  nloccov = 0
+  if ( exists("local_cov", p$stmv_variables) ) nloccov = length(p$stmv_variables$local_cov)
+
   p = parameters_add_without_overwriting( p,
-    minresolution = ifelse( exists("TIME", p$stmv_variables), c(p$pres, p$pres, p$tres), c(p$pres, p$pres ) ),
-    nloccov = ifelse( exists("local_cov", p$stmv_variables), length(p$stmv_variables$local_cov), 0 ),
+    minresolution = minresolution,
+    nloccov = nloccov,
     stmv_force_complete_method = "linear",  # moving average
     stmv_rsquared_threshold = 0  # essentially ignore ..
   )

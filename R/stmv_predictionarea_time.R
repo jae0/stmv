@@ -2,7 +2,7 @@ stmv_predictionarea_time = function( p, pa ) {
 
   pa_n = nrow(pa) # n of space only
   pa = cbind( pa[ rep.int(1:pa_n, p$nt), ], rep.int(p$prediction_ts, rep(pa_n, p$nt )) )
-  names(pa) = c( names(pa), p$stmv_variables$TIME )
+  names(pa)[ncol(pa)] = p$stmv_variables$TIME
   pa = cbind( pa, stmv_timecovars( vars=p$stmv_variables$local_all, ti=pa[,p$stmv_variables$TIME]  ) )
 
   if (p$nloccov > 0) {
@@ -23,5 +23,5 @@ stmv_predictionarea_time = function( p, pa ) {
       } else if (nts==1) { } #nothing to do .. already processed above }
     }
   }
-
+  return(pa)
 }

@@ -11,6 +11,7 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE, just_testing_v
     debugging=TRUE
   }
 
+
   Sloc = stmv_attach( p$storage_backend, p$ptr$Sloc )
   Yloc = stmv_attach( p$storage_backend, p$ptr$Yloc )
   Y = stmv_attach( p$storage_backend, p$ptr$Y )
@@ -143,10 +144,10 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE, just_testing_v
       if (!exists("predictions", res))  next()
       if (!exists("mean", res$predictions)) next()
       if (length(which( is.finite(res$predictions$mean ))) < 1) next()
-
-
-      return( res )
+      return( res )  ## only return if we made it here ..
     }
+
+    if (is.null(res)) stop( "Initial testing of methods did not result in a viable solution. Check your model and constraints.Hint: p$stmv_nmin, p$stmv_tmin, p$stmv_interpolation_basis_distance, etc. "  )
   }
 
 
