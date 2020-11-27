@@ -58,7 +58,7 @@ stmv_interpolate_predictions = function( ip=NULL, p, debugging=FALSE, ... ) {
 
     windowsize.half = aegis_floor( prediction_area / p$pres ) + 1L
     # construct data (including static covariates) for prediction locations (pa)
-    pa = try( stmv_predictionarea( p=p, sloc=Sloc[Si,], windowsize.half=windowsize.half ) )
+    pa = try( stmv_predictionarea_lattice( p=p, sloc=Sloc[Si,], windowsize.half=windowsize.half ) )
     if ( is.null(pa) ) {
       Sflag[Si] = E[["prediction_area"]]
       next()
