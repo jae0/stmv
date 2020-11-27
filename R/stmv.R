@@ -623,7 +623,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         p = p0 #reset
         p$stmv_interpolation_basis_distance = p$stmv_interpolation_basis_distance_choices[j]
         # p$runmode = paste("carstm_distance_basis_", p$stmv_interpolation_basis_correlation, sep="")
-        # p$clusters = p$stmv_runmode[["carstm"]][[j]] # as ram reqeuirements increase drop cpus
+        # ni = p$stmv_runmode[["interpolate"]]
+        # jcpu = ifelse( j > ni, ni, j )
+        # p$clusters = p$stmv_runmode[["carstm"]][[jcpu]] # as ram reqeuirements increase drop cpus
         p$runmode = "carstm"
         p$clusters = p$stmv_runmode[["carstm"]] # as ram reqeuirements increase drop cpus
         currentstatus = stmv_statistics_status( p=p, reset="flags", reset_flags=c("insufficient_data",  "unknown" ) )
@@ -683,7 +685,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         p = p0 #reset
         p$stmv_interpolation_basis_correlation = p$stmv_autocorrelation_basis_interpolation[j]
         p$runmode = paste("interpolate_correlation_basis_", p$stmv_interpolation_basis_correlation, sep="")
-        p$clusters = p$stmv_runmode[["interpolate"]][[j]] # as ram reqeuirements increase drop cpus
+        ni = p$stmv_runmode[["interpolate"]]
+        jcpu = ifelse( j > ni, ni, j )
+        p$clusters = p$stmv_runmode[["interpolate"]][[jcpu]] # as ram reqeuirements increase drop cpus
 
         if (exists("stmv_fft_filter", p)) {
           if (grepl("fast_and_exhaustive_predictions", p$stmv_fft_filter)) {
@@ -761,7 +765,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         p = p0 #reset
         p$stmv_interpolation_basis_distance = p$stmv_distance_basis_interpolation[j]
         p$runmode = paste("interpolate_distance_basis_", p$stmv_interpolation_basis_distance, sep="")
-        p$clusters = p$stmv_runmode[["interpolate_distance_basis"]][[j]] # as ram reqeuirements increase drop cpus
+        ni = p$stmv_runmode[["interpolate"]]
+        jcpu = ifelse( j > ni, ni, j )
+        p$clusters = p$stmv_runmode[["interpolate_distance_basis"]][[jcpu]] # as ram reqeuirements increase drop cpus
         message( "\n||| Entering <", p$runmode, " > : ", format(Sys.time()) )
         currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
         if ( currentstatus$n.todo == 0 ) break()
@@ -825,7 +831,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
           p = p0 #reset
           p$local_interpolation_correlation = p$stmv_autocorrelation_basis_interpolation[j]
           p$runmode = paste("interpolate_hybrid_boost_", p$local_interpolation_correlation, sep="")
-          p$clusters = p$stmv_runmode[["interpolate_hybrid_boost"]][[j]] # as ram reqeuirements increase drop cpus
+          ni = p$stmv_runmode[["interpolate"]]
+          jcpu = ifelse( j > ni, ni, j )
+          p$clusters = p$stmv_runmode[["interpolate_hybrid_boost"]][[jcpu]] # as ram reqeuirements increase drop cpus
           message( "\n||| Entering <", p$runmode, "> stage: ", format(Sys.time()) , "\n" )
           p$stmv_local_modelengine = "kernel"  # override -- no covariates, basic moving window average (weighted by inverse variance)
           currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
@@ -870,7 +878,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         p = p0 #reset
         p$stmv_interpolation_basis_distance = p$stmv_distance_scale[j]
         p$runmode = "interpolate_predictions"
-        p$clusters = p$stmv_runmode[["interpolate_predictions"]][[j]] # as ram reqeuirements increase drop cpus
+        ni = p$stmv_runmode[["interpolate"]]
+        jcpu = ifelse( j > ni, ni, j )
+        p$clusters = p$stmv_runmode[["interpolate_predictions"]][[jcpu]] # as ram reqeuirements increase drop cpus
         stmv_statistics_status( p=p, reset=c( "complete" ), verbose=FALSE )
         currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
         if ( currentstatus$n.todo == 0 ) break()
