@@ -47,9 +47,9 @@ p = aegis.bathymetry::bathymetry_parameters(
   stmv_lowpass_nu = 0.5,
   stmv_lowpass_phi = stmv::matern_distance2phi( distance=0.2, nu=0.5, cor=0.1 ),  # note: p$pres = 0.5
   stmv_variogram_method = "fft",
-  stmv_autocorrelation_fft_taper = 0.75,  # benchmark from which to taper .. high data density truncate local predictions to capture heterogeneity
+  stmv_autocorrelation_fft_taper = 0.7,  # benchmark from which to taper .. high data density truncate local predictions to capture heterogeneity
   stmv_autocorrelation_localrange = 0.1,
-  stmv_autocorrelation_basis_interpolation = c(0.5, 0.25, 0.1, 0.01, 0.001),  # start with smaller localrange estimates and expand
+  stmv_autocorrelation_basis_interpolation = c(0.5, 0.25, 0.1, 0.01),  # start with smaller localrange estimates and expand
   stmv_filter_depth_m = FALSE,  # need data above sea level to get coastline
   stmv_Y_transform =list(
     transf = function(x) {log10(x + 2500)} ,
@@ -57,11 +57,11 @@ p = aegis.bathymetry::bathymetry_parameters(
   ), # data range is from -1667 to 5467 m: make all positive valued
   stmv_rsquared_threshold = 0.01, # lower threshold  .. i.e., ignore ... there is no timeseries model, nor a fixed effect spatial "model"
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
-  stmv_distance_scale = c( 2.5, 5, 10, 20, 40, 80 ), # km ... approx guesses of 95% AC range
-  stmv_distance_basis_interpolation = c( 5, 10, 15, 20, 40, 80  ) , # range of permissible predictions km (i.e 1/2 stats grid to upper limit) .. in this case 5, 10, 20
+  stmv_distance_scale = c( 2.5, 5, 10, 20, 40, 60, 80 ), # km ... approx guesses of 95% AC range
+  stmv_distance_basis_interpolation = c( 5, 10, 15, 20, 40, 60, 80  ) , # range of permissible predictions km (i.e 1/2 stats grid to upper limit) .. in this case 5, 10, 20
   stmv_distance_prediction_limits =c( 2.5, 10 ), # range of permissible predictions km (i.e 1/2 stats grid to upper limit based upon data density)
   stmv_nmin = 50,  # min number of data points req before attempting to model in a localized space
-  stmv_nmax = 50 * 10, # no real upper bound.. just speed /RAM
+  stmv_nmax = 600, # no real upper bound.. just speed /RAM
   stmv_force_complete_method = "fft",
   stmv_runmode = list(
     scale = rep("localhost", scale_ncpus),

@@ -9,7 +9,7 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=3
     icoo = 1:nrow(coo)
   }
 
-  if ( !is.data.table(coo)) coo = as.data.table(coo)
+  if ( !is.data.table(coo)) coo = data.table(coo)
 
   ntarget = min( ntarget, length(icoo))
 
@@ -48,6 +48,7 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=3
       }
 
       coo = aegis_floor( coo  / minresolution + 1) * minresolution
+      coo = data.table(coo)
 
       if ( method=="default" ) {
         # basic discretization in 1D
