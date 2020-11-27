@@ -880,7 +880,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         p$runmode = "interpolate_predictions"
         ni = length( p$stmv_runmode[["interpolate"]] )
         jcpu = ifelse( j > ni, ni, j )
-        p$clusters = p$stmv_runmode[["interpolate_predictions"]][[jcpu]] # as ram reqeuirements increase drop cpus
+        p$clusters = p$stmv_runmode[["interpolate"]][[jcpu]] # as ram reqeuirements increase drop cpus
         stmv_statistics_status( p=p, reset=c( "complete" ), verbose=FALSE )
         currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
         if ( currentstatus$n.todo == 0 ) break()
