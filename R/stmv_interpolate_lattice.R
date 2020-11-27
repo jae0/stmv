@@ -11,7 +11,6 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE, just_testing_v
     debugging=TRUE
   }
 
-
   Sloc = stmv_attach( p$storage_backend, p$ptr$Sloc )
   Yloc = stmv_attach( p$storage_backend, p$ptr$Yloc )
   Y = stmv_attach( p$storage_backend, p$ptr$Y )
