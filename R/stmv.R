@@ -685,7 +685,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         p = p0 #reset
         p$stmv_interpolation_basis_correlation = p$stmv_autocorrelation_basis_interpolation[j]
         p$runmode = paste("interpolate_correlation_basis_", p$stmv_interpolation_basis_correlation, sep="")
-        ni = p$stmv_runmode[["interpolate"]]
+        ni = length( p$stmv_runmode[["interpolate"]] )
         jcpu = ifelse( j > ni, ni, j )
         p$clusters = p$stmv_runmode[["interpolate"]][[jcpu]] # as ram reqeuirements increase drop cpus
 
@@ -765,7 +765,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         p = p0 #reset
         p$stmv_interpolation_basis_distance = p$stmv_distance_basis_interpolation[j]
         p$runmode = paste("interpolate_distance_basis_", p$stmv_interpolation_basis_distance, sep="")
-        ni = p$stmv_runmode[["interpolate"]]
+        ni = length( p$stmv_runmode[["interpolate"]] )
         jcpu = ifelse( j > ni, ni, j )
         p$clusters = p$stmv_runmode[["interpolate_distance_basis"]][[jcpu]] # as ram reqeuirements increase drop cpus
         message( "\n||| Entering <", p$runmode, " > : ", format(Sys.time()) )
@@ -831,7 +831,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
           p = p0 #reset
           p$local_interpolation_correlation = p$stmv_autocorrelation_basis_interpolation[j]
           p$runmode = paste("interpolate_hybrid_boost_", p$local_interpolation_correlation, sep="")
-          ni = p$stmv_runmode[["interpolate"]]
+          ni = length( p$stmv_runmode[["interpolate"]] )
           jcpu = ifelse( j > ni, ni, j )
           p$clusters = p$stmv_runmode[["interpolate_hybrid_boost"]][[jcpu]] # as ram reqeuirements increase drop cpus
           message( "\n||| Entering <", p$runmode, "> stage: ", format(Sys.time()) , "\n" )
@@ -878,7 +878,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         p = p0 #reset
         p$stmv_interpolation_basis_distance = p$stmv_distance_scale[j]
         p$runmode = "interpolate_predictions"
-        ni = p$stmv_runmode[["interpolate"]]
+        ni = length( p$stmv_runmode[["interpolate"]] )
         jcpu = ifelse( j > ni, ni, j )
         p$clusters = p$stmv_runmode[["interpolate_predictions"]][[jcpu]] # as ram reqeuirements increase drop cpus
         stmv_statistics_status( p=p, reset=c( "complete" ), verbose=FALSE )
