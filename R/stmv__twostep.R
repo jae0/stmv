@@ -36,7 +36,7 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
       if ( nts==1 ) tokeep = c(tokeep, vn )
     }
   }
-  px = px[ , tokeep ]
+  px = px[ , ..tokeep ]
   px_n = nrow(px)
   nts = vn = NULL
 
@@ -45,7 +45,7 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
     px = cbind( px[ rep.int(1:px_n, p$nt), ],
                     rep.int(p$prediction_ts, rep(px_n, p$nt )) )
     names(px)[ ncol(px) ] = p$stmv_variables$TIME
-    px = cbind( px, stmv_timecovars ( vars=p$stmv_variables$local_all, ti=px[,p$stmv_variables$TIME]  ) )
+    px = cbind( px, stmv_timecovars ( vars=p$stmv_variables$local_all, ti=px[[ p$stmv_variables$TIME ]]  ) )
   }
 
   if (p$nloccov > 0) {

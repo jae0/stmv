@@ -195,9 +195,10 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
     # correlation spectroscopy. Journal of biomedical optics, 17(8), 080801. doi:10.1117/1.JBO.17.8.080801
     # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3414238/
 
-    coo$X = c(X)
-    yy = coo[xi, mean(X, na.rm=TRUE), by=.(x, y) ]
-    nn = coo[xi, .N, by=.(x, y) ]
+    GG = coo[xi,]
+    GG$X = c(X)
+    yy = GG[, mean(X, na.rm=TRUE), by=.(x, y) ]
+    nn = GG[, .N, by=.(x, y) ]
     if ( nrow(yy) < 5 ) return( out )
 
     fY = matrix(0, nrow = nr2, ncol = nc2)
@@ -336,6 +337,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
     fY = Re( fftwtools::fftw2d( sp.covar * fY, inverse = TRUE))[1:nr, 1:nc]
     fN = Re( fftwtools::fftw2d( sp.covar * fN, inverse = TRUE))[1:nr, 1:nc]
     sp.covar = NULL
+
     X = ifelse((fN > eps), (fY/fN), NA)
     X[!is.finite(X)] = NA
     X = X * zsd + zmean # revert to input scale
@@ -349,7 +351,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
       pa$mean[pa_i] = X
       X = NULL
     } else {
-      X_i = array_map( "xy->2", coords=pa[pa_i] [[p$stmv_variables$LOCS]], origin=origin, res=res )
+      X_i = array_map( "xy->2", coords=pa[pa_i, ..vns], origin=origin, res=res )
       tokeep = which( X_i[,1] >= 1 & X_i[,2] >= 1  & X_i[,1] <= nr & X_i[,2] <= nc )
       if (length(tokeep) < 1) next()
       X_i = X_i[tokeep,]

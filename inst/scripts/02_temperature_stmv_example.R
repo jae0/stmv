@@ -78,6 +78,7 @@ p = aegis.temperature::temperature_parameters(
   stmv_rsquared_threshold = 0.001, # lower thindreshold for timeseries model
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
   stmv_distance_scale = c( 2, 5, 10, 15, 20, 40, 80  ), # km ... approx guess of 95% AC range, the range also determine limits of localrange
+  stmv_interpolation_basis_distance_choices = c( 5, 10, 15, 20, 40, 80 ),
   stmv_distance_basis_interpolation = c( 5, 10, 15, 20, 40, 80  ) , # range of permissible predictions km (i.e 1/2 stats grid to upper limit) .. in this case 5, 10, 20
   stmv_distance_prediction_limits =c( 2.5, 5 ), # range of permissible predictions km (i.e 1/2 stats grid to upper limit) .. in this case 5, 10, 20
   stmv_nmin = 120,  # min number of unit spatial locations req before attempting to model in a localized space .. control no error in local model
