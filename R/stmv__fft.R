@@ -239,7 +239,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
 
         stmv_stats_by_time[ti, match("sdTotal", statsvars_scale_names ) ] = zsd
         stmv_stats_by_time[ti, match("sdSpatial", statsvars_scale_names ) ] = sqrt(fit$summary$varSpatial)
-        stmv_stats_by_time[ti, match("sdObs", statsvars_scale_names ) ] = sqrt(fit$summary$varObs
+        stmv_stats_by_time[ti, match("sdObs", statsvars_scale_names ) ] = sqrt(fit$summary$varObs)
         stmv_stats_by_time[ti, match("phi", statsvars_scale_names ) ] = fit$summary$phi
         stmv_stats_by_time[ti, match("nu", statsvars_scale_names ) ] = fit$summary$nu
         stmv_stats_by_time[ti, match("localrange", statsvars_scale_names ) ] = fit$summary$localrange
