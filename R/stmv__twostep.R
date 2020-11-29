@@ -74,7 +74,8 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
 
   p$stmv_local_modelformula = p$stmv_local_modelformula_time
 
-  if (p$stmv_twostep_time == "inla" ) ts_preds = stmv__inla_ts( p, dat, px )
+  if (p$stmv_twostep_time == "inla" ) ts_preds = stmv__inla_ts( p, dat, px )  #TODO
+  if (p$stmv_twostep_time == "inla_ar1" ) ts_preds = stmv__inla_ar1( p, dat, px ) #TODO
   if (p$stmv_twostep_time == "glm" ) ts_preds = stmv__glm( p, dat, px )
   if (p$stmv_twostep_time == "gam" ) ts_preds = stmv__gam( p, dat, px )
   if (p$stmv_twostep_time == "bayesx" ) ts_preds = stmv__bayesx( p, dat, px )
@@ -130,9 +131,13 @@ stmv__twostep = function( p, dat, pa, nu=NULL, phi=NULL, varObs=varObs, varSpati
     out = stmv__gstat( p, dat=pxts, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial )
   }
 
-  # if ( p$stmv_twostep_space == "inla" ) {
-  #   out = stmv__inla_space( p, dat=pxts, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial )
-  # }
+  if ( p$stmv_twostep_space == "inla_spde" ) {
+    out = stmv__inla_space_spde( p, dat=pxts, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ) #TODO
+  }
+
+  if ( p$stmv_twostep_space == "inla_car" ) {
+    out = stmv__inla_space_car( p, dat=pxts, pa=pa, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial ) #TODO
+  }
 
   if (p$stmv_twostep_space %in% c("tps") ) {
     out = stmv__tps( p, dat=pxts, pa=pa, lambda=varObs/varSpatial, nu=nu, phi=phi, varObs=varObs, varSpatial=varSpatial   )

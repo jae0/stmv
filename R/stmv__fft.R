@@ -39,7 +39,6 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
     eps = 1e-9
   }
 
-  statsvars = c( "sdTotal", "sdSpatial", "sdObs", "phi", "nu", "localrange", "ndata" )
 
   params = list(...)
 
@@ -88,21 +87,13 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
   theta.Taper_static = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_autocorrelation_fft_taper )  # default
 
 
-  # final output grid
-  # x_locs = expand_grid_fast(
-  #   seq( x_r[1], x_r[2], length.out=nr ),
-  #   seq( x_c[1], x_c[2], length.out=nc )
-  # )
-  # attr( x_locs , "out.attrs") = NULL
-  # names( x_locs ) = p$stmv_variables$LOCS
 
   dat$mean = NA
   pa$mean = NA
   pa$sd = sqrt(varSpatial)
 
-  # constainer for spatial filters
+  # constainer for spatial filters ( final output grid )
   grid.list = list((1:nr2) * dx, (1:nc2) * dy)
-  # dgrid = as.matrix(expand.grid(grid.list))  # a bit slower
   dgrid = expand_grid_fast(  grid.list[[1]],  grid.list[[2]] )
   dimnames(dgrid) = list(NULL, names(grid.list))
   attr(dgrid, "grid.list") = grid.list
@@ -145,7 +136,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
 
   stmv_stats_by_time = NA
   if ( grepl("stmv_variogram_resolve_time", p$stmv_fft_filter)) {
-      stmv_stats_by_time = matrix( NA, ncol=length( statsvars), nrow=p$nt )  # container to hold time-specific results
+      statsvars_scale_names = c( "sdTotal", "sdSpatial", "sdObs", "phi", "nu", "localrange", "ndata" )
+      stmv_stats_by_time = matrix( NA, ncol=length( statsvars_scale_names ), nrow=p$nt )  # container to hold time-specific results
   }
 
   # things to do outside of the time loop
@@ -168,14 +160,11 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
     theta.Taper = NULL
 
     # bounds check: make sure predictions exist
-    z = dat[xi] [[p$stmv_variables$Y]]
-
-
-    zmean = mean(z, na.rm=TRUE)
-    zsd = sd(z, na.rm=TRUE)
+    zmean = mean( dat[xi] [[p$stmv_variables$Y]], na.rm=TRUE)
+    zsd = sd( dat[xi] [[p$stmv_variables$Y]], na.rm=TRUE)
     zvar = zsd^2
-    X = (z - zmean) / zsd # zscore -- making it mean 0 removes the "DC component"
-    z = NULL
+
+    X = ( dat[xi] [[p$stmv_variables$Y]] - zmean) / zsd # zscore -- making it mean 0 removes the "DC component"
 
 
     if (0) {
@@ -199,6 +188,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
     GG$X = c(X)
     yy = GG[, mean(X, na.rm=TRUE), by=.(x, y) ]
     nn = GG[, .N, by=.(x, y) ]
+    GG = NULL
     if ( nrow(yy) < 5 ) return( out )
 
     fY = matrix(0, nrow = nr2, ncol = nc2)
@@ -242,21 +232,18 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
       # plot(sv ~ distances, data=vgm   )
 
         uu = which( (vgm$distances < dmax ) & is.finite(vgm$sv) )  # dmax ~ Nyquist freq
+
         fit = try( stmv_variogram_optimization( vx=vgm$distances[uu], vg=vgm$sv[uu], plotvgm=FALSE,
           stmv_internal_scale=dmax*0.75, cor=p$stmv_autocorrelation_localrange ))
-
-        statsvars_scale = c(
-          sdTotal = sd(dat[xi] [[ p$stmv_variables$Y ]] , na.rm=T),
-          sdSpatial = sqrt(fit$summary$varSpatial) ,
-          sdObs = sqrt(fit$summary$varObs),
-          phi = fit$summary$phi,
-          nu = fit$summary$nu,
-          localrange = fit$summary$localrange,
-          ndata=length(xi)
-        )
-        stmv_stats_by_time[ti, match( names(statsvars_scale), statsvars )] = statsvars_scale
         uu = NULL
-        statsvars_scale = NULL
+
+        stmv_stats_by_time[ti, match("sdTotal", statsvars_scale_names ) ] = zsd
+        stmv_stats_by_time[ti, match("sdSpatial", statsvars_scale_names ) ] = sqrt(fit$summary$varSpatial)
+        stmv_stats_by_time[ti, match("sdObs", statsvars_scale_names ) ] = sqrt(fit$summary$varObs
+        stmv_stats_by_time[ti, match("phi", statsvars_scale_names ) ] = fit$summary$phi
+        stmv_stats_by_time[ti, match("nu", statsvars_scale_names ) ] = fit$summary$nu
+        stmv_stats_by_time[ti, match("localrange", statsvars_scale_names ) ] = fit$summary$localrange
+        stmv_stats_by_time[ti, match("ndata", statsvars_scale_names ) ] = length(xi)
 
         if ( !inherits(fit, "try-error") ) {
           if (exists("summary", fit)) {
@@ -361,7 +348,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
 
 
     if ( grepl("stmv_variogram_resolve_time", p$stmv_fft_filter)) {
-      pa$sd[pa_i] = stmv_stats_by_time[ti, match("sdSpatial", statsvars )]
+      pa$sd[pa_i] = stmv_stats_by_time[ti, match("sdSpatial", statsvars_scale_names )]
     }
 
     iYP = match(
@@ -383,7 +370,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
 
   if ( grepl("stmv_variogram_resolve_time", p$stmv_fft_filter)) {
     stmv_stats = as.list(colMeans(stmv_stats_by_time, na.rm=TRUE))
-    stmv_stats[ match("rsquared", statsvars )] = rsquared
+    stmv_stats[ match("rsquared", statsvars_scale_names )] = rsquared
   }
 
   # lattice::levelplot( mean ~ plon + plat, data=pa, col.regions=heat.colors(100), scale=list(draw=TRUE) , aspect="iso" )

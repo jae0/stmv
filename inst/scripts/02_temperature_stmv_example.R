@@ -1,5 +1,5 @@
 # 1. stmv interpolations assuming some seasonal pattern
-# twostep:  ~ 36 hrs :( .. consider shoter time range and less exhaustive settings
+# twostep:  ~ 24 hrs :( .. consider shorter time range and less exhaustive settings
 
 
 year.assessment = 2018
@@ -74,7 +74,7 @@ p = aegis.temperature::temperature_parameters(
   stmv_autocorrelation_localrange = 0.1,  # for reporting in stats
   stmv_autocorrelation_basis_interpolation = c(  0.3, 0.2, 0.1, 0.01 ),  # range finding
   stmv_local_model_distanceweighted = TRUE,
-  stmv_filter_depth_m = 5, # the depth covariate is input as units of depth (m) so, choose stats locations with elevation > 10m as being on land
+  stmv_filter_depth_m = 10, # the depth covariate is input as units of depth (m) so, choose stats locations with elevation > 10m as being on land
   stmv_rsquared_threshold = 0.001, # lower thindreshold for timeseries model
   stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
   stmv_distance_scale = c( 2, 5, 10, 15, 20, 40, 80  ), # km ... approx guess of 95% AC range, the range also determine limits of localrange
