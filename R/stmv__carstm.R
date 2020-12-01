@@ -3,12 +3,8 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, improve.hyperparam.estimates
 
 
     if (0) {
-      varObs = S[Si, i_sdObs]^2
-      varSpatial = S[Si, i_sdSpatial]^2
       sloc = Sloc[Si,]
-      eps = 1e-9
       improve.hyperparam.estimates=FALSE
-      variablelist=FALSE
     }
 
 
@@ -24,7 +20,7 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, improve.hyperparam.estimates
 
     sppoly = attr( pa, "sppoly" )
     dat$AUID = st_points_in_polygons(
-      pts = st_transform( st_as_sf( as.matrix(dat[, ..vns ]), coords=vns, crs=st_crs(p$aegis_proj4string_planar_km) ), crs=st_crs(sppoly) ),
+      pts = st_transform( st_as_sf( dat[, ..vns ], coords=vns, crs=st_crs(p$aegis_proj4string_planar_km) ), crs=st_crs(sppoly) ),
       polys = sppoly[, "AUID"],
       varname="AUID"
     )
@@ -46,7 +42,7 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, improve.hyperparam.estimates
 
     sppoly_df = NULL
 
-    dat$aui  = as.numeric( factor(dat$AUID) )  # for inla
+    dat$auid  = as.numeric( factor(dat$AUID) )  # for inla
 
     # get hyper param scalings
     # function copied from carstm .. used below
@@ -197,22 +193,22 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, improve.hyperparam.estimates
 
     if (exists("summary.random", fit)) {
 
-      if (exists("aui", fit$summary.random)) {
+      if (exists("auid", fit$summary.random)) {
 
-        if (nrow(fit$summary.random$aui) == nAUID*2) {
+        if (nrow(fit$summary.random$auid) == nAUID*2) {
           # a single nonspatial effect (no grouping across time)
           resout = expand.grid( AUID=res$AUID, type = c("nonspatial", "spatial") )
           res$i_nonspatial = which(resout$type=="nonspatial")
           res$ns_matchfrom = list( AUID=resout$AUID[res$i_nonspatial]  )
           res$ns_matchto   = list( AUID=res$AUID  )
 
-        } else if (nrow(fit$summary.random$aui) == nAUID*2 * p$ny ) {
+        } else if (nrow(fit$summary.random$auid) == nAUID*2 * p$ny ) {
           #  nonspatial effects grouped by year
           resout = expand.grid( AUID=res$AUID, type = c("nonspatial", "spatial"), year=p$yrs )
           res$i_nonspatial = which(resout$type=="nonspatial")
           res$ns_matchfrom = list( AUID=resout$AUID[res$i_nonspatial], year=resout$year[res$i_nonspatial] )
           res$ns_matchto   = list( AUID=res$AUID,   year=res$year  )
-        } else if (nrow(fit$summary.random$aui) == nAUID*2 * p$nt ) {
+        } else if (nrow(fit$summary.random$auid) == nAUID*2 * p$nt ) {
           # nonspatial at all time slices
           resout = expand.grid( AUID=res$AUID, type = c("nonspatial", "spatial"), year=p$yrs, dyear=p$dyears )
           res$i_nonspatial = which(resout$type=="nonspatial")
@@ -220,20 +216,20 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, improve.hyperparam.estimates
           res$ns_matchto   = list( AUID=res$AUID,   year=res$year, dyear=res$dyear )
         }
 
-        if (nrow(fit$summary.random$aui) == nAUID*2) {
+        if (nrow(fit$summary.random$auid) == nAUID*2) {
           # a single spatial effect (no grouping across time)
           resout = expand.grid( AUID=res$AUID, type = c("nonspatial", "spatial") )
           res$i_spatial = which(resout$type=="spatial")
           res$sp_matchfrom = list( AUID=resout$AUID[res$i_spatial]  )
           res$sp_matchto   = list( AUID=res$AUID  )
 
-        } else if (nrow(fit$summary.random$aui) == nAUID*2 * p$ny ) {
+        } else if (nrow(fit$summary.random$auid) == nAUID*2 * p$ny ) {
           # spatial effects grouped by year
           resout = expand.grid( AUID=res$AUID, type = c("nonspatial", "spatial"), year=p$yrs )
           res$i_spatial = which(resout$type=="spatial")
           res$sp_matchfrom = list( AUID=resout$AUID[res$i_spatial], year=resout$year[res$i_spatial] )
           res$sp_matchto   = list( AUID=res$AUID,   year=res$year  )
-        } else if (nrow(fit$summary.random$aui) == nAUID*2 * p$nt ) {
+        } else if (nrow(fit$summary.random$auid) == nAUID*2 * p$nt ) {
           # at every time slice
           resout = expand.grid( AUID=res$AUID, type = c("nonspatial", "spatial"), year=p$yrs, dyear=p$dyears )
           res$i_spatial = which(resout$type=="spatial")
@@ -259,15 +255,15 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, improve.hyperparam.estimates
         if (!is.null(NA_mask)) res[[vn]][NA_mask] = NA
       }
 
-      if (exists("aui", fit$summary.random)) {
+      if (exists("auid", fit$summary.random)) {
 
-        input = fit$summary.random$aui[ res$i_nonspatial, "mean" ]
+        input = fit$summary.random$auid[ res$i_nonspatial, "mean" ]
         vn = paste( p$stmv_variables$Y, "random_auid_nonspatial", sep=".")
         res[[vn]] = reformat_to_array( input=input, matchfrom=res$ns_matchfrom, matchto=res$ns_matchto )
         if (!is.null(NA_mask)) res[[vn]][NA_mask] = NA
         # carstm_plot( p=p, res=res, vn=vn, time_match=list(year="2000", dyear="0.8" ) )
 
-        input = fit$summary.random$aui[ res$i_spatial, "mean" ]  # offset structure due to bym2
+        input = fit$summary.random$auid[ res$i_spatial, "mean" ]  # offset structure due to bym2
         vn = paste( p$stmv_variables$Y, "random_auid_spatial", sep=".")
         res[[vn]] = reformat_to_array( input=input, matchfrom=res$sp_matchfrom, matchto=res$sp_matchto )
         if (!is.null(NA_mask)) res[[vn]][NA_mask] = NA

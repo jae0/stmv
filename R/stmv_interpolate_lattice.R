@@ -12,6 +12,12 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE, just_testing_v
   }
 
 
+  p = parameters_add(p, list(...)) # add passed args to parameter list, priority to args
+
+  if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
+
+  if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
+
   Sloc = stmv_attach( p$storage_backend, p$ptr$Sloc )
   Yloc = stmv_attach( p$storage_backend, p$ptr$Yloc )
   Y = stmv_attach( p$storage_backend, p$ptr$Y )
@@ -154,12 +160,6 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE, just_testing_v
 
 
   # ---------------------
-
-  p = parameters_add(p, list(...)) # add passed args to parameter list, priority to args
-
-  if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
-
-  if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
 
 
   E = stmv_error_codes()

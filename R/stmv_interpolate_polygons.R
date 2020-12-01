@@ -1,6 +1,6 @@
 
 
-stmv_interpolate_polygons = function( ip=NULL, p, debugging=FALSE, global_sppoly=NULL, stmv_au_buffer_links=1, stmv_au_distance_reference="completely_inside_boundary", just_testing_variablelist=FALSE, ... ) {
+stmv_interpolate_polygons = function( ip=NULL, p, debugging=FALSE, global_sppoly=NULL, stmv_au_buffer_links=1, stmv_au_distance_reference="completely_inside_boundary", just_testing_variablelist=FALSE, eps=1e-6, ... ) {
   #\\ core function to interpolate (model and predict) in parallel
 
   if (0) {
@@ -11,7 +11,16 @@ stmv_interpolate_polygons = function( ip=NULL, p, debugging=FALSE, global_sppoly
     debugging=TRUE
     stmv_au_distance_reference="completely_inside_boundary"  # distance filter on "boundary" of polygon or "centroids"
     stmv_au_buffer_links=1  # number of additional links to nearest neighbourhoods
+    eps=1e-6
   }
+
+
+  p = parameters_add( p, list(...) ) # add passed args to parameter list, priority to args
+
+  if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
+
+  if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
+
 
   local_fn = ifelse (p$stmv_local_modelengine=="userdefined", p$stmv_local_modelengine_userdefined,
     stmv_interpolate_function_lookup( p$stmv_local_modelengine ) )
@@ -122,11 +131,11 @@ stmv_interpolate_polygons = function( ip=NULL, p, debugging=FALSE, global_sppoly
 
   # ---------------------
 
-  p = parameters_add(p, list(...)) # add passed args to parameter list, priority to args
+  # p = parameters_add(p, list(...)) # add passed args to parameter list, priority to args
 
-  if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
+  # if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
 
-  if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
+  # if (is.null(ip)) if( exists( "nruns", p ) ) ip = 1:p$nruns
 
 
   #---------------------
@@ -181,7 +190,7 @@ stmv_interpolate_polygons = function( ip=NULL, p, debugging=FALSE, global_sppoly
     # add a small error term to prevent some errors when duplicate locations exist; localrange_interpolation offsets to positive values
 
     dat[,ilocs] = Yloc[data_subset$data_index,]
-    dat[,ilocs] = dat[,ilocs] + localrange_interpolation * runif(2*ndata, -dist_error, dist_error)
+    dat[,ilocs] = dat[,ilocs] + localrange_interpolation * runif(2*ndata, -eps, eps)
 
     if (p$nloccov > 0) dat[,icov] = Ycov[data_subset$data_index, icov_local] # no need for other dim checks as this is user provided
     if (exists("TIME", p$stmv_variables)) {

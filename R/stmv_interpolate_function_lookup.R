@@ -19,5 +19,9 @@ stmv_interpolate_function_lookup = function( modelengine ) {
     carstm = stmv__carstm,
     twostep = stmv__twostep
   )
+  if ( is.null(local_fn) ) {
+    message( "Interpolation module: ", modelengine, " not found." )
+    stop ()
+  }
   return( local_fn )
 }
