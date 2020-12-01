@@ -60,7 +60,6 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, improve.hyperparam.estimates
 
     fit  = NULL
 
-
     for (ll in 1:length(p$control.inla.variations)) {
       inlacall = gsub(
         "verbose=TRUE",

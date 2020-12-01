@@ -189,16 +189,16 @@ p = bathymetry_parameters(
   stmv_variables = list(Y="z"),  # required as fft has no formulae
   stmv_global_modelengine = "none",  # too much data to use glm as an entry into link space ... use a direct transformation
   stmv_local_modelengine="carstm",
-  stmv_au_distance_reference="completely_inside_boundary",
-  stmv_au_buffer_links=1,
+  # stmv_au_distance_reference="completely_inside_boundary",
+  # stmv_au_buffer_links=1,
   stmv_filter_depth_m = FALSE,  # need data above sea level to get coastline
   stmv_Y_transform =list(
     transf = function(x) {log10(x + 2500)} ,
     invers = function(x) {10^(x) - 2500}
   ), # data range is from -1667 to 5467 m: make all positive valued
   stmv_rsquared_threshold = 0.01, # lower threshold  .. i.e., ignore ... there is no timeseries model, nor a fixed effect spatial "model"
-  stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
-  stmv_distance_scale = c( 2.5, 5, 10, 20, 40, 60, 80 ), # km ... approx guesses of 95% AC range
+  stmv_distance_statsgrid = 1, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
+  # stmv_distance_scale = c( 2.5, 5, 10, 20, 40, 60, 80 ), # km ... approx guesses of 95% AC range
   stmv_distance_prediction_limits =c( 2.5, 10 ), # range of permissible predictions km (i.e 1/2 stats grid to upper limit based upon data density)
   stmv_nmin = 50,  # min number of data points req before attempting to model in a localized space
   stmv_nmax = 600, # no real upper bound.. just speed /RAM
@@ -253,7 +253,7 @@ statsvars = dimnames(statistics)[[2]]
 
 # statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "phi", "nu", "localrange" )
 dev.new(); levelplot( predictions[] ~ locations[,1] + locations[,2], aspect="iso" )
-dev.new(); levelplot( statistics[,match("nu", statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) # nu
+dev.new(); levelplot( statistics[,match("Phi_for_auid", statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) # nu
 dev.new(); levelplot( statistics[,match("sdTotal", statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) #sd total
-dev.new(); levelplot( statistics[,match("localrange", statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) #localrange
+dev.new(); levelplot( statistics[,match("rsquared", statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) #localrange
 
