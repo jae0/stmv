@@ -156,6 +156,7 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE, just_testing_v
     }
 
     if (is.null(res)) stop( "Initial testing of methods did not result in a viable solution. Check your model and constraints.Hint: p$stmv_nmin, p$stmv_tmin, p$stmv_interpolation_basis_distance, etc. "  )
+    return(NULL)
   }
 
 

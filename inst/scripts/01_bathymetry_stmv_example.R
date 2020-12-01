@@ -199,7 +199,7 @@ p = bathymetry_parameters(
   stmv_rsquared_threshold = 0.01, # lower threshold  .. i.e., ignore ... there is no timeseries model, nor a fixed effect spatial "model"
   stmv_distance_statsgrid = 1, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
   # stmv_distance_scale = c( 2.5, 5, 10, 20, 40, 60, 80 ), # km ... approx guesses of 95% AC range
-  stmv_distance_prediction_limits =c( 2.5, 10 ), # range of permissible predictions km (i.e 1/2 stats grid to upper limit based upon data density)
+  stmv_distance_prediction_limits =c( 5, 10 ), # range of permissible predictions km (i.e 1/2 stats grid to upper limit based upon data density)
   stmv_nmin = 50,  # min number of data points req before attempting to model in a localized space
   stmv_nmax = 600, # no real upper bound.. just speed /RAM
   stmv_force_complete_method = "linear_interp",
@@ -210,6 +210,7 @@ p = bathymetry_parameters(
     save_completed_data = TRUE # just a dummy variable with the correct name
   )
 )
+
 
 if (0) {
   # to force serial mode

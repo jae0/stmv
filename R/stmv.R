@@ -492,7 +492,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
     res = stmv_interpolate_lattice( p=p, just_testing_variablelist=TRUE  )
   }
 
-
   # str( res )
 #  print( str(res$stmv_stats) )
 

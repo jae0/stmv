@@ -14,7 +14,6 @@ stmv_interpolate_polygons = function( ip=NULL, p, debugging=FALSE, global_sppoly
     eps=1e-6
   }
 
-
   p = parameters_add( p, list(...) ) # add passed args to parameter list, priority to args
 
   if (exists( "libs", p)) suppressMessages( RLibrary( p$libs ) )
@@ -78,53 +77,57 @@ stmv_interpolate_polygons = function( ip=NULL, p, debugging=FALSE, global_sppoly
       localrange_interpolation = ifelse( !exists("stmv_interpolation_basis_distance", p), p$stmv_distance_statsgrid *1.5, p$stmv_interpolation_basis_distance )
 
       data_subset = stmv_select_data( p=p, Si=Si, localrange=localrange_interpolation )
-      if (is.null( data_subset )) next()
+      if ( !is.null( data_subset )) {
 
-      unique_spatial_locations = data_subset$unique_spatial_locations
-      ndata = length(data_subset$data_index)
-      if (unique_spatial_locations < p$stmv_nmin) next()
+        unique_spatial_locations = data_subset$unique_spatial_locations
+        ndata = length(data_subset$data_index)
+        if (unique_spatial_locations > p$stmv_nmin) {
 
-      dat = matrix( 1, nrow=ndata, ncol=dat_nc )
-      dat[,iY] = Y[data_subset$data_index] # these are residuals if there is a global model
-      dat[,ilocs] = Yloc[data_subset$data_index,]
+          dat = matrix( 1, nrow=ndata, ncol=dat_nc )
+          dat[,iY] = Y[data_subset$data_index] # these are residuals if there is a global model
+          dat[,ilocs] = Yloc[data_subset$data_index,]
 
-      if (p$nloccov > 0) dat[,icov] = Ycov[data_subset$data_index, icov_local] # no need for other dim checks as this is user provided
-      if (exists("TIME", p$stmv_variables)) {
-        dat[, itime_cov] = as.matrix(stmv_timecovars( vars=ti_cov, ti=Ytime[data_subset$data_index,] ) )
-        itt = which(dat_names==p$stmv_variables$TIME)
-        dat[, itt ] = Ytime[data_subset$data_index,]
-        # crude check of number of time slices
-        n_time_slices = stmv_discretize_coordinates( coo=dat[, itt], ntarget=p$nt, minresolution=p$minresolution[3], method="thin"  )
-        if ( length(n_time_slices) < p$stmv_tmin )  next()
-      }
-      dat = data.table(dat)
-      names(dat) = dat_names
-      dat_range = range( dat[,..iY], na.rm=TRUE )  # used later
+          if (p$nloccov > 0) dat[,icov] = Ycov[data_subset$data_index, icov_local] # no need for other dim checks as this is user provided
+          if (exists("TIME", p$stmv_variables)) {
+            dat[, itime_cov] = as.matrix(stmv_timecovars( vars=ti_cov, ti=Ytime[data_subset$data_index,] ) )
+            itt = which(dat_names==p$stmv_variables$TIME)
+            dat[, itt ] = Ytime[data_subset$data_index,]
+            # crude check of number of time slices
+            n_time_slices = stmv_discretize_coordinates( coo=dat[, itt], ntarget=p$nt, minresolution=p$minresolution[3], method="thin"  )
+            if ( length(n_time_slices) < p$stmv_tmin )  next()
+          }
+          dat = data.table(dat)
+          names(dat) = dat_names
+          dat_range = range( dat[,..iY], na.rm=TRUE )  # used later
 
-      # construct prediction/output grid area ('pa')
-      prediction_area = localrange_interpolation
-      if (exists("stmv_distance_prediction_limits", p)) {
-        prediction_area = min( max( localrange_interpolation, min(p$stmv_distance_prediction_limits) ), max(p$stmv_distance_prediction_limits), na.rm=TRUE )
-      }
+          # construct prediction/output grid area ('pa')
+          prediction_area = localrange_interpolation
+          if (exists("stmv_distance_prediction_limits", p)) {
+            prediction_area = min( max( localrange_interpolation, min(p$stmv_distance_prediction_limits) ), max(p$stmv_distance_prediction_limits), na.rm=TRUE )
+          }
 
-      windowsize.half =  aegis_floor( prediction_area / p$pres ) + 1L
+          windowsize.half =  aegis_floor( prediction_area / p$pres ) + 1L
 
-      pa = try( stmv_predictionarea_polygons( p=p, sloc=sloc, windowsize.half=windowsize.half, global_sppoly=global_sppoly, stmv_au_buffer_links=stmv_au_buffer_links, stmv_au_distance_reference=stmv_au_distance_reference  ) )
+          pa = try( stmv_predictionarea_polygons( p=p, sloc=sloc, windowsize.half=windowsize.half, global_sppoly=global_sppoly, stmv_au_buffer_links=stmv_au_buffer_links, stmv_au_distance_reference=stmv_au_distance_reference  ) )
 
-      if ( is.null(pa) ) next()
-      if ( inherits(pa, "try-error") ) next()
+          if ( is.null(pa) ) next()
+          if ( inherits(pa, "try-error") ) next()
 
-      res =NULL
-      res = try( local_fn ( p=p, dat=dat, pa=pa, localrange=localrange_interpolation,  sloc=sloc ) )
+          res =NULL
+          res = try( local_fn ( p=p, dat=dat, pa=pa, localrange=localrange_interpolation,  sloc=sloc ) )
 
-      if ( is.null(res))  next()
-      if ( inherits(res, "try-error") ) next()
-      if (!exists("predictions", res))  next()
-      if (!exists("mean", res$predictions)) next()
-      if (length(which( is.finite(res$predictions$mean ))) < 1) next()
+          if ( is.null(res))  next()
+          if ( inherits(res, "try-error") ) next()
+          if (!exists("predictions", res))  next()
+          if (!exists("mean", res$predictions)) next()
+          if (length(which( is.finite(res$predictions$mean ))) < 1) next()
 
-      return( res )
-    }
+          return( res )
+        }  # unique sp locations
+      }  # null data_subset
+    }  # end for iip
+    if (is.null(res)) stop( "Initial testing of methods did not result in a viable solution. Check your model and constraints.Hint: p$stmv_nmin, p$stmv_tmin, p$stmv_au_buffer_links, p$stmv_au_distance_reference, p$stmv_distance_statsgrid, p$stmv_interpolation_basis_distance  etc. "  )
+    return(NULL)
   }
 
 
