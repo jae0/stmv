@@ -60,20 +60,11 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, improve.hyperparam.estimates
 
     fit  = NULL
 
-    control.inla.variations = list(
-      list( optimise.strategy="smart", stupid.search=FALSE, strategy="adaptive") ,
-      list( optimise.strategy="smart", stupid.search=FALSE, strategy="adaptive", h=0.05, cmin=0, tolerance=1e-9),
-      list( optimise.strategy="smart", stupid.search=FALSE, strategy="adaptive", h=0.1,  cmin=0, tolerance=1e-6),
-      list( optimise.strategy="smart", stupid.search=FALSE, strategy="laplace", fast=FALSE, step.factor=0.1),
-      list( optimise.strategy="smart", stupid.search=TRUE, h=0.1 ),
-      list( optimise.strategy="smart", stupid.search=TRUE, h=0.01 ),
-      list( optimise.strategy="smart", stupid.search=TRUE, h=0.001 )
-    )
 
-    for (ll in 1:length(control.inla.variations)) {
+    for (ll in 1:length(p$control.inla.variations)) {
       inlacall = gsub(
         "verbose=TRUE",
-        paste( "control.inla=", deparse( control.inla.variations[[ll]] , width.cutoff=500), ", verbose=TRUE ", sep=" " ),
+        paste( "control.inla=", deparse( p$control.inla.variations[[ll]] , width.cutoff=500), ", verbose=TRUE ", sep=" " ),
         p$stmv_local_modelcall
       )
       assign("fit", eval(parse(text=paste( "try(", inlacall, ")" ) ) ))

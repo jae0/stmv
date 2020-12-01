@@ -487,7 +487,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   # determine stats to retain / expect
   res = NULL
   if ( any(grepl("carstm", names(p$stmv_runmode))) ) {
-    res = stmv_interpolate_polygons( p=p, global_sppoly=global_sppoly, stmv_au_buffer_links=p$stmv_au_buffer_links, stmv_au_distance_reference=p$stmv_au_distance_reference  )
+    res = stmv_interpolate_polygons( p=p, global_sppoly=global_sppoly, stmv_au_buffer_links=p$stmv_au_buffer_links, stmv_au_distance_reference=p$stmv_au_distance_reference, just_testing_variablelist=TRUE  )
   } else {
     res = stmv_interpolate_lattice( p=p, just_testing_variablelist=TRUE  )
   }
