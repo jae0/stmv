@@ -147,7 +147,7 @@ dev.new(); levelplot( statistics[,match("localrange", statsvars)]  ~ locations[,
 #########################################
 ### example 2 -- hybrid stmv/car model:
 
-## :: main difference is:  project_class="production"  (vs "stmv" above)
+## :: main difference is:  project_class="hybrid"  (vs "stmv" above)
 
 require(aegis.bathymetry)
 
@@ -179,7 +179,7 @@ DATA$input = DATA$input[ which(is.finite(DATA$input$z)), ]
 
 p = bathymetry_parameters(
   p=p0,  # start with spatial settings of input data
-  project_class="production",
+  project_class="hybrid",
   data_root = file.path(work_root, "bathymetry_example"),
   DATA = DATA,
   spatial_domain = p0$spatial_domain,

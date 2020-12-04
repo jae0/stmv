@@ -9,8 +9,17 @@ stmv_parameters = function( p=list(), ... ) {
   if (! exists("spatial_domain", p) ) stop( "||| spatial_domain is required" )
   if (! exists("stmv_distance_statsgrid", p)) stop( "||| stmv_distance_statsgrid must be defined" )
 
+  if (! exists("stmv_model_label", p) ) stmv_model_label = "default"
+
   p = parameters_add_without_overwriting( p,
-    stmvSaveDir = file.path( p$data_root, "modelled", p$stmv_variables$Y, p$spatial_domain )
+    project_class = "stmv",
+    stmv_model_label = "default",
+    stmv_global_modelengine = "none",
+    stmv_local_modelengine = "none"
+  }
+
+  p = parameters_add_without_overwriting( p,
+    stmvSaveDir = file.path( p$modeldir, p$stmv_model_label, p$project_class, paste(  p$stmv_global_modelengine, stmv_local_modelengine, sep="_"), p$stmv_variables$Y, p$spatial_domain)
   )
 
   if ( !file.exists(p$stmvSaveDir)) dir.create( p$stmvSaveDir, recursive=TRUE, showWarnings=FALSE )
@@ -32,8 +41,6 @@ stmv_parameters = function( p=list(), ... ) {
     stmv_autocorrelation_fft_taper = 0.75,   # scale at which to mark tapering
     stmv_global_family = gaussian(link = "identity"),
     boundary = FALSE,
-    stmv_global_modelengine = "none",
-    stmv_local_modelengine = "none",
     stmv_filter_depth_m = FALSE, # if !FALSE .. depth is given as m so, choose andy stats locations with elevation > 1 m as being on land
     stmv_nmin_downsize_factor = c(1.0, 0.8, 0.6, 0.4, 0.2, 0.1),
     stmv_lowpass_nu = 0.5, # this is exponential covar
