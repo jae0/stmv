@@ -16,7 +16,7 @@ stmv_parameters = function( p=list(), ... ) {
     stmv_model_label = "default",
     stmv_global_modelengine = "none",
     stmv_local_modelengine = "none"
-  }
+  )
 
   p = parameters_add_without_overwriting( p,
     stmvSaveDir = file.path( p$modeldir, p$stmv_model_label, p$project_class, paste(  p$stmv_global_modelengine, stmv_local_modelengine, sep="_"), p$stmv_variables$Y, p$spatial_domain)

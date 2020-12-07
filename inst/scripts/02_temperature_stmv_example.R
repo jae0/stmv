@@ -35,8 +35,12 @@ DATA = list(
     )
   )
 )
-DATA$input = lonlat2planar( DATA$input, p0$aegis_proj4string_planar_km )
-DATA$input = DATA$input[, c("plon", "plat", "tiyr", "z", "t")]   ## yr, cos.w and sin.w are note required as they are computed internally
+DATA$input = sf::st_as_sf( DATA$input, coords=c("lon","lat"), crs=st_crs(projection_proj4string("lonlat_wgs84")) )
+DATA$input = sf::st_transform( DATA$input, crs=st_crs(p0$aegis_proj4string_planar_km) )
+DATA$input = as.data.frame( cbind( DATA$input[, c("t", "z", "tiyr")], st_coordinates(DATA$input) ) )
+names(DATA$input) = c("t", "z", "tiyr", "plon", "plat")
+DATA$input = DATA$input[ which(is.finite(DATA$input$t)), ]
+
 
 
 # quick look of data
@@ -47,7 +51,7 @@ p = aegis.temperature::temperature_parameters(
   p=p0,  # start with spatial settings of input data
   project_class="stmv",
   stmv_model_label="gam_fft_twostep_statsgrid10km",
-  data_root = file.path(getwd(), "temperature_test"),
+  data_root = file.path( tempdir(), "temperature_test" ),
   DATA = DATA,
   spatial_domain = p0$spatial_domain,
   spatial_domain_subareas =NULL,  # prevent subgrid estimation

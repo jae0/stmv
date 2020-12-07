@@ -21,22 +21,25 @@ p0 = aegis::spatial_parameters( spatial_domain="bathymetry_example",
   dres=1/60/4, pres=0.5, lon0=-64, lon1=-62, lat0=44, lat1=45, psignif=2 )
 
 # or:
-# p0 = stmv_test_data( "aegis.test.parameters")
+p0 = stmv_test_data( "aegis.test.parameters")
 
-DATA = list(
-  input = stmv::stmv_test_data( datasource="aegis.space", p=p0),
-  output = list( LOCS = spatial_grid(p0) )
-)
+input = stmv::stmv_test_data( datasource="aegis.space", p=p0)
+input = sf::st_as_sf( input, coords=c("lon","lat"), crs=st_crs(projection_proj4string("lonlat_wgs84")) )
+input = sf::st_transform( input, crs=st_crs(p0$aegis_proj4string_planar_km) )
+input = as.data.frame( cbind( input$z, st_coordinates(input) ) )
+names(input) = c("z", "plon", "plat")
+input = input[ which(is.finite(input$z)), ]
+output = list( LOCS = spatial_grid(p0) )
+DATA = list( input = input,  output = output )
 
-DATA$input = lonlat2planar( DATA$input, p0$aegis_proj4string_planar_km )
-DATA$input = DATA$input[, c("plon", "plat", "z")]
-DATA$input = DATA$input[ which(is.finite(DATA$input$z)), ]
+input = output = NULL
+gc()
 
 p = bathymetry_parameters(
   p=p0,  # start with spatial settings of input data
   project_class="hybrid",
   stmv_model_label="carstm_statsgrid10km",  # this label is used as directory for storage
-  data_root = file.path(getwd(), "bathymetry_example"),
+  data_root = file.path(tempdir(), "bathymetry_example"),
   DATA = DATA,
   spatial_domain = p0$spatial_domain,
   spatial_domain_subareas =NULL,

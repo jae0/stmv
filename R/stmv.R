@@ -702,7 +702,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
             invisible( stmv_db(p=p, DS="save_current_state", runmode=p$runmode, datasubset="Pn" ) )
             stmv_statistics_status( p=p, verbose=FALSE ) # quick update before logging
             slog = stmv_logfile(p=p, flag= paste("Fast Interpolation correlation basis phase", p$runmode, "completed ...") ) # final update before continuing
-            p$stmv_fft_filter = gsub( "fast_predictions", "", p$stmv_fft_filter )  # remove fast ... now moving to slow/exhaustive
+            p$stmv_fft_filter = gsub( "fast_predictions", "", p$stmv_fft_filter )  # temporarily remove fast ... now moving to slow/exhaustive
           }
         }
         message( "\n||| Entering < Exhaustive ", p$runmode, " > : ", format(Sys.time()) )
@@ -873,13 +873,13 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
       }
       p$time_start_runmode = Sys.time()
       p0 = p
-      for ( j in 1:length(p$stmv_distance_scale) ) {
+      for ( j in 1:length(p$stmv_distance_interpolate_predictions) ) {
         p = p0 #reset
-        p$stmv_interpolation_basis_distance = p$stmv_distance_scale[j]
+        p$stmv_interpolation_basis_distance = p$stmv_distance_interpolate_predictions[j]
         p$runmode = "interpolate_predictions"
-        ni = length( p$stmv_runmode[["interpolate"]] )
-        jcpu = ifelse( j > ni, ni, j )
-        p$clusters = p$stmv_runmode[["interpolate"]][[jcpu]] # as ram reqeuirements increase drop cpus
+        ni = length( p$stmv_runmode[["interpolate_predictions"]] )
+        jcpu = ifelse( j > ni, 1, j )  # drop to 1 as this can get expensive
+        p$clusters = p$stmv_runmode[["interpolate_predictions"]][[jcpu]] # as ram reqeuirements increase drop cpus
         stmv_statistics_status( p=p, reset=c( "complete" ), verbose=FALSE )
         currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
         if ( currentstatus$n.todo == 0 ) break()
