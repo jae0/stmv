@@ -1,6 +1,6 @@
 
 
-stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE, just_testing_variablelist=FALSE,  ... ) {
+stmv_interpolate_lattice = function( ip=NULL, p, localrange_interpolation=NULL, localrange_interpolation_correlation=NULL, debugging=FALSE, just_testing_variablelist=FALSE, eps=1e-6, ... ) {
   #\\ core function to interpolate (model and predict) in parallel
 
   if (0) {
@@ -10,7 +10,6 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE, just_testing_v
     ip = 1:p$nruns
     debugging=TRUE
   }
-
 
   p = parameters_add(p, list(...)) # add passed args to parameter list, priority to args
 
@@ -50,8 +49,7 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE, just_testing_v
   i_sdSpatial = match("sdSpatial",   p$statsvars)
   i_sdObs = match("sdObs",   p$statsvars)
 
-  distance_limits = range( p$stmv_distance_scale )    # for range estimate
-
+  
   # error (km) to add to locations to force solutions that are affected by duplicated locations
   dist_error = 1e-6
   if ( exists( "stmv_lowpass_nu", p) & exists( "stmv_lowpass_phi", p) ) {
@@ -93,7 +91,7 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE, just_testing_v
       phi   = p$stmv_lowpass_phi
       localrange = p$stmv_autocorrelation_localrange   # attached to p$stmv_autocorrelation_localrange
 
-      localrange_interpolation = ifelse( !exists("stmv_interpolation_basis_distance", p), p$stmv_distance_statsgrid *1.5, p$stmv_interpolation_basis_distance )  # force a simple solution
+      if (is.null(localrange_interpolation)) localrange_interpolation = p$stmv_distance_statsgrid * 2   # force a simple solution
 
       data_subset = stmv_select_data( p=p, Si=Si, localrange=localrange_interpolation )
       if (is.null( data_subset )) next()
@@ -110,7 +108,7 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE, just_testing_v
       varObs = var(dat[,iY]) /2
       varSpatial = varObs
 
-      dat[,ilocs] = dat[,ilocs] + localrange_interpolation * runif(2*ndata, -dist_error, dist_error)
+      dat[,ilocs] = dat[,ilocs] + eps * runif(2*ndata, -dist_error, dist_error)
 
       if (p$nloccov > 0) dat[,icov] = Ycov[data_subset$data_index, icov_local] # no need for other dim checks as this is user provided
       if (exists("TIME", p$stmv_variables)) {
@@ -128,8 +126,8 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE, just_testing_v
       # construct prediction/output grid area ('pa')
       prediction_area = localrange_interpolation
       if (exists("stmv_distance_prediction_limits", p)) {
-        prediction_area = min( max( localrange_interpolation, min(p$stmv_distance_prediction_limits) ), max(p$stmv_distance_prediction_limits), na.rm=TRUE )
-      }
+        prediction_area = min( max( prediction_area, min(p$stmv_distance_prediction_limits) ), max(p$stmv_distance_prediction_limits), na.rm=TRUE )
+      } 
 
       windowsize.half =  aegis_floor( prediction_area / p$pres ) + 1L
 
@@ -155,7 +153,7 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE, just_testing_v
 
     }
 
-    if (is.null(res)) stop( "Initial testing of methods did not result in a viable solution. Check your model and constraints.Hint: p$stmv_nmin, p$stmv_tmin, p$stmv_interpolation_basis_distance, etc. "  )
+    if (is.null(res)) stop( "Initial testing of methods did not result in a viable solution. Check your model and constraints.Hint: p$stmv_nmin, p$stmv_tmin, stmv_interpolation_distance, etc. "  )
     return(NULL)
   }
 
@@ -201,7 +199,7 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE, just_testing_v
       ii = NULL
       if ( !is.finite( localrange ) ) {
         # obtain estimate of localrange from adjoining areas
-        localrange = max( distance_limits ) #initial guess
+        localrange = max( p$stmv_distance_interpolation ) #initial guess
         ii = which( ( s1 <= localrange ) & ( s2 <= localrange ) )
         if (length( ii ) < 1)  next()
         localrange = median( S[ii, i_localrange ], na.rm=TRUE ) # initial local estimate
@@ -239,13 +237,9 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE, just_testing_v
       }
     }
 
-    if (!exists("stmv_interpolation_basis", p)) p$stmv_interpolation_basis = "correlation"
-
-    if (p$stmv_interpolation_basis == "correlation")  {
-      localrange_interpolation = matern_phi2distance( phi=phi, nu=nu, cor=p$stmv_interpolation_basis_correlation )
-    } else if (p$stmv_interpolation_basis == "distance")  {
-      localrange_interpolation = p$stmv_interpolation_basis_distance
-    }
+    if (is.null(localrange_interpolation) ) {
+      if (!is.null(localrange_interpolation_correlation)) localrange_interpolation = matern_phi2distance( phi=phi, nu=nu, cor=localrange_interpolation_correlation )
+    } 
 
     data_subset = stmv_select_data( p=p, Si=Si, localrange=localrange_interpolation )
     if (is.null( data_subset )) {
@@ -273,7 +267,7 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE, just_testing_v
     # add a small error term to prevent some errors when duplicate locations exist; localrange_interpolation offsets to positive values
 
     dat[,ilocs] = Yloc[data_subset$data_index,]
-    dat[,ilocs] = dat[,ilocs] + localrange_interpolation * runif(2*ndata, -dist_error, dist_error)
+    dat[,ilocs] = dat[,ilocs] + eps * runif(2*ndata, -dist_error, dist_error)
 
     if (p$nloccov > 0) dat[,icov] = Ycov[data_subset$data_index, icov_local] # no need for other dim checks as this is user provided
     if (exists("TIME", p$stmv_variables)) {
@@ -300,10 +294,12 @@ stmv_interpolate_lattice = function( ip=NULL, p, debugging=FALSE, just_testing_v
 
     # construct prediction/output grid area ('pa')
     prediction_area = localrange_interpolation
+
     if (exists("stmv_distance_prediction_limits", p)) {
-      prediction_area = min( max( localrange_interpolation, min(p$stmv_distance_prediction_limits) ), max(p$stmv_distance_prediction_limits), na.rm=TRUE )
+      prediction_area = min( max( prediction_area, min(p$stmv_distance_prediction_limits) ), max(p$stmv_distance_prediction_limits), na.rm=TRUE )
     }
 
+  
     windowsize.half =  aegis_floor( prediction_area / p$pres ) + 1L
 
     pa = try( stmv_predictionarea_lattice( p=p, sloc=sloc, windowsize.half=windowsize.half ) )

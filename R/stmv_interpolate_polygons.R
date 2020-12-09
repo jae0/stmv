@@ -1,6 +1,6 @@
 
 
-stmv_interpolate_polygons = function( ip=NULL, p, debugging=FALSE, global_sppoly=NULL, stmv_au_buffer_links=1, localrange=NULL, stmv_au_distance_reference="completely_inside_boundary", just_testing_variablelist=FALSE, eps=1e-6, ... ) {
+stmv_interpolate_polygons = function( ip=NULL, p, debugging=FALSE, global_sppoly=NULL, stmv_au_buffer_links=1, localrange_interpolation=NULL, stmv_au_distance_reference="completely_inside_boundary", just_testing_variablelist=FALSE, eps=1e-6, ... ) {
   #\\ core function to interpolate (model and predict) in parallel
 
   if (0) {
@@ -9,7 +9,7 @@ stmv_interpolate_polygons = function( ip=NULL, p, debugging=FALSE, global_sppoly
     p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) )
     ip = 1:p$nruns
     debugging=TRUE
-    localrange = p$pres * 10
+    localrange_interpolation = p$pres * 10
     stmv_au_distance_reference="completely_inside_boundary"  # distance filter on "boundary" of polygon or "centroids"
     stmv_au_buffer_links=1  # number of additional links to nearest neighbourhoods
     eps=1e-6
@@ -61,12 +61,11 @@ stmv_interpolate_polygons = function( ip=NULL, p, debugging=FALSE, global_sppoly
 
 
   # construct prediction/output grid area ('pa')
-  prediction_area = localrange
   if (exists("stmv_distance_prediction_limits", p)) {
-    prediction_area = min( max( prediction_area, min(p$stmv_distance_prediction_limits) ), max(p$stmv_distance_prediction_limits), na.rm=TRUE )
+    localrange_interpolation = min( max( localrange_interpolation, min(p$stmv_distance_prediction_limits) ), max(p$stmv_distance_prediction_limits), na.rm=TRUE )
   }
 
-  windowsize.half =  aegis_floor( prediction_area / p$pres ) + 1L
+  windowsize.half =  aegis_floor( localrange_interpolation / p$pres ) + 1L
 
 
   if (just_testing_variablelist) {
@@ -86,7 +85,7 @@ stmv_interpolate_polygons = function( ip=NULL, p, debugging=FALSE, global_sppoly
       Si = p$runs[ iip, "locs" ]
       sloc = Sloc[Si,]
             
-      data_subset = stmv_select_data( p=p, Si=Si, localrange=localrange )
+      data_subset = stmv_select_data( p=p, Si=Si, localrange=localrange_interpolation )
       if ( !is.null( data_subset )) {
 
         unique_spatial_locations = data_subset$unique_spatial_locations
@@ -135,7 +134,7 @@ stmv_interpolate_polygons = function( ip=NULL, p, debugging=FALSE, global_sppoly
         }  # unique sp locations
       }  # null data_subset
     }  # end for iip
-    if (is.null(res)) stop( "Initial testing of methods did not result in a viable solution. Check your model and constraints.Hint: p$stmv_nmin, p$stmv_tmin, p$stmv_au_buffer_links, p$pres, stmv_au_distance_reference, p$stmv_distance_statsgrid, p$stmv_interpolation_basis_distance_choices  etc. "  )
+    if (is.null(res)) stop( "Initial testing of methods did not result in a viable solution. Check your model and constraints.Hint: p$stmv_nmin, p$stmv_tmin, p$stmv_au_buffer_links, p$pres, stmv_au_distance_reference, p$stmv_distance_statsgrid, p$stmv_distance_interpolation  etc. "  )
     return(NULL)
   }
 
@@ -174,7 +173,7 @@ stmv_interpolate_polygons = function( ip=NULL, p, debugging=FALSE, global_sppoly
     if ( Sflag[Si] == E[["complete"]] ) next()
     sloc = Sloc[Si,]
 
-    data_subset = stmv_select_data( p=p, Si=Si, localrange=localrange )
+    data_subset = stmv_select_data( p=p, Si=Si, localrange=localrange_interpolation )
     if (is.null( data_subset )) {
       Sflag[Si] = E[["insufficient_data"]]
       next()

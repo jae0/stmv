@@ -1,6 +1,6 @@
 
 
-stmv_interpolate_predictions = function( ip=NULL, p, debugging=FALSE, ... ) {
+stmv_interpolate_predictions = function( ip=NULL, p, localrange_interpolation=NULL, debugging=FALSE, ... ) {
   #\\ simple brute force linear interpolaion of finalized prediction to fill missing data
 
   if (0) {
@@ -39,8 +39,6 @@ stmv_interpolate_predictions = function( ip=NULL, p, debugging=FALSE, ... ) {
   }
   logpoints  =  sort( sample( ip, round( max(1, nlogs) ) ) )  # randomize
 
-  localrange_interpolation = p$stmv_interpolation_basis_distance
-
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
 
@@ -53,10 +51,10 @@ stmv_interpolate_predictions = function( ip=NULL, p, debugging=FALSE, ... ) {
     # construct prediction/output grid area ('pa')
     # convert distance to discretized increments of row/col indices;
     if (exists("stmv_distance_prediction_limits", p)) {
-      prediction_area = min( max( localrange_interpolation, min(p$stmv_distance_prediction_limits) ), max(p$stmv_distance_prediction_limits), na.rm=TRUE )
+      localrange_interpolation = min( max( localrange_interpolation, min(p$stmv_distance_prediction_limits) ), max(p$stmv_distance_prediction_limits), na.rm=TRUE )
     }
 
-    windowsize.half = aegis_floor( prediction_area / p$pres ) + 1L
+    windowsize.half = aegis_floor( localrange_interpolation / p$pres ) + 1L
     # construct data (including static covariates) for prediction locations (pa)
     pa = try( stmv_predictionarea_lattice( p=p, sloc=Sloc[Si,], windowsize.half=windowsize.half ) )
     if ( is.null(pa) ) {

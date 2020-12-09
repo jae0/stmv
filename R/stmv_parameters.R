@@ -63,7 +63,6 @@ stmv_parameters = function( p=list(), ... ) {
   if (p$stmv_local_modelengine %in% c("carstm") ) {
     p$libs = c( p$libs, "INLA", "sf", "sp", "spdep" )
     p = parameters_add_without_overwriting( p,
-      stmv_interpolation_basis_distance_choices = p$stmv_distance_statsgrid * c( 1, 1.5, 2), # data selection / prediction
       stmv_au_distance_reference = "none", # additional filters upon polygons relative to windowsize: "centroid", "inside_or_touches_boundary", completely_inside_boundary"
       stmv_au_buffer_links = 0, # number of additional neighbours to extend beyond initial solution
       pres = 1  # this governs resolution of lattice predictions

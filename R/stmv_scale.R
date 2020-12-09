@@ -51,8 +51,6 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps=1e-6, ... ) {
   stmv_ntarget = stmv_ntarget[ stmv_ntarget >=  p$stmv_nmin ]
   stmv_nmax = p$stmv_nmax
 
-  stmv_distances = sort( unique( p$stmv_distance_scale ), decreasing=FALSE ) # smallest first
-
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
 
@@ -68,10 +66,10 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps=1e-6, ... ) {
     unique_spatial_locations = 0
 
     for ( ntarget in stmv_ntarget ) {
-      for ( stmv_distance_cur in stmv_distances )  {
-        # print(stmv_distance_cur)
+      for ( localrange in p$stmv_distance_scale )  {
+        # print(localrange)
         data_subset = NULL
-        data_subset = stmv_select_data( p=p, Si=Si, localrange=stmv_distance_cur )
+        data_subset = stmv_select_data( p=p, Si=Si, localrange=localrange )
         if (is.null( data_subset )) next()
         unique_spatial_locations = data_subset$unique_spatial_locations
         ndata = length(data_subset$data_index)
@@ -96,8 +94,8 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps=1e-6, ... ) {
         xy=Yloc[data_subset$data_index,],
         z=Y[data_subset$data_index,],
         methods=p$stmv_variogram_method,
-        distance_cutoff=stmv_distance_cur,
-        discretized_n = aegis_floor(stmv_distance_cur / p$pres),
+        distance_cutoff=localrange,
+        discretized_n = aegis_floor(localrange / p$pres),
         nbreaks=p$stmv_variogram_nbreaks_totry[ss]
       ) )
       if ( !is.null(o)) {
