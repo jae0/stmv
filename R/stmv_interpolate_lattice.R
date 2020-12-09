@@ -415,6 +415,7 @@ stmv_interpolate_lattice = function( ip=NULL, p, localrange_interpolation=NULL, 
         message( "flag: stmv_variogram_resolve_time used in p$stmv_fft_filter ... time-varying variogram parameters ... need to create as system to store/use this properly! .. incomplete")
       }
     }
+    
 
     for ( vv in 1:length(res$stmv_stats) ) {
       vn = names(res$stmv_stats)[vv]
