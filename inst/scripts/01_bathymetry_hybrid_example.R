@@ -63,7 +63,7 @@ p = bathymetry_parameters(
   stmv_nmax = 600, # no real upper bound.. just speed /RAM
   stmv_force_complete_method = "linear_interp",
   stmv_runmode = list(
-    carstm = rep("localhost", scale_ncpus),
+    carstm = rep("localhost", 1),
     globalmodel = FALSE,
     restart_load = FALSE,
     save_completed_data = TRUE # just a dummy variable with the correct name
@@ -72,23 +72,18 @@ p = bathymetry_parameters(
 
 
 if (0) {
-  # to force serial mode
+  # to force parallel mode
    p$stmv_runmode = list(
-    scale=rep("localhost", scale_ncpus),
-    interpolate = rep("localhost", 1),
-    interpolate_predictions = TRUE,
+    carstm = rep("localhost", scale_ncpus),
     globalmodel = FALSE,
-    save_intermediate_results = FALSE,
+    restart_load = FALSE,
     save_completed_data = TRUE # just a dummy variable with the correct name
-   )
+  )
 
 }
 
 # quick look of data
-  dev.new(); surface( as.image( Z=DATA$input$z, x=DATA$input[, c("plon", "plat")], nx=p$nplons, ny=p$nplats, na.rm=TRUE) )
-
-
-
+dev.new(); surface( as.image( Z=DATA$input$z, x=DATA$input[, c("plon", "plat")], nx=p$nplons, ny=p$nplats, na.rm=TRUE) )
 
 stmv( p=p  )  # This will take from a few minutes, depending upon system
 # stmv_db( p=p, DS="cleanup.all" )

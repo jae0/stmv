@@ -620,15 +620,18 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
       p0 = p
       for ( j in 1:length(p$stmv_interpolation_basis_distance_choices) ) {
         p = p0 #reset
-        p$stmv_interpolation_basis_distance = p$stmv_interpolation_basis_distance_choices[j]
-        # p$runmode = paste("carstm_distance_basis_", p$stmv_interpolation_basis_correlation, sep="")
-        # ni = p$stmv_runmode[["interpolate"]]
-        # jcpu = ifelse( j > ni, ni, j )
-        # p$clusters = p$stmv_runmode[["carstm"]][[jcpu]] # as ram reqeuirements increase drop cpus
         p$runmode = "carstm"
         p$clusters = p$stmv_runmode[["carstm"]] # as ram reqeuirements increase drop cpus
         currentstatus = stmv_statistics_status( p=p, reset="flags", reset_flags=c("insufficient_data",  "unknown" ) )
-        parallel_run( stmv_interpolate_polygons, p=p, runmode="carstm", global_sppoly=global_sppoly, stmv_au_buffer_links=p$stmv_au_buffer_links,stmv_au_distance_reference=p$stmv_au_distance_reference, runindex=list( locs=sample( currentstatus$todo )) )
+        parallel_run( stmv_interpolate_polygons, 
+          p=p, 
+          runmode=p$runmode, 
+          localrange=p$stmv_interpolation_basis_distance_choices[j], 
+          global_sppoly=global_sppoly, 
+          stmv_au_buffer_links=p$stmv_au_buffer_links, 
+          stmv_au_distance_reference=p$stmv_au_distance_reference, 
+          runindex=list( locs=sample( currentstatus$todo )
+        ) )
         invisible( stmv_db(p=p, DS="save_current_state", runmode="carstm", datasubset="statistics") )# temp save to disk
         invisible( stmv_db(p=p, DS="save_current_state", runmode="carstm", datasubset="P" ) )
         invisible( stmv_db(p=p, DS="save_current_state", runmode="carstm", datasubset="Psd" ) )

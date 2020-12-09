@@ -75,46 +75,62 @@ p = bathymetry_parameters(
   stmv_nmin = 50,  # min number of data points req before attempting to model in a localized space
   stmv_nmax = 600, # no real upper bound.. just speed /RAM
   stmv_force_complete_method = "fft",
-  stmv_runmode = list(
+ stmv_runmode = list(
+    scale = rep("localhost", 1),
+    interpolate = list(
+      c1 = rep("localhost", 1),
+      c2 = rep("localhost", 1),
+      c3 = rep("localhost", 1),
+      c4 = rep("localhost", 1),
+      c5 = rep("localhost", 1)
+    ),
+    interpolate_predictions = list(
+      c1 = rep("localhost", 1),
+      c2 = rep("localhost", 1),
+      c3 = rep("localhost", 1),
+      c4 = rep("localhost", 1),
+      c5 = rep("localhost", 1),
+      c6 = rep("localhost", 1),
+      c7 = rep("localhost", 1) 
+    ),
+    globalmodel = FALSE,
+    save_intermediate_results = TRUE,
+    save_completed_data = TRUE
+  ) 
+)
+
+
+if (0) {
+  # to force parallel mode
+   stmv_runmode = list(
     scale = rep("localhost", scale_ncpus),
     interpolate = list(
       c1 = rep("localhost", interpolate_ncpus),  # ncpus for each runmode
       c2 = rep("localhost", interpolate_ncpus),  # ncpus for each runmode
       c3 = rep("localhost", max(1, interpolate_ncpus-1)),
-      c4 = rep("localhost", max(1, interpolate_ncpus-2)),
+      c4 = rep("localhost", max(1, interpolate_ncpus-1)),
       c5 = rep("localhost", max(1, interpolate_ncpus-2))
     ),
-    # if a good idea of autocorrelation is missing, forcing via explicit distance limits is an option
-    # interpolate_distance_basis = list(
-    #   d1 = rep("localhost", interpolate_ncpus),
-    #   d2 = rep("localhost", interpolate_ncpus),
-    #   d3 = rep("localhost", max(1, interpolate_ncpus-1)),
-    #   d4 = rep("localhost", max(1, interpolate_ncpus-1)),
-    #   d5 = rep("localhost", max(1, interpolate_ncpus-2)),
-    #   d6 = rep("localhost", max(1, interpolate_ncpus-2))
-    # ),
-    interpolate_predictions = TRUE,
+    interpolate_predictions = list(
+      c1 = rep("localhost", max(1, interpolate_ncpus-1)),  # ncpus for each runmode
+      c2 = rep("localhost", max(1, interpolate_ncpus-1)),  # ncpus for each runmode
+      c3 = rep("localhost", max(1, interpolate_ncpus-2)),
+      c4 = rep("localhost", max(1, interpolate_ncpus-3)),
+      c5 = rep("localhost", max(1, interpolate_ncpus-4)),
+      c6 = rep("localhost", max(1, interpolate_ncpus-4)),
+      c7 = rep("localhost", max(1, interpolate_ncpus-5))
+    ),
     globalmodel = FALSE,
-    restart_load = FALSE,
-    save_completed_data = TRUE # just a dummy variable with the correct name
+    # restart_load = "interpolate_correlation_basis_0.01" ,  # only needed if this is restarting from some saved instance
+    save_intermediate_results = TRUE,
+    save_completed_data = TRUE
+
   )  # ncpus for each runmode
-)
-
-if (0) {
-  # to force serial mode
-   p$stmv_runmode = list(
-    scale=rep("localhost", scale_ncpus),
-    interpolate = rep("localhost", 1),
-    interpolate_predictions = TRUE,
-    globalmodel = FALSE,
-    save_intermediate_results = FALSE,
-    save_completed_data = TRUE # just a dummy variable with the correct name
-   )
-
 }
 
+
 # quick look of data
-  dev.new(); surface( as.image( Z=DATA$input$z, x=DATA$input[, c("plon", "plat")], nx=p$nplons, ny=p$nplats, na.rm=TRUE) )
+dev.new(); surface( as.image( Z=DATA$input$z, x=DATA$input[, c("plon", "plat")], nx=p$nplons, ny=p$nplats, na.rm=TRUE) )
 
 
 

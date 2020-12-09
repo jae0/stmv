@@ -28,11 +28,6 @@ stmv_parameters = function( p=list(), ... ) {
     stmv_current_status = file.path( p$stmvSaveDir, "stmv_current_status" )
   )
 
-  # range of permissible predictions km (i.e 1/2 stats grid to upper limit based upon data density)
-  p = parameters_add_without_overwriting( p,
-    stmv_distance_prediction_limits = ifelse ( exists("stmv_distance_scale", p), range( p$stmv_distance_scale ), NA )
-  )
-
   p = parameters_add_without_overwriting( p,
     storage_backend="bigmemory.ram",
     stmv_variogram_method = "fft",   # note GP methods are slow when there is too much data
@@ -46,6 +41,7 @@ stmv_parameters = function( p=list(), ... ) {
     stmv_lowpass_nu = 0.5, # this is exponential covar
     stmv_lowpass_phi = stmv::matern_distance2phi( distance=ifelse(exists("pres", p), p$pres, stop("'p$pres' needs to be defined")), nu=p$stmv_lowpass_nu, cor=p$stmv_autocorrelation_localrange ) # FFT based method when operating gloablly
   )
+ 
 
   if ( p$stmv_local_modelengine %in% c("gaussianprocess2Dt")) {
     p$libs = c( p$libs, "fields", "fftwtools", "fftw" )
@@ -67,8 +63,10 @@ stmv_parameters = function( p=list(), ... ) {
   if (p$stmv_local_modelengine %in% c("carstm") ) {
     p$libs = c( p$libs, "INLA", "sf", "sp", "spdep" )
     p = parameters_add_without_overwriting( p,
-      stmv_au_distance_reference = "none",
-      stmv_au_buffer_links = 0
+      stmv_interpolation_basis_distance_choices = p$stmv_distance_statsgrid * c( 1, 1.5, 2), # data selection / prediction
+      stmv_au_distance_reference = "none", # additional filters upon polygons relative to windowsize: "centroid", "inside_or_touches_boundary", completely_inside_boundary"
+      stmv_au_buffer_links = 0, # number of additional neighbours to extend beyond initial solution
+      pres = 1  # this governs resolution of lattice predictions
     )
     p = parameters_add_without_overwriting( p,
       control.inla.variations = list(

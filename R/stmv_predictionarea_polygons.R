@@ -112,7 +112,7 @@ if (0) {
 
       if ( stmv_au_buffer_links > 0 ) {
         # no of additional neighbourhood links ... 0 == nearest neighbours, 1 == nn + next nearest neighbours, etc
-        for (i in 1:nlinks ) {
+        for (i in 1:stmv_au_buffer_links ) {
           new = NULL
           for ( foc in nnAUID ) {
             new = c( new, nbnames[nb[[which( nbnames == foc  )]]] ) ## nearest neighbours

@@ -3,7 +3,6 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, improve.hyperparam.estimates
 
 
     if (0) {
-      sloc = Sloc[Si,]
       improve.hyperparam.estimates=FALSE
     }
 
