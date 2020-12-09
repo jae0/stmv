@@ -89,8 +89,7 @@ stmv_interpolate_lattice = function( ip=NULL, p, localrange_interpolation=NULL, 
       sloc = Sloc[Si,]
       nu    = p$stmv_lowpass_nu
       phi   = p$stmv_lowpass_phi
-      localrange = p$stmv_autocorrelation_localrange   # attached to p$stmv_autocorrelation_localrange
-
+      
       if (is.null(localrange_interpolation)) localrange_interpolation = p$stmv_distance_statsgrid * 2   # force a simple solution
 
       data_subset = stmv_select_data( p=p, Si=Si, localrange=localrange_interpolation )
@@ -186,7 +185,7 @@ stmv_interpolate_lattice = function( ip=NULL, p, localrange_interpolation=NULL, 
     sloc = Sloc[Si,]
     nu    = S[Si, i_nu]
     phi   = S[Si, i_phi]
-    localrange = S[Si, i_localrange]   # attached to p$stmv_autocorrelation_localrange
+    localrange = S[Si, i_localrange]   
     varObs = S[Si, i_sdObs]^2
     varSpatial = S[Si, i_sdSpatial]^2
 
