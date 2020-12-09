@@ -43,13 +43,14 @@ p = bathymetry_parameters(
   DATA = DATA,
   spatial_domain = p0$spatial_domain,
   spatial_domain_subareas =NULL,
-  inputdata_spatial_discretization_planar_km = p0$pres,  # pres = 0.5
+  inputdata_spatial_discretization_planar_km = p0$pres/5,  # pres = 0.5, pres defines underlaying lattice resolution 
   aegis_dimensionality="space",
   stmv_variables = list(Y="z"),  # required as fft has no formulae
   stmv_global_modelengine = "none",  # too much data to use glm as an entry into link space ... use a direct transformation
   stmv_local_modelengine="carstm",
   # stmv_au_distance_reference="completely_inside_boundary",
-  # stmv_au_buffer_links=1,
+  stmv_au_distance_reference = "none", 
+  stmv_au_buffer_links = 1, # number of additional neighbours to extend beyond initial solution
   stmv_filter_depth_m = FALSE,  # need data above sea level to get coastline
   stmv_Y_transform =list(
     transf = function(x) {log10(x + 2500)} ,
