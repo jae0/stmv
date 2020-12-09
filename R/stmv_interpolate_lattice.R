@@ -458,6 +458,7 @@ stmv_interpolate_lattice = function( ip=NULL, p, localrange_interpolation=NULL, 
 
   }  # end for loop
 
+browser()
 
   return(NULL)
 
