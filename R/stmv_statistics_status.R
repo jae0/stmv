@@ -14,81 +14,6 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NUL
     }
 
 
-    if ( grepl("features", reset)) {
-
-      # create location specific flags for analysis, etc..
-
-      # flag areas overlapping with prediction locations:
-      Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
-      Sloc = stmv_attach( p$storage_backend, p$ptr$Sloc )
-
-      pidP = array_map( "xy->1", Ploc[], gridparams=p$gridparams )
-      pidS = array_map( "xy->1", Sloc[], gridparams=p$gridparams )
-      overlap = match( pidS, pidP )
-      outside_bounds = which( !is.finite( overlap ))
-
-      if (length(outside_bounds)  > 0 ) Sflag[outside_bounds] = E[["outside_bounds"]]  # outside of prediction domain
-
-      # catch data boundaries if present
-      if (exists( "boundary", p) && p$boundary) {
-        timeb0 =  Sys.time()
-        message("\n")
-        message( "||| Defining boundary polygon for data .. this reduces the number of points to analyse")
-        message( "||| but takes a few minutes to set up ...")
-        stmv_db( p=p, DS="boundary.redo" ) # ~ 5 min on nfs
-      # last set of filters to reduce problem size
-        bnds = try( stmv_db( p=p, DS="boundary" ) )
-        if (!is.null(bnds)) {
-          if( !("try-error" %in% class(bnds) ) ) {
-            outside_bounds = which( bnds$inside.polygon == 0 ) # outside boundary
-            if (length(outside_bounds)>0) Sflag[outside_bounds] = E[["outside_bounds"]]
-        }}
-        bnds = NULL
-        message( paste( "||| Time taken to estimate spatial bounds (mins):", round( difftime( Sys.time(), timeb0, units="mins" ),3) ) )
-      }
-
-      if ( exists("stmv_filter_depth_m", p) && is.finite(p$stmv_filter_depth_m) ) {
-        # additionaldepth-based filter:
-        # assuming that there is depth information in Pcov, match Sloc's and filter out locations that fall on land
-        if ( "z" %in% p$stmv_variables$COV ){
-          z = stmv_attach( p$storage_backend, p$ptr$Pcov[["z"]] )[]
-          Pabove = which( z < p$stmv_filter_depth_m ) # negative = above land:: depth = - height
-          Pbelow = which( z >= p$stmv_filter_depth_m )
-
-          Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
-          Sloc = stmv_attach( p$storage_backend, p$ptr$Sloc )
-
-          pidA = array_map( "xy->1", Ploc[Pabove,], gridparams=p$gridparams )
-          pidB = array_map( "xy->1", Ploc[Pbelow,], gridparams=p$gridparams )
-          sid  = array_map( "xy->1", Sloc[], gridparams=p$gridparams )
-          Pabove = Pbelow = NULL
-
-          above = which( is.finite( match( sid, pidA ) ))
-          below = which( is.finite( match( sid, pidB ) ))
-          piA = piB = NULL
-
-          if (length(above) > 0 ) Sflag[above] = E[["too_shallow"]]
-          if (length(below) > 0 ) Sflag[below] = E[["todo"]]
-          above = below = NULL
-
-          if (0) {
-            Yloc = stmv_attach( p$storage_backend, p$ptr$Yloc )
-            plot( Yloc[], pch=".", col="grey" ) # data locations
-            bnds = try( stmv_db( p=p, DS="boundary" ) )
-            if (!is.null(bnds)) {
-              if ( !("try-error" %in% class(bnds) ) ) {
-                points( Sloc[which(bnds$inside.polygon==1),], pch=".", col="orange" )
-                lines( bnds$polygon[] , col="green", pch=2 )
-              }
-            }
-            points( Sloc[which( Sflag[]==E[["todo"]]),], pch=".", col="blue" )
-          }
-        }
-      }
-
-    }
-
-
     if ( grepl("complete", reset)) {
       # statistics locations where estimations need to be redone
 
@@ -172,6 +97,81 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NUL
       }
       uS = NULL
       Sloc_nplon = Sloc_nplat = NULL
+    }
+
+
+    if ( grepl("features", reset)) {
+
+      # create location specific flags for analysis, etc..
+
+      # flag areas overlapping with prediction locations:
+      Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
+      Sloc = stmv_attach( p$storage_backend, p$ptr$Sloc )
+
+      pidP = array_map( "xy->1", Ploc[], gridparams=p$gridparams )
+      pidS = array_map( "xy->1", Sloc[], gridparams=p$gridparams )
+      overlap = match( pidS, pidP )
+      outside_bounds = which( !is.finite( overlap ))
+
+      if (length(outside_bounds)  > 0 ) Sflag[outside_bounds] = E[["outside_bounds"]]  # outside of prediction domain
+
+      # catch data boundaries if present
+      if (exists( "boundary", p) && p$boundary) {
+        timeb0 =  Sys.time()
+        message("\n")
+        message( "||| Defining boundary polygon for data .. this reduces the number of points to analyse")
+        message( "||| but takes a few minutes to set up ...")
+        stmv_db( p=p, DS="boundary.redo" ) # ~ 5 min on nfs
+      # last set of filters to reduce problem size
+        bnds = try( stmv_db( p=p, DS="boundary" ) )
+        if (!is.null(bnds)) {
+          if( !("try-error" %in% class(bnds) ) ) {
+            outside_bounds = which( bnds$inside.polygon == 0 ) # outside boundary
+            if (length(outside_bounds)>0) Sflag[outside_bounds] = E[["outside_bounds"]]
+        }}
+        bnds = NULL
+        message( paste( "||| Time taken to estimate spatial bounds (mins):", round( difftime( Sys.time(), timeb0, units="mins" ),3) ) )
+      }
+
+      if ( exists("stmv_filter_depth_m", p) && is.finite(p$stmv_filter_depth_m) ) {
+        # additionaldepth-based filter:
+        # assuming that there is depth information in Pcov, match Sloc's and filter out locations that fall on land
+        if ( "z" %in% p$stmv_variables$COV ){
+          z = stmv_attach( p$storage_backend, p$ptr$Pcov[["z"]] )[]
+          Pabove = which( z < p$stmv_filter_depth_m ) # negative = above land:: depth = - height
+          Pbelow = which( z >= p$stmv_filter_depth_m )
+
+          Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
+          Sloc = stmv_attach( p$storage_backend, p$ptr$Sloc )
+
+          pidA = array_map( "xy->1", Ploc[Pabove,], gridparams=p$gridparams )
+          pidB = array_map( "xy->1", Ploc[Pbelow,], gridparams=p$gridparams )
+          sid  = array_map( "xy->1", Sloc[], gridparams=p$gridparams )
+          Pabove = Pbelow = NULL
+
+          above = which( is.finite( match( sid, pidA ) ))
+          below = which( is.finite( match( sid, pidB ) ))
+          piA = piB = NULL
+
+          if (length(above) > 0 ) Sflag[above] = E[["too_shallow"]]
+          if (length(below) > 0 ) Sflag[below] = E[["todo"]]
+          above = below = NULL
+
+          if (0) {
+            Yloc = stmv_attach( p$storage_backend, p$ptr$Yloc )
+            plot( Yloc[], pch=".", col="grey" ) # data locations
+            bnds = try( stmv_db( p=p, DS="boundary" ) )
+            if (!is.null(bnds)) {
+              if ( !("try-error" %in% class(bnds) ) ) {
+                points( Sloc[which(bnds$inside.polygon==1),], pch=".", col="orange" )
+                lines( bnds$polygon[] , col="green", pch=2 )
+              }
+            }
+            points( Sloc[which( Sflag[]==E[["todo"]]),], pch=".", col="blue" )
+          }
+        }
+      }
+
     }
 
 

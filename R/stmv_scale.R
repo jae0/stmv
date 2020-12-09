@@ -7,7 +7,6 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps=1e-6, ... ) {
     currentstatus = stmv_statistics_status( p=p )
     p = parallel_run( p=p, runindex=list( locs=sample( currentstatus$todo )) )
     # parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
-    p$runmode = "scale"
     ip = 1:p$nruns
     debugging=TRUE
     eps = 1e-6
@@ -57,7 +56,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps=1e-6, ... ) {
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
 
-    if ( iip %in% logpoints )  slog = stmv_logfile(p=p, flag= paste("Scale determination", p$runmode) )
+    if ( iip %in% logpoints )  slog = stmv_logfile(p=p, flag="Scale determination")
     Si = p$runs[ iip, "locs" ]
     if ( Sflag[Si] != E[["todo"]] ) next()  # previously attempted .. skip
     if (debugging) print( paste("index =", iip, ";  Si = ", Si ) )
