@@ -1,7 +1,7 @@
 stmv_logfile = function(p, flag="default"){
 
   time_current = Sys.time()
-  time_runmode = p$time_start_runmode
+  time_runmode = p$time_start_current_runmode
 
   dtime_totalelapsed = difftime( time_current, p$time_start )
   dtime = difftime( time_current, time_runmode )
