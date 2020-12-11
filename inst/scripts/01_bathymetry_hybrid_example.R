@@ -18,7 +18,7 @@ interpolate_ncpus = min( parallel::detectCores(), floor( (ram_local()- interpola
 
 p0 = aegis::spatial_parameters( spatial_domain="bathymetry_example",
   aegis_proj4string_planar_km="+proj=utm +ellps=WGS84 +zone=20 +units=km",
-  dres=1/60/4, pres=0.5, lon0=-64, lon1=-62, lat0=44, lat1=45, psignif=2 )
+  dres=1/60/4, pres=1, lon0=-64, lon1=-62, lat0=44, lat1=45, psignif=2 )
 
 # or:
 p0 = stmv_test_data( "aegis.test.parameters")
@@ -43,7 +43,7 @@ p = bathymetry_parameters(
   DATA = DATA,
   spatial_domain = p0$spatial_domain,
   spatial_domain_subareas =NULL,
-  inputdata_spatial_discretization_planar_km = p0$pres/5,  # pres = 0.5, pres defines underlaying lattice resolution 
+  inputdata_spatial_discretization_planar_km = p0$pres/5,  # pres = 1, pres defines underlaying lattice resolution 
   aegis_dimensionality="space",
   stmv_variables = list(Y="z"),  # required as fft has no formulae
   stmv_global_modelengine = "none",  # too much data to use glm as an entry into link space ... use a direct transformation
@@ -57,7 +57,7 @@ p = bathymetry_parameters(
     invers = function(x) {10^(x) - 2500}
   ), # data range is from -1667 to 5467 m: make all positive valued
   stmv_rsquared_threshold = 0.01, # lower threshold  .. i.e., ignore ... there is no timeseries model, nor a fixed effect spatial "model"
-  stmv_distance_statsgrid = 10, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
+  stmv_distance_statsgrid = 5, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )
   # stmv_distance_scale = c( 2.5, 5, 10, 20, 40, 60, 80 ), # km ... approx guesses of 95% AC range
   stmv_distance_prediction_limits =c( 5, 10 ), # range of permissible predictions km (i.e 1/2 stats grid to upper limit based upon data density)
   stmv_nmin = 50,  # min number of data points req before attempting to model in a localized space

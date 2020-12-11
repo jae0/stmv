@@ -78,7 +78,6 @@ p = aegis.temperature::temperature_parameters(
   stmv_autocorrelation_fft_taper = 0.75,  # benchmark from which to taper .. user level control of smoothness
   stmv_autocorrelation_localrange = 0.1,  # for reporting in stats
   stmv_autocorrelation_interpolation = c(  0.3, 0.2, 0.1, 0.01 ),  # range finding
-  stmv_local_model_distanceweighted = TRUE,
   stmv_filter_depth_m = 10, # the depth covariate is input as units of depth (m) so, choose stats locations with elevation > 10m as being on land
   stmv_rsquared_threshold = 0.001, # lower thindreshold for timeseries model
   stmv_distance_statsgrid = 10, # resolution (km) of data aggregation (i.e. generation of the ** statistics ** )

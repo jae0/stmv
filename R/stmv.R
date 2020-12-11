@@ -104,7 +104,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
   message( "\n")
   message( "||| Initializing temporary storage of data and output files... ")
-  message( "||| These are large files (4 to 6 X 5GB), it will take a minute ... ")
+  message( "||| These can be large files and take a minute ... ")
   message( "||| Try to turn off swap/paging such that only RAM is used. ")
 
   stmv_db( p=p, DS="cleanup" )
