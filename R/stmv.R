@@ -660,7 +660,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         if ( global_model_do )  invisible( stmv_db(p=p, DS="load_saved_state", runmode="meanprocess",  datasubset=c("P0", "P0sd") ) )
         stmv_statistics_status( p=p, reset=c( "all", "complete",  "incomplete", "features" ), verbose=FALSE  ) # required to start as scale determination uses Sflags too
       }
-      current_runmode = "interpolate_correlation_basis"
+      if ("interpolate" %in% runmode) current_runmode = "interpolate"
+      if ("interpolate_correlation_basis" %in% runmode) current_runmode = "interpolate_correlation_basis"
+
       p$time_start_current_runmode = Sys.time()
       
       p0 = p
@@ -711,14 +713,14 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
       }
       message( paste( "Time used for <interpolations", ">: ", format(difftime(  Sys.time(), p$time_start_current_runmode )), "\n" ) )
-      invisible( stmv_db(p=p, DS="save_current_state", runmode="interpolate", datasubset=c("P", "Pn", "Psd", "statistics") ) )
+      invisible( stmv_db(p=p, DS="save_current_state", runmode=current_runmode, datasubset=c("P", "Pn", "Psd", "statistics") ) )
       p = p0
     }
 
 
     if(0) {
-      stmv_db(p=p, DS="load_saved_state", runmode="interpolate", datasubset=c("P", "Pn", "Psd") )
-      stmv_db(p=p, DS="save_current_state", runmode="interpolate", datasubset=c("P", "Pn", "Psd"))
+      stmv_db(p=p, DS="load_saved_state", runmode=current_runmode, datasubset=c("P", "Pn", "Psd") )
+      stmv_db(p=p, DS="save_current_state", runmode=current_runmode, datasubset=c("P", "Pn", "Psd"))
       P = stmv_attach( p$storage_backend, p$ptr$P )
       Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
       if (length(dim(P)) > 1 ) {
