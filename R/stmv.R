@@ -666,11 +666,12 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
       p$time_start_current_runmode = Sys.time()
       
       p0 = p
+  
       for ( j in 1:length(p$stmv_autocorrelation_interpolation) ) {
         p = p0 #reset
         current_runmode_iter = paste( current_runmode, p$stmv_autocorrelation_interpolation[j] , sep="_")
 
-        ni = length( p$stmv_runmode[[ current_runmode ]] )
+        ni = length( p$stmv_runmode[[ current_runmode ]][[j]] )
         if (ni > 1) {
           jcpu = ifelse( j > ni, ni, j )
           p$clusters = p$stmv_runmode[[ current_runmode ]] [[ jcpu ]] # as ram reqeuirements increase drop cpus
@@ -685,7 +686,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
             message( "\n||| Entering < Fast ", current_runmode_iter, " > : ", format(Sys.time()) )
             currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
             if ( currentstatus$n.todo == 0 ) break()
-            if ( currentstatus$n.todo < (2*length(p$clusters)) ) p$clusters = p$clusters[1] # drop to serial mode
+            if ( currentstatus$n.todo < length(p$clusters) ) p$clusters = p$clusters[1] # drop to serial mode
             invisible( parallel_run( stmv_interpolate_lattice, 
               p=p, 
               localrange_interpolation_correlation = p$stmv_autocorrelation_interpolation[j] ,
@@ -694,13 +695,15 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
             invisible( stmv_db(p=p, DS="save_current_state", runmode=current_runmode, datasubset=c("P", "Pn", "Psd", "statistics") ) )
             stmv_statistics_status( p=p, verbose=FALSE ) # quick update before logging
             slog = stmv_logfile(p=p, flag= paste("Fast Interpolation correlation basis phase", current_runmode_iter, "completed ...") ) # final update before continuing
+            p$stmv__runmode = p0$stmv__runmode ## revert in case there were any changes
             p$stmv_fft_filter = gsub( "fast_predictions", "", p$stmv_fft_filter )  # temporarily remove fast ... now moving to slow/exhaustive
+          
           }
         }
         message( "\n||| Entering < Exhaustive ", current_runmode_iter, " > : ", format(Sys.time()) )
         currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
         if ( currentstatus$n.todo == 0 ) break()
-        if ( currentstatus$n.todo < (2*length(p$clusters)) ) p$clusters = p$clusters[1] # drop to serial mode
+        if ( currentstatus$n.todo < length(p$clusters) ) p$clusters = p$clusters[1] # drop to serial mode
         invisible( parallel_run( stmv_interpolate_lattice, 
           p=p, 
           localrange_interpolation_correlation = p$stmv_autocorrelation_interpolation[j],
@@ -710,6 +713,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
         stmv_statistics_status( p=p, verbose=FALSE ) # quick update before logging
         slog = stmv_logfile(p=p, flag= paste("Exhaustive Interpolation correlation basis phase", current_runmode_iter, "completed ...") ) # final update before continuing
+        p$stmv__runmode = p0$stmv__runmode
 
       }
       message( paste( "Time used for <interpolations", ">: ", format(difftime(  Sys.time(), p$time_start_current_runmode )), "\n" ) )
@@ -748,8 +752,8 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
       for ( j in 1:length(p$stmv_distance_interpolation) ) {
         p = p0 #reset
         current_runmode_iter = paste( current_runmode, p$stmv_distance_interpolation[j], sep="_")
-        ni = length( p$stmv_runmode[[ current_runmode ]] )
-        if (ni > 1){
+        ni = length( p$stmv_runmode[[ current_runmode ]][[j]] )
+        if (ni > 1) {
           jcpu = ifelse( j > ni, ni, j )
           p$clusters = p$stmv_runmode[[ current_runmode ]] [[ jcpu ]] # as ram reqeuirements increase drop cpus
         } else {
@@ -759,7 +763,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         message( "\n||| Entering <", current_runmode_iter, " > : ", format(Sys.time()) )
         currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
         if ( currentstatus$n.todo == 0 ) break()
-        if ( currentstatus$n.todo < (2*length(p$clusters)) ) p$clusters = p$clusters[1] # drop to serial mode
+        if ( currentstatus$n.todo < length(p$clusters) ) p$clusters = p$clusters[1] # drop to serial mode
         invisible( parallel_run( stmv_interpolate_lattice, 
           p=p, 
           localrange_interpolation = p$stmv_distance_interpolation[j],
@@ -768,6 +772,8 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         invisible( stmv_db(p=p, DS="save_current_state", runmode=current_runmode, datasubset=c("P", "Pn", "Psd", "statistics") ) )
         stmv_statistics_status( p=p, verbose=FALSE ) # quick update before logging
         slog = stmv_logfile(p=p, flag= paste("Interpolation distance basis phase", current_runmode_iter, "completed ...") ) # final update before continuing
+        p$stmv__runmode = p0$stmv__runmode ## revert in case there were any changes
+
       }
       message( paste( "Time used for <interpolations", ">: ", format(difftime(  Sys.time(), p$time_start_current_runmode )), "\n" ) )
       stmv_db(p=p, DS="save_current_state", runmode=current_runmode, datasubset=c("P", "Pn", "Psd", "statistics") )
@@ -808,7 +814,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
       for ( j in 1:length(p$stmv_distance_interpolate_predictions) ) {
         p = p0 #reset
         current_runmode_iter = paste( current_runmode, p$stmv_distance_interpolate_predictions[j], sep="_")
-        ni = length( p$stmv_runmode[[ current_runmode ]] )
+        ni = length( p$stmv_runmode[[ current_runmode ]][[j]] )
         if (ni > 1) {
           jcpu = ifelse( j > ni, ni, j )
           p$clusters = p$stmv_runmode[[ current_runmode ]] [[ jcpu ]] # as ram reqeuirements increase drop cpus
@@ -818,7 +824,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         stmv_statistics_status( p=p, reset=c( "complete" ), verbose=FALSE )
         currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
         if ( currentstatus$n.todo == 0 ) break()
-        if ( currentstatus$n.todo < (2*length(p$clusters)) ) p$clusters = p$clusters[1] # drop to serial mode
+        if ( currentstatus$n.todo < length(p$clusters) ) p$clusters = p$clusters[1] # drop to serial mode
         invisible( parallel_run( stmv_interpolate_predictions, 
           p=p, 
           localrange_interpolation = p$stmv_distance_interpolate_predictions[j],
