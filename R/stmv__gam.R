@@ -5,25 +5,23 @@ stmv__gam = function( p=NULL, dat=NULL, pa=NULL, ... ) {
   #\\ family is gaussian("identity") as we are operating upon the link scale by this point
 
   sdTotal=sd(dat[[p$stmv_variables$Y]], na.rm=T)
-
+  fit = NULL
   if ( exists("stmv_local_model_distanceweighted", p) ) {
     if (p$stmv_local_model_distanceweighted) {
-      hmod = try( bam( p$stmv_local_modelformula, data=dat, na.action="na.omit", method="fREML", use.chol=TRUE, gc.level=2, weights=weights ) )
-    } else {
-      hmod = try( bam( p$stmv_local_modelformula, data=dat, na.action="na.omit", method="fREML", use.chol=TRUE, gc.level=2 ) )
+       fit = try( gam( p$stmv_local_modelformula, data=dat, na.action="na.omit", method="fREML", use.chol=TRUE, gc.level=2, weights=weights ) )
     }
   }
 
-  if ( inherits(hmod, "try-error") ) {
-    hmod = try( gam( p$stmv_local_modelformula, data=dat, na.action="na.omit" ) )  # try again just with defaults of gam
-  }
+  if (is.null(fit)) fit = try( gam( p$stmv_local_modelformula, data=dat, na.action="na.omit", method="fREML", use.chol=TRUE, gc.level=2 ) )
 
-  if ( inherits(hmod, "try-error") ) return( NULL )
+  if (is.null(fit)) return(NULL)
 
-  ss = summary(hmod)
+  if ( inherits( fit, "try-error") ) return( NULL )
+
+  ss = summary( fit)
 #  if (ss$r.sq < p$stmv_rsquared_threshold ) return(NULL)  # smooth/flat surfaces are ok ..
 
-  out = try( predict( hmod, newdata=pa, type="response", se.fit=TRUE ) )
+  out = try( predict(  fit, newdata=pa, type="response", se.fit=TRUE ) )
 
   if ( inherits(out, "try-error") ) return( NULL )
 

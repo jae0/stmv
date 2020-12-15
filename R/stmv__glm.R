@@ -6,23 +6,27 @@ stmv__glm = function(p=NULL, dat=NULL, pa=NULL, ... ) {
 
   sdTotal=sd(dat[[p$stmv_variables$Y]], na.rm=T)
 
+  fit  = NULL
+
   if ( exists("stmv_local_model_distanceweighted", p) ) {
     if (p$stmv_local_model_distanceweighted) {
-      hmod = try( glm( p$stmv_local_modelformula, data=dat, weights=Y_wgt  ) )
+      fit = try( glm( p$stmv_local_modelformula, data=dat, weights=Y_wgt  ) )
     } else {
-      hmod = try( glm( p$stmv_local_modelformula, data=dat ) )
+      fit = try( glm( p$stmv_local_modelformula, data=dat ) )
     }
   } else {
-      hmod = try( glm( p$stmv_local_modelformula, data=dat ) )
+      fit = try( glm( p$stmv_local_modelformula, data=dat ) )
   }
 
-  if ( inherits(hmod, "try-error") ) return( NULL )
+  if (is.null(fit)) return(NULL)
 
-  ss = summary(hmod)
+  if ( inherits(fit, "try-error") ) return( NULL )
+
+  ss = summary(fit)
   rsq = 1 - (ss$deviance/ss$null.deviance)
   if ( rsq < p$stmv_rsquared_threshold ) return(NULL)
 
-  out = try( predict( hmod, newdata=pa, type="response", se.fit=TRUE ) )  # already on link scale
+  out = try( predict( fit, newdata=pa, type="response", se.fit=TRUE ) )  # already on link scale
 
   if ( inherits(out, "try-error") ) return( NULL )
 
