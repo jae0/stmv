@@ -8,11 +8,11 @@ stmv__gam = function( p=NULL, dat=NULL, pa=NULL, ... ) {
   fit = NULL
   if ( exists("stmv_local_model_distanceweighted", p) ) {
     if (p$stmv_local_model_distanceweighted) {
-       fit = try( gam( p$stmv_local_modelformula, data=dat, na.action="na.omit", method="fREML", use.chol=TRUE, gc.level=2, weights=weights ) )
+       fit = try( gam( p$stmv_local_modelformula, data=dat, na.action="na.omit", weights=weights ) )
     }
   }
 
-  if (is.null(fit)) fit = try( gam( p$stmv_local_modelformula, data=dat, na.action="na.omit", method="fREML", use.chol=TRUE, gc.level=2 ) )
+  if (is.null(fit)) fit = try( gam( p$stmv_local_modelformula, data=dat, na.action="na.omit" ) )
 
   if (is.null(fit)) return(NULL)
 
