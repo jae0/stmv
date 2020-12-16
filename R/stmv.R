@@ -640,13 +640,36 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         invisible( stmv_db(p=p, DS="load_saved_state", runmode="scale", datasubset="statistics" ) )
       }
       p$time_start_current_runmode = Sys.time()
-      p$clusters = p$stmv_runmode[["scale"]] # as ram reqeuirements increase drop cpus
-      currentstatus = stmv_statistics_status( p=p, reset="flags", reset_flags=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
-      parallel_run( stmv_scale, p=p, runindex=list( locs=sample( currentstatus$todo )) )
-      stmv_db(p=p, DS="save_current_state", runmode="scale", datasubset="statistics") # temp save to disk
-      stmv_statistics_status( p=p, verbose=FALSE ) # quick update before logging
+           
+      p0 = p
+
+      current_runmode = "scale"
+
+      for ( stmv_localrange in p$stmv_distance_scale )  {
+        p = p0 #reset
+        current_runmode_iter = paste( current_runmode, p$stmv_autocorrelation_interpolation[j] , sep="_")
+
+        ni = length( p$stmv_runmode[[ current_runmode ]][[j]] )
+        if (ni > 1) {
+          jcpu = ifelse( j > ni, ni, j )
+          p$clusters = p$stmv_runmode[[ current_runmode ]] [[ jcpu ]] # as ram reqeuirements increase drop cpus
+        } else {
+          p$clusters = p$stmv_runmode[[ current_runmode ]] # as ram reqeuirements increase drop cpus
+        }
+        currentstatus = stmv_statistics_status( p=p, reset="flags", reset_flags=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
+        parallel_run( stmv_scale, p=p, stmv_localrange=stmv_localrange, runindex=list( locs=sample( currentstatus$todo )) )
+
+        invisible( stmv_db(p=p, DS="save_current_state", runmode="scale", datasubset="statistics") ) 
+        
+        stmv_statistics_status( p=p, verbose=FALSE ) # quick update before logging
+        slog = stmv_logfile(p=p, flag= paste("Scale determination", current_runmode_iter, "completed ...") ) # final update before continuing
+        p$stmv__runmode = p0$stmv__runmode
+
+      }
+ 
       slog = stmv_logfile(p=p, flag= "Scaling phase completed" ) # final update before continuing
       message( "||| Time used for scale estimation: ", format(difftime(  Sys.time(), p$time_start_current_runmode )), "\n"  )
+      p = p0
     }
 
 
@@ -716,8 +739,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         p$stmv__runmode = p0$stmv__runmode
 
       }
+  
+      slog = stmv_logfile(p=p, flag= "interpolate_correlation_basis phase completed" ) # final update before continuing
       message( paste( "Time used for <interpolations", ">: ", format(difftime(  Sys.time(), p$time_start_current_runmode )), "\n" ) )
-      invisible( stmv_db(p=p, DS="save_current_state", runmode=current_runmode, datasubset=c("P", "Pn", "Psd", "statistics") ) )
       p = p0
     }
 
@@ -775,8 +799,8 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         p$stmv__runmode = p0$stmv__runmode ## revert in case there were any changes
 
       }
+      slog = stmv_logfile(p=p, flag= "interpolate_distance_basis phase completed" ) # final update before continuing
       message( paste( "Time used for <interpolations", ">: ", format(difftime(  Sys.time(), p$time_start_current_runmode )), "\n" ) )
-      stmv_db(p=p, DS="save_current_state", runmode=current_runmode, datasubset=c("P", "Pn", "Psd", "statistics") )
       p = p0
     }
 

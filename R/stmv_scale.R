@@ -1,5 +1,5 @@
 
-stmv_scale = function( ip=NULL, p, debugging=FALSE, eps=1e-6, ... ) {
+stmv_scale = function( ip=NULL, p, stmv_localrange, debugging=FALSE, eps=1e-6, ... ) {
   #\\ core function to interpolate (model variogram) in parallel
 
   if (0) {
@@ -47,7 +47,7 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps=1e-6, ... ) {
   }
   logpoints  =  sort( sample( ip, round( max(1, nlogs) ) ) )  # randomize
 
-  stmv_ntarget = sort( unique( c(1, p$stmv_nmin_downsize_factor) * p$stmv_nmax ), decreasing=TRUE )  # largest first
+  stmv_ntarget = round( sort( unique( c(1, p$stmv_nmin_downsize_factor) * p$stmv_nmax ), decreasing=TRUE ) ) # largest first
   stmv_ntarget = stmv_ntarget[ stmv_ntarget >=  p$stmv_nmin ]
   stmv_nmax = p$stmv_nmax
 
@@ -66,16 +66,12 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps=1e-6, ... ) {
     unique_spatial_locations = 0
 
     for ( ntarget in stmv_ntarget ) {
-      for ( localrange in p$stmv_distance_scale )  {
-        # print(localrange)
         data_subset = NULL
-        data_subset = stmv_select_data( p=p, Si=Si, localrange=localrange )
+        data_subset = stmv_select_data( p=p, Si=Si, localrange=stmv_localrange )
         if (is.null( data_subset )) next()
         unique_spatial_locations = data_subset$unique_spatial_locations
         ndata = length(data_subset$data_index)
-        if ( unique_spatial_locations >= ntarget ) break()  # innermost loop
-      }
-      if ( unique_spatial_locations >= ntarget ) break() # middle loop
+        if ( unique_spatial_locations >= ntarget ) break()   
     }
 
     # if (p$stmv_variogram_method=="inla_nonseparable") {
@@ -94,8 +90,8 @@ stmv_scale = function( ip=NULL, p, debugging=FALSE, eps=1e-6, ... ) {
         xy=Yloc[data_subset$data_index,],
         z=Y[data_subset$data_index,],
         methods=p$stmv_variogram_method,
-        distance_cutoff=localrange,
-        discretized_n = aegis_floor(localrange / p$pres),
+        distance_cutoff=stmv_localrange,
+        discretized_n = aegis_floor(stmv_localrange / p$pres),
         nbreaks=p$stmv_variogram_nbreaks_totry[ss]
       ) )
       if ( !is.null(o)) {
