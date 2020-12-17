@@ -17,8 +17,8 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
     plotdata=FALSE
     eps=1e-9
     add.interpolation=TRUE
-    stmv_autocorrelation_localrange=0.1
-    stmv_autocorrelation_fft_taper=0
+    stmv_autocorrelation_localrange=0.1  # only used if interpolating
+    stmv_autocorrelation_fft_taper=0  # only used if interpolating
     stmv_fft_filter="matern_tapered_modelled"
 
   }

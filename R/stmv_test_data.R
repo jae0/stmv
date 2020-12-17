@@ -1,7 +1,7 @@
 
 
 stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
-
+  require(data.table)
   if ( datasource == "swiss" ) {
     require(geostatsp)
     data(swissRain)

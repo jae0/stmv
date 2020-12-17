@@ -1,9 +1,9 @@
 
-stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
-  plotdata=FALSE, methods=c("geoR"), discretized_n=64, nbreaks = 32,
+stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
+  plotdata=FALSE, methods=c("geoR"), discretized_n=64, nbreaks = c( 16, 32, 64, 13, 17, 21, 33, 49 ),
   distance_cutoff=NA, family=gaussian(link="identity"),
   range_correlation=0.1, stmv_autocorrelation_fft_taper=0,
-  stanmodel=NULL, modus_operandi="easygoing" ) {
+  stanmodel=NULL, modus_operandi="easygoing", discretize_data=FALSE ) {
 
   #\\ estimate empirical variograms (actually correlation functions)
   #\\ and then model them using a number of different approaches .. using a Matern basis
@@ -23,6 +23,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
 
         # project.library("aegis", "aegis", "stmv"  )
         loadfunctions( c("aegis", "aegis", "stmv" ))
+        XYZ = NULL
         xyz = stmv_test_data( datasource="swiss" )
         xy = xyz[, c("x", "y")]
         mz = log( xyz$rain )
@@ -35,6 +36,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
         family=gaussian(link="identity")
         range_correlation=0.1
 
+        discretize_data=FALSE
         discretized_n=64
         nbreaks = 32
         range_correlation=0.1
@@ -325,51 +327,74 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
     } #end if
 
   # ----- start -----
+  
 
+  if (is.null(XYZ) ) XYZ = cbind( xy, z) 
 
+  XYZ = as.data.frame( XYZ )
+  names(XYZ) =  c("plon", "plat", "z" ) # arbitrary
+  rownames( XYZ) = 1:nrow(XYZ)  # RF seems to require rownames ...
+  
+  if (discretize_data) XYZ = stmv_discretize_coordinates(coo=XYZ[,c(1,2)], z=XYZ[,3], discretized_n=discretized_n, method="aggregate", FUNC=mean, na.rm=TRUE)
 
-  out = list()
-
-  out$Ndata = length(z)
-  out$varZ = var( z, na.rm=TRUE )  # this is the scaling factor for semivariance .. diving by sd, below reduces numerical floating point issues
-
-  # reduce scale of distances to reduce large number effects
-  out$range_crude = sqrt( diff(range(xy[,1]))^2 + diff(range(xy[,2]))^2) / 4  #initial scaling distance
+  
+  out = list(
+    Ndata = nrow(XYZ), 
+    stmv_internal_mean = mean( as.vector(XYZ[,3]), na.rm=TRUE ), 
+    varZ = var( as.vector(XYZ[,3]), na.rm=TRUE ),  # this is the scaling factor for semivariance .. diving by sd, below reduces numerical floating point issues
+    range_crude = sqrt( diff(range(XYZ[,1]))^2 + diff(range(XYZ[,2]))^2) / 4  #initial scaling distance
+  )
+  
+  out$stmv_internal_sd = sqrt( out$varZ )
   out$stmv_internal_scale = matern_distance2phi( out$range_crude, nu=0.5 )  # the presumed scaling distance to make calcs use smaller numbers
-
   # if max dist not given, make a sensible choice using exponential variogram as a first estimate
-  if ( is.na(distance_cutoff) ) {
-    out$distance_cutoff = out$range_crude * 1.5
-  } else {
-    out$distance_cutoff = distance_cutoff
-  }
+  out$distance_cutoff = ifelse( is.na(distance_cutoff), out$range_crude * 1.5, distance_cutoff)
 
-  zmin = min( z, na.rm=TRUE )
-
-  xy = xy + out$stmv_internal_scale * runif(2*out$Ndata, -1e-9, 1e-9) # add a small error term to prevent some errors in GRMF methods
-
+  XYZ[,1] = XYZ[,1] / out$stmv_internal_scale
+  XYZ[,2] = XYZ[,2] / out$stmv_internal_scale
+  XYZ[,3] = (XYZ[,3] - out$stmv_internal_mean) / out$stmv_internal_sd
 
 
   # ------------------------
 
 
   if ("fft" %in% methods) {
-    # spatial discretization
-    XYZ = stmv_discretize_coordinates(coo=xy, z=z, discretized_n=discretized_n, method="aggregate", FUNC=mean, na.rm=TRUE)
-    names(XYZ) =  c("plon", "plat", "z" ) # arbitrary
+    
+    # empirical variogram by fftw2d
+    finished = FALSE
+    for ( i in 1:length(nbreaks)) {
+      VGM = NULL
+      VGM = stmv_variogram_fft( xyz=XYZ, nx=discretized_n, ny=discretized_n, nbreaks=nbreaks[i]  )  
+      if (is.null(VGM)) next()
+      uu = which( (VGM$vgm$distances < 0.9*max(VGM$vgm$distances) ) & is.finite(VGM$vgm$sv) )
+      fit = try( stmv_variogram_optimization( vx=VGM$vgm$distances[uu], vg=VGM$vgm$sv[uu], plotvgm=plotdata,
+        stmv_internal_scale=out$stmv_internal_scale, cor=range_correlation  ))
+      if ( !inherits(fit, "try-error") ) {
+        out$fft = fit$summary
+        if (exists("phi", out$fft)) {
+          if (is.finite(out$fft$phi)) {
+             out$fft$phi  = out$fft$phi  * out$stmv_internal_scale
+             out$fft$localrange = out$fft$localrange * out$stmv_internal_scale
+             if ( out$fft$phi  < out$distance_cutoff*0.99 ) {
+              finished = TRUE
+             } 
+          }
+        }
+      }
+      if (finished) break()
+    }
 
-    VGM = stmv_variogram_fft( xyz=XYZ, nx=discretized_n, ny=discretized_n, nbreaks=nbreaks,
-      stmv_fft_filter="matern_tapered_modelled", stmv_autocorrelation_fft_taper=stmv_autocorrelation_fft_taper  )  # empirical variogram by fftw2d
-    out$vgm = VGM
-    uu = which( (VGM$vgm$distances < 0.9*max(VGM$vgm$distances) ) & is.finite(VGM$vgm$sv) )
-    fit = try( stmv_variogram_optimization( vx=VGM$vgm$distances[uu], vg=VGM$vgm$sv[uu], plotvgm=plotdata,
-      stmv_internal_scale=out$stmv_internal_scale, cor=range_correlation  ))
+    if (exists("VGM")) out$vgm = VGM
 
-    if ( !inherits(fit, "try-error") ) {
-      out$fft = fit$summary
-      if (exists("phi", out$fft)) {
-        if (is.finite(out$fft$phi)) {
-          out$fft$phi_ok = ifelse( out$fft$phi < out$distance_cutoff*0.99, TRUE, FALSE )  # using distance as an upper limit
+    if (!finished) return(out)
+
+    if (exists("summary", fit)) {
+      if ( !inherits(fit, "try-error") ) {
+        
+        if (exists("phi", out$fft)) {
+          if (is.finite(out$fft$phi)) {
+            out$fft$phi_ok = ifelse( out$fft$phi < out$distance_cutoff*0.99, TRUE, FALSE )  # using distance as an upper limit
+          }
         }
       }
     }
@@ -400,9 +425,6 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL,
 
   if ("optim" %in% methods) {
     # spatial discretization
-    XYZ = stmv_discretize_coordinates(coo=xy, z=z, discretized_n=discretized_n, method="aggregate", FUNC=mean, na.rm=TRUE)
-    names(XYZ) =  c("plon", "plat", "z" ) # arbitrary
-    rownames( XYZ) = 1:nrow(XYZ)  # RF seems to require rownames ...
 
     require( RandomFields )
     VGM = RFvariogram( data=RFspatialPointsDataFrame( coords=XYZ[,c(1,2)], data=XYZ[,3], RFparams=list(vdim=1, n=1) ) )
