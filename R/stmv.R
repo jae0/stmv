@@ -647,7 +647,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
       for ( stmv_localrange in p$stmv_distance_scale )  {
         p = p0 #reset
-        current_runmode_iter = paste( current_runmode, p$stmv_autocorrelation_interpolation[j] , sep="_")
+        current_runmode_iter = paste( current_runmode, stmv_localrange , sep="_")
 
         ni = length( p$stmv_runmode[[ current_runmode ]][[j]] )
         if (ni > 1) {
