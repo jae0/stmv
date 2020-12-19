@@ -645,9 +645,9 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
       current_runmode = "scale"
 
-      for ( stmv_localrange in p$stmv_distance_scale )  {
+      for ( j in 1:length( p$stmv_distance_scale ) )  {
         p = p0 #reset
-        current_runmode_iter = paste( current_runmode, stmv_localrange , sep="_")
+        current_runmode_iter = paste( current_runmode, p$stmv_distance_scale[j] , sep="_")
 
         ni = length( p$stmv_runmode[[ current_runmode ]][[j]] )
         if (ni > 1) {
@@ -657,7 +657,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
           p$clusters = p$stmv_runmode[[ current_runmode ]] # as ram reqeuirements increase drop cpus
         }
         currentstatus = stmv_statistics_status( p=p, reset="flags", reset_flags=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
-        parallel_run( stmv_scale, p=p, stmv_localrange=stmv_localrange, runindex=list( locs=sample( currentstatus$todo )) )
+        parallel_run( stmv_scale, p=p, stmv_localrange=p$stmv_distance_scale[j], runindex=list( locs=sample( currentstatus$todo )) )
 
         invisible( stmv_db(p=p, DS="save_current_state", runmode="scale", datasubset="statistics") )
 
