@@ -1,7 +1,7 @@
 
 
 
-stmv_matern= function( distance=NULL, mRange, mSmooth=0.5, parameterization="stmv", returntype="autocorrelation" ) {
+stmv_matern = function( distance=NULL, mRange, mSmooth=0.5, parameterization="stmv", returntype="autocorrelation" ) {
   # matern autocorrelation function
   # mSmooth =  Bessl smoothness parameter (aks, "nu")
   # mRange = range parameter (aka "phi", .. not the spatial range)
@@ -55,4 +55,3 @@ stmv_matern= function( distance=NULL, mRange, mSmooth=0.5, parameterization="stm
   }
 
 }
-

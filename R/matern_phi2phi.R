@@ -8,7 +8,7 @@ matern_phi2phi = function( mRange, mSmooth, parameterization_input="stmv", param
   #\\   where K_{nu} is the Bessel function with smooth nu and phi is known as the range parameter
   # -------------------------
 
-  need.more.testing = c("geostatsp")
+  need.more.testing = c("geostatsp", "CompRandFld")
   of = grepl(parameterization_input, need.more.testing)
   ot = grepl(parameterization_output, need.more.testing)
   oo = of | ot
@@ -21,7 +21,7 @@ matern_phi2phi = function( mRange, mSmooth, parameterization_input="stmv", param
       stmv = mRange ,
       wikipedia = mRange,
       RandomFields = mRange ,
-      CompRandFld = sqrt(2*mSmooth )/mRange,  # R(h) = 2^{1-nu} Gamma(nu)^{-1} x^nu  * K_nu(h) ; ||x||==h;  -- same as wikipedia except x=sqrt( 2nu*d/phi)
+      # CompRandFld = sqrt(2*mSmooth )/mRange,  # R(h) = 2^{1-nu} Gamma(nu)^{-1} x^nu  * K_nu(h) ; ||x||==h;  -- same as wikipedia except x=sqrt( 2nu*d/phi)
       geoR = mRange * sqrt(2*mSmooth ),
       fields = mRange * sqrt(2*mSmooth ),
       gstat = mRange * sqrt(2*mSmooth ),
@@ -36,7 +36,7 @@ matern_phi2phi = function( mRange, mSmooth, parameterization_input="stmv", param
       stmv = mRange_stmv,
       wikipedia = mRange_stmv,
       RandomFields = mRange_stmv ,
-      CompRandFld = mRange_stmv * sqrt(2*mSmooth ),
+      # CompRandFld = sqrt(2*mSmooth ) / mRange_stmv ,
       geoR = mRange_stmv * sqrt(2*mSmooth ),
       fields = mRange_stmv * sqrt(2*mSmooth ),
       gstat = mRange_stmv * sqrt(2*mSmooth ),

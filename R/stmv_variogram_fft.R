@@ -145,7 +145,7 @@ stmv_variogram_fft = function( xyz, nx=NULL, ny=NULL, nbreaks=30, plotdata=FALSE
 
     if (plotdata) dev.new()
     out$fit = try( stmv_variogram_optimization( vx=vgm$distances[uu], vg=vgm$sv[uu], plotvgm=plotdata,
-      stmv_internal_scale=dmax*0.75, cor=stmv_autocorrelation_localrange ) )
+      cor=stmv_autocorrelation_localrange ) )
 
     if (any(!is.finite( c(out$fit$summary$phi, out$fit$summary$nu) ))) return(out)
 

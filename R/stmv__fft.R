@@ -234,7 +234,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
         uu = which( (vgm$distances < dmax ) & is.finite(vgm$sv) )  # dmax ~ Nyquist freq
 
         fit = try( stmv_variogram_optimization( vx=vgm$distances[uu], vg=vgm$sv[uu], plotvgm=FALSE,
-          stmv_internal_scale=dmax*0.75, cor=p$stmv_autocorrelation_localrange ))
+          cor=p$stmv_autocorrelation_localrange ))
         uu = NULL
 
         stmv_stats_by_time[ti, match("sdTotal", statsvars_scale_names ) ] = zsd
@@ -378,6 +378,3 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
   return( list( predictions=pa, stmv_stats=stmv_stats, stmv_stats_by_time=stmv_stats_by_time ) )
 
 }
-
-
-

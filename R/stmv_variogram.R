@@ -1,9 +1,9 @@
 
-stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
-  plotdata=FALSE, methods=c("geoR"), discretized_n=64, nbreaks = c( 16, 32, 64, 13, 17, 21, 33, 49 ),
+stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
+  plotdata=FALSE, methods=c("geoR"), discretized_n=NULL, nbreaks = c( 13, 17, 15, 21, 24, 32, 11, 9  ),
   distance_cutoff=NA, family=gaussian(link="identity"),
   range_correlation=0.1, stmv_autocorrelation_fft_taper=0,
-  stanmodel=NULL, modus_operandi="easygoing", discretize_data=FALSE ) {
+  stanmodel=NULL, modus_operandi="easygoing", scale_distances=TRUE  ) {
 
   #\\ estimate empirical variograms (actually correlation functions)
   #\\ and then model them using a number of different approaches .. using a Matern basis
@@ -21,8 +21,7 @@ stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
       if ( 0 ) {
         # debugging / comparison of results
 
-        # project.library("aegis", "aegis", "stmv"  )
-        loadfunctions( c("aegis", "aegis", "stmv" ))
+        loadfunctions( c( "aegis", "stmv" ))
         XYZ = NULL
         xyz = stmv_test_data( datasource="swiss" )
         xy = xyz[, c("x", "y")]
@@ -31,22 +30,23 @@ stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
         z = residuals( mm)
 
         plotdata=TRUE
-        nbreaks = 15
+        nbreaks = c( 16, 32, 64, 13, 17, 21, 33, 49 )
         distance_cutoff=NA
         family=gaussian(link="identity")
         range_correlation=0.1
 
-        discretize_data=FALSE
+        # scale_distances = FALSE
+
+        scale_distances = TRUE
         discretized_n=64
-        nbreaks = 32
         range_correlation=0.1
         stmv_autocorrelation_fft_taper=0
 
-        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="fft", plotdata=FALSE )}, times= 10 )  # 63 milli sec
+        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="fft", plotdata=FALSE )}, times= 10 )  # 348.604506  milli sec
         gr = stmv_variogram( xy, z, methods="fft", plotdata=TRUE ) # nls
 
 
-        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="optim", plotdata=FALSE )}, times= 10 )  # 63 milli sec
+        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="optim", plotdata=FALSE )}, times= 10 )  # 34 milli sec
         gr = stmv_variogram( xy, z, methods="optim", plotdata=TRUE ) # nls
 
         # $optim$vgm_var_max
@@ -95,19 +95,6 @@ stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
 # ..$ varSpatial: num 0.588
 # ..$ varObs    : num 0
 # ..$ phi_ok  : logi TRUE
-
-      microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="multipass", plotdata=FALSE )}, times= 10 )  # 31 milli sec
-            gr = stmv_variogram( xy, z, methods="multipass", plotdata=TRUE ) # nls
-        # $fast$vgm_var_max: 0.7987
-        # $fast$vgm_dist_max: 171425
-        # $fast$autocorrelation_function: "matern"
-        # $fast$nu: 0.5
-        # $fast$phi: 29060
-        # $fast$varSpatial: 0.5956
-        # $fast$varObs: 0
-        # $fast$range: 87056
-        # $fast$phi_ok: TRUE
-        # $fast$objfn: 0.1278
 
         gr = stmv_variogram( xy, z, methods="fields", plotdata=TRUE ) # ml via profile likelihood
         microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="fields", plotdata=FALSE )}, times= 10 )  # 1.38 sec
@@ -327,70 +314,79 @@ stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
     } #end if
 
   # ----- start -----
-  
 
-  if (is.null(XYZ) ) XYZ = cbind( xy, z) 
+
+  if (is.null(XYZ) ) XYZ = cbind( xy, z)
+
+  if (!is.null(discretized_n)) {
+    #\\ As usage sometimes is for high density data, aggregation to a coarse resolution of 'discretized_n' units along
+    #\\ the smaller dimension  before computation.
+    XYZ = stmv_discretize_coordinates(coo=XYZ[,c(1,2)], z=XYZ[,3], discretized_n=discretized_n, method="aggregate", FUNC=mean, na.rm=TRUE)
+  }
 
   XYZ = as.data.frame( XYZ )
   names(XYZ) =  c("plon", "plat", "z" ) # arbitrary
   rownames( XYZ) = 1:nrow(XYZ)  # RF seems to require rownames ...
-  
-  if (discretize_data) XYZ = stmv_discretize_coordinates(coo=XYZ[,c(1,2)], z=XYZ[,3], discretized_n=discretized_n, method="aggregate", FUNC=mean, na.rm=TRUE)
 
-  
   out = list(
-    Ndata = nrow(XYZ), 
-    stmv_internal_mean = mean( as.vector(XYZ[,3]), na.rm=TRUE ), 
+    Ndata = nrow(XYZ),
+    stmv_internal_mean = mean( as.vector(XYZ[,3]), na.rm=TRUE ),
     varZ = var( as.vector(XYZ[,3]), na.rm=TRUE ),  # this is the scaling factor for semivariance .. diving by sd, below reduces numerical floating point issues
     range_crude = sqrt( diff(range(XYZ[,1]))^2 + diff(range(XYZ[,2]))^2) / 4  #initial scaling distance
   )
-  
+
   out$stmv_internal_sd = sqrt( out$varZ )
-  out$stmv_internal_scale = matern_distance2phi( out$range_crude, nu=0.5 )  # the presumed scaling distance to make calcs use smaller numbers
-  # if max dist not given, make a sensible choice using exponential variogram as a first estimate
   out$distance_cutoff = ifelse( is.na(distance_cutoff), out$range_crude * 1.5, distance_cutoff)
 
-  XYZ[,1] = XYZ[,1] / out$stmv_internal_scale
-  XYZ[,2] = XYZ[,2] / out$stmv_internal_scale
-  XYZ[,3] = (XYZ[,3] - out$stmv_internal_mean) / out$stmv_internal_sd
+
+  out$stmv_internal_scale = 1
+  if (scale_distances) {
+    out$stmv_internal_scale = matern_distance2phi( out$range_crude, nu=0.5 )  # the presumed scaling distance to make calcs use smaller numbers
+    # if max dist not given, make a sensible choice using exponential variogram as a first estimate
+    XYZ[,1] = XYZ[,1] / out$stmv_internal_scale
+    XYZ[,2] = XYZ[,2] / out$stmv_internal_scale
+  #  XYZ[,3] = (XYZ[,3] - out$stmv_internal_mean) / out$stmv_internal_sd
+  }
+
+  maxdist = out$distance_cutoff/out$stmv_internal_scale
 
 
   # ------------------------
 
 
   if ("fft" %in% methods) {
-    
+
     # empirical variogram by fftw2d
     finished = FALSE
     for ( i in 1:length(nbreaks)) {
       VGM = NULL
-      VGM = stmv_variogram_fft( xyz=XYZ, nx=discretized_n, ny=discretized_n, nbreaks=nbreaks[i]  )  
+      VGM = stmv_variogram_fft( xyz=XYZ, nbreaks=nbreaks[i]  )
       if (is.null(VGM)) next()
       uu = which( (VGM$vgm$distances < 0.9*max(VGM$vgm$distances) ) & is.finite(VGM$vgm$sv) )
       fit = try( stmv_variogram_optimization( vx=VGM$vgm$distances[uu], vg=VGM$vgm$sv[uu], plotvgm=plotdata,
-        stmv_internal_scale=out$stmv_internal_scale, cor=range_correlation  ))
+        cor=range_correlation, distance_scaling_factor=out$stmv_internal_scale  ))
       if ( !inherits(fit, "try-error") ) {
         out$fft = fit$summary
         if (exists("phi", out$fft)) {
           if (is.finite(out$fft$phi)) {
-             out$fft$phi  = out$fft$phi  * out$stmv_internal_scale
-             out$fft$localrange = out$fft$localrange * out$stmv_internal_scale
-             if ( out$fft$phi  < out$distance_cutoff*0.99 ) {
+            if ( out$fft$phi  < out$distance_cutoff*0.99 ) {
               finished = TRUE
-             } 
+            }
           }
         }
       }
       if (finished) break()
     }
 
-    if (exists("VGM")) out$vgm = VGM
+    if (exists("VGM")) {
+      if (scale_distances) VGM$vgm$distances = VGM$vgm$distances *  out$stmv_internal_scale
+      out$vgm = VGM
+    }
 
     if (!finished) return(out)
 
     if (exists("summary", fit)) {
       if ( !inherits(fit, "try-error") ) {
-        
         if (exists("phi", out$fft)) {
           if (is.finite(out$fft$phi)) {
             out$fft$phi_ok = ifelse( out$fft$phi < out$distance_cutoff*0.99, TRUE, FALSE )  # using distance as an upper limit
@@ -434,14 +430,20 @@ stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
     todrop = unique( c(1, todrop) )
     vg = VGM@empirical[-todrop]
     vx = VGM@centers[-todrop]
-    out$vgm = VGM
-    fit = try( stmv_variogram_optimization( vx=vx, vg=vg, nu=0.5, plotvgm=plotdata, stmv_internal_scale=out$stmv_internal_scale, cor=range_correlation ))
+    fit = try( stmv_variogram_optimization( vx=vx, vg=vg, nu=0.5, plotvgm=plotdata, cor=range_correlation, distance_scaling_factor=out$stmv_internal_scale ))
     if ( !inherits(fit, "try-error") ) {
       out$optim = fit$summary
       if (exists("phi", out$optim)) {
         if (is.finite(out$optim$phi)) {
           out$optim$phi_ok = ifelse( out$optim$phi < out$distance_cutoff*0.99, TRUE, FALSE )
         }
+      }
+    }
+
+    if (exists("VGM")) {
+      out$vgm = VGM
+      if (scale_distances) {
+        out$vgm@centers =  VGM@centers * out$stmv_internal_scale
       }
     }
 
@@ -473,34 +475,21 @@ stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
     # gives a fast stable empirical variogram using nl least squares and a coarse-grained discretization
     # essentially the same as gstat method but coarse grained discretization
 
-    # nu=0.5, discretized_n=100, nbreaks = 13
+    # nu=0.5,  nbreaks = 13
 
       # nu=0.5 defaults to exponential and uses gstat
       #\\ NOTE:: the default parameterization is Wikipedia's paramterization:
       #\\ == Rasmussen, Carl Edward (2006) Gaussian Processes for Machine Learning
       #\\  sigma^2 * (2^{1-nu} / Gamma(nu) ) * (sqrt(2*nu) * ||x|| / phi)^{nu} * K_{nu}( sqrt(2*nu) * ||x|| / phi)
       #\\   where K_{nu} is the Bessel function with smooth nu and phi is known as the range parameter
-      #\\ As usage sometimes is for high density data, aggregation to a coarse resolution of 'discretized_n' units along
-      #\\ the smaller dimension  before computation.
       # -------------------------
 
-      # spatial discretization only
-      XYZ = stmv_discretize_coordinates(coo=xy, z=z, discretized_n=discretized_n, method="aggregate", FUNC=mean, na.rm=TRUE)
-      names(XYZ) =  c("plon", "plat", "z" ) # arbitrary
-
-      maxdist = out$range_crude   # begin with this (diagonal)
 
       # gives a fast stable empirical variogram using nl least squares
-
-      XYZ$plon = XYZ$plon / out$stmv_internal_scale  # keeps things smaller in value to avoid floating point issues
-      XYZ$plat = XYZ$plat / out$stmv_internal_scale  # keeps things smaller in value to avoid floating point issues
-
       # empirical variogram
-      vEm = gstat::variogram( z ~ 1, locations=~plon+plat, data=XYZ, cutoff=maxdist/out$stmv_internal_scale, width=maxdist/out$stmv_internal_scale/nbreaks, cressie=FALSE )
+      vEm = gstat::variogram( z ~ 1, locations=~plon+plat, data=as.data.frame(XYZ), cutoff=maxdist, width=maxdist/nbreaks[1], cressie=FALSE )
 
-      vEm$dist0 = vEm$dist * out$stmv_internal_scale
-
-      fit = stmv_variogram_optimization( vx=vEm$dist0, vg=vEm$gamma, plotvgm=FALSE, stmv_internal_scale=out$stmv_internal_scale, cor=range_correlation ) # nu=0.5 == exponential variogram
+      fit = stmv_variogram_optimization( vx=vEm$dist, vg=vEm$gamma, plotvgm=FALSE, distance_scaling_factor=out$stmv_internal_scale, cor=range_correlation ) # nu=0.5 == exponential variogram
 
       if ( fit$summary$phi_ok ) {
 
@@ -521,8 +510,8 @@ stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
           # message( "Range longer than distance cutoff ... retrying with a larger distance cutoff")
           cnt = cnt + 1
 
-          vEm = gstat::variogram( z~1, locations=~plon+plat, data=XYZ, cutoff=maxdist/out$stmv_internal_scale, width=maxdist/(out$stmv_internal_scale*nbreaks), cressie=FALSE )  # empirical variogram
-          vEm$dist0 = vEm$dist * out$stmv_internal_scale
+          vEm = gstat::variogram( z~1, locations=~plon+plat, data=XYZ, cutoff=maxdist, width=maxdist/nbreaks[1], cressie=FALSE )  # empirical variogram
+          vEm$dist = vEm$dist * out$stmv_internal_scale
           vMod0 = gstat::vgm(psill=2*0.75*runif(1), model="Mat", range=2*1*runif(1), nugget=2*0.25*runif(1), kappa=0.5 ) # starting model parameters, 2*X as the expected value of runif(1) = 0.5
           vFitgs =  try( gstat::fit.variogram( vEm, vMod0, fit.kappa =TRUE, fit.sills=TRUE, fit.ranges=TRUE ) )
             # gstat's kappa is the Bessel function's "nu" smoothness parameter
@@ -535,20 +524,27 @@ stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
           out$fast.recursive = list( fit=vFitgs, vgm=vEm, nu=vFitgs$kappa[2], phi=phi,
             varSpatial=vFitgs$psill[2], varObs=vFitgs$psill[1]  )
           out$fast.recursive$phi_ok = FALSE
-          if ( out$fast.recursive$phi < max(out$fast.recursive$vgm$dist0)*0.99) out$fast.recursive$phi_ok = TRUE
+          if ( out$fast.recursive$phi < max(out$fast.recursive$vgm$dist)*0.99) out$fast.recursive$phi_ok = TRUE
           localrange = matern_phi2distance( phi=phi, nu=nu, cor=range_correlation )
           if ( localrange < maxdist ) break()
         }
       }
 
+      if (exists("vEm")) {
+        if (scale_distances) {
+          out$fast.recursive$vgm$dist = out$fast.recursive$vgm$dist  *  out$stmv_internal_scale
+        }
+      }
 
       if (plotdata) {
         xub = max(out$distance_cutoff) *1.25
+        if (exists("vFitgs")) {
+          plot.new()
+          plot(vEm, model=vFitgs, add=T)
+        }
         plot.new()
-        plot(vEm, model=vFitgs, add=T)
-        plot.new()
-        plot( gamma ~ dist0, data=out$fast.recursive$vgm, xlim=c(0,xub),
-             ylim=c(0,max(out$fast.recursive$vgm$gamma)*1.1), col="blue", pch=20 )
+        plot( gamma ~ dist, data=out$fast.recursive$vgm, xlim=c(0,xub),
+          ylim=c(0,max(out$fast.recursive$vgm$gamma)*1.1), col="blue", pch=20 )
         abline( h=out$fast.recursive$varSpatial + out$fast.recursive$varObs )
         abline( h=out$fast.recursive$varObs )
         abline( v=localrange )
@@ -560,7 +556,7 @@ stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
 
         if (0) {
           # looks at the predictions
-          gs <- gstat(id = "z", formula = z~1, locations=~plon+plat, data=xy, maxdist=distance_cutoff, nmin=10, force=TRUE, model=vFitgs )
+          gs <- gstat(id = "z", formula = z~1, locations=~plon+plat, data=xy, maxdist=maxdist, nmin=10, force=TRUE, model=vFitgs )
           # variogram of residuals
           data(meuse.grid)
           meuse.grid$plon = meuse.grid$x
@@ -593,11 +589,14 @@ stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
   # ------------------------
   # ------------------------
 
+
+
   if ("CompRandFld" %in% methods) {
     require( CompRandFld )
     stop( "CompRandFld seems unstable .. force stop")
-    fit = FitComposite( data=z, coordx=as.matrix(xy/out$stmv_internal_scale), corrmodel="matern",
-                       maxdist=out$distance_cutoff/out$stmv_internal_scale, optimizer="BFGS" )
+
+    fit = FitComposite( data=XYZ[,c(3)], coordx=as.matrix(XYZ[,c(1,2)]), corrmodel="matern",
+                       maxdist=maxdist, optimizer="BFGS" )
     out$CompRandFld = list(
       varObs=fit$param[["nugget"]],
       varSpatial = fit$param[["sill"]],
@@ -607,13 +606,13 @@ stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
     out$CompRandFld$phi_ok = ifelse( out$CompRandFld$phi < out$distance_cutoff*0.99, TRUE, FALSE )
     localrange = matern_phi2distance(phi=out$CompRandFld$phi, nu=out$CompRandFld$nu, cor=range_correlation)
     if( plotdata) {
-      VGM = EVariogram(data=z, coordx=as.matrix(xy/out$stmv_internal_scale),
-                        maxdist=out$distance_cutoff/out$stmv_internal_scale, numbins=nbreaks)
+      VGM = EVariogram(data=XYZ[,c(3)], coordx=as.matrix(XYZ[,c(1,2)]),
+                        maxdist=maxdist, numbins=nbreaks[1])
       vg = VGM$variograms
-      vx = VGM$centers
+      vx = VGM$centers * out$stmv_internal_scale
       xlim= c(0, max(VGM$centers)*1.1) * out$stmv_internal_scale
       ylim= c(0, max(VGM$variograms)*1.1)
-      plot( VGM$centers* out$stmv_internal_scale, VGM$variograms, col="green", xlim=xlim, ylim=ylim )
+      plot( vx, vg, col="green", xlim=xlim, ylim=ylim )
       ds = seq( 0, max(VGM$centers), length.out=100 ) * out$stmv_internal_scale
       ac = out$CompRandFld$varObs + out$CompRandFld$varSpatial*(1 - stmv_matern( ds, out$CompRandFld$phi, out$CompRandFld$nu ) )
       lines( ds, ac, col="orange" )
@@ -635,18 +634,13 @@ stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
 
     require(fields)
 
-    XYZ = stmv_discretize_coordinates(coo=xy, z=z, discretized_n=discretized_n, method="aggregate", FUNC=mean, na.rm=TRUE)
-    names(XYZ) =  c("plon", "plat", "z" ) # arbitrary
-    xy = XYZ[,c("plon", "plat")]
-    z = XYZ$z
-    XYZ = NULL
     nu = 0.5 # 0.5 == exponential .. ie. fixed
     res =NULL
     ## NOTE: process variance (rho); range (theta); nugget (sigma**2)
     ## lambda= sigma**2/ rho and rho. Thinking about h as the spatial signal and e as the noise lambda can be interpreted
     ##  as the noise to signal variance ratio in this spatial context
     # MLESpatialProcess is a ML method for Gaussian spatial process
-    fsp = MLESpatialProcess(xy/out$stmv_internal_scale, z, cov.function = "stationary.cov",
+    fsp = MLESpatialProcess(XYZ[,c(1,2)], XYZ[,3], cov.function = "stationary.cov",
       # abstol=1e-3,
       # lambda.start=0.5, theta.start=1.0, theta.range=c(0.2, 4.0), gridN=25,
       # optim.args=list(method = "BFGS", control = list(fnscale=-1, parscale=c(0.5, 0.5), ndeps=c(0.05,0.05))),
@@ -657,7 +651,7 @@ stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
 
     # warning ("vgram is really slow ...")
 
-    vg = vgram( xy/out$stmv_internal_scale, z, N=nbreaks, dmax=out$distance_cutoff/out$stmv_internal_scale )
+    vg = vgram( XYZ[,c(1,2)], XYZ[,3], N=nbreaks[1], dmax=maxdist )
     vgm = Matern( d=vg$centers, range=res[["theta"]], smoothness=nu )
     cvg = data.frame( cbind( x=vg$centers*out$stmv_internal_scale, cvgm= (res[["sigmaMLE"]]^2 + res[["rhoMLE"]] * (1-vgm)) ))
     out$fields = list( fit=fsp, vgm=cvg, nu=nu, phi=NA,
@@ -672,10 +666,10 @@ stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
 #      xub = max(out$distance_cutoff, max(out$geoR$vgm$u, out$distance_cutoff)) *1.25
       plot.new()
 
-      vEm = try( variog( coords=xy/out$stmv_internal_scale, data=z, uvec=nbreaks, max.dist=out$distance_cutoff/out$stmv_internal_scale ) )
-      vEm$u0 = vEm$u * out$stmv_internal_scale
-      plot( vEm$v ~ vEm$u0, pch=20 ,
-            xlim=c(0, max( c(cvg$x, vEm$u0) )), ylim=c(0, max( c(out$fields$varSpatial + out$fields$varObs, out$varZ, cvg$cvgm, vEm$v) ) ) )
+      vEm = try( variog( coords=XYZ[,c(1,2)], data=XYZ[,3], uvec=nbreaks[1], max.dist=maxdist ) )
+      vEm$u = vEm$u * out$stmv_internal_scale
+      plot( vEm$v ~ vEm$u, pch=20 ,
+            xlim=c(0, max( c(cvg$x, vEm$u) )), ylim=c(0, max( c(out$fields$varSpatial + out$fields$varObs, out$varZ, cvg$cvgm, vEm$v) ) ) )
 
       points( cvg, type="b", ylim=range( c(0, cvg$cvgm) ) )
       abline( h=out$fields$varSpatial + out$fields$varObs)
@@ -710,30 +704,31 @@ stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
     require(gstat)
     require(sp)
 
-    xy = as.data.frame(xy/out$stmv_internal_scale )
-    names(xy) =  c("plon", "plat" ) # arbitrary
-
-    co = out$distance_cutoff / out$stmv_internal_scale
-    vEm = try( variogram( z~1, locations=~plon+plat, data=xy, cutoff=co, width=co/nbreaks, cressie=TRUE ) ) # empirical variogram
+    vEm = try( variogram( z~1, locations=~plon+plat, data=as.data.frame(XYZ ), cutoff=maxdist, width=maxdist/nbreaks[1], cressie=TRUE ) ) # empirical variogram
     if (inherits(vEm, "try-error") ) return(NULL)
-    vEm$dist0 = vEm$dist * out$stmv_internal_scale
     vMod0 = vgm(psill=2/3*out$varZ, model="Mat", range=1, nugget=out$varZ/3, kappa=1/2 ) # starting model parameters
+
     vFitgs =  try( fit.variogram( vEm, vMod0, fit.kappa =TRUE, fit.sills=TRUE, fit.ranges=TRUE ) ) ## gstat's kappa is the Bessel function's "nu" smoothness parameter
+    vFitgs$range = vFitgs$range *  out$stmv_internal_scale
+
     if (inherits(vFitgs, "try-error") )  return(NULL)
 
-    scale = matern_phi2phi( mRange=vFitgs$range[2], mSmooth=vFitgs$kappa[2], parameterization_input="gstat", parameterization_output="stmv" ) * out$stmv_internal_scale
+    vEm$dist = vEm$dist * out$stmv_internal_scale
+
+    scale = matern_phi2phi( mRange=vFitgs$range[2], mSmooth=vFitgs$kappa[2], parameterization_input="gstat", parameterization_output="stmv" )
 
     out$gstat = list( fit=vFitgs, vgm=vEm, nu=vFitgs$kappa[2], phi=scale,
         varSpatial=vFitgs$psill[2], varObs=vFitgs$psill[1]  )  # gstat::"range" == range parameter == phi
     localrange = matern_phi2distance( phi=out$gstat$phi, nu=out$gstat$nu, cor=range_correlation  )
     out$gstat$phi_ok = ifelse( out$gstat$phi < out$distance_cutoff*0.99, TRUE, FALSE )
 
+
     if (plotdata) {
       xub = max(out$distance_cutoff) *1.25
       plot.new()
       plot(vEm, model=vFitgs, add=T)
       plot.new()
-      plot( gamma ~ dist0, data=out$gstat$vgm, xlim=c(0,xub),
+      plot( gamma ~ dist, data=out$gstat$vgm, xlim=c(0,xub),
            ylim=c(0,max(out$gstat$vgm$gamma)*1.1), col="blue", pch=20 )
       abline( h=out$gstat$varSpatial + out$gstat$varObs )
       abline( h=out$gstat$varObs )
@@ -746,7 +741,7 @@ stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
 
       if (0) {
         # looks at the predictions
-        gs <- gstat(id = "z", formula = z~1, locations=~plon+plat, data=xy, maxdist=distance_cutoff, nmin=10, force=TRUE, model=vFitgs )
+        gs <- gstat(id = "z", formula = z~1, locations=~plon+plat, data=xy, maxdist=maxdist, nmin=10, force=TRUE, model=vFitgs )
         # variogram of residuals
         data(meuse.grid)
         meuse.grid$plon = meuse.grid$x
@@ -768,14 +763,15 @@ stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
   if ("geoR" %in% methods) {
     gc() ## crashes often ...
     require( geoR )
-    vEm = try( variog( coords=xy/out$stmv_internal_scale, data=z, uvec=nbreaks, max.dist=out$distance_cutoff/out$stmv_internal_scale ) )
+    vEm = try( variog( coords=XYZ[,c(1,2)], data=XYZ[,c(3)], uvec=nbreaks[1], max.dist=maxdist ) )
     if  (inherits(vEm, "try-error") )  return(NULL)
-    vEm$u0 = vEm$u * out$stmv_internal_scale
+    vEm$uvec = vEm$uvec * out$stmv_internal_scale
+    vEm$u = vEm$u * out$stmv_internal_scale
     gc()
 
     vMod = try( variofit( vEm, nugget=0.5*out$varZ, kappa=0.5, cov.model="matern",
       ini.cov.pars=c(0.5*out$varZ, 1 ),  limits = pars.limits( phi=c(0.1, 3), kappa=c(0.1, 5), sigmasq=c(0, out$varZ*1.25) ),
-      fix.kappa=FALSE, fix.nugget=FALSE, max.dist=out$distance_cutoff/out$stmv_internal_scale, weights="cressie" ) )
+      fix.kappa=FALSE, fix.nugget=FALSE, max.dist=maxdist, weights="cressie" ) )
       # kappa is the smoothness parameter , also called "nu" by others incl. RF
     gc()
 
@@ -786,7 +782,7 @@ stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
     if (retry) {
       vMod = try( variofit( vEm, nugget=0.5*out$varZ, kappa=0.5, cov.model="matern",
         ini.cov.pars=c(0.5*out$varZ, 1 ),  limits = pars.limits( phi=c(0.1, 3), kappa=c(0.1, 5), sigmasq=c(0, out$varZ*1.25) ),
-        fix.kappa=TRUE, fix.nugget=FALSE, max.dist=out$distance_cutoff/out$stmv_internal_scale, weights="cressie" ) )
+        fix.kappa=TRUE, fix.nugget=FALSE, max.dist=maxdist, weights="cressie" ) )
         # kappa is the smoothness parameter , also called "nu" by others incl. RF
       gc()
     }
@@ -809,7 +805,7 @@ stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
       # plot.new()
       # plot( out$geoR$vgm )
       plot.new()
-      plot( out$geoR$vgm$v ~ out$geoR$vgm$u0, pch=20 ,
+      plot( out$geoR$vgm$v ~ out$geoR$vgm$u, pch=20 ,
            xlim=c(0,xub), ylim=c(0, max(out$geoR$varSpatial + out$geoR$varObs, out$varZ)) )
       abline( h=out$geoR$varSpatial + out$geoR$varObs)
       abline( h=out$geoR$varObs )
@@ -860,7 +856,7 @@ stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
 
     model = RMmatern( nu=NA, var=NA, scale=NA) + RMnugget(var=NA)
 
-    o = RFfit(model, x=xy/out$stmv_internal_scale, data=z, allowdistanceZero=TRUE,  modus_operandi=modus_operandi )
+    o = RFfit(model, x=XYZ[,c(1,2)], data=XYZ[,3], allowdistanceZero=TRUE,  modus_operandi=modus_operandi )
     oo=summary(o)
 
     scale = matern_phi2phi( mRange=oo$param["value", "matern.s"], mSmooth=oo$param["value", "matern.nu"], parameterization_input="RandomFields", parameterization_output="stmv" ) * out$stmv_internal_scale
@@ -902,16 +898,16 @@ stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
   if ("geoR.ML" %in% methods) {
 
     require( geoR )
-    vEm = try( variog( coords=xy/out$stmv_internal_scale, data=z, uvec=nbreaks, max.dist=out$distance_cutoff/out$stmv_internal_scale ) )
+    vEm = try( variog( coords=XYZ[,c(1,2)], data=XYZ[,3], uvec=nbreaks[1], max.dist=maxdist ) )
     if  (inherits(vEm, "try-error") )  return(NULL)
     v0 = try( variofit( vEm, nugget=0.5*out$varZ, kappa=0.5, cov.model="matern",
       ini.cov.pars=c(0.5*out$varZ, 1) ,
-      fix.kappa=FALSE, fix.nugget=FALSE, max.dist=out$distance_cutoff/out$stmv_internal_scale, weights="cressie" ) )
+      fix.kappa=FALSE, fix.nugget=FALSE, max.dist=maxdist, weights="cressie" ) )
       # kappa is the smoothness parameter , also called "nu" by others incl. RF
     if  (inherits(v0, "try-error") )  return(NULL)
 
     # maximum likelihood method does not work well with Matern
-     vMod = try( likfit( coords=as.matrix(xy/out$stmv_internal_scale), data=z, cov.model="matern", ini.cov.pars=v0$cov.pars,
+     vMod = try( likfit( coords=as.matrix(XYZ[,c(1,2)]), data=XYZ[,3], cov.model="matern", ini.cov.pars=v0$cov.pars,
       fix.kappa=FALSE, fix.nugget=FALSE, lik.method = "REML" ) )
 # try to add this to make it go faster:  parscale =  c(range=0.1, shape=1, boxcox=1, nugget=out$varZ/100 )
 #  and then add to likfit call: control=list(parscale=parscale )
@@ -1065,7 +1061,7 @@ stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
     # data stack for occurence (PA)
     Z = inla.stack(
         tag="data",
-        data=list( z=z ) ,
+        data=list( z=XYZ[,3] ) ,
         A=list(A, 1 ),
         effects=list( spatial.field=spatial.field, xys )  # b0 is the intercept
     )
@@ -1159,7 +1155,7 @@ stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
     xy_blocked = array_map( "xy->2", xy, res=res, origin=origin ) * res[1]
     xy_blocked = xy_blocked / out$stmv_internal_scale
 
-    m = tapply( X=z, INDEX=list(xy_blocked[,1], xy_blocked[,2]),
+    m = tapply( X=XYZ[,3], INDEX=list(xy_blocked[,1], xy_blocked[,2]),
         FUN = function(w) {mean(w, na.rm=TRUE)},
         simplify=TRUE )
 
@@ -1209,7 +1205,7 @@ stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
     # by default, bayesx fixes nu=1.5  , see: bayesx.term.options( bs="kr", method="REML" )
     # phi = max(distance) / const, such that Corr(distance=const) = 0.001;
     nu = 0.5
-    xys = as.data.frame(xy/out$stmv_internal_scale)
+    xys = as.data.frame(XYZ[,c(1,2)])
     names(xys) =  c("plon", "plat" ) # arbitrary
 
     fm <- bayesx( z ~ sx(plon, plat, bs="kr" ), family=family$family, method="REML", data =xys )
@@ -1293,7 +1289,7 @@ stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
 
     distances = abs( as.matrix(  dist( xy/ out$stmv_internal_scale ) ) )
 
-    Data = list( N=length(z), DIST=distances, y=z )
+    Data = list( N=nrow(XYZ), DIST=distances, y=XYZ[,3] )
     fit = jagsUI::jags(data=Data,
        parameters.to.save=c("phi", "sigmasq", "tausq"),
        model.file=fn,
@@ -1355,7 +1351,7 @@ stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
     inp$COVFN=1
     inp$sigma_sq0 = 0.8
     inp$tau_sq0 = 0.2
-    inp$dist=as.matrix( dist( as.data.frame( xy/out$stmv_internal_scale )) )
+    inp$dist=as.matrix( dist( as.data.frame( XYZ[,c(1,2)] )) )
 #    inp$vgm_dist_max = max(abs(inp$dist))
 #    inp$dist = inp$dist / inp$vgm_dist_max
 
@@ -1509,9 +1505,9 @@ stmv_variogram = function( XYZ=NULL, xy=NULL, z=NULL, ti=NULL,
     Data = list(
       eps = 1e-6,
       N = length(z),  # required for LaplacesDemon
-      DIST=as.matrix(dist( xy, diag=TRUE, upper=TRUE)), # distance matrix between knots
-      Y=z/var(z),
-      varZ=var(z)
+      DIST=as.matrix(dist( XYZ[,c(1,2)], diag=TRUE, upper=TRUE)), # distance matrix between knots
+      Y=XYZ[,3]/var(XYZ[,3]),
+      varZ=var(XYZ[,3])
     )
     Data$DIST = Data$DIST / out$stmv_internal_scale
     Data$mon.names = c( "LP", paste0("yhat[",1:Data$N,"]" ) )

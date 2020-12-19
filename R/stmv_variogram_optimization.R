@@ -1,12 +1,13 @@
 
-stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_internal_scale=NA, cor=0.1, control=list(factr=1e-9, maxit = 1000L), weight_by_inverse_distance=TRUE ) {
+stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, cor=0.1, control=list(factr=1e-9, maxit = 1000L), weight_by_inverse_distance=TRUE, distance_scaling_factor=1 ) {
   #\\ simple nonlinear least squares fit
 
   vgm_var_max = max(vg)
   vgm_dist_max = max(vx)
 
-  if (is.na(stmv_internal_scale)) stmv_internal_scale = vgm_dist_max / 3
-  vxs = vx / stmv_internal_scale
+  vgm_internal_scale = vgm_dist_max / 3
+
+  vxs = vx / vgm_internal_scale
   vgs = vg / vgm_var_max
 
   if (any(!is.finite(vxs)) | any(!is.finite(vgs))) {
@@ -39,7 +40,7 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
     lower =c(0.5, 0, 0.001 )
     upper =c(1.5, 1, 5)
 
-    fit = try( optim( par=par, vgs=vgs, vxs=vxs, nu=nu, w=w, method="Nelder-Meads", fn=vario_function_phi ) )
+    fit = try( optim( par=par, vgs=vgs, vxs=vxs, nu=nu, w=w, method="Nelder-Mead", fn=vario_function_phi ) )
 
     if ( !inherits(fit, "try-error")) if ( fit$convergence != 0 ) class(fit) = "try-error"
     if (exists( "par", fit)) {
@@ -115,9 +116,9 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
 
   fit$summary = list(
     vg = vg,
-    vx = vx,
+    vx = vx * distance_scaling_factor,
     vgm_var_max= vgm_var_max,
-    vgm_dist_max = vgm_dist_max,
+    vgm_dist_max = vgm_dist_max * distance_scaling_factor ,
     autocorrelation_function="matern",
     nu =NA,
     phi=NA,
@@ -131,24 +132,25 @@ stmv_variogram_optimization = function( vg, vx, nu=NULL, plotvgm=FALSE, stmv_int
   if ( !inherits(fit, "try-error")) {
    if ( fit$convergence==0 ) {
       fit$summary$nu = ifelse( !is.null(nu), nu, fit$par[["nu"]] )
-      fit$summary$phi=fit$par[["phi"]] * stmv_internal_scale
+      fit$summary$phi=fit$par[["phi"]] * vgm_internal_scale * distance_scaling_factor
       fit$summary$localrange =matern_phi2distance( phi=fit$summary$phi, nu=fit$summary$nu, cor=cor )
       fit$summary$varSpatial = fit$par[["total.var"]] * fit$par[["sigma.sq.fraction"]]  * vgm_var_max
       fit$summary$varObs = fit$par[["total.var"]] * (1- fit$par[["sigma.sq.fraction"]]) * vgm_var_max
-      fit$summary$phi_ok = ifelse( fit$summary$phi < fit$summary$vgm_dist_max*0.99, TRUE, FALSE )
+      fit$summary$phi_ok = ifelse( fit$summary$phi < fit$summary$vgm_dist_max*0.99 , TRUE, FALSE )
       fit$summary$objfn=fit$value
    }
   }
+
 
   # message( " Optim flag (0==all good): ", fit$convergence, " --- ", fit$message )
   if (!is.finite(  fit$summary$phi *  fit$summary$nu  )) return(fit)
 
   if( plotvgm ) {
     dev.new()
-    xlim= c(0, fit$summary$vgm_dist_max*1.1)
+    xlim= c(0, fit$summary$vgm_dist_max*1.1 )
     ylim= c(0, vgm_var_max*1.1)
     plot( fit$summary$vx, fit$summary$vg, col="green", xlim=xlim, ylim=ylim )
-    ds = seq( 0, fit$summary$vgm_dist_max, length.out=100 )
+    ds = seq( 0, fit$summary$vgm_dist_max  , length.out=100 )
 
     ac = fit$summary$varObs + fit$summary$varSpatial*(1 - stmv_matern( ds, fit$summary$phi, fit$summary$nu ) )
     lines( ds, ac, col="orange" )
