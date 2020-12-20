@@ -321,7 +321,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
   if (!is.null(discretized_n)) {
     #\\ As usage sometimes is for high density data, aggregation to a coarse resolution of 'discretized_n' units along
     #\\ the smaller dimension  before computation.
-    XYZ = stmv_discretize_coordinates(coo=XYZ[,c(1,2)], z=XYZ[,3], discretized_n=discretized_n, method="aggregate", FUNC=mean, na.rm=TRUE)
+    XYZ = stmv_discretize_coordinates(coo=XYZ[,c(1,2)], z=XYZ$z, discretized_n=discretized_n, method="aggregate", FUNC=mean, na.rm=TRUE)
     if (nrow(XYZ) < 10 ) return(NULL)
   }
 
@@ -330,12 +330,12 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
   names(XYZ) =  c("plon", "plat", "z" ) # arbitrary
   rownames( XYZ) = 1:nrow(XYZ)  # RF seems to require rownames ...
 
-  varZ = var( XYZ[,3], na.rm=TRUE )
+  varZ = var( XYZ$z, na.rm=TRUE )
   if (!is.finite(varZ)) varZ = 0 
 
   out = list(
     Ndata = nrow(XYZ),
-    stmv_internal_mean = mean( as.vector(XYZ[,3]), na.rm=TRUE ),
+    stmv_internal_mean = mean( as.vector(XYZ$z), na.rm=TRUE ),
     varZ = varZ,  # this is the scaling factor for semivariance .. diving by sd, below reduces numerical floating point issues
     range_crude = sqrt( diff(range(XYZ[,1]))^2 + diff(range(XYZ[,2]))^2) / 4  #initial scaling distance
   )
@@ -350,7 +350,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
     # if max dist not given, make a sensible choice using exponential variogram as a first estimate
     XYZ[,1] = XYZ[,1] / out$stmv_internal_scale
     XYZ[,2] = XYZ[,2] / out$stmv_internal_scale
-  #  XYZ[,3] = (XYZ[,3] - out$stmv_internal_mean) / out$stmv_internal_sd
+  #  XYZ$z = (XYZ$z - out$stmv_internal_mean) / out$stmv_internal_sd
   }
 
   maxdist = out$distance_cutoff/out$stmv_internal_scale
@@ -429,7 +429,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
     # spatial discretization
 
     require( RandomFields )
-    VGM = RFvariogram( data=RFspatialPointsDataFrame( coords=XYZ[,c(1,2)], data=XYZ[,3], RFparams=list(vdim=1, n=1) ) )
+    VGM = RFvariogram( data=RFspatialPointsDataFrame( coords=XYZ[,c(1,2)], data=XYZ$z, RFparams=list(vdim=1, n=1) ) )
     # remove the (0,0) point -- force intercept
 
     todrop = which( !is.finite(VGM@empirical )) # occasionally NaN's are created!
@@ -646,7 +646,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
     ## lambda= sigma**2/ rho and rho. Thinking about h as the spatial signal and e as the noise lambda can be interpreted
     ##  as the noise to signal variance ratio in this spatial context
     # MLESpatialProcess is a ML method for Gaussian spatial process
-    fsp = MLESpatialProcess(XYZ[,c(1,2)], XYZ[,3], cov.function = "stationary.cov",
+    fsp = MLESpatialProcess(XYZ[,c(1,2)], XYZ$z, cov.function = "stationary.cov",
       # abstol=1e-3,
       # lambda.start=0.5, theta.start=1.0, theta.range=c(0.2, 4.0), gridN=25,
       # optim.args=list(method = "BFGS", control = list(fnscale=-1, parscale=c(0.5, 0.5), ndeps=c(0.05,0.05))),
@@ -657,7 +657,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
 
     # warning ("vgram is really slow ...")
 
-    vg = vgram( XYZ[,c(1,2)], XYZ[,3], N=nbreaks[1], dmax=maxdist )
+    vg = vgram( XYZ[,c(1,2)], XYZ$z, N=nbreaks[1], dmax=maxdist )
     vgm = Matern( d=vg$centers, range=res[["theta"]], smoothness=nu )
     cvg = data.frame( cbind( x=vg$centers*out$stmv_internal_scale, cvgm= (res[["sigmaMLE"]]^2 + res[["rhoMLE"]] * (1-vgm)) ))
     out$fields = list( fit=fsp, vgm=cvg, nu=nu, phi=NA,
@@ -672,7 +672,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
 #      xub = max(out$distance_cutoff, max(out$geoR$vgm$u, out$distance_cutoff)) *1.25
       plot.new()
 
-      vEm = try( variog( coords=XYZ[,c(1,2)], data=XYZ[,3], uvec=nbreaks[1], max.dist=maxdist ) )
+      vEm = try( variog( coords=XYZ[,c(1,2)], data=XYZ$z, uvec=nbreaks[1], max.dist=maxdist ) )
       vEm$u = vEm$u * out$stmv_internal_scale
       plot( vEm$v ~ vEm$u, pch=20 ,
             xlim=c(0, max( c(cvg$x, vEm$u) )), ylim=c(0, max( c(out$fields$varSpatial + out$fields$varObs, out$varZ, cvg$cvgm, vEm$v) ) ) )
@@ -862,7 +862,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
 
     model = RMmatern( nu=NA, var=NA, scale=NA) + RMnugget(var=NA)
 
-    o = RFfit(model, x=XYZ[,c(1,2)], data=XYZ[,3], allowdistanceZero=TRUE,  modus_operandi=modus_operandi )
+    o = RFfit(model, x=XYZ[,c(1,2)], data=XYZ$z, allowdistanceZero=TRUE,  modus_operandi=modus_operandi )
     oo=summary(o)
 
     scale = matern_phi2phi( mRange=oo$param["value", "matern.s"], mSmooth=oo$param["value", "matern.nu"], parameterization_input="RandomFields", parameterization_output="stmv" ) * out$stmv_internal_scale
@@ -904,7 +904,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
   if ("geoR.ML" %in% methods) {
 
     require( geoR )
-    vEm = try( variog( coords=XYZ[,c(1,2)], data=XYZ[,3], uvec=nbreaks[1], max.dist=maxdist ) )
+    vEm = try( variog( coords=XYZ[,c(1,2)], data=XYZ$z, uvec=nbreaks[1], max.dist=maxdist ) )
     if  (inherits(vEm, "try-error") )  return(NULL)
     v0 = try( variofit( vEm, nugget=0.5*out$varZ, kappa=0.5, cov.model="matern",
       ini.cov.pars=c(0.5*out$varZ, 1) ,
@@ -913,7 +913,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
     if  (inherits(v0, "try-error") )  return(NULL)
 
     # maximum likelihood method does not work well with Matern
-     vMod = try( likfit( coords=as.matrix(XYZ[,c(1,2)]), data=XYZ[,3], cov.model="matern", ini.cov.pars=v0$cov.pars,
+     vMod = try( likfit( coords=as.matrix(XYZ[,c(1,2)]), data=XYZ$z, cov.model="matern", ini.cov.pars=v0$cov.pars,
       fix.kappa=FALSE, fix.nugget=FALSE, lik.method = "REML" ) )
 # try to add this to make it go faster:  parscale =  c(range=0.1, shape=1, boxcox=1, nugget=out$varZ/100 )
 #  and then add to likfit call: control=list(parscale=parscale )
@@ -1067,7 +1067,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
     # data stack for occurence (PA)
     Z = inla.stack(
         tag="data",
-        data=list( z=XYZ[,3] ) ,
+        data=list( z=XYZ$z ) ,
         A=list(A, 1 ),
         effects=list( spatial.field=spatial.field, xys )  # b0 is the intercept
     )
@@ -1161,14 +1161,14 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
     xy_blocked = array_map( "xy->2", xy, res=res, origin=origin ) * res[1]
     xy_blocked = xy_blocked / out$stmv_internal_scale
 
-    m = tapply( X=XYZ[,3], INDEX=list(xy_blocked[,1], xy_blocked[,2]),
+    m = tapply( X=XYZ$z, INDEX=list(xy_blocked[,1], xy_blocked[,2]),
         FUN = function(w) {mean(w, na.rm=TRUE)},
         simplify=TRUE )
 
     xyz = as.data.frame( as.table (m) )
     xyz[,1] = as.numeric(as.character( xyz[,1] ))
     xyz[,2] = as.numeric(as.character( xyz[,2] ))
-    xyz = xyz[ which( is.finite( xyz[,3] )) ,]
+    xyz = xyz[ which( is.finite( xyz$z )) ,]
     xyz = rasterFromXYZ( xyz )
 
     fit = geostatsp::lgcp(
@@ -1295,7 +1295,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
 
     distances = abs( as.matrix(  dist( xy/ out$stmv_internal_scale ) ) )
 
-    Data = list( N=nrow(XYZ), DIST=distances, y=XYZ[,3] )
+    Data = list( N=nrow(XYZ), DIST=distances, y=XYZ$z )
     fit = jagsUI::jags(data=Data,
        parameters.to.save=c("phi", "sigmasq", "tausq"),
        model.file=fn,
@@ -1512,8 +1512,8 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
       eps = 1e-6,
       N = length(z),  # required for LaplacesDemon
       DIST=as.matrix(dist( XYZ[,c(1,2)], diag=TRUE, upper=TRUE)), # distance matrix between knots
-      Y=XYZ[,3]/var(XYZ[,3]),
-      varZ=var(XYZ[,3])
+      Y=XYZ$z/var(XYZ$z),
+      varZ=var(XYZ$z)
     )
     Data$DIST = Data$DIST / out$stmv_internal_scale
     Data$mon.names = c( "LP", paste0("yhat[",1:Data$N,"]" ) )
