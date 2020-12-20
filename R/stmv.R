@@ -657,7 +657,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         currentstatus = stmv_statistics_status( p=p, reset="flags", reset_flags=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
 
         if ( currentstatus$n.todo == 0 ) break()
-        if ( currentstatus$n.todo < length(p$clusters) ) p$clusters = p$clusters[1] # drop to serial mode
 
         parallel_run( stmv_scale, p=p, stmv_localrange=p$stmv_distance_scale[j], runindex=list( locs=sample( currentstatus$todo )) )
 
