@@ -643,8 +643,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
       p0 = p
 
-      current_runmode = "scale"
-
       for ( j in 1:length( p$stmv_distance_scale ) )  {
         p = p0 #reset
         current_runmode_iter = paste( current_runmode, p$stmv_distance_scale[j] , sep="_")

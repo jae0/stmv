@@ -9,6 +9,8 @@
 # 2 mins
 require(aegis)
 require(aegis.bathymetry)
+require(stmv)
+require(sf)
 
 scale_ram_required_main_process = 1 # GB twostep / fft ---
 scale_ram_required_per_process  = 1 # twostep / fft /fields vario ..  (mostly 0.5 GB, but up to 5 GB)

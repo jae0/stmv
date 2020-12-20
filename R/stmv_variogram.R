@@ -328,10 +328,13 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
   names(XYZ) =  c("plon", "plat", "z" ) # arbitrary
   rownames( XYZ) = 1:nrow(XYZ)  # RF seems to require rownames ...
 
+  varZ = var( as.vector(XYZ[,3]), na.rm=TRUE )
+  if (!is.finite(varZ)) varZ = 0 
+
   out = list(
     Ndata = nrow(XYZ),
     stmv_internal_mean = mean( as.vector(XYZ[,3]), na.rm=TRUE ),
-    varZ = var( as.vector(XYZ[,3]), na.rm=TRUE ),  # this is the scaling factor for semivariance .. diving by sd, below reduces numerical floating point issues
+    varZ = varZ,  # this is the scaling factor for semivariance .. diving by sd, below reduces numerical floating point issues
     range_crude = sqrt( diff(range(XYZ[,1]))^2 + diff(range(XYZ[,2]))^2) / 4  #initial scaling distance
   )
 
@@ -363,6 +366,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
       VGM = stmv_variogram_fft( xyz=XYZ, nbreaks=nbreaks[i]  )
       if (is.null(VGM)) next()
       uu = which( (VGM$vgm$distances < 0.9*max(VGM$vgm$distances) ) & is.finite(VGM$vgm$sv) )
+      if (length(uu) < 5 ) next()
       fit = try( stmv_variogram_optimization( vx=VGM$vgm$distances[uu], vg=VGM$vgm$sv[uu], plotvgm=plotdata,
         cor=range_correlation, distance_scaling_factor=out$stmv_internal_scale  ))
       if ( !inherits(fit, "try-error") ) {
