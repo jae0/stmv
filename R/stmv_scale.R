@@ -74,6 +74,9 @@ stmv_scale = function( ip=NULL, p, stmv_localrange, debugging=FALSE, eps=1e-6, .
         if ( unique_spatial_locations >= ntarget ) break()   
     }
 
+    # check again
+    if ( unique_spatial_locations < ntarget ) next()   
+
     # if (p$stmv_variogram_method=="inla_nonseparable") {
     #   # TODO
     #   return()

@@ -316,7 +316,10 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
   # ----- start -----
 
 
-  if (is.null(XYZ) ) XYZ = cbind( xy, z)
+  if (is.null(XYZ) ) {
+    if (length(z) < 10) return(NULL)
+    XYZ = cbind( xy, z)
+  }
 
   if (!is.null(discretized_n)) {
     #\\ As usage sometimes is for high density data, aggregation to a coarse resolution of 'discretized_n' units along
@@ -324,6 +327,9 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
     XYZ = stmv_discretize_coordinates(coo=XYZ[,c(1,2)], z=XYZ[,3], discretized_n=discretized_n, method="aggregate", FUNC=mean, na.rm=TRUE)
     if (nrow(XYZ) < 10 ) return(NULL)
   }
+
+  if (nrow(XYZ) < 10) return(NULL)
+  if (ncol(XYZ) != 3) return(NULL)
 
   XYZ = as.data.frame( XYZ )
   names(XYZ) =  c("plon", "plat", "z" ) # arbitrary .. for formula driven variograms suc as gstat, bayesx, etc
