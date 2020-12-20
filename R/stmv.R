@@ -655,9 +655,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
           p$clusters = p$stmv_runmode[[ current_runmode ]] # as ram reqeuirements increase drop cpus
         }
         currentstatus = stmv_statistics_status( p=p, reset="flags", reset_flags=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
-
-        if ( currentstatus$n.todo == 0 ) break()
-
         parallel_run( stmv_scale, p=p, stmv_localrange=p$stmv_distance_scale[j], runindex=list( locs=sample( currentstatus$todo )) )
 
         invisible( stmv_db(p=p, DS="save_current_state", runmode="scale", datasubset="statistics") )

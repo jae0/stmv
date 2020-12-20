@@ -327,7 +327,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
 
 
   XYZ = as.data.frame( XYZ )
-  names(XYZ) =  c("plon", "plat", "z" ) # arbitrary
+  names(XYZ) =  c("plon", "plat", "z" ) # arbitrary .. for formula driven variograms suc as gstat, bayesx, etc
   rownames( XYZ) = 1:nrow(XYZ)  # RF seems to require rownames ...
 
   varZ = var( XYZ$z, na.rm=TRUE )
@@ -335,7 +335,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
 
   out = list(
     Ndata = nrow(XYZ),
-    stmv_internal_mean = mean( as.vector(XYZ$z), na.rm=TRUE ),
+    stmv_internal_mean = mean( XYZ[,"z"], na.rm=TRUE ),
     varZ = varZ,  # this is the scaling factor for semivariance .. diving by sd, below reduces numerical floating point issues
     range_crude = sqrt( diff(range(XYZ[,1]))^2 + diff(range(XYZ[,2]))^2) / 4  #initial scaling distance
   )
@@ -493,7 +493,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
 
       # gives a fast stable empirical variogram using nl least squares
       # empirical variogram
-      vEm = gstat::variogram( z ~ 1, locations=~plon+plat, data=as.data.frame(XYZ), cutoff=maxdist, width=maxdist/nbreaks[1], cressie=FALSE )
+      vEm = gstat::variogram( z ~ 1, locations=~plon+plat, data=XYZ, cutoff=maxdist, width=maxdist/nbreaks[1], cressie=FALSE )
 
       fit = stmv_variogram_optimization( vx=vEm$dist, vg=vEm$gamma, plotvgm=FALSE, distance_scaling_factor=out$stmv_internal_scale, cor=range_correlation ) # nu=0.5 == exponential variogram
 
@@ -562,7 +562,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
 
         if (0) {
           # looks at the predictions
-          gs <- gstat(id = "z", formula = z~1, locations=~plon+plat, data=xy, maxdist=maxdist, nmin=10, force=TRUE, model=vFitgs )
+          gs <- gstat(id = "z", formula = z~1, locations=~plon+plat, data=XYZ, maxdist=maxdist, nmin=10, force=TRUE, model=vFitgs )
           # variogram of residuals
           data(meuse.grid)
           meuse.grid$plon = meuse.grid$x
@@ -710,7 +710,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
     require(gstat)
     require(sp)
 
-    vEm = try( variogram( z~1, locations=~plon+plat, data=as.data.frame(XYZ ), cutoff=maxdist, width=maxdist/nbreaks[1], cressie=TRUE ) ) # empirical variogram
+    vEm = try( variogram( z~1, locations=~plon+plat, data=XYZ, cutoff=maxdist, width=maxdist/nbreaks[1], cressie=TRUE ) ) # empirical variogram
     if (inherits(vEm, "try-error") ) return(NULL)
     vMod0 = vgm(psill=2/3*out$varZ, model="Mat", range=1, nugget=out$varZ/3, kappa=1/2 ) # starting model parameters
 
@@ -747,7 +747,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
 
       if (0) {
         # looks at the predictions
-        gs <- gstat(id = "z", formula = z~1, locations=~plon+plat, data=xy, maxdist=maxdist, nmin=10, force=TRUE, model=vFitgs )
+        gs <- gstat(id = "z", formula = z~1, locations=~plon+plat, data=XYZ, maxdist=maxdist, nmin=10, force=TRUE, model=vFitgs )
         # variogram of residuals
         data(meuse.grid)
         meuse.grid$plon = meuse.grid$x
@@ -1211,10 +1211,8 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
     # by default, bayesx fixes nu=1.5  , see: bayesx.term.options( bs="kr", method="REML" )
     # phi = max(distance) / const, such that Corr(distance=const) = 0.001;
     nu = 0.5
-    xys = as.data.frame(XYZ[,c(1,2)])
-    names(xys) =  c("plon", "plat" ) # arbitrary
-
-    fm <- bayesx( z ~ sx(plon, plat, bs="kr" ), family=family$family, method="REML", data =xys )
+    
+    fm <- bayesx( z ~ sx(plon, plat, bs="kr" ), family=family$family, method="REML", data =XYZ )
     # fm <- bayesx( z ~ sx(plon, plat,  bs="kr" ), family=family$family, method="HMCMC", data =xy )
     # ?bayesx.control
     # warning( "BayesX documentation is not clear if rho is the scale parameter. This seems ok, but should do some more testing." )
