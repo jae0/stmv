@@ -91,7 +91,7 @@ stmv_scale = function( ip=NULL, p, stmv_localrange, debugging=FALSE, eps=1e-6, .
       z=Y[data_subset$data_index,],
       methods=p$stmv_variogram_method,
       distance_cutoff=stmv_localrange,  # initial guess of effective range
-      discretized_n = aegis_floor(stmv_localrange / p$pres),
+      # discretized_n = aegis_floor(stmv_localrange / p$pres),
       nbreaks=p$stmv_variogram_nbreaks_totry # different number of breaks actually has an influence upon the stability of variograms
     ) )
  

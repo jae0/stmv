@@ -641,26 +641,20 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
       }
       p$time_start_current_runmode = Sys.time()
 
-      p0 = p
-
       for ( j in 1:length( p$stmv_distance_scale ) )  {
-        p = p0 #reset
         current_runmode_iter = paste( current_runmode, p$stmv_distance_scale[j] , sep="_")
 
-        ni = length( p$stmv_runmode[[ current_runmode ]][[j]] )
-        if (ni > 1) {
-          jcpu = ifelse( j > ni, ni, j )
-          p$clusters = p$stmv_runmode[[ current_runmode ]] [[ jcpu ]] # as ram reqeuirements increase drop cpus
-        } else {
-          p$clusters = p$stmv_runmode[[ current_runmode ]] # as ram reqeuirements increase drop cpus
-        }
+        runmode_cpus = p$stmv_runmode[[ current_runmode ]] #reset
+        ni = length( runmode_cpus )
+        jcpu = ifelse( ni > 1, ifelse( j > ni, ni, j ), 1 ) # in case index j > clusters provided
+        clusters = runmode_cpus [[ jcpu ]] 
         currentstatus = stmv_statistics_status( p=p, reset="flags", reset_flags=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
-        parallel_run( stmv_scale, p=p, stmv_localrange=p$stmv_distance_scale[j], runindex=list( locs=sample( currentstatus$todo )) )
+        parallel_run( stmv_scale, p=p, stmv_localrange=p$stmv_distance_scale[j], clusters=clusters, runindex=list( locs=sample( currentstatus$todo )) )
 
         invisible( stmv_db(p=p, DS="save_current_state", runmode="scale", datasubset="statistics") )
 
         stmv_statistics_status( p=p, verbose=FALSE ) # quick update before logging
-        slog = stmv_logfile(p=p, flag= paste("Scale determination", current_runmode_iter, "completed ...") ) # final update before continuing
+     #   slog = stmv_logfile(p=p, flag= paste("Scale determination", current_runmode_iter, "completed ...") ) # final update before continuing
         p$stmv__runmode = p0$stmv__runmode
 
       }
