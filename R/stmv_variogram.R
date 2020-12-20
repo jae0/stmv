@@ -3,7 +3,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
   plotdata=FALSE, methods=c("geoR"), discretized_n=NULL, nbreaks = c( 13, 17, 15, 21, 24, 32, 11, 9  ),
   distance_cutoff=NA, family=gaussian(link="identity"),
   range_correlation=0.1, stmv_autocorrelation_fft_taper=0,
-  stanmodel=NULL, modus_operandi="easygoing", scale_distances=TRUE  ) {
+  stanmodel=NULL, modus_operandi="easygoing", scale_distances=FALSE  ) {
 
   #\\ estimate empirical variograms (actually correlation functions)
   #\\ and then model them using a number of different approaches .. using a Matern basis
@@ -322,13 +322,15 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
     #\\ As usage sometimes is for high density data, aggregation to a coarse resolution of 'discretized_n' units along
     #\\ the smaller dimension  before computation.
     XYZ = stmv_discretize_coordinates(coo=XYZ[,c(1,2)], z=XYZ[,3], discretized_n=discretized_n, method="aggregate", FUNC=mean, na.rm=TRUE)
+    if (nrow(XYZ) < 10 ) return(NULL)
   }
+
 
   XYZ = as.data.frame( XYZ )
   names(XYZ) =  c("plon", "plat", "z" ) # arbitrary
   rownames( XYZ) = 1:nrow(XYZ)  # RF seems to require rownames ...
 
-  varZ = var( as.vector(XYZ[,3]), na.rm=TRUE )
+  varZ = var( XYZ[,3], na.rm=TRUE )
   if (!is.finite(varZ)) varZ = 0 
 
   out = list(
