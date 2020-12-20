@@ -12,24 +12,13 @@ require(aegis.bathymetry)
 require(stmv)
 require(sf)
 
-scale_ram_required_main_process = 1 # GB twostep / fft ---
-scale_ram_required_per_process  = 1 # twostep / fft /fields vario ..  (mostly 0.5 GB, but up to 5 GB)
-scale_ncpus = min( parallel::detectCores(), floor( (ram_local()- scale_ram_required_main_process) / scale_ram_required_per_process ) )
-
-# 5 mins
-interpolate_ram_required_main_process = 1 # GB twostep / fft
-interpolate_ram_required_per_process  = 1.5 # twostep / fft /fields vario ..
-interpolate_ncpus = min( parallel::detectCores(), floor( (ram_local()- interpolate_ram_required_main_process) / interpolate_ram_required_per_process ) )
-
 
 p0 = aegis::spatial_parameters( spatial_domain="bathymetry_example",
   aegis_proj4string_planar_km="+proj=utm +ellps=WGS84 +zone=20 +units=km",
   dres=1/60/4, pres=0.5, lon0=-64, lon1=-62, lat0=44, lat1=45, psignif=2 )
 
 # or:
-
-p0 = stmv_test_data( "aegis.test.parameters")
-
+# p0 = stmv_test_data( "aegis.test.parameters")
 
 input = stmv::stmv_test_data( datasource="aegis.space", p=p0)
 input = sf::st_as_sf( input, coords=c("lon","lat"), crs=st_crs(projection_proj4string("lonlat_wgs84")) )
@@ -59,11 +48,11 @@ p = bathymetry_parameters(
   stmv_local_modelengine="fft",
   stmv_fft_filter = "matern tapered lowpass modelled fast_predictions", #  matern with taper, fast predictions are sufficient as data density is high
   stmv_lowpass_nu = 0.5,
-  stmv_lowpass_phi = stmv::matern_distance2phi( distance=0.2, nu=0.5, cor=0.1 ),  # note: p$pres = 0.5
+  stmv_lowpass_phi = stmv::matern_distance2phi( distance=0.5, nu=0.5, cor=0.1 ),  # note: p$pres = 0.5
   stmv_variogram_method = "fft",
-  stmv_autocorrelation_fft_taper = 0.8,  # benchmark from which to taper .. high data density truncate local predictions to capture heterogeneity
+  stmv_autocorrelation_fft_taper = 0.9,  # benchmark from which to taper .. high data density truncate local predictions to capture heterogeneity
   stmv_autocorrelation_localrange = 0.1,
-  stmv_autocorrelation_interpolation = c(0.3, 0.25, 0.1, 0.01),  # start with smaller localrange estimates and expand
+  stmv_autocorrelation_interpolation = c(0.3, 0.25, 0.1, 0.05, 0.01),  # start with smaller localrange estimates and expand
   stmv_filter_depth_m = FALSE,  # need data above sea level to get coastline
   stmv_Y_transform =list(
     transf = function(x) {log10(x + 2500)} ,
@@ -74,8 +63,8 @@ p = bathymetry_parameters(
   stmv_distance_scale = c( 2.5, 5, 10, 20, 40, 60, 80 ), # km ... approx guesses of 95% AC range
   stmv_distance_interpolation = c( 5, 10, 15, 20, 40, 60, 80  ) , # range of permissible predictions km (i.e 1/2 stats grid to upper limit) .. in this case 5, 10, 20
   stmv_distance_prediction_limits =c( 2.5, 10 ), # range of permissible predictions km (i.e 1/2 stats grid to upper limit based upon data density)
-  stmv_nmin = 50,  # min number of data points req before attempting to model in a localized space
-  stmv_nmax = 600, # no real upper bound.. just speed /RAM
+  stmv_nmin = 30,  # min number of data points req before attempting to model in a localized space
+  stmv_nmax = 900, # no real upper bound.. just speed /RAM
   stmv_force_complete_method = "fft",
   stmv_runmode = list(
     scale =list( 
@@ -87,7 +76,7 @@ p = bathymetry_parameters(
       distsc6 = rep("localhost", 1), 
       distsc7 = rep("localhost", 1)
     ),
-    interpolate = list(
+    interpolate_correlation_basis = list(
       c1 = rep("localhost", 1),
       c2 = rep("localhost", 1),
       c3 = rep("localhost", 1),
@@ -112,38 +101,54 @@ p = bathymetry_parameters(
 
 if (0) {
   # to force parallel mode
-   stmv_runmode = list(
-    scale = rep("localhost", scale_ncpus),
-    interpolate = list(
-      c1 = rep("localhost", interpolate_ncpus),  # ncpus for each runmode
-      c2 = rep("localhost", interpolate_ncpus),  # ncpus for each runmode
-      c3 = rep("localhost", max(1, interpolate_ncpus-1)),
-      c4 = rep("localhost", max(1, interpolate_ncpus-1)),
-      c5 = rep("localhost", max(1, interpolate_ncpus-2))
-    ),
-    interpolate_predictions = list(
-      c1 = rep("localhost", max(1, interpolate_ncpus-1)),  # ncpus for each runmode
-      c2 = rep("localhost", max(1, interpolate_ncpus-1)),  # ncpus for each runmode
-      c3 = rep("localhost", max(1, interpolate_ncpus-2)),
-      c4 = rep("localhost", max(1, interpolate_ncpus-3)),
-      c5 = rep("localhost", max(1, interpolate_ncpus-4)),
-      c6 = rep("localhost", max(1, interpolate_ncpus-4)),
-      c7 = rep("localhost", max(1, interpolate_ncpus-5))
-    ),
-    globalmodel = FALSE,
-    # restart_load = "interpolate_correlation_basis_0.01" ,  # only needed if this is restarting from some saved instance
-    save_intermediate_results = TRUE,
-    save_completed_data = TRUE
 
-  )  # ncpus for each runmode
+    scale_ram_required_main_process = 1 # GB twostep / fft ---
+    scale_ram_required_per_process  = 1 # twostep / fft /fields vario ..  (mostly 0.5 GB, but up to 5 GB)
+    scale_ncpus = min( parallel::detectCores(), floor( (ram_local()- scale_ram_required_main_process) / scale_ram_required_per_process ) )
+
+    # 5 mins
+    interpolate_ram_required_main_process = 1 # GB twostep / fft
+    interpolate_ram_required_per_process  = 1.5 # twostep / fft /fields vario ..
+    interpolate_ncpus = min( parallel::detectCores(), floor( (ram_local()- interpolate_ram_required_main_process) / interpolate_ram_required_per_process ) )
+
+    stmv_runmode = list(
+      scale = list( 
+        distsc1 = rep("localhost", scale_ncpus), 
+        distsc2 = rep("localhost", scale_ncpus), 
+        distsc3 = rep("localhost", scale_ncpus), 
+        distsc4 = rep("localhost", scale_ncpus), 
+        distsc5 = rep("localhost", scale_ncpus), 
+        distsc6 = rep("localhost", scale_ncpus), 
+        distsc7 = rep("localhost", scale_ncpus)
+      ),
+      interpolate_correlation_basis = list(
+        c1 = rep("localhost", interpolate_ncpus),  # ncpus for each runmode
+        c2 = rep("localhost", interpolate_ncpus),  # ncpus for each runmode
+        c3 = rep("localhost", interpolate_ncpus),
+        c4 = rep("localhost", interpolate_ncpus),
+        c5 = rep("localhost", interpolate_ncpus)
+      ),
+      interpolate_predictions = list(
+        c1 = rep("localhost", interpolate_ncpus),  # ncpus for each runmode
+        c2 = rep("localhost", interpolate_ncpus),  # ncpus for each runmode
+        c3 = rep("localhost", interpolate_ncpus),
+        c4 = rep("localhost", interpolate_ncpus),
+        c5 = rep("localhost", interpolate_ncpus),
+        c6 = rep("localhost", interpolate_ncpus),
+        c7 = rep("localhost", interpolate_ncpus)
+      ),
+      globalmodel = FALSE,
+      # restart_load = "interpolate_correlation_basis_0.01" ,  # only needed if this is restarting from some saved instance
+      save_intermediate_results = TRUE,
+      save_completed_data = TRUE
+
+    )  # ncpus for each runmode
+
 }
 
 
 # quick look of data
 dev.new(); surface( as.image( Z=DATA$input$z, x=DATA$input[, c("plon", "plat")], nx=p$nplons, ny=p$nplats, na.rm=TRUE) )
-
-
-
 
 stmv( p=p  )  # This will take from a few minutes, depending upon system
 # stmv_db( p=p, DS="cleanup.all" )
