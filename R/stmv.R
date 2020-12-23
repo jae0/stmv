@@ -486,6 +486,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
   # determine stats to retain / expect
   res = NULL
+  message("Running a test interpolation to obtain dimensionality of results")
   if ( any(grepl("carstm", runmode )) ) {
     res = stmv_interpolate_polygons( p=p, global_sppoly=global_sppoly, stmv_au_buffer_links=p$stmv_au_buffer_links, stmv_au_distance_reference=p$stmv_au_distance_reference, just_testing_variablelist=TRUE  )
   } else {
@@ -502,7 +503,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   if (exists("TIME", p$stmv_variables) )  p$statsvars = c( p$statsvars, "ar_timerange", "ar_1" )
 
   p$statsvars = unique( p$statsvars )
-
+  message( "Statistics include: ", p$statsvars )
   res = NULL
 
 

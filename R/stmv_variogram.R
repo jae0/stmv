@@ -85,7 +85,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
         # tests
         gr = stmv_variogram( xy, z, methods="fast.recursive", plotdata=TRUE ) # nls
 # $ Ndata              : int 100
-# $ varZ               : num 0.578
+# $ stmv_internal_variance_total               : num 0.578
 # $ range_crude        : num 88029
 # $ stmv_internal_scale: num 29385
 # $ distance_cutoff    : num 132043
@@ -181,7 +181,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
         # Ndata
         # [1] 100
 
-        # $varZ
+        # $stmv_internal_variance_total
         # [1] 0.5782
 
         # $range_crude
@@ -335,19 +335,20 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
   names(XYZ) =  c("plon", "plat", "z" ) # arbitrary .. for formula driven variograms suc as gstat, bayesx, etc
   rownames( XYZ) = 1:nrow(XYZ)  # RF seems to require rownames ...
 
-  varZ = var( XYZ$z, na.rm=TRUE )
-  if (!is.finite(varZ)) varZ = 0 
+  stmv_internal_variance_total = var( XYZ$z, na.rm=TRUE )
+  if (!is.finite(stmv_internal_variance_total)) stmv_internal_variance_total = 0 
+
+  if (stmv_internal_variance_total == 0) return(NULL)
 
   out = list(
     Ndata = nrow(XYZ),
     stmv_internal_mean = mean( XYZ[,"z"], na.rm=TRUE ),
-    varZ = varZ,  # this is the scaling factor for semivariance .. diving by sd, below reduces numerical floating point issues
+    stmv_internal_variance_total = stmv_internal_variance_total,  # this is the scaling factor for semivariance .. diving by sd, below reduces numerical floating point issues
     range_crude = sqrt( diff(range(XYZ[,1]))^2 + diff(range(XYZ[,2]))^2) / 4  #initial scaling distance
   )
 
-  out$stmv_internal_sd = sqrt( out$varZ )
+  out$stmv_internal_sd = sqrt( out$stmv_internal_variance_total )
   out$distance_cutoff = ifelse( is.na(distance_cutoff), out$range_crude * 1.5, distance_cutoff)
-
 
   out$stmv_internal_scale = 1
   if (scale_distances) {
@@ -680,7 +681,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
       vEm = try( variog( coords=XYZ[,c(1,2)], data=XYZ$z, uvec=nbreaks[1], max.dist=maxdist ) )
       vEm$u = vEm$u * out$stmv_internal_scale
       plot( vEm$v ~ vEm$u, pch=20 ,
-            xlim=c(0, max( c(cvg$x, vEm$u) )), ylim=c(0, max( c(out$fields$varSpatial + out$fields$varObs, out$varZ, cvg$cvgm, vEm$v) ) ) )
+            xlim=c(0, max( c(cvg$x, vEm$u) )), ylim=c(0, max( c(out$fields$varSpatial + out$fields$varObs, out$stmv_internal_variance_total, cvg$cvgm, vEm$v) ) ) )
 
       points( cvg, type="b", ylim=range( c(0, cvg$cvgm) ) )
       abline( h=out$fields$varSpatial + out$fields$varObs)
@@ -717,7 +718,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
 
     vEm = try( variogram( z~1, locations=~plon+plat, data=XYZ, cutoff=maxdist, width=maxdist/nbreaks[1], cressie=TRUE ) ) # empirical variogram
     if (inherits(vEm, "try-error") ) return(NULL)
-    vMod0 = vgm(psill=2/3*out$varZ, model="Mat", range=1, nugget=out$varZ/3, kappa=1/2 ) # starting model parameters
+    vMod0 = vgm(psill=2/3*out$stmv_internal_variance_total, model="Mat", range=1, nugget=out$stmv_internal_variance_total/3, kappa=1/2 ) # starting model parameters
 
     vFitgs =  try( fit.variogram( vEm, vMod0, fit.kappa =TRUE, fit.sills=TRUE, fit.ranges=TRUE ) ) ## gstat's kappa is the Bessel function's "nu" smoothness parameter
     vFitgs$range = vFitgs$range *  out$stmv_internal_scale
@@ -780,8 +781,8 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
     vEm$u = vEm$u * out$stmv_internal_scale
     gc()
 
-    vMod = try( variofit( vEm, nugget=0.5*out$varZ, kappa=0.5, cov.model="matern",
-      ini.cov.pars=c(0.5*out$varZ, 1 ),  limits = pars.limits( phi=c(0.1, 3), kappa=c(0.1, 5), sigmasq=c(0, out$varZ*1.25) ),
+    vMod = try( variofit( vEm, nugget=0.5*out$stmv_internal_variance_total, kappa=0.5, cov.model="matern",
+      ini.cov.pars=c(0.5*out$stmv_internal_variance_total, 1 ),  limits = pars.limits( phi=c(0.1, 3), kappa=c(0.1, 5), sigmasq=c(0, out$stmv_internal_variance_total*1.25) ),
       fix.kappa=FALSE, fix.nugget=FALSE, max.dist=maxdist, weights="cressie" ) )
       # kappa is the smoothness parameter , also called "nu" by others incl. RF
     gc()
@@ -791,8 +792,8 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
     if (vMod$kappa < 0.1 | vMod$kappa > 5) retry =TRUE
 
     if (retry) {
-      vMod = try( variofit( vEm, nugget=0.5*out$varZ, kappa=0.5, cov.model="matern",
-        ini.cov.pars=c(0.5*out$varZ, 1 ),  limits = pars.limits( phi=c(0.1, 3), kappa=c(0.1, 5), sigmasq=c(0, out$varZ*1.25) ),
+      vMod = try( variofit( vEm, nugget=0.5*out$stmv_internal_variance_total, kappa=0.5, cov.model="matern",
+        ini.cov.pars=c(0.5*out$stmv_internal_variance_total, 1 ),  limits = pars.limits( phi=c(0.1, 3), kappa=c(0.1, 5), sigmasq=c(0, out$stmv_internal_variance_total*1.25) ),
         fix.kappa=TRUE, fix.nugget=FALSE, max.dist=maxdist, weights="cressie" ) )
         # kappa is the smoothness parameter , also called "nu" by others incl. RF
       gc()
@@ -817,7 +818,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
       # plot( out$geoR$vgm )
       plot.new()
       plot( out$geoR$vgm$v ~ out$geoR$vgm$u, pch=20 ,
-           xlim=c(0,xub), ylim=c(0, max(out$geoR$varSpatial + out$geoR$varObs, out$varZ)) )
+           xlim=c(0,xub), ylim=c(0, max(out$geoR$varSpatial + out$geoR$varObs, out$stmv_internal_variance_total)) )
       abline( h=out$geoR$varSpatial + out$geoR$varObs)
       abline( h=out$geoR$varObs )
 
@@ -911,8 +912,8 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
     require( geoR )
     vEm = try( variog( coords=XYZ[,c(1,2)], data=XYZ$z, uvec=nbreaks[1], max.dist=maxdist ) )
     if  (inherits(vEm, "try-error") )  return(NULL)
-    v0 = try( variofit( vEm, nugget=0.5*out$varZ, kappa=0.5, cov.model="matern",
-      ini.cov.pars=c(0.5*out$varZ, 1) ,
+    v0 = try( variofit( vEm, nugget=0.5*out$stmv_internal_variance_total, kappa=0.5, cov.model="matern",
+      ini.cov.pars=c(0.5*out$stmv_internal_variance_total, 1) ,
       fix.kappa=FALSE, fix.nugget=FALSE, max.dist=maxdist, weights="cressie" ) )
       # kappa is the smoothness parameter , also called "nu" by others incl. RF
     if  (inherits(v0, "try-error") )  return(NULL)
@@ -920,7 +921,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
     # maximum likelihood method does not work well with Matern
      vMod = try( likfit( coords=as.matrix(XYZ[,c(1,2)]), data=XYZ$z, cov.model="matern", ini.cov.pars=v0$cov.pars,
       fix.kappa=FALSE, fix.nugget=FALSE, lik.method = "REML" ) )
-# try to add this to make it go faster:  parscale =  c(range=0.1, shape=1, boxcox=1, nugget=out$varZ/100 )
+# try to add this to make it go faster:  parscale =  c(range=0.1, shape=1, boxcox=1, nugget=out$stmv_internal_variance_total/100 )
 #  and then add to likfit call: control=list(parscale=parscale )
 # where they control resolution of optimization
 
@@ -941,7 +942,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
       plot( out$geoR.ML$vgm )
       plot.new()
       plot( out$geoR.ML$vgm$v ~ I(out$geoR.ML$vgm$u*out$stmv_internal_scale), pch=20 ,
-           xlim=c(0,xub), ylim=c(0, max(out$geoR.ML$varSpatial + out$geoR.ML$varObs, out$varZ)) )
+           xlim=c(0,xub), ylim=c(0, max(out$geoR.ML$varSpatial + out$geoR.ML$varObs, out$stmv_internal_variance_total)) )
       abline( h=out$geoR.ML$varSpatial + out$geoR.ML$varObs)
       abline( h=out$geoR.ML$varObs )
       # abline( v=vMod$practicalRange*out$stmv_internal_scale, col="green" )
@@ -1179,7 +1180,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
     fit = geostatsp::lgcp(
       formula = ~ 1,
       data=xyz,
-      priorCI = list(range=c(0.01,0.8)*n_min, sd=c(0.01, 2.0)*sqrt(out$varZ) ),  # priors are specified as 95% bounds
+      priorCI = list(range=c(0.01,0.8)*n_min, sd=c(0.01, 2.0)*sqrt(out$stmv_internal_variance_total) ),  # priors are specified as 95% bounds
       buffer=n_min*0.05,
       grid=xyz
     )
@@ -1516,7 +1517,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
       N = length(z),  # required for LaplacesDemon
       DIST=as.matrix(dist( XYZ[,c(1,2)], diag=TRUE, upper=TRUE)), # distance matrix between knots
       Y=XYZ$z/var(XYZ$z),
-      varZ=var(XYZ$z)
+      stmv_internal_variance_total=var(XYZ$z)
     )
     Data$DIST = Data$DIST / out$stmv_internal_scale
     Data$mon.names = c( "LP", paste0("yhat[",1:Data$N,"]" ) )
@@ -1531,7 +1532,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
     Data$PGF = compiler::cmpfun(
       function(Data) {
         #initial values .. get them near the center of mass
-        mu = rnorm(Data$N, 0, sqrt(Data$varZ))
+        mu = rnorm(Data$N, 0, sqrt(Data$stmv_internal_variance_total))
         va = rcauchy (2, 0, 0.5) # variances
         phi = rnorm (1, 1, 1) # scale
         nu = rnorm(1, 1, 1)

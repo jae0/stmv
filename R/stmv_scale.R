@@ -53,7 +53,7 @@ stmv_scale = function( ip=NULL, p, stmv_localrange, debugging=FALSE, eps=1e-6, .
 
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
-
+ 
     if ( iip %in% logpoints )  slog = stmv_logfile(p=p, flag="Scale determination")
     Si = p$runs[ iip, "locs" ]
     if ( Sflag[Si] != E[["todo"]] ) next()  # previously attempted .. skip
@@ -118,8 +118,11 @@ stmv_scale = function( ip=NULL, p, stmv_localrange, debugging=FALSE, eps=1e-6, .
     }
     om  = o[[p$stmv_variogram_method]] # save stats
 
+    if ( o$stmv_internal_variance_total < eps ) return(NULL)
+    if ( !om$phi_ok ) return(NULL)
+
     statvars_scale = c(
-      sdTotal = sqrt( o$varZ),
+      sdTotal = sqrt( o$stmv_internal_variance_total),
       rsquared=NA,
       sdSpatial = sqrt(om$varSpatial) ,
       sdObs = sqrt(om$varObs),
