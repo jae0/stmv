@@ -31,7 +31,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
     s_runmode = s_runmode[ unlist(o) ]
     runmode = intersect(s_runmode, c( "globalmodel", "scale", "scale_interpolate", "interpolate_fast_predictions", "interpolate", "interpolate_correlation_basis", "interpolate_distance_basis", "interpolate_predictions", "save_completed_data", "restart_load", "carstm" ) )
   }
-  message( "Specified runmodes are: ", paste(runmode, ", ", sep=" ")  )
+  message( "Specified runmodes are: ", paste(runmode, ", ", sep="")  )
 
   p$nlogs = nlogs
 
@@ -503,7 +503,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
   if (exists("TIME", p$stmv_variables) )  p$statsvars = c( p$statsvars, "ar_timerange", "ar_1" )
 
   p$statsvars = unique( p$statsvars )
-  message( "Statistics include: ", p$statsvars )
+  message( "Statistics include: ", paste( p$statsvars, ", ", sep="") )
   res = NULL
 
 
@@ -615,7 +615,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         runmode_cpus = p$stmv_runmode[[ current_runmode ]] #reset
         ni = length( runmode_cpus )
         jcpu = ifelse( ni > 1, ifelse( j > ni, ni, j ), 1 ) # in case index j > runmode_clusters provided
-        runmode_clusters = runmode_cpus [[ jcpu ]] 
+        runmode_clusters = runmode_cpus [[ jcpu ]]
         currentstatus = stmv_statistics_status( p=p, reset="flags", reset_flags=c("insufficient_data",  "unknown" ) )
         if ( currentstatus$n.todo == 0 ) break()
         if ( currentstatus$n.todo < (2*length(runmode_clusters)) ) runmode_clusters = runmode_clusters[1] # drop to serial mode
@@ -651,7 +651,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         runmode_cpus = p$stmv_runmode[[ current_runmode ]] #reset
         ni = length( runmode_cpus )
         jcpu = ifelse( ni > 1, ifelse( j > ni, ni, j ), 1 ) # in case index j > runmode_clusters provided
-        runmode_clusters = runmode_cpus [[ jcpu ]] 
+        runmode_clusters = runmode_cpus [[ jcpu ]]
         currentstatus = stmv_statistics_status( p=p, reset="flags", reset_flags=c("insufficient_data", "variogram_failure", "variogram_range_limit", "unknown" ) )
         if ( currentstatus$n.todo == 0 ) break()
         if ( currentstatus$n.todo < (2*length(runmode_clusters)) ) runmode_clusters = runmode_clusters[1] # drop to serial mode
@@ -659,6 +659,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         parallel_run( stmv_scale, p=p, stmv_localrange=p$stmv_distance_scale[j],  runindex=list( locs=sample( currentstatus$todo )) )
         invisible( stmv_db(p=p, DS="save_current_state", runmode="scale", datasubset="statistics") )
         stmv_statistics_status( p=p, verbose=FALSE ) # quick update before logging
+        slog = stmv_logfile(p=p, flag= paste("Iteration completed:", current_runmode_iter ) ) # final update before continuing
       }
       slog = stmv_logfile(p=p, flag= "Scaling phase completed" ) # final update before continuing
       message( "||| Time used for scale estimation: ", format(difftime(  Sys.time(), p$time_start_current_runmode )), "\n"  )
@@ -690,7 +691,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
             message( "\n||| Entering < Fast ", current_runmode_iter, " > : ", format(Sys.time()) )
             ni = length( runmode_cpus )
             jcpu = ifelse( ni > 1, ifelse( j > ni, ni, j ), 1 ) # in case index j > runmode_clusters provided
-            runmode_clusters = runmode_cpus [[ jcpu ]] 
+            runmode_clusters = runmode_cpus [[ jcpu ]]
             currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
             if ( currentstatus$n.todo == 0 ) break()
             if ( currentstatus$n.todo < (2*length(runmode_clusters)) ) runmode_clusters = runmode_clusters[1] # drop to serial mode
@@ -709,7 +710,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         message( "\n||| Entering < Exhaustive ", current_runmode_iter, " > : ", format(Sys.time()) )
         ni = length( runmode_cpus )
         jcpu = ifelse( ni > 1, ifelse( j > ni, ni, j ), 1 ) # in case index j > runmode_clusters provided
-        runmode_clusters = runmode_cpus [[ jcpu ]] 
+        runmode_clusters = runmode_cpus [[ jcpu ]]
         currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
         if ( currentstatus$n.todo == 0 ) break()
         if ( currentstatus$n.todo < length(runmode_clusters) ) runmode_clusters = runmode_clusters[1] # drop to serial mode
@@ -760,7 +761,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         runmode_cpus = p$stmv_runmode[[ current_runmode ]] #reset
         ni = length( runmode_cpus )
         jcpu = ifelse( ni > 1, ifelse( j > ni, ni, j ), 1 ) # in case index j > runmode_clusters provided
-        runmode_clusters = runmode_cpus [[ jcpu ]] 
+        runmode_clusters = runmode_cpus [[ jcpu ]]
         currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
         if ( currentstatus$n.todo == 0 ) break()
         if ( currentstatus$n.todo < length(runmode_clusters) ) runmode_clusters = runmode_clusters[1] # drop to serial mode
@@ -813,7 +814,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         runmode_cpus = p$stmv_runmode[[ current_runmode ]] #reset
         ni = length( runmode_cpus )
         jcpu = ifelse( ni > 1, ifelse( j > ni, ni, j ), 1 ) # in case index j > runmode_clusters provided
-        runmode_clusters = runmode_cpus [[ jcpu ]] 
+        runmode_clusters = runmode_cpus [[ jcpu ]]
         stmv_statistics_status( p=p, reset=c( "complete" ), verbose=FALSE )
         currentstatus = stmv_statistics_status( p=p, reset=c( "incomplete" ) ) # flags/filter stats locations base dupon prediction covariates. .. speed up and reduce storage
         if ( currentstatus$n.todo == 0 ) break()
