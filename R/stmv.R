@@ -659,6 +659,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         parallel_run( stmv_scale, p=p, stmv_localrange=p$stmv_distance_scale[j],  runindex=list( locs=sample( currentstatus$todo )) )
         invisible( stmv_db(p=p, DS="save_current_state", runmode="scale", datasubset="statistics") )
         stmv_statistics_status( p=p, verbose=FALSE ) # quick update before logging
+        slog = stmv_logfile(p=p, flag= paste("Iteration completed:", current_runmode_iter ) ) # final update before continuing
       }
       slog = stmv_logfile(p=p, flag= "Scaling phase completed" ) # final update before continuing
       message( "||| Time used for scale estimation: ", format(difftime(  Sys.time(), p$time_start_current_runmode )), "\n"  )
