@@ -202,8 +202,8 @@
       if ( exists("TIME", p$stmv_variables)) {
 
         p0 = p
-        p$clusters = p$stmv_runmode[["interpolate"]][[1]]
-
+        p$clusters = rep( "localhost", parallel::detectCores() )
+        
         parallel_run(
           p=p,
           shallower=shallower,

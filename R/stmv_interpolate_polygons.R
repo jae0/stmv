@@ -167,6 +167,8 @@ stmv_interpolate_polygons = function( ip=NULL, p, debugging=FALSE, global_sppoly
 
 # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
+    stmv_control_check(p=p)
+  
     if ( iip %in% logpoints )  slog = stmv_logfile(p=p, flag= paste("Interpolation", p$runoption) )
     Si = p$runs[ iip, "locs" ]
     print( paste("index =", iip, ";  Si = ", Si ) )

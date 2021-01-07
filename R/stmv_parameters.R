@@ -25,7 +25,8 @@ stmv_parameters = function( p=list(), ... ) {
   if ( !file.exists(p$stmvSaveDir)) dir.create( p$stmvSaveDir, recursive=TRUE, showWarnings=FALSE )
 
   p = parameters_add_without_overwriting( p,
-    stmv_current_status = file.path( p$stmvSaveDir, "stmv_current_status" )
+    stmv_current_status = file.path( p$stmvSaveDir, "stmv_current_status" ),
+    stmv_control_file = file.path( p$stmvSaveDir, "stmv_control" )
   )
 
   p = parameters_add_without_overwriting( p,

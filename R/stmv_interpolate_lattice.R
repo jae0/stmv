@@ -176,6 +176,8 @@ stmv_interpolate_lattice = function( ip=NULL, p, localrange_interpolation=NULL, 
   # main loop over each output location in S (stats output locations)
   for ( iip in ip ) {
 
+    stmv_control_check(p=p)
+    
     if ( iip %in% logpoints )  slog = stmv_logfile(p=p, flag= paste("Interpolation", p$runoption) )
     Si = p$runs[ iip, "locs" ]
 
