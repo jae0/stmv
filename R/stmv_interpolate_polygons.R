@@ -163,6 +163,7 @@ stmv_interpolate_polygons = function( ip=NULL, p, debugging=FALSE, global_sppoly
     nlogs = ifelse( length(ip) > (p$nlogs*5), p$nlogs, length(ip) / 5  )
   }
   logpoints  =  sort( sample( ip, round( max(1, nlogs) ) ) )  # randomize
+  savepoints = logpoints[ floor( length(logpoints) * c( 0.25, 0.5, 0.75, 0.9)) ]
 
 
 # main loop over each output location in S (stats output locations)
@@ -170,6 +171,10 @@ stmv_interpolate_polygons = function( ip=NULL, p, debugging=FALSE, global_sppoly
     stmv_control_check(p=p)
   
     if ( iip %in% logpoints )  slog = stmv_logfile(p=p, flag= paste("Interpolation", p$runoption) )
+    if ( iip %in% savepoints )  {
+      stmv_db(p=p, DS="save_current_state", runmode=p$current_runmode, datasubset=c("P", "Pn", "Psd", "statistics") )  
+    }
+
     Si = p$runs[ iip, "locs" ]
     print( paste("index =", iip, ";  Si = ", Si ) )
     if ( Sflag[Si] == E[["complete"]] ) next()

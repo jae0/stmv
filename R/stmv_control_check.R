@@ -15,7 +15,7 @@ stmv_control_check = function(p) {
         res = gsub( "^[[:space:]]*\\#('|\\/\\/)", "", o[k] )
 
         if (grepl( "save", res ) ) {
-          stmv_db(p=p, DS="save_current_state", runmode="external_control", datasubset=c("P", "Pn", "Psd", "statistics") )  
+          stmv_db(p=p, DS="save_current_state", runmode=p$current_runmode, datasubset=c("P", "Pn", "Psd", "statistics") )  
         }
 
         if (grepl( "status_reset_incomplete", res ) ) {
