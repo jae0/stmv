@@ -5,7 +5,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
 
   if (0) {
     runmode = NULL
-    nlogs = 10
+    nlogs = 100
     niter = 1
     DATA=NULL
     debug_plot_variable_index=1
@@ -707,7 +707,6 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
             p$stmv_fft_filter = gsub( "fast_predictions", "", p$stmv_fft_filter )  # remove fast ... now moving to slow/exhaustive
           }
         }
-        message( "\n||| Entering < Exhaustive ", current_runmode_iter, " > : ", format(Sys.time()) )
         ni = length( runmode_cpus )
         jcpu = ifelse( ni > 1, ifelse( j > ni, ni, j ), 1 ) # in case index j > runmode_clusters provided
         runmode_clusters = runmode_cpus [[ jcpu ]]
@@ -715,6 +714,7 @@ stmv = function( p, runmode=NULL, DATA=NULL, nlogs=100, niter=1,
         if ( currentstatus$n.todo == 0 ) break()
         if ( currentstatus$n.todo < length(runmode_clusters) ) runmode_clusters = runmode_clusters[1] # drop to serial mode
         p$clusters = runmode_clusters
+        message( "\n||| Entering < Exhaustive ", current_runmode_iter, " > : ", format(Sys.time()) )
         invisible( parallel_run( stmv_interpolate_lattice,
           p=p,
           localrange_interpolation_correlation = p$stmv_autocorrelation_interpolation[j],
