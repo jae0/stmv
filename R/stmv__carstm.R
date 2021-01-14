@@ -51,9 +51,6 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, improve.hyperparam.estimates
 
     H = stmv_carstm_hyperparameters( sd(m), alpha=0.5, median(m) )
     m = NULL
-    # # adjust based upon RAM requirements and ncores
-    # inla.setOption(num.threads= p$inla_num.threads)
-    # inla.setOption(blas.num.threads=p$inla_blas.num.threads)
 
     gc()
 
