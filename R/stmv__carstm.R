@@ -247,13 +247,13 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, improve.hyperparam.estimates
         vn = paste( p$stmv_variables$Y, "random_auid_nonspatial", sep=".")
         res[[vn]] = reformat_to_array( input=input, matchfrom=res$ns_matchfrom, matchto=res$ns_matchto )
         if (!is.null(NA_mask)) res[[vn]][NA_mask] = NA
-        # carstm_plot( p=p, res=res, vn=vn, time_match=list(year="2000", dyear="0.8" ) )
+        # carstm_map( res=res, vn=vn, time_match=list(year="2000", dyear="0.85" ) )
 
         input = fit$summary.random$auid[ res$i_spatial, "mean" ]  # offset structure due to bym2
         vn = paste( p$stmv_variables$Y, "random_auid_spatial", sep=".")
         res[[vn]] = reformat_to_array( input=input, matchfrom=res$sp_matchfrom, matchto=res$sp_matchto )
         if (!is.null(NA_mask)) res[[vn]][NA_mask] = NA
-        # carstm_plot( p=p, res=res, vn=vn, time_match=list(year="2000", dyear="0.8" ) )
+        # carstm_map( res=res, vn=vn, time_match=list(year="2000", dyear="0.85" ) )
 
       }
     }
