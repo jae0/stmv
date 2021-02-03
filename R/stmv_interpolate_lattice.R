@@ -81,7 +81,7 @@ stmv_interpolate_lattice = function( ip=NULL, p, localrange_interpolation=NULL, 
 
 #    message("testing a run of the model to check for output")
 
-    p = parallel_run( p=p, runindex=list( locs=sample( stmv_statistics_status( p=p )$todo )) )
+    p = parallel_run( p=p, runindex=list( locs=sample( stmv_statistics_status( p=p, verbose=FALSE )$todo )) )
     ip = 1:100
 
     for ( iip in ip ) {
