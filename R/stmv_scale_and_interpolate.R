@@ -49,7 +49,7 @@ stmv_scale_and_interpolate = function( ip=NULL, p, debugging=FALSE, eps=1e-6, ..
     nlogs = ifelse( length(ip) > (p$nlogs*5), p$nlogs, length(ip) / 5  )
   }
   logpoints  =  sort( sample( ip, round( max(1, nlogs) ) ) )  # randomize
-  savepoints = logpoints[ floor( length(logpoints) * c( 0.25, 0.5, 0.75, 0.9)) ]
+  savepoints =  sort( sample( ip,  3 ) )  
 
   stmv_ntarget = sort( unique( c(1, p$stmv_nmin_downsize_factor) * p$stmv_nmax ), decreasing=TRUE )  # largest first
   stmv_ntarget = stmv_ntarget[ stmv_ntarget >=  p$stmv_nmin ]

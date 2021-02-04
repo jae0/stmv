@@ -163,7 +163,8 @@ stmv_interpolate_polygons = function( ip=NULL, p, debugging=FALSE, global_sppoly
     nlogs = ifelse( length(ip) > (p$nlogs*5), p$nlogs, length(ip) / 5  )
   }
   logpoints  =  sort( sample( ip, round( max(1, nlogs) ) ) )  # randomize
-  savepoints = logpoints[ floor( length(logpoints) * c( 0.25, 0.5, 0.75, 0.9)) ]
+
+  savepoints =  sort( sample( ip,  3  ) )  
 
 
 # main loop over each output location in S (stats output locations)
