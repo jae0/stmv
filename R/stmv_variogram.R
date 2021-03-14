@@ -1347,10 +1347,8 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
 
   if ( grepl("stan", methods) ) {
 
-    library(rstan)
-    rstan_options(auto_write = TRUE)
-    options(mc.cores = parallel::detectCores())
-
+    library(cmdstanr)
+   
     inp = list()
     inp$varY = var(z)
     inp$Y = z / inp$varY
@@ -1365,7 +1363,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
 #    inp$vgm_dist_max = max(abs(inp$dist))
 #    inp$dist = inp$dist / inp$vgm_dist_max
 
-    if (is.null(stanmodel)) stanmodel=rstan::stan_model( model_code= "
+    if (is.null(stanmodel)) stanmodel=stan_initialize( stan_code="
 
       functions{
 
@@ -1473,13 +1471,15 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
 
   )
 
+  stanmodel$compile()
+
     # f = optimizing(stanmodel, data=inp, hessian=FALSE )
     # optimizing(stanmodel, data=inp, hessian=FALSE, tol_rel_obj=1e6, algorithm="LBFGS"  )
     # optimizing(stanmodel, data=inp, hessian=FALSE, tol_rel_obj=1e6, algorithm="BFGS"  )
 
     # f = vb(stanmodel, data=inp)
 
-    f = sampling(stanmodel, data=inp, iter=1000, chains=3)
+    f = stanmodel$sample( data=inp, iter=1000, chains=3 )
       # warmup = 200,          # number of warmup iterations per chain
       # control =. list(adapt_delta = 0.9),
       # # refresh = 500,          # show progress every 'refresh' iterations
@@ -1494,7 +1494,8 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
 
     # extract samples
     # m2 = as.array(f)
-    pred=rstan::extract(f)
+    pred=stan_extract( as_draws_df( f$draws() ) )
+
     phii = mean(pred$phi) * out$stmv_internal_scale
     rnge = matern_phi2distance( phi=phii, nu=0.5, cor=range_correlation  )
     out$stan$phi_ok = ifelse( out$stan$phi < out$distance_cutoff*0.99, TRUE, FALSE )
