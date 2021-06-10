@@ -167,8 +167,8 @@ statsvars = dimnames(statistics)[[2]]
 # statsvars = c("sdTotal", "ndata", "fixed_mean", "fixed_sd", "dic", "dic_p_eff",
 #   "waic", "waic_p_eff", "mlik", "Expected_number_of_parameters",
 #   "Stdev_of_the_number_of_parameters", "Number_of_equivalent_replicates",
-#   "Precision_for_the_Gaussian_observations", "Precision_for_auid",
-#   "Phi_for_auid", "Precision_for_the_Gaussian_observations_sd", "Precision_for_auid_sd", "Phi_for_auid_sd"
+#   "Precision_for_the_Gaussian_observations", "Precision_for_space",
+#   "Phi_for_space", "Precision_for_the_Gaussian_observations_sd", "Precision_for_space_sd", "Phi_for_space_sd"
 # )
 
 # statsvars = c( "sdTotal", "rsquared", "ndata", "sdSpatial", "sdObs", "phi", "nu", "localrange" )

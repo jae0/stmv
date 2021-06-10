@@ -70,14 +70,16 @@ stmv_parameters = function( p=list(), ... ) {
     )
     p = parameters_add_without_overwriting( p,
       control.inla.variations = list(
-        list( optimise.strategy="smart", stupid.search=FALSE, strategy="adaptive", h=0.001, cmin=0),
-        list( optimise.strategy="smart", stupid.search=FALSE, strategy="adaptive", h=0.01, cmin=0),
-        list( optimise.strategy="smart", stupid.search=FALSE, strategy="adaptive", h=0.1,  cmin=0),
-        list( optimise.strategy="smart", stupid.search=FALSE, strategy="adaptive") ,
-        list( optimise.strategy="smart", stupid.search=TRUE, h=0.0001 ),
-        list( optimise.strategy="smart", stupid.search=TRUE, h=0.001 ),
-        list( optimise.strategy="smart", stupid.search=TRUE, h=0.01 ),
-        list( optimise.strategy="smart", stupid.search=TRUE, h=0.1 )
+        inla.set.control.inla.default(),  # first try defaults
+        list( strategy="adaptive", improved.simplified.laplace=TRUE ), # default h=0.005
+        list( stupid.search=FALSE, strategy="adaptive", h=0.001, cmin=0),
+        list( stupid.search=FALSE, strategy="adaptive", h=0.01, cmin=0),
+        list( stupid.search=FALSE, strategy="adaptive", h=0.1,  cmin=0),
+        list( stupid.search=FALSE, strategy="adaptive") ,
+        list( stupid.search=TRUE, h=0.0001 ),
+        list( stupid.search=TRUE, h=0.001 ),
+        list( stupid.search=TRUE, h=0.01 ),
+        list( stupid.search=TRUE, h=0.1 )
       )
     )
 
