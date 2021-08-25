@@ -49,7 +49,7 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, improve.hyperparam.estimates
     j = which( is.finite(dat[[ p$stmv_variables$Y ]]) )
     m = dat[[p$stmv_variables$Y ]] [j]
 
-    H = stmv_carstm_hyperparameters( sd(m), alpha=0.5, median(m) )
+    H = stmv_hyperparameters( sd(m), alpha=0.5, median(m) )
     m = NULL
 
     gc()
