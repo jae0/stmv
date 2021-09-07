@@ -8,6 +8,7 @@
 
 # 2 mins
 require(aegis)
+require(aegis.survey)
 require(aegis.bathymetry)
 require(stmv)
 require(sf)

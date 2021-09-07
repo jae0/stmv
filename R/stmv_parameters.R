@@ -43,6 +43,7 @@ stmv_parameters = function( p=list(), ... ) {
     stmv_lowpass_phi = stmv::matern_distance2phi( distance=ifelse(exists("pres", p), p$pres, stop("'p$pres' needs to be defined")), nu=p$stmv_lowpass_nu, cor=p$stmv_autocorrelation_localrange ) # FFT based method when operating gloablly
   )
  
+  p$discretization = discretizations(p=p$discretization)
 
   if ( p$stmv_local_modelengine %in% c("gaussianprocess2Dt")) {
     p$libs = c( p$libs, "fields", "fftwtools", "fftw" )
