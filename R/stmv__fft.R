@@ -287,7 +287,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
       if ( grepl("tapered", p$stmv_fft_filter) ) {
         if (is.null(theta.Taper)) theta.Taper = theta.Taper_static  # if null then not time varying so use static
         spk =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Matern", theta=local_phi, smoothness=local_nu,
-          Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
+          Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2, aRange=1), spam.format=TRUE)
         spk = as.surface(dgrid, c(spk))$z / (nr2*nc2)
         sp.covar = sp.covar * fftwtools::fftw2d(spk)  * mC_fft
       } else {
@@ -302,7 +302,7 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
       if ( grepl("tapered", p$stmv_fft_filter) ) {
         if (is.null(theta.Taper)) theta.Taper = theta.Taper_static  # if null then not time varying so use static
         spk =  stationary.taper.cov( x1=dgrid, x2=center, Covariance="Exponential", theta=theta,
-          Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2), spam.format=TRUE)
+          Taper="Wendland", Taper.args=list(theta=theta.Taper, k=2, dimension=2, aRange=1 ), spam.format=TRUE)
         spk = as.surface(dgrid, c(spk))$z / (nr2*nc2)
         sp.covar = sp.covar * fftwtools::fftw2d(spk)  * mC_fft
       } else {
