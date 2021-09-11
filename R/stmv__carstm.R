@@ -87,9 +87,6 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, improve.hyperparam.estimates
     rsquared = ifelse( inherits(oores, "try-error"), NA,  summary(oores)$r.squared )
     oo = oores = NULL
 
-    mlik_p_eff = c(fit$neffp)
-    names(mlik_p_eff) = gsub( " ", "_", rownames(fit$neffp) )
-
     res$stmv_stats = c(
       sdTotal=sdTotal,
       ndata=nrow(dat),
@@ -101,7 +98,6 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, improve.hyperparam.estimates
       waic = fit$waic$waic, #1
       waic_p_eff = fit$waic$p.eff, #1
       mlik = fit$mlik[[2,1]], #1
-      mlik_p_eff,
       hyp_pars
     )
 
