@@ -69,8 +69,8 @@ stmv__fft = function( p=NULL, dat=NULL, pa=NULL, nu=NULL, phi=NULL, varSpatial=N
   rr = diff(x_r)
   rc = diff(x_c)
 
-  nr = aegis_floor( rr/dx ) + 1L
-  nc = aegis_floor( rc/dy ) + 1L
+  nr = trunc( rr/dx ) + 1L
+  nc = trunc( rc/dy ) + 1L
 
   dr = rr/(nr-1) # == dx
   dc = rc/(nc-1) # == dy

@@ -32,10 +32,10 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NUL
       Sloc_nplat = length(sbox$plats)
       Sloc_nplon = length(sbox$plons)
       Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
-      uS = array_map( "2->1", aegis_floor( cbind(Sloc[,1]-p$origin[1], Sloc[,2]-p$origin[2])/p$stmv_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
+      uS = array_map( "2->1", trunc( cbind(Sloc[,1]-p$origin[1], Sloc[,2]-p$origin[2])/p$stmv_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
 
       if( length(yesP) > 0 ) {
-        toreset = array_map( "2->1", aegis_floor( cbind(Ploc[yesP,1]-p$origin[1], Ploc[yesP,2]-p$origin[2])/p$stmv_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
+        toreset = array_map( "2->1", trunc( cbind(Ploc[yesP,1]-p$origin[1], Ploc[yesP,2]-p$origin[2])/p$stmv_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
         toreset = unique(toreset)
         yesP = NULL
         inrange = which( (toreset >= min(uS, na.rm=TRUE)) & (toreset <= max(uS, na.rm=TRUE)) )
@@ -72,10 +72,10 @@ stmv_statistics_status = function(p, plotdata=FALSE, reset=NULL, reset_flags=NUL
       Sloc_nplat = length(sbox$plats)
       Sloc_nplon = length(sbox$plons)
       Ploc = stmv_attach( p$storage_backend, p$ptr$Ploc )
-      uS = array_map( "2->1", aegis_floor( cbind(Sloc[,1]-p$origin[1], Sloc[,2]-p$origin[2])/p$stmv_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
+      uS = array_map( "2->1", trunc( cbind(Sloc[,1]-p$origin[1], Sloc[,2]-p$origin[2])/p$stmv_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
 
       if( length(noP) > 0 ) {
-        toreset = array_map( "2->1", aegis_floor( cbind(Ploc[noP,1]-p$origin[1], Ploc[noP,2]-p$origin[2])/p$stmv_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
+        toreset = array_map( "2->1", trunc( cbind(Ploc[noP,1]-p$origin[1], Ploc[noP,2]-p$origin[2])/p$stmv_distance_statsgrid)+1, c(Sloc_nplon, Sloc_nplat) )
         toreset = unique(toreset)
         noP = NULL
         inrange = which( (toreset >= min(uS, na.rm=TRUE)) & (toreset <= max(uS, na.rm=TRUE)) )

@@ -47,7 +47,7 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=3
         minresolution = diff(xr) / discretized_n
       }
 
-      coo = aegis_floor( coo  / minresolution + 1) * minresolution
+      coo = trunc( coo  / minresolution + 1) * minresolution
       coo = data.table(coo)
 
       if ( method=="default" ) {
@@ -80,7 +80,7 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=3
           oo = which( coo[["x"]] == res[["x"]][o]  )
           noo = length(oo)
           if ( noo > 1) {
-            okeep = max(1, aegis_floor(invcount[o] * noo))
+            okeep = max(1, trunc(invcount[o] * noo))
             if (okeep >= 1) {
               ss = oo[ .Internal( sample( noo, okeep, replace=FALSE, prob=NULL)) ]
               tokeep = c(tokeep, icoo[ss] )
@@ -106,8 +106,8 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=3
       minresolution = rep( dmin / discretized_n, 2)
     }
 
-    coo[[1]] = aegis_floor( coo[[1]] / minresolution[1] + 1) * minresolution[1]
-    coo[[2]] = aegis_floor( coo[[2]] / minresolution[2] + 1) * minresolution[2]
+    coo[[1]] = trunc( coo[[1]] / minresolution[1] + 1) * minresolution[1]
+    coo[[2]] = trunc( coo[[2]] / minresolution[2] + 1) * minresolution[2]
 
     if ( method=="default" ) {
       # basic discretization in 2D
@@ -138,7 +138,7 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=3
         oo = which( coo[["x"]] == res[["x"]][o] & coo[["y"]] == res[["y"]][o] )
         noo = length(oo)
         if ( noo > 1) {
-          okeep = max(1, aegis_floor(invcount[o] * noo))
+          okeep = max(1, trunc(invcount[o] * noo))
           if (okeep >= 1) {
             ss = oo[ .Internal( sample( noo, okeep, replace=FALSE, prob=NULL)) ]
             tokeep = c(tokeep, icoo[ss] )
@@ -167,9 +167,9 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=3
         minresolution = c( dmin / discretized_n, dmin / discretized_n, tmin/discretized_n )
       }
 
-      coo[[1]] = aegis_floor( coo[[1]] / minresolution[1] +1 ) * minresolution[1]
-      coo[[2]] = aegis_floor( coo[[2]] / minresolution[2] +1 ) * minresolution[2]
-      coo[[3]] = aegis_floor( coo[[3]] / minresolution[3] +1 ) * minresolution[3]
+      coo[[1]] = trunc( coo[[1]] / minresolution[1] +1 ) * minresolution[1]
+      coo[[2]] = trunc( coo[[2]] / minresolution[2] +1 ) * minresolution[2]
+      coo[[3]] = trunc( coo[[3]] / minresolution[3] +1 ) * minresolution[3]
 
       if ( method=="default" ) {
         # basic discretization in 2D
@@ -200,7 +200,7 @@ stmv_discretize_coordinates = function(coo, z=NULL, discretized_n=100, ntarget=3
           oo = which( coo[,1] == res[o,1] & coo[,2] == res[o,2] & coo[,3] == res[o,3] )
           noo = length(oo)
           if ( noo > 1) {
-            okeep = max(1, aegis_floor(invcount[o] * noo))
+            okeep = max(1, trunc(invcount[o] * noo))
             if (okeep >= 1) {
               ss = oo[ .Internal( sample( noo, okeep, replace=FALSE, prob=NULL)) ]
               tokeep = c(tokeep, icoo[ss] )

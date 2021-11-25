@@ -13,8 +13,8 @@ stmv__constant = function( p=NULL,  dat=NULL, pa=NULL, ...  ) {
   x_r = range(pa[[vns[1] ]])
   x_c = range(pa[[vns[2] ]])
 
-  nr = aegis_floor( diff(x_r)/p$pres +1 )
-  nc = aegis_floor( diff(x_c)/p$pres +1 )
+  nr = trunc( diff(x_r)/p$pres +1 )
+  nc = trunc( diff(x_c)/p$pres +1 )
 
   xo = seq(x_r[1], x_r[2], length.out = nr )
   yo = seq(x_c[1], x_c[2], length.out = nc )

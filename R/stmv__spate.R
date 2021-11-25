@@ -150,7 +150,7 @@ stmv__spate = function( p=NULL, dat=NULL, pa=NULL, sloc=NULL, distance=NULL, nu=
         for (i in 1:p$nt) {
            pause(1)
           # data
-          di = which( aegis_floor(dat[ , p$stmv_variables$TIME ]) == aegis_floor(p$prediction_ts[i]) )
+          di = which( trunc(dat[ , p$stmv_variables$TIME ]) == trunc(p$prediction_ts[i]) )
           if (length(di) > 5) {
             dmbas = MBA::mba.surf( dat[di, c( p$stmv_variables$LOCS, p$stmv_variables$Y) ], 300, 300, extend=TRUE)$xyz.est
            } else {
@@ -174,7 +174,7 @@ stmv__spate = function( p=NULL, dat=NULL, pa=NULL, sloc=NULL, distance=NULL, nu=
 
 
   pa$id = array_map( "3->1",
-    coords = aegis_floor( cbind(
+    coords = trunc( cbind(
       ( (pa[,p$stmv_variables$TIME ] - p$prediction_ts[1] ) / p$tres)  ,
       ( TS$windowsize.half + (pa[,p$stmv_variables$LOCS[1]] - sloc[1]) / p$pres) ,
       ( TS$windowsize.half + (pa[,p$stmv_variables$LOCS[2]] - sloc[2]) / p$pres)) ) + 1L ,

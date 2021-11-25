@@ -17,8 +17,8 @@ stmv_predictionarea_polygons = function(p, sloc, global_sppoly=NULL, windowsize.
     x_r = range(pa[, pa_coord_names[1]])
     x_c = range(pa[, pa_coord_names[2]])
 
-    nr = aegis_floor( diff(x_r)/dx ) + 1L
-    nc = aegis_floor( diff(x_c)/dy ) + 1L
+    nr = trunc( diff(x_r)/dx ) + 1L
+    nc = trunc( diff(x_c)/dy ) + 1L
     # check: dr = diff(x_r)/(nr-1) == dx  ;; dc = diff(x_c)/(nc-1) # == dy
 
     # default behaviour .. lattice grid

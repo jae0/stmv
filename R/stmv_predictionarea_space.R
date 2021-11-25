@@ -11,8 +11,8 @@ stmv_predictionarea_space = function(p, sloc, windowsize.half) {
   pa_w_n = length(pa_w)
 
   # determine prediction locations and time slices
-  iwplon = aegis_floor( (sloc[1]-p$origin[1]) /dx + 1L) + pa_w
-  iwplat = aegis_floor( (sloc[2]-p$origin[2]) /dy + 1L) + pa_w
+  iwplon = trunc( (sloc[1]-p$origin[1]) /dx + 1L) + pa_w
+  iwplat = trunc( (sloc[2]-p$origin[2]) /dy + 1L) + pa_w
 
   pa = data.table( iplon = rep.int(iwplon, pa_w_n) ,
                    iplat = rep.int(iwplat, rep.int(pa_w_n, pa_w_n)) )

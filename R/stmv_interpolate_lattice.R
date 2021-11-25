@@ -128,7 +128,7 @@ stmv_interpolate_lattice = function( ip=NULL, p, localrange_interpolation=NULL, 
         prediction_area = min( max( prediction_area, min(p$stmv_distance_prediction_limits) ), max(p$stmv_distance_prediction_limits), na.rm=TRUE )
       } 
 
-      windowsize.half =  aegis_floor( prediction_area / p$pres ) + 1L
+      windowsize.half =  trunc( prediction_area / p$pres ) + 1L
 
       pa = try( stmv_predictionarea_lattice( p=p, sloc=sloc, windowsize.half=windowsize.half ) )
 
@@ -310,7 +310,7 @@ stmv_interpolate_lattice = function( ip=NULL, p, localrange_interpolation=NULL, 
     }
 
   
-    windowsize.half =  aegis_floor( prediction_area / p$pres ) + 1L
+    windowsize.half =  trunc( prediction_area / p$pres ) + 1L
 
     pa = try( stmv_predictionarea_lattice( p=p, sloc=sloc, windowsize.half=windowsize.half ) )
 
@@ -341,8 +341,8 @@ stmv_interpolate_lattice = function( ip=NULL, p, localrange_interpolation=NULL, 
       # statistical output locations
       grids= spatial_grid(p, DS="planar.coords" )
 
-      points( grids$plat[aegis_floor( (Sloc[Si,2]-p$origin[2])/p$pres) + 1]
-            ~ grids$plon[aegis_floor( (Sloc[Si,1]-p$origin[1])/p$pres) + 1] , col="purple", pch=25, cex=5 )
+      points( grids$plat[trunc( (Sloc[Si,2]-p$origin[2])/p$pres) + 1]
+            ~ grids$plon[trunc( (Sloc[Si,1]-p$origin[1])/p$pres) + 1] , col="purple", pch=25, cex=5 )
 
       points( Ploc[pa$i,2] ~ Ploc[ pa$i, 1] , col="black", pch=6, cex=0.7 ) # check on pa$i indexing -- prediction locations
     }

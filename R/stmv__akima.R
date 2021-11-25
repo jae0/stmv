@@ -11,8 +11,8 @@ stmv__akima = function( p=NULL,  dat=NULL, pa=NULL, ...  ) {
   x_r = range(dat[[ vns[1] ]] )
   x_c = range(dat[[ vns[2] ]] )
 
-  nr = aegis_floor( diff(x_r)/p$pres + 1L )
-  nc = aegis_floor( diff(x_c)/p$pres + 1L )
+  nr = trunc( diff(x_r)/p$pres + 1L )
+  nc = trunc( diff(x_c)/p$pres + 1L )
 
   xo = seq(x_r[1], x_r[2], length.out = nr )
   yo = seq(x_c[1], x_c[2], length.out = nc )
@@ -65,7 +65,7 @@ stmv__akima = function( p=NULL,  dat=NULL, pa=NULL, ...  ) {
 
     X = X_i = NULL
 
-    # dat[ xi, ..vns ] = aegis_floor( dat[ xi, ..vns ] / p$pres + 1L ) * p$pres
+    # dat[ xi, ..vns ] = trunc( dat[ xi, ..vns ] / p$pres + 1L ) * p$pres
     iYP = match(
       array_map( "xy->1", dat[ xi, ..vns ], gridparams=p$gridparams ),
       array_map( "xy->1", pa[ pa_i , ..vns ], gridparams=p$gridparams )

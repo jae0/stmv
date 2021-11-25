@@ -101,7 +101,7 @@ stmv_scale = function( ip=NULL, p, stmv_localrange, debugging=FALSE, eps=1e-6, .
       z=Y[data_subset$data_index,],
       methods=p$stmv_variogram_method,
       distance_cutoff=stmv_localrange,  # initial guess of effective range
-      # discretized_n = aegis_floor(stmv_localrange / p$pres),
+      # discretized_n = trunc(stmv_localrange / p$pres),
       nbreaks=p$stmv_variogram_nbreaks_totry # different number of breaks actually has an influence upon the stability of variograms
     ) )
  
@@ -164,7 +164,7 @@ stmv_scale = function( ip=NULL, p, stmv_localrange, debugging=FALSE, eps=1e-6, .
         ar_1 = NA
 
         pac = res$predictions[ pac_i, ]
-        pac$dyr = pac[, p$stmv_variables$TIME] - aegis_floor(pac[, p$stmv_variables$TIME] )
+        pac$dyr = pac[, p$stmv_variables$TIME] - trunc(pac[, p$stmv_variables$TIME] )
         piid = which( zapsmall( pac$dyr - p$dyear_centre) == 0 )
         pac = pac[ piid, c(p$stmv_variables$TIME, "mean")]
         pac = pac[ order(pac[,p$stmv_variables$TIME]),]
@@ -217,7 +217,7 @@ stmv_scale = function( ip=NULL, p, stmv_localrange, debugging=FALSE, eps=1e-6, .
         ar_1 = NA
 
         pac = res$predictions[ pac_i, ]
-        pac$dyr = pac[, p$stmv_variables$TIME] - aegis_floor(pac[, p$stmv_variables$TIME] )
+        pac$dyr = pac[, p$stmv_variables$TIME] - trunc(pac[, p$stmv_variables$TIME] )
         piid = which( zapsmall( pac$dyr - p$dyear_centre) == 0 )
         pac = pac[ piid, c(p$stmv_variables$TIME, "mean")]
         pac = pac[ order(pac[,p$stmv_variables$TIME]),]

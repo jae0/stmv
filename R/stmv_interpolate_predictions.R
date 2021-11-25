@@ -56,7 +56,7 @@ stmv_interpolate_predictions = function( ip=NULL, p, localrange_interpolation=NU
       localrange_interpolation = min( max( localrange_interpolation, min(p$stmv_distance_prediction_limits) ), max(p$stmv_distance_prediction_limits), na.rm=TRUE )
     }
 
-    windowsize.half = aegis_floor( localrange_interpolation / p$pres ) + 1L
+    windowsize.half = trunc( localrange_interpolation / p$pres ) + 1L
     # construct data (including static covariates) for prediction locations (pa)
     pa = try( stmv_predictionarea_lattice( p=p, sloc=Sloc[Si,], windowsize.half=windowsize.half ) )
     if ( is.null(pa) ) {

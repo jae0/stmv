@@ -22,8 +22,8 @@ stmv__kernel = function( p=NULL, dat=NULL, pa=NULL, phi=NULL, nu=NULL, varObs=NU
   }
 
 
-  nr = aegis_floor( diff(x_r)/p$pres + 1L )
-  nc = aegis_floor( diff(x_c)/p$pres + 1L )
+  nr = trunc( diff(x_r)/p$pres + 1L )
+  nc = trunc( diff(x_c)/p$pres + 1L )
 
   dat$mean = NA
   pa$mean = NA
@@ -74,7 +74,7 @@ stmv__kernel = function( p=NULL, dat=NULL, pa=NULL, phi=NULL, nu=NULL, varObs=NU
       X = X_i = NULL
     }
 
-    # dat[ xi, ..vns ] = aegis_floor( dat[ xi, ..vns ] / p$pres + 1L ) * p$pres
+    # dat[ xi, ..vns ] = trunc( dat[ xi, ..vns ] / p$pres + 1L ) * p$pres
     iYP = match(
       array_map( "xy->1", dat[ xi, ..vns ], gridparams=p$gridparams ),
       array_map( "xy->1", pa[ pa_i , ..vns ], gridparams=p$gridparams )

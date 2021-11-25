@@ -15,7 +15,7 @@ stmv_timecovars = function( vars, ti) {
     #   b = arctan(b1/b2)
     # more than 3 harmonics would not be advisable .. but you would add them here..
   out = data.table( ti=ti )
-  if ("yr" %in% vars)     out$yr = aegis_floor( ti )
+  if ("yr" %in% vars)     out$yr = trunc( ti )
   if ("dyear" %in% vars)  out$dyear = ti - out$yr  # fractional year
   if ("cos.w" %in% vars)  out$cos.w  = cos( ti )
   if ("sin.w" %in% vars)  out$sin.w  = sin( ti )
