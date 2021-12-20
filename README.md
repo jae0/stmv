@@ -24,19 +24,5 @@ if (file.exists(passwords)) source( passwords )
 
 require( aegis )
 ```
-
-
-Thereafter, you can used the bootstrapped environment to install the other basic tools:
-
-```
-  project.libraryInstall()
-```
-
-If you have a local git clone of the required packages, you can install with:
-
-```
-  project.libraryInstall(local=TRUE)
-
-```
-
+ 
 For usage, examples can be found in https://github.com/jae0/aegis.*.
