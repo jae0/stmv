@@ -60,22 +60,22 @@ if (0) {
     }
     sppoly$AUID = as.character( sppoly$AUID )
     # poly* function operate on Spatial* data
-    nb = poly2nb(sppoly, row.names=sppoly$AUID, queen=TRUE)  # slow .. ~1hr?
-    nb.remove = which(card(nb) == 0)
+    NB_graph = poly2nb(sppoly, row.names=sppoly$AUID, queen=TRUE)  # slow .. ~1hr?
+    NB_graph.remove = which(card(NB_graph) == 0)
 
-    if ( length(nb.remove) > 0 ) {
-      # remove isolated locations and recreate sppoly .. alternatively add links to nb
-      nb.keep = which(card(nb) > 0)
-      nb = nb_remove( nb, nb.remove )
-      sppoly = sppoly[nb.keep,]
+    if ( length(NB_graph.remove) > 0 ) {
+      # remove isolated locations and recreate sppoly .. alternatively add links to NB_graph
+      NB_graph.keep = which(card(NB_graph) > 0)
+      NB_graph = nb_remove( NB_graph, NB_graph.remove )
+      sppoly = sppoly[NB_graph.keep,]
       row.names(sppoly) = sppoly$AUID
       sppoly = sp::spChFIDs( sppoly, row.names(sppoly) )  #fix id's
       # sppoly = sppoly[ order(sppoly$AUID), ]
     }
 
-    attr(sppoly, "nb") = nb  # adding neighbourhood as an attribute to sppoly
-    nb =NULL
-    nb.remove =NULL
+    attr(sppoly, "NB_graph") = NB_graph  # adding neighbourhood as an attribute to sppoly
+    NB_graph =NULL
+    NB_graph.remove =NULL
 
     attr( pa, "sppoly" ) = sppoly
 
@@ -105,9 +105,9 @@ if (0) {
         message( "no data" )
         return (NULL)
       }
-      nb = attr(au, "nb")  # full matrix
-      nbnames = attr( nb, "region.id")
-      nnAUID = nbnames[nb[[which( nbnames == nbfocal )]]]  ## nearest neighbours
+      NB_graph = attr(au, "NB_graph")  # full matrix
+      nbnames = attr( NB_graph, "region.id")
+      nnAUID = nbnames[NB_graph[[which( nbnames == nbfocal )]]]  ## nearest neighbours
       tokeep = unique( c( nnAUID, nbfocal ) )
 
       if ( stmv_au_buffer_links > 0 ) {
@@ -115,7 +115,7 @@ if (0) {
         for (i in 1:stmv_au_buffer_links ) {
           new = NULL
           for ( foc in nnAUID ) {
-            new = c( new, nbnames[nb[[which( nbnames == foc  )]]] ) ## nearest neighbours
+            new = c( new, nbnames[NB_graph[[which( nbnames == foc  )]]] ) ## nearest neighbours
           }
           tokeep = unique( c(tokeep, new) )
           nnAUID = tokeep
@@ -186,23 +186,23 @@ if (0) {
       if ( exists("TIME", p$stmv_variables) )  pa = stmv_predictionarea_time( p=p, pa=pa )
 
       # poly* function operate on Spatial* data
-      #       nb = attr(au, "nb")  # full matrix
-      # nbnames = attr( nb, "region.id")
+      #       NB_graph = attr(au, "NB_graph")  # full matrix
+      # nbnames = attr( NB_graph, "region.id")
 
-      nnAUID = nbnames[nb[[which( nbnames == nbfocal )]]]  ## nearest neighbours
+      nnAUID = nbnames[NB_graph[[which( nbnames == nbfocal )]]]  ## nearest neighbours
       tokeep = unique( c( nnAUID, nbfocal ) )
 
-      nb.remove = which( ! (nbnames %in% sppoly$AUID ) )
-      if ( length(nb.remove) > 0 ) {
-        # remove isolated locations and recreate sppoly .. alternatively add links to nb
-        nb = nb_remove( nb, nb.remove )
+      NB_graph.remove = which( ! (nbnames %in% sppoly$AUID ) )
+      if ( length(NB_graph.remove) > 0 ) {
+        # remove isolated locations and recreate sppoly .. alternatively add links to NB_graph
+        NB_graph = nb_remove( NB_graph, NB_graph.remove )
         sppoly = sp::spChFIDs( sppoly, row.names(sppoly) )  #fix id's
         # sppoly = sppoly[ order(sppoly$AUID), ]
       }
 
-      attr(sppoly, "nb") = nb  # adding neighbourhood as an attribute to sppoly
-      nb =NULL
-      nb.remove =NULL
+      attr(sppoly, "NB_graph") = NB_graph  # adding neighbourhood as an attribute to sppoly
+      NB_graph =NULL
+      NB_graph.remove =NULL
 
       attr( pa, "sppoly" ) = sppoly
 
@@ -212,13 +212,13 @@ if (0) {
   }
 
   if (0) {
-      jj = which( card(nb) == 0)
+      jj = which( card(NB_graph) == 0)
       jj = match( tokeep, au$AUID )
       plot(sppoly)
       plot(sppoly[jj,], add=T, col="red")
       dev.new()
-      edit(nb, polys=sppoly)
-      card(nb) # last check if any more  isolated areas
+      edit(NB_graph, polys=sppoly)
+      card(NB_graph) # last check if any more  isolated areas
   }
 
 }
