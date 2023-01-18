@@ -18,303 +18,6 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
   # -------------------------
 
 
-      if ( 0 ) {
-        # debugging / comparison of results
-
-        loadfunctions( c( "aegis", "stmv" ))
-        XYZ = NULL
-        xyz = stmv_test_data( datasource="swiss" )
-        xy = xyz[, c("x", "y")]
-        mz = log( xyz$rain )
-        mm = lm( mz ~ 1 )
-        z = residuals( mm)
-
-        plotdata=TRUE
-        nbreaks = c( 16, 32, 64, 13, 17, 21, 33, 49 )
-        distance_cutoff=NA
-        family=gaussian(link="identity")
-        range_correlation=0.1
-
-        # scale_distances = FALSE
-
-        scale_distances = TRUE
-        discretized_n=NULL
-        range_correlation=0.1
-        stmv_autocorrelation_fft_taper=0
-
-        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="fft", plotdata=FALSE )}, times= 10 )  # 348.604506  milli sec
-        gr = stmv_variogram( xy, z, methods="fft", plotdata=TRUE ) # nls
-
-
-        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="optim", plotdata=FALSE )}, times= 10 )  # 34 milli sec
-        gr = stmv_variogram( xy, z, methods="optim", plotdata=TRUE ) # nls
-
-        # $optim$vgm_var_max
-        # [1] 0.7927
-
-        # $optim$vgm_dist_max
-        # [1] 171907
-
-        # $optim$autocorrelation_function
-        # [1] "matern"
-
-        # $optim$nu
-        # [1] 3
-
-        # $optim$phi
-        # [1] 26532
-
-        # $optim$varSpatial
-        # [1] 0.4464
-
-        # $optim$varObs
-        # [1] 0.1385
-
-        # $optim$range
-        # [1] 69508
-
-        # $optim$phi_ok
-        # [1] TRUE
-
-        # $optim$objfn
-        # [1] 0.1079
-
-
-
-        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="fast.recursive", plotdata=FALSE )}, times= 10 )  # 138.3 milli sec  .. unstable
-        # tests
-        gr = stmv_variogram( xy, z, methods="fast.recursive", plotdata=TRUE ) # nls
-# $ Ndata              : int 100
-# $ stmv_internal_variance_total               : num 0.578
-# $ range_crude        : num 88029
-# $ stmv_internal_scale: num 29385
-# $ distance_cutoff    : num 132043
-# ..$ range     : num 67830
-# ..$ nu        : num 1
-# ..$ phi       : num 23990
-# ..$ varSpatial: num 0.588
-# ..$ varObs    : num 0
-# ..$ phi_ok  : logi TRUE
-
-        gr = stmv_variogram( xy, z, methods="fields", plotdata=TRUE ) # ml via profile likelihood
-        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="fields", plotdata=FALSE )}, times= 10 )  # 1.38 sec
-        # fields$range [1] 80510
-        # $fields$nu [1] 0.5
-        # $fields$phi 26875
-        # $fields$varSpatial [1] 0.294
-        # $fields$varObs [1] 1.333e-05
-
-        gr = stmv_variogram( xy, z, methods="geoR", plotdata=TRUE ) # ml
-        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="geoR", plotdata=FALSE )}, times= 10 )  # 45 MILLI Sec   # geoR seems to crash a node ..
-       # $geoR$range
-        # [1] 60278
-        # $geoR$varSpatial
-        # [1] 0.572
-        # $geoR$varObs
-        # [1] 0
-        # $geoR$nu
-        # [1] 1.127
-        # $geoR$phi
-        # [1] 21528
-        # $geoR$phi_ok
-        # [1] TRUE
-
-        # plot( gr$geoR$vgm )
-        # lines( gr$geoR$fit, lwd=2, col="slateblue" )
-        # xRange = c( 0, max(gr$geoR$range*2.1 ) )
-        # yRange = c( 0, max(gr$geoR$vgm$v )*1.05 )
-        # plot ( gr$geoR$vgm$v ~ gr$geoR$vgm$u, pch=20, xlim=xRange, ylim=yRange, ylab="Semivariance", xlab="Distance" )
-        #   abline( h=0,  col="gray", lwd=2 )
-        #   abline( h= (gr$geoR$varSpatial + gr$geoR$varObs), lty="dashed", col="slategray"  )
-        #   abline( h=  gr$geoR$varObs , lty="dashed", col="slategray")
-        #   abline( v=gr$geoR$range, lty="dotted", col="slateblue" )
-        #   abline( v=0,  col="gray", lwd=2 )
-        #   x = seq( 0, 2*gr$geoR$range, length.out=100 )
-        #   acor = geoR::matern( x, phi=gr$geoR$phi, kappa=gr$geoR$kappa  )
-        #   acov = gr$geoR$varObs +  gr$geoR$varSpatial * (1- acor)
-        #   lines( acov ~ x , col="blue", lwd=2 )
-
-        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="geoR.ML", plotdata=FALSE )}, times= 10 )  # 119 mili sec
-        gr = stmv_variogram( xy, z, methods="geoR.ML", plotdata=TRUE ) # ml
-        #  unstable
-
-        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="gstat", plotdata=FALSE )}, times= 10 )  # 86 milli sec
-        gr = stmv_variogram( xy, z, methods="gstat", plotdata=TRUE ) # ml
-        # $gstat$range
-        # [1] 65461
-        # $gstat$nu
-        # [1] 1.1
-        # $gstat$phi
-        # [1] 23333
-        # $gstat$varSpatial
-        # [1] 0.5776
-        # $gstat$varObs
-        # [1] 0
-        # $gstat$phi_ok
-        # [1] TRUE
-
-        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="RandomFields", plotdata=FALSE )}, times= 10 ) #  1.349 sec
-        gr = stmv_variogram( xy, z, methods="RandomFields", plotdata=TRUE ) # ml via rf
-        # $RandomFields$range
-        # [1] 65343
-
-        # $RandomFields$varSpatial
-        # [1] 0.6561
-
-        # $RandomFields$varObs
-        # [1] 2.862e-05
-
-        # $RandomFields$phi
-        # [1] 22851
-
-        # $RandomFields$nu
-        # [1] 0.8727
-
-        # $RandomFields$error
-        # [1] NA
-
-        # $RandomFields$phi_ok
-        # [1] TRUE
-
-        gr = stmv_variogram( xy, z, methods="CompRandFld", plotdata=TRUE ) # unstable results
-        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="CompRandFld", plotdata=FALSE )}, times= 10 )  # 2.34 sec! .. slow!
-        # Ndata
-        # [1] 100
-
-        # $stmv_internal_variance_total
-        # [1] 0.5782
-
-        # $range_crude
-        # [1] 88029
-
-        # $stmv_internal_scale
-        # [1] 29385
-
-        # $distance_cutoff
-        # [1] 132043
-
-        # $CompRandFld
-        # $CompRandFld$varObs
-        # [1] 9.182e-12
-
-        # $CompRandFld$varSpatial
-        # [1] 0.5211
-
-        # $CompRandFld$nu
-        # [1] 0.4918
-
-        # $CompRandFld$phi
-        # [1] 44705
-
-        # $CompRandFld$range
-        # [1] 134102
-
-        # $CompRandFld$phi_ok
-        # [1] FALSE
-
-
-        gr = stmv_variogram( xy, z, methods="spBayes", plotdata=TRUE ) # mcmc
-        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="spBayes", plotdata=FALSE )}, times= 10 )  # v. slow! ... 29.3 sec
-        # $spBayes$range: 66377
-        # $spBayes$varSpatial: 0.4683
-        # $spBayes$varObs: 0.1073
-        # $spBayes$phi: 24778
-        # $spBayes$nu: 2.062
-
-        # out = gsp
-        # nd = nrow(out$spBayes$recover$p.theta.samples)
-        # rr = rep(NA, nd )
-        # for (i in 1:nd) rr[i] = geoR::practicalRange("matern", phi=1/out$spBayes$recover$p.theta.samples[i,3], kappa=out$spBayes$recover$p.theta.samples[i,4] )
-        # #  range = matern_phi2distance(phi=phi, nu=nu, cor=range_correlation)
-
-        # hist(rr)  # range estimate
-
-        # hist( out$spBayes$recover$p.theta.samples[,1] ) #"sigma.sq"
-        # hist( out$spBayes$recover$p.theta.samples[,2] ) # "tau.sq"
-        # hist( out$spBayes$recover$p.theta.samples[,3] ) # 1/phi
-        # hist( out$spBayes$recover$p.theta.samples[,4] ) # nu
-
-
-       gr = stmv_variogram( xy, z, methods="bayesx", plotdata=TRUE )
-        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="bayesx", plotdata=FALSE )}, times= 10 )  # 90 milli sec
-        # $bayesx$range
-        # [1] 103783
-
-        # $bayesx$model
-        # Call:
-        # bayesx(formula = z ~ sx(plon, plat, bs = "kr"), data = xys, family = family$family,
-        #     method = "REML")
-        # Summary:
-        # N = 100  df = 9.725  AIC = 0.547  BIC = 25.882
-        # logLik = 9.451  method = REML  family = gaussian
-
-        # $bayesx$varSpatial
-        # [1] 1.166
-
-        # $bayesx$varObs
-        # [1] 0.3066
-
-        # $bayesx$nu
-        # [1] 0.5
-
-        # $bayesx$phi
-        # [1] 34644
-
-        # $bayesx$phi_ok
-        # [1] TRUE
-
-
-
-        gr = stmv_variogram( xy, z, methods="inla", plotdata=TRUE )
-        microbenchmark::microbenchmark( {gr = stmv_variogram( xy, z, methods="inla", plotdata=FALSE )}, times= 10 )  # 4.4 sec
-        # $inla$range.inla.practical
-        # [1] 52481
-        # $inla$varSpatial
-        # [1] 0.6499
-        # $inla$varObs
-        # [1] 0.0001482
-        # $inla$phi
-        # [1] 25407
-        # $inla$nu
-        # [1] 1
-        # $inla$error
-        # [1] NA
-        # $inla$range
-        # [1] 71835
-        # $inla$phi_ok
-        # [1] TRUE
-
-
-        # Laplace Approximation:  too slow to use
-
-        #              Mean      SD     MCSE  ESS         LB     Median         UB
-        # tausq      4.585e+00 0.00000 0.000000 1000  4.585e+00  4.585e+00  4.585e+00
-        # sigmasq   -8.461e-02 0.00000 0.000000 1000 -8.461e-02 -8.461e-02 -8.461e-02
-        # phi       -4.978e-01 0.00000 0.000000 1000 -4.978e-01 -4.978e-01 -4.978e-01
-        # nu         6.286e-03 0.00000 0.000000 1000  6.286e-03  6.286e-03  6.286e-03
-        # Deviance   3.743e+02 0.03871 0.001224 1000  3.743e+02  3.743e+02  3.744e+02
-        # LP        -1.954e+02 0.01973 0.000624 1000 -1.954e+02 -1.954e+02 -1.953e+02
-
-        # Laplaces Demon:
-        #             Mean        SD      MCSE       ESS         LB     Median         UB
-        # tausq      1.187e+00  0.5468  0.16983   8.251    0.35260    1.13508    2.2354
-        # sigmasq    8.280e-01  0.5387  0.14286  21.539    0.09564    0.72554    2.4146
-        # phi        1.761e+00  0.7113  0.20396  14.262    0.46596    1.77338    3.2806
-        # nu         1.415e+00  0.8262  0.24249  10.989    0.21269    1.35122    3.0988
-        # Deviance   3.204e+02 36.0896 12.04187   2.287  251.50445  335.42134  366.2237
-        # LP        -1.667e+02 19.0692  6.36485   2.197 -192.71295 -174.44162 -130.6786
-
-        # stan:
-        #                      mean se_mean    sd    2.5%     25%     50%    75%  97.5% n_eff Rhat
-        # sigma_sq             5.73    1.26 13.47    0.08    1.03    2.44   5.65  32.17   115 1.02
-        # tau_sq               4.47    1.04  7.66    0.14    0.95    2.08   4.87  23.02    54 1.05
-        # phi                  1.32    0.05  0.79    0.09    0.71    1.25   1.80   3.04   275 1.01
-        # out$stmv_internal_scale = 30485 ;
-        # range = 40240
-    } #end if
-
-  # ----- start -----
-
 
   if (is.null(XYZ) ) {
     if (length(z) < 10) return(NULL)
@@ -372,6 +75,70 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
     for ( i in 1:length(nbreaks)) {
       VGM = NULL
       VGM = stmv_variogram_fft( xyz=XYZ, nbreaks=nbreaks[i]  )
+      if (is.null(VGM)) next()
+      uu = which( (VGM$vgm$distances < 0.9*max(VGM$vgm$distances) ) & is.finite(VGM$vgm$sv) )
+      if (length(uu) < 5 ) next()
+      fit = try( stmv_variogram_optimization( vx=VGM$vgm$distances[uu], vg=VGM$vgm$sv[uu], plotvgm=plotdata,
+        cor=range_correlation, distance_scaling_factor=out$stmv_internal_scale  ))
+      if ( !inherits(fit, "try-error") ) {
+        out$fft = fit$summary
+        if (exists("phi", out$fft)) {
+          if (is.finite(out$fft$phi)) {
+            if ( out$fft$phi  < out$distance_cutoff*0.99 ) {
+              finished = TRUE
+            }
+          }
+        }
+      }
+      if (finished) break()
+    }
+
+    if (exists("VGM")) {
+      if (scale_distances) VGM$vgm$distances = VGM$vgm$distances *  out$stmv_internal_scale
+      out$vgm = VGM
+    }
+
+    if (!finished) return(out)
+
+    if (exists("summary", fit)) {
+      if ( !inherits(fit, "try-error") ) {
+        if (exists("phi", out$fft)) {
+          if (is.finite(out$fft$phi)) {
+            out$fft$phi_ok = ifelse( out$fft$phi < out$distance_cutoff*0.99, TRUE, FALSE )  # using distance as an upper limit
+          }
+        }
+      }
+    }
+
+    if (plotdata) {
+      xlim= c(0, fit$summary$vgm_dist_max*1.1)
+      ylim= c(0, fit$summary$vgm_var_max*1.1)
+      plot( fit$summary$vx, fit$summary$vg, col="green", xlim=xlim, ylim=ylim )
+      ds = seq( 0, fit$summary$vgm_dist_max, length.out=100 )
+      ac = fit$summary$varObs + fit$summary$varSpatial*(1 - stmv_matern( ds, fit$summary$phi, fit$summary$nu ) )
+      lines( ds, ac, col="orange" )
+      abline( h=0, lwd=1, col="lightgrey" )
+      abline( v=0 ,lwd=1, col="lightgrey" )
+      abline( h=fit$summary$varObs, lty="dashed", col="grey" )
+      abline( h=fit$summary$varObs + fit$summary$varSpatial, lty="dashed", col="grey" )
+      localrange = matern_phi2distance( phi=fit$summary$phi, nu=fit$summary$nu, cor=range_correlation )
+      abline( v=localrange, lty="dashed", col="grey")
+    }
+
+    return(out)
+  }
+
+
+  # --------------
+
+
+  if ("julia_turing" %in% methods) {
+
+    # empirical variogram by fftw2d
+    finished = FALSE
+    for ( i in 1:length(nbreaks)) {
+      VGM = NULL
+      VGM = stmv_variogram_julia_turing( xyz=XYZ, nbreaks=nbreaks[i]  )
       if (is.null(VGM)) next()
       uu = which( (VGM$vgm$distances < 0.9*max(VGM$vgm$distances) ) & is.finite(VGM$vgm$sv) )
       if (length(uu) < 5 ) next()
@@ -542,6 +309,11 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
         }
       }
 
+      out$fast.recursive$vgm_var_max = max(vEm$gamma)
+      out$fast.recursive$vgm_dist_max = max(vEm$dist) * out$stmv_internal_scale
+      out$fast.recursive$localrange = localrange
+
+  
       if (exists("vEm")) {
         if (scale_distances) {
           out$fast.recursive$vgm$dist = out$fast.recursive$vgm$dist  *  out$stmv_internal_scale
@@ -605,7 +377,6 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
 
   if ("CompRandFld" %in% methods) {
     require( CompRandFld )
-    stop( "CompRandFld seems unstable .. force stop")
 
     fit = FitComposite( data=XYZ[,c(3)], coordx=as.matrix(XYZ[,c(1,2)]), corrmodel="matern",
                        maxdist=maxdist, optimizer="BFGS" )
@@ -614,9 +385,12 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
       varSpatial = fit$param[["sill"]],
       nu = fit$param[["smooth"]]
     )
-    out$CompRandFld$phi =  matern_phi2phi( mRange=fit$param[["scale"]], mSmooth=out$CompRandFld$nu, parameterization_input="CompRandFld", parameterization_output="stmv" ) * out$stmv_internal_scale
-    out$CompRandFld$phi_ok = ifelse( out$CompRandFld$phi < out$distance_cutoff*0.99, TRUE, FALSE )
-    localrange = matern_phi2distance(phi=out$CompRandFld$phi, nu=out$CompRandFld$nu, cor=range_correlation)
+    out$CompRandFld$phi =  matern_phi2phi( mRange=fit$param[["scale"]], mSmooth=fit$param[["smooth"]], parameterization_input="CompRandFld", parameterization_output="stmv" ) * out$stmv_internal_scale
+    
+    out$CompRandFld$localrange = matern_phi2distance(phi=out$CompRandFld$phi, nu=out$CompRandFld$nu, cor=range_correlation)
+    
+    out$CompRandFld$phi_ok = ifelse( out$CompRandFld$localrange < out$distance_cutoff*0.99, TRUE, FALSE )
+    
     if( plotdata) {
       VGM = EVariogram(data=XYZ[,c(3)], coordx=as.matrix(XYZ[,c(1,2)]),
                         maxdist=maxdist, numbins=nbreaks[1])
@@ -651,28 +425,34 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
     ## NOTE: process variance (rho); range (theta); nugget (sigma**2)
     ## lambda= sigma**2/ rho and rho. Thinking about h as the spatial signal and e as the noise lambda can be interpreted
     ##  as the noise to signal variance ratio in this spatial context
-    # MLESpatialProcess is a ML method for Gaussian spatial process
-    fsp = MLESpatialProcess(XYZ[,c(1,2)], XYZ$z, cov.function = "stationary.cov",
+    # spatialProcess is a ML method for Gaussian spatial process
+    fsp = spatialProcess(XYZ[,c(1,2)], XYZ$z, cov.function = "stationary.cov",
       # abstol=1e-3,
       # lambda.start=0.5, theta.start=1.0, theta.range=c(0.2, 4.0), gridN=25,
       # optim.args=list(method = "BFGS", control = list(fnscale=-1, parscale=c(0.5, 0.5), ndeps=c(0.05,0.05))),
       cov.args = list(Covariance = "Matern", smoothness = nu)
     )
-    if( is.finite(sum(fsp$summary))) res = fsp$summary
+
+    if ( is.finite(sum(fsp$summary, na.rm=TRUE))) res = fsp$summary
     if (is.null(res)) return(NULL)
 
     # warning ("vgram is really slow ...")
 
     vg = vgram( XYZ[,c(1,2)], XYZ$z, N=nbreaks[1], dmax=maxdist )
-    vgm = Matern( d=vg$centers, range=res[["theta"]], smoothness=nu )
-    cvg = data.frame( cbind( x=vg$centers*out$stmv_internal_scale, cvgm= (res[["sigmaMLE"]]^2 + res[["rhoMLE"]] * (1-vgm)) ))
+    vgm = Matern( d=vg$centers, range=res[["aRange"]], smoothness=nu )
+    cvg = data.frame( cbind( x=vg$centers*out$stmv_internal_scale, cvgm= (res[["sigma2"]]^2 + res[["tau"]] * (1-vgm)) ))
     out$fields = list( fit=fsp, vgm=cvg, nu=nu, phi=NA,
-      varSpatial=res[["rhoMLE"]], varObs=res[["sigmaMLE"]]^2  )  # fields::"range" == range parameter == phi
+      varSpatial=res[["tau"]], varObs=res[["sigma2"]]^2  )  # fields::"range" == range parameter == phi
 
-    out$fields$phi = matern_phi2phi( mRange=res[["theta"]], mSmooth=out$fields$nu,
+    out$fields$phi = matern_phi2phi( mRange=res[["aRange"]], mSmooth=out$fields$nu,
       parameterization_input="fields", parameterization_output="stmv") * out$stmv_internal_scale
     localrange = matern_phi2distance(phi=out$fields$phi, nu=out$fields$nu, cor=range_correlation)
     out$fields$phi_ok = ifelse( out$fields$phi < out$distance_cutoff*0.99, TRUE, FALSE )
+
+    out$fields$vgm_var_max = max( vg$vgram )
+    out$fields$vgm_dist_max = max( vg$d ) * out$stmv_internal_scale
+    out$fields$localrange = localrange
+
 
     if( plotdata ){
 #      xub = max(out$distance_cutoff, max(out$geoR$vgm$u, out$distance_cutoff)) *1.25
@@ -733,7 +513,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
         varSpatial=vFitgs$psill[2], varObs=vFitgs$psill[1]  )  # gstat::"range" == range parameter == phi
     localrange = matern_phi2distance( phi=out$gstat$phi, nu=out$gstat$nu, cor=range_correlation  )
     out$gstat$phi_ok = ifelse( out$gstat$phi < out$distance_cutoff*0.99, TRUE, FALSE )
-
+    out$gstat$localrange = localrange
 
     if (plotdata) {
       xub = max(out$distance_cutoff) *1.25
@@ -806,7 +586,9 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
     out$geoR = list( fit=vMod, vgm=vEm, model=vMod,
             varSpatial= vMod$cov.pars[1], varObs=vMod$nugget,
             nu=vMod$kappa,  phi=scale )
-    out$geoR$phi_ok = ifelse( out$geoR$phi < out$distance_cutoff*0.99, TRUE, FALSE )
+    localrange = matern_phi2distance( phi=out$geoR$phi, nu=out$geoR$nu, cor=range_correlation  )
+    out$geoR$phi_ok = ifelse( localrange < out$distance_cutoff*0.99, TRUE, FALSE )
+    out$geoR$localrange = localrange
 
     if (plotdata) {
       # not rescaled ...
@@ -879,7 +661,11 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
               phi=scale,
               nu=oo$param["value", "matern.nu"], # RF::nu == geoR:: kappa (bessel smoothness param)
               error=NA )
-    out$RandomFields$phi_ok = ifelse( out$RandomFields$phi < out$distance_cutoff*0.99, TRUE, FALSE )
+
+
+    localrange = matern_phi2distance( phi=out$RandomFields$phi, nu=out$RandomFields$nu, cor=range_correlation  )
+    out$RandomFields$phi_ok = ifelse( localrange < out$distance_cutoff*0.99, TRUE, FALSE )
+    out$RandomFields$localrange = localrange
 
     if (plotdata) {
       xub = max(out$distance_cutoff, out$RandomFields$vgm@centers) *1.25
@@ -930,7 +716,10 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
     out$geoR.ML = list( fit=vMod, vgm=vEm, model=vMod,
             varSpatial= vMod$cov.pars[1], varObs=vMod$nugget,
             nu=vMod$kappa,  phi=scale )
-    out$geoR.ML$phi_ok = ifelse( out$geoR.ML$phi < out$distance_cutoff*0.99, TRUE, FALSE )
+
+    localrange = matern_phi2distance( phi=out$geoR.ML$phi, nu=out$geoR.ML$nu, cor=range_correlation  )
+    out$geoR.ML$phi_ok = ifelse( localrange < out$distance_cutoff*0.99, TRUE, FALSE )
+    out$geoR.ML$localrange = localrange
 
     if (plotdata) {
       xub = max(out$distance_cutoff, out$geoR.ML$vgm$u) *1.25
@@ -1003,8 +792,11 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
     out$spBayes = list( model=model, recover=m.1,
       varSpatial=u[["sigma.sq"]], varObs=u[["tau.sq"]],
       phi=scale, nu=u["nu"] )  # output using geoR nomenclature
-    out$spBayes$phi_ok = ifelse( out$spBayes$phi < out$distance_cutoff*0.99, TRUE, FALSE )
 
+    localrange=matern_phi2distance( phi=scale, nu=u[["nu"]], cor=range_correlation  )
+    out$spBayes$phi_ok = ifelse( localrange < out$distance_cutoff*0.99, TRUE, FALSE )
+    out$spBayes$localrange = localrange
+    
     if (plotdata) {
       plot.new()
       x = seq( 0,  max(out$distance_cutoff ) *1.1, length.out=100 )
@@ -1078,10 +870,10 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
         effects=list( spatial.field=spatial.field, xys )  # b0 is the intercept
     )
 
-    RES <- inla(  z ~ 0 + b0 + f( spatial.field, model=SPDE ), family=family,
+    # NOTE over-riding family ... this is just a placemarker for the method 
+    RES <- inla(  z ~ 0 + b0 + f( spatial.field, model=SPDE ), family="gaussian",  
         data=inla.stack.data(Z),
         # control.compute=list(dic=TRUE),
-        control.results=list(return.marginals.random=TRUE ),
         # control.results=list(return.marginals.random=TRUE, return.marginals.predictor=TRUE ),
         # control.fixed = list(expand.factor.strategy='inla') ,
         control.predictor=list(A=inla.stack.A(Z), compute=TRUE, link=1 ) ,
@@ -1130,8 +922,8 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
       varObs=inla.summary[["observation error","mean"]] ,
       phi=scale, nu=alpha-1, error=NA )
 
-    # out$inla$range = matern_phi2distance( phi=out$inla$phi, nu=out$inla$nu, cor=range_correlation  )
-    out$inla$phi_ok = ifelse( out$inla$phi < out$distance_cutoff*0.99, TRUE, FALSE )
+    out$inla$localrange = matern_phi2distance( phi=out$inla$phi, nu=out$inla$nu, cor=range_correlation  )
+    out$inla$phi_ok = ifelse( out$inla$localrange < out$distance_cutoff*0.99, TRUE, FALSE )
 
     if (plotdata) {
       x = seq( 0,  max(out$distance_cutoff) *1.25, length.out=100 )
@@ -1191,7 +983,9 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
       varObs=inla.summary[["observation error","mean"]] ,
       phi=scale, nu=alpha-1, error=NA )
 
-    out$geostatsp$phi_ok = ifelse( out$geostatsp$phi < out$distance_cutoff*0.99, TRUE, FALSE )
+    localrange = matern_phi2distance( phi=out$geostatsp$phi, nu=out$geostatsp$nu, cor=range_correlation  )
+    out$geostatsp$phi_ok = ifelse( localrange < out$distance_cutoff*0.99, TRUE, FALSE )
+    out$geostatsp$localrange = localrange
 
     if (plotdata) {
       x = seq( 0,  max(out$distance_cutoff) *1.25, length.out=100 )
@@ -1236,8 +1030,10 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
         varSpatial = fm$smooth.hyp[,"Variance"] ,
         varObs = fm$fixed.effects[1,"Std. Error"] ,
         nu =nu, phi=scale )
-
-    out$bayesx$phi_ok = ifelse( out$bayesx$phi < out$distance_cutoff*0.99, TRUE, FALSE )
+ 
+    localrange = matern_phi2distance( phi=out$bayesx$phi, nu=out$bayesx$nu, cor=range_correlation  )
+    out$bayesx$phi_ok = ifelse( localrange < out$distance_cutoff*0.99, TRUE, FALSE )
+    out$bayesx$localrange = localrange
 
     if(0){
       plot( fm, term = "sx(plon,plat)", image=TRUE, contour=TRUE )
@@ -1331,6 +1127,7 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
     )
     localrange = matern_phi2distance( phi=out$jags$phi, nu=0.5, cor=range_correlation  )
     out$jags$phi_ok = ifelse( out$jags$phi < out$distance_cutoff*0.99, TRUE, FALSE )
+    out$jags$localrange = localrange
 
     return(out)
   }
@@ -1472,13 +1269,16 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
   )
 
   stanmodel$compile()
+  
+  browser()
+  
+  ### THIS is not complete
 
     # f = optimizing(stanmodel, data=inp, hessian=FALSE )
     # optimizing(stanmodel, data=inp, hessian=FALSE, tol_rel_obj=1e6, algorithm="LBFGS"  )
     # optimizing(stanmodel, data=inp, hessian=FALSE, tol_rel_obj=1e6, algorithm="BFGS"  )
 
     # f = vb(stanmodel, data=inp)
-
     f = stanmodel$sample( data=inp, iter=1000, chains=3 )
       # warmup = 200,          # number of warmup iterations per chain
       # control =. list(adapt_delta = 0.9),
@@ -1487,21 +1287,27 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
       # chains = 5,             # number of Markov chains
       # cores = 5              # number of cores (using 2 just for the vignette)
     # f = optimizing(stanmodel, data=inp, hessian=FALSE )
+   
 
-    plot(f)
-    print(f)
-    traceplot(f)
+# Browse[2]> names(inp)
+#  [1] "varY"      "Y"         "N"         "Np"        "X"         "eps"       "COVFN"     "sigma_sq0" "tau_sq0"   "dist"     
+
+    # plot(f)
+    # print(f)
+    # traceplot(f)
 
     # extract samples
     # m2 = as.array(f)
     pred=stan_extract( as_draws_df( f$draws() ) )
 
     phii = mean(pred$phi) * out$stmv_internal_scale
-    rnge = matern_phi2distance( phi=phii, nu=0.5, cor=range_correlation  )
-    out$stan$phi_ok = ifelse( out$stan$phi < out$distance_cutoff*0.99, TRUE, FALSE )
+    localrange = matern_phi2distance( phi=phii, nu=0.5, cor=range_correlation  )
+    out$stan$phi_ok = ifelse( localrange < out$distance_cutoff*0.99, TRUE, FALSE )
+    out$stan$localrange = localrange
 
     # prob=apply(pred,2,function(x) I(length(x[x>0.10])/length(x) > 0.8)*1)
-    return( "Method not yet finished .. speed is the issue (though faster than JAGS) and ML/VB methods are unstable")
+    message( "Method not yet finished .. speed is the issue (though faster than JAGS) and ML/VB methods are unstable")
+    return(out)
   }
 
 
@@ -1604,7 +1410,10 @@ stmv_variogram = function( xy=NULL, z=NULL, ti=NULL, XYZ=NULL,
       phi =f$Summary2["phi", "Mean"] *  out$stmv_internal_scale
     )   ## need to check parameterization...
 
-    out$LaplacesDemon$phi_ok = ifelse( out$LaplacesDemon$phi < out$distance_cutoff*0.99, TRUE, FALSE )
+
+    localrange = matern_phi2distance( phi=out$LaplacesDemon$phi, nu=out$LaplacesDemon$nu, cor=range_correlation  )
+    out$LaplacesDemon$phi_ok = ifelse( localrange < out$distance_cutoff*0.99, TRUE, FALSE )
+    out$LaplacesDemon$localrange = localrange
 
    # print( out$LaplacesDemon )
 

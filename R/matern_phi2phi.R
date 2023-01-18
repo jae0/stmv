@@ -21,6 +21,7 @@ matern_phi2phi = function( mRange, mSmooth, parameterization_input="stmv", param
       stmv = mRange ,
       wikipedia = mRange,
       RandomFields = mRange ,
+      CompRandFld = mRange,
       # CompRandFld = sqrt(2*mSmooth )/mRange,  # R(h) = 2^{1-nu} Gamma(nu)^{-1} x^nu  * K_nu(h) ; ||x||==h;  -- same as wikipedia except x=sqrt( 2nu*d/phi)
       geoR = mRange * sqrt(2*mSmooth ),
       fields = mRange * sqrt(2*mSmooth ),
@@ -36,6 +37,7 @@ matern_phi2phi = function( mRange, mSmooth, parameterization_input="stmv", param
       stmv = mRange_stmv,
       wikipedia = mRange_stmv,
       RandomFields = mRange_stmv ,
+      CompRandFlds = mRange_stmv ,
       # CompRandFld = sqrt(2*mSmooth ) / mRange_stmv ,
       geoR = mRange_stmv * sqrt(2*mSmooth ),
       fields = mRange_stmv * sqrt(2*mSmooth ),

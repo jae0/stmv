@@ -34,7 +34,7 @@ stmv__gaussianprocess2Dt = function(p=NULL, dat=NULL, pa=NULL, localrange=NULL, 
     xy = dat[xi, ..vns]
     z = dat[xi] [[p$stmv_variables$Y]]
 
-    fsp = try( MLESpatialProcess(xy, z, cov.function=p$fields.cov.function, cov.args=p$fields.cov.args ,
+    fsp = try( spatialProcess(xy, z, cov.function=p$fields.cov.function, cov.args=p$fields.cov.args ,
       theta.grid=phi.grid, lambda.grid=p$lambda.grid, ngrid = 10, niter = 15, tol = 0.01,
       Distance = "rdist", nstep.cv = 50 ) )
 

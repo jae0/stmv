@@ -44,7 +44,7 @@ if (0) {
 
       require(raster)
       raster_template = raster::raster(extent(Z), res=areal_units_resolution_km, crs=projection(Z) ) # +1 to increase the area
-      sppoly = raster::rasterize( Z, raster_template, field=Z$z )
+      sppoly = raster::rasterize( Z, raster_template, field=Z$z )  #NOTE :: TODO : move to stars::st_rasterize 
       sppoly = as(sppoly, "SpatialPixelsDataFrame")
       sppoly = as( as(sppoly, "SpatialPolygonsDataFrame"), "sf")
       raster_template = NULL
