@@ -76,7 +76,7 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, improve.hyperparam.estimates
     # initial prediction container
     hyp_pars =  c( fit$summary.hyperpar$mean, fit$summary.hyperpar$sd )
     names( hyp_pars ) =  gsub( " ", "_",  c( rownames(fit$summary.hyperpar), paste( rownames(fit$summary.hyperpar), "_sd", sep="" ) ) )
-    res = list( dat=dat, dimensionality = p$aegis_dimensionality )
+    res = list( dat=dat, dimensionality = p$dimensionality )
     res$predictions = data.table( i=pa$i)
     pa = NULL
 
@@ -104,7 +104,7 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, improve.hyperparam.estimates
 
 
     # row indices for predictions
-    if ( p$aegis_dimensionality == "space") {
+    if ( p$dimensionality == "space") {
       AUID = sppoly[["AUID"]]
       res$i_preds = which(
         dat$tag=="predictions" &
@@ -115,7 +115,7 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, improve.hyperparam.estimates
       res$matchto   = list( AUID=res$AUID )
     }
 
-    if ( p$aegis_dimensionality == "space-year") {
+    if ( p$dimensionality == "space-time") {
       AUID = sppoly[["AUID"]]
       year = as.character( p$yrs )
       dat$year = as.character(dat$year)
@@ -132,7 +132,7 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, improve.hyperparam.estimates
       res$matchto   = list( AUID=res$AUID,   year=res$year )
     }
 
-    if ( p$aegis_dimensionality == "space-year-season") {
+    if ( p$dimensionality == "space-time-cyclic") {
       AUID = sppoly[["AUID"]]
       year = as.character( p$yrs )
       dyear = as.character( discretize_data( (p$dyears + diff(p$dyears)[1]/2), p$discretization[["dyear"]] ) )

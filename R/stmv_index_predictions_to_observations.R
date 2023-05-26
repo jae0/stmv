@@ -12,14 +12,14 @@
       array_map( "xy->1", Ploc[], gridparams=p$gridparams )
     )
     coo = NULL
-    if ( p$aegis_dimensionality =="space" ) {
+    if ( p$dimensionality =="space" ) {
       # nothing to do
     }
-    if ( p$aegis_dimensionality =="space-year" ) {
+    if ( p$dimensionality =="space-time" ) {
       Ytime = stmv_attach( p$storage_backend, p$ptr$Ytime )
       iYP = cbind(iYP, match( trunc(Ytime[]), p$yrs ) )
     }
-    if ( p$aegis_dimensionality =="space-year-season" ) {
+    if ( p$dimensionality =="space-time-cyclic" ) {
       Ytime = stmv_attach( p$storage_backend, p$ptr$Ytime )
       yrs = trunc(Ytime[])
       dyear = Ytime[] - yrs

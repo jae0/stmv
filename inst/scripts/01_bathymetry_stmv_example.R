@@ -43,7 +43,7 @@ p = bathymetry_parameters(
   spatial_domain = p0$spatial_domain,
   spatial_domain_subareas =NULL,
   inputdata_spatial_discretization_planar_km = p0$pres,  # pres = 0.5
-  aegis_dimensionality="space",
+  dimensionality="space",
   stmv_variables = list(Y="z"),  # required as fft has no formulae
   stmv_global_modelengine = "none",  # too much data to use glm as an entry into link space ... use a direct transformation
   stmv_local_modelengine="fft",
