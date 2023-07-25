@@ -1,9 +1,9 @@
 
 # Bathymetry modelling and prediction using STMV
 
-Spatial interpolation using [STMV - Space-Time Models of Variability](https://github.com/jae0/stmv) involves modelling the autocorrelation function of some feature of interest. STMV comes from the tradition of *Kriging with external drift*, where external drift represents some externally imposed gradient that is first modelled and then the residuals are modelled as some spatial process. This is, therefore, slightly ad-hoc in approach in that the external forcing is treated separately (modelled via MGCV or GLM) from the random spatial processes. Improved results would be expected if Expectation-Maximization or Gibbs sampling is used. However, due to computational expenses, this was not available when constructed. This may change soon and I might update the approach, time being the constraint. 
+Spatial interpolation using [STMV - Space-Time Models of Variability](https://github.com/jae0/stmv) involves modelling the autocorrelation function of some feature of interest. STMV comes from the tradition of *Kriging with external drift*, where external drift represents some externally imposed gradient that is first modelled and then the residuals are modelled as some spatial process. This is, therefore, an ad-hoc approach in that the external forcing is treated separately (modelled via MGCV or GLM) from the random spatial processes. The Random processes are subjected to a moving windows that incrementally grow dependning upon local estimates spatial of autocorrelation functions. Improved results would be expected if Expectation-Maximization or Gibbs sampling is used. However, due to computational load, this was not available when constructed. This may change soon and I might update the approach, time being the constraint. 
 
-The example here uses FFT (Fast Fourier Transforms) to discretize the spatial autocorrelation process (Matern). It is the method of choice for speed and ability to capture the variability .. this should take just a few minutes
+The example here uses FFT (Fast Fourier Transforms) to discretize and compute the spatial autocorrelation process (Matern). It is the method of choice for speed and ability to capture the variability ... the following should take just a few minutes
 
 ```r
 # prep data
@@ -177,14 +177,16 @@ statistics  = stmv_db( p=p, DS="stmv.stats" )
 locations =  spatial_grid( p )
 
 
-# comparison
-dev.new(); surface( as.image( Z=predictions, x=locations, nx=p$nplons, ny=p$nplats, na.rm=TRUE) )
+# comparison .. need to remove NA's that messes up isolines
+i = which( is.finite(predictions )) 
+o = interp( x=locations[i,1], y=locations[i,2], z= predictions[i],  xo=p$plons, yo=p$plats, method="linear" )
+dev.new(); surface( o )
 
 ```
 
 ![](../../docs/media/bathymetry_stmv.png)
 
-We can see that it recovers most of the oceanographic features and as a bonus even the land features that are sampled on very different scales. The vertical line artifact is due to a plotting issue with *fields::surface*'s isocline interpolation options that I will have to fix. 
+We can see that it recovers most of the oceanographic features and as a bonus even the land features that are sampled on very different scales. 
 
 
 What makes STMV unique is the non-stationary assumption of the spatial process. As such, we can recover estimates of spatial parameters as a function of location!
