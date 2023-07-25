@@ -184,6 +184,9 @@ dev.new(); surface( as.image( Z=predictions, x=locations, nx=p$nplons, ny=p$npla
 
 ![](../../docs/media/bathymetry_stmv.png)
 
+We can see that it recovers most of the oceanographic features and as a bonus even the land features that are sampled on very different scales. The vertical line artifact is due to a plotting issue with *fields::surface*'s isocline interpolation options that I will have to fix. 
+
+
 What makes STMV unique is the non-stationary assumption of the spatial process. As such, we can recover estimates of spatial parameters as a function of location!
 
 ```r
