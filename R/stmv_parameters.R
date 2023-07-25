@@ -63,7 +63,7 @@ stmv_parameters = function( p=list(), ... ) {
     p = parameters_add_without_overwriting( p, stmv_gam_optimizer=c("outer","bfgs") ) # "perf"
   }
   if (p$stmv_local_modelengine %in% c("carstm") ) {
-    p$libs = c( p$libs, "INLA", "sf", "sp", "spdep" )
+    p$libs = c( p$libs, "INLA", "sf", "spdep" )
     p = parameters_add_without_overwriting( p,
       stmv_au_distance_reference = "none", # additional filters upon polygons relative to windowsize: "centroid", "inside_or_touches_boundary", completely_inside_boundary"
       stmv_au_buffer_links = 0, # number of additional neighbours to extend beyond initial solution
@@ -87,7 +87,7 @@ stmv_parameters = function( p=list(), ... ) {
   }
 
   # determine storage format
-  p$libs = unique( c( p$libs, "sp", "spdep", "sf", "rgdal", "interp", "parallel", "raster", "INLA" ) )
+  p$libs = unique( c( p$libs, "spdep", "sf", "interp", "parallel", "raster", "INLA" ) )
 
   if (any( grepl ("ff", p$storage_backend)))         p$libs = c( p$libs, "ff", "ffbase" )
   if (any( grepl ("bigmemory", p$storage_backend)))  p$libs = c( p$libs, "bigmemory" )

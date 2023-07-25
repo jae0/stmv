@@ -148,7 +148,7 @@
       ww = cbind( (vv[,1] - 1) * p$pres + p$origin[1], (vv[,2] - 1) * p$pres + p$origin[2] )
 
       if (!exists("stmv_nonconvexhull_alpha", p)) p$stmv_nonconvexhull_alpha=20
-      boundary=list( polygon = non_convex_hull( ww, alpha=p$stmv_nonconvexhull_alpha, plot=FALSE ) )
+      boundary=list( polygon = non_convex_hull( ww, lengthscale=p$stmv_nonconvexhull_alpha, plot=FALSE ) )
 
       # statistical output locations
       Sloc = stmv_attach(  p$storage_backend, p$ptr$Sloc )

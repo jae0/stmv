@@ -1,26 +1,26 @@
 
-# Bathymetry
+# Bathymetry modelling and prediction using STMV
 
+Spatial interpolation using [STMV - Space-Time Models of Variability](https://github.com/jae0/stmv) involves modelling the autocorrelation function of some feature of interest. STMV comes from the tradition of *Kriging with external drift*, where external drift represents some externally imposed gradient that is first modelled and then the residuals are modelled as some spatial process. This is, therefore, slightly ad-hoc in approach in that the external forcing is treated separately from the random spatial processes. Improved results would be expected if Expectation-Maximization or Gibbs sampling is used. However, due to computational expenses, this was not available when constructed. This may change soon and I might update the approach, time being the constraint. 
 
-# Spatial interpolation using stmv
+The example here uses FFT (Fast Fourier Transforms) to discretize the spatial autocorrelation process (Matern). It is the method of choice for speed and ability to capture the variability .. this should take just a few minutes
 
-# FFT is the method of choice for speed and ability to capture the variability .. this shold take just a few minutes
+```r
+# prep data
 
-# 2 mins
 require(aegis)
 require(aegis.survey)
 require(aegis.bathymetry)
 require(stmv)
 require(sf)
 
-
 p0 = aegis::spatial_parameters( spatial_domain="bathymetry_example",
   aegis_proj4string_planar_km="+proj=utm +ellps=WGS84 +zone=20 +units=km",
   dres=1/60/4, pres=0.5, lon0=-64, lon1=-62, lat0=44, lat1=45, psignif=2 )
 
-# or:
-# p0 = stmv_test_data( "aegis.test.parameters")
+# p0 = stmv_test_data( "aegis.test.parameters")  # same thing
 
+# separate data components
 input = stmv::stmv_test_data( datasource="aegis.space", p=p0)
 input = sf::st_as_sf( input, coords=c("lon","lat"), crs=st_crs(projection_proj4string("lonlat_wgs84")) )
 input = sf::st_transform( input, crs=st_crs(p0$aegis_proj4string_planar_km) )
@@ -33,7 +33,7 @@ DATA = list( input = input,  output = output )
 input = output = NULL
 gc()
 
-
+# set up interpolation options
 p = bathymetry_parameters(
   p=p0,  # start with spatial settings of input data
   project_class="stmv",
@@ -150,19 +150,42 @@ if (0) {
 
 # quick look of data
 dev.new(); surface( as.image( Z=DATA$input$z, x=DATA$input[, c("plon", "plat")], nx=p$nplons, ny=p$nplats, na.rm=TRUE) )
+```
+
+The raw data with a fast interpolation with "surface":
+
+![](../../docs/media/bathymetry_simple.png)
+
+We see that land, to the north-west is sparsely sampled. 
+
+---
+
+Now we run the model:
+
+```r
 
 stmv( p=p  )  # This will take from a few minutes, depending upon system
 # stmv_db( p=p, DS="cleanup.all" )
+```
 
+And then some outputs:
+
+```r
 
 predictions = stmv_db( p=p, DS="stmv.prediction", ret="mean" )
 statistics  = stmv_db( p=p, DS="stmv.stats" )
 locations =  spatial_grid( p )
 
+
 # comparison
 dev.new(); surface( as.image( Z=predictions, x=locations, nx=p$nplons, ny=p$nplats, na.rm=TRUE) )
 
+```
+![](../../docs/media/bathymetry_stmv.png)
 
+What makes STMV unique is the non-stationary assumption of the spatial process. As such, we can recover estimates of spatial parameters as a function of location!
+
+```r
 statsvars = dimnames(statistics)[[2]]
 
 # statsvars = c("sdTotal", "ndata", "fixed_mean", "fixed_sd", "dic", "dic_p_eff",
@@ -177,7 +200,17 @@ dev.new(); levelplot( predictions[] ~ locations[,1] + locations[,2], aspect="iso
 dev.new(); levelplot( statistics[,match("nu", statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) # nu
 dev.new(); levelplot( statistics[,match("sdTotal", statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) #sd total
 dev.new(); levelplot( statistics[,match("localrange", statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) #localrange
+```
+These are estimates of the spatial variability of depth as a function of space. Clearly they are spatially patterned and so non-stationary! 
+![](../../docs/media/bathymetry_nu.png)
 
 
+Further the shape of the AC (autocorrelation) function varies with space. The Matern nu (strength of curvature of AC function) as a function of space is here.
+
+![](../../docs/media/bathymetry_nu.png)
+
+And estimates of spatial range, the length scales at which variability of the AC-function declines to some very low level!
+
+![](../../docs/media/bathymetry_range.png)
 
 
