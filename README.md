@@ -1,4 +1,4 @@
-# stmv
+# STMV
 
 Core functions and the data architecture required for prediction and inference of spatiotemporal models: kernal-based lattice models that divide and conquer large space-time modelling and prediction problems. A local space-time operator/filter is used with a global covariate model. It is therefore, an hierarchical model.
 
@@ -24,5 +24,7 @@ if (file.exists(passwords)) source( passwords )
 
 require( aegis )
 ```
- 
-For usage, examples can be found in https://github.com/jae0/aegis.*.
+
+[For a short self-contained example, see the test example here modelling ocean bottom depths.](inst/scripts/01_bathymetry_stmv_example.md)
+
+Other examples can be found in the various projects in https://github.com/jae0/aegis.*, but these are more involved as they use much larger data sets and spatial/temporal domains.
