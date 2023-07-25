@@ -181,6 +181,7 @@ locations =  spatial_grid( p )
 dev.new(); surface( as.image( Z=predictions, x=locations, nx=p$nplons, ny=p$nplats, na.rm=TRUE) )
 
 ```
+
 ![](../../docs/media/bathymetry_stmv.png)
 
 What makes STMV unique is the non-stationary assumption of the spatial process. As such, we can recover estimates of spatial parameters as a function of location!
@@ -201,8 +202,10 @@ dev.new(); levelplot( statistics[,match("nu", statsvars)]  ~ locations[,1] + loc
 dev.new(); levelplot( statistics[,match("sdTotal", statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) #sd total
 dev.new(); levelplot( statistics[,match("localrange", statsvars)]  ~ locations[,1] + locations[,2], aspect="iso" ) #localrange
 ```
+
 These are estimates of the spatial variability of depth as a function of space. Clearly they are spatially patterned and so non-stationary! 
-![](../../docs/media/bathymetry_nu.png)
+
+![](../../docs/media/bathymetry_sd.png)
 
 
 Further the shape of the AC (autocorrelation) function varies with space. The Matern nu (strength of curvature of AC function) as a function of space is here.
