@@ -1,9 +1,7 @@
 
 # Bathymetry modelling and prediction using STMV
 
-Spatial interpolation using [STMV - Space-Time Models of Variability](https://github.com/jae0/stmv) involves modelling the autocorrelation function of some feature of interest. STMV comes from the tradition of *Kriging with external drift*, where external drift represents some externally imposed gradient that is first modelled and then the residuals are modelled as some spatial process. This is, therefore, an ad-hoc approach in that the external forcing is treated separately (modelled via MGCV or GLM) from the random spatial processes. The Random processes are subjected to a moving windows that incrementally grow dependning upon local estimates spatial of autocorrelation functions. Improved results would be expected if Expectation-Maximization or Gibbs sampling is used. However, due to computational load, this was not available when constructed. This may change soon and I might update the approach, time being the constraint. 
-
-The example here uses FFT (Fast Fourier Transforms) to discretize and compute the spatial autocorrelation process (Matern). It is the method of choice for speed and ability to capture the variability ... the following should take just a few minutes
+The example here uses FFT (Fast Fourier Transforms) to discretize and describe the local spatial autocorrelation process (Matern) and with no global model (no external drift). It is the method of choice for speed and ability to capture the variability ... the following should take just a few minutes. 
 
 ```r
 # prep data
