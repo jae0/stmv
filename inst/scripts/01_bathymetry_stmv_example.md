@@ -1,7 +1,9 @@
 
 # Bathymetry modelling and prediction using STMV
 
-The example here uses FFT (Fast Fourier Transforms) to discretize and describe the local spatial autocorrelation process (Matern) and with no global model (no external drift). It is the method of choice for speed and ability to capture the variability ... the following should take just a few minutes. 
+The example here uses FFT (Fast Fourier Transforms) to discretize and describe the local spatial autocorrelation process (Matern) and with no global model (no external drift). It is the method of choice for speed and ability to capture the variability ... the following should take just a few minutes. The spatial domain is small for puposes of exposition. When applied to larger domains, first and second order nonstationarity becomes very obvious.
+
+This example runs in serial mode. Parallel mode is faster, but must be balanced by RAM demands. 
 
 ```r
 # prep data
