@@ -6,6 +6,11 @@ More specifically, external forcing ("drift") is treated separately (*global* mo
 
 This package provides the core functions required for prediction and inference of STMV-type spatiotemporal models. 
 
+[For a short self-contained example, see the test example here modelling ocean bottom depths.](inst/scripts/01_bathymetry_stmv_example.md)
+
+Other examples can be found in the various projects in https://github.com/jae0/aegis.*, but these are more involved as they use much larger data sets and spatial/temporal domains.
+
+
 To install you need to bootstrap from https://github.com/jae0/aegis directly:
 
 ```
@@ -28,7 +33,3 @@ if (file.exists(passwords)) source( passwords )
 
 require( aegis )
 ```
-
-[For a short self-contained example, see the test example here modelling ocean bottom depths.](inst/scripts/01_bathymetry_stmv_example.md)
-
-Other examples can be found in the various projects in https://github.com/jae0/aegis.*, but these are more involved as they use much larger data sets and spatial/temporal domains.
