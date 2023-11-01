@@ -1,0 +1,5 @@
+useDynLib(stmvdev)
+exportPattern("^[[:alpha:]]+")
+import("mvtnorm")
+import("truncnorm")
+import(stmv, parallel, Rcpp, RcppZiggurat, RcppArmadillo)

@@ -1,0 +1,44 @@
+Package: stmvdev
+Title: Spatiotemporal models in R researching estimation and inference of complex ecosystems
+Version: 2021.1
+Authors@R: c( person("Jae", "Choi", email="choi.jae.seok@gmail.com", role=c("aut", "cre")) )
+Description: Spatio-temporal models in R of ecosystems using constrained kernel-based approximations to estimate and develop statistical inference of space-time hierarchical models. This package interacts with other stmv*, and aegis* projects. This is the R&D additions to stmv .. mostly under testing. Requires compiler tools.
+Depends: R (>= 3.0.0),
+  mvtnorm,
+  truncnorm
+Imports:
+  lubridate,
+  alphahull,
+  parallel,
+  Rcpp,
+  RcppZiggurat,
+  RcppArmadillo,
+  inline,
+  sp,
+  mgcv,
+  lattice,
+  geoR,
+  gstat,
+  fields,
+  RandomFields,
+  parallel,
+  bigmemory,
+  devtools,
+  aegis,
+  stmv
+Suggests:
+  INLA,
+  biglm,
+  cmdstanr,
+  rmarkdown
+LinkingTo:
+  Rcpp,
+  RcppZiggurat,
+  RcppArmadillo
+NeedsCompilation: yes
+SystemRequirements: fftw3 (>= 3.1.2)
+ByteCompile: TRUE
+VignetteBuilder: knitr
+License: MIT
+LazyData: true
+URL: https://github.com/jae0/stmv/
