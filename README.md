@@ -10,26 +10,25 @@ This package provides the core functions required for prediction and inference o
 
 Other examples can be found in the various projects in https://github.com/jae0/aegis.*, but these are more involved as they use much larger data sets and spatial/temporal domains.
 
+## Installation
 
-To install you need to bootstrap from https://github.com/jae0/aegis directly:
 
-```
-  devtools::install_github( "jae0/aegis" )
-```
+To install, run the following:
 
-Then, you need to have an Rprofile set up properly. An example can be seen in aegis/R/project.Rprofile.example.R, or use the following, being careful to define the required R-global variables:
+```r
+  remotes::install_github( "jae0/aegis")  # helper functions
+  remotes::install_github( "jae0/stmv")
+``` 
 
-```.
-libPaths("~/R")
+You probably will want to have an Rprofile set up properly such as:
+
+```r
 homedir = path.expand("~")
-tmpdir = file.path( homedir, "tmp" )
-work_root = file.path( homedir, "work" )    ### replace with correct path to work directory (local temporary storage)
 code_root = file.path( homedir, "bio" )   ### replace with correct path to the parent directory of your git-projects
 data_root = file.path( homedir, "bio.data" )   ### replace with correct path to your data
 
-# store your passwords and login here and make sure they are secure
-passwords = file.path( homedir, ".passwords" )
-if (file.exists(passwords)) source( passwords )
-
 require( aegis )
+require( stmv )
+
 ```
+ 
