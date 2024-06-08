@@ -245,7 +245,7 @@ H = inla_hyperparameters( sd(m), alpha=0.5, median(m) )
 # interaction-only model does not make sense here .. esp as there are other model components
 fit = inla(
   formula =
-    totno ~ 1 + offset( log( data_offset) )
+    totno ~ 1 + offset( log( data_offset) )  # CARSTM does log-transformation internally  but this is a direct call to inla 
       + f(strata, model="iid", group=year, hyper=H$iid)
       + f(year, model="ar1", hyper=H$ar1 )
       + f(iid_error, model="iid", hyper=H$iid)
@@ -307,7 +307,7 @@ spplot( sppoly, vn, col.regions=p$mypalette, main=vn, at=brks, sp.layout=p$coast
 
 fit = inla(
   formula = totno ~ 1
-    + offset( log(data_offset) )
+    + offset( log(data_offset) ) # CARSTM does log-transformation internally  but this is a direct call to inla 
     + f(iid_error, model="iid", hyper=H$iid)
     + f(ti, model="rw2", scale.model=TRUE, hyper=H$rw2)
     + f(zi, model="rw2", scale.model=TRUE, hyper=H$rw2)
@@ -354,7 +354,7 @@ plot( fit$marginals.hyperpar$"Phi for strata", type="l")  # posterior distributi
 
 fit = inla(
   formula = totno ~ 1
-    + offset( log(data_offset) )
+    + offset( log(data_offset) ) # CARSTM does log-transformation internally  but this is a direct call to inla 
 #    + f(iid_error, model="iid", hyper=H$iid)
     + f(ti, model="rw2", scale.model=TRUE, hyper=H$rw2)
     + f(zi, model="rw2", scale.model=TRUE, hyper=H$rw2)
@@ -414,7 +414,7 @@ plot( fit$marginals.hyperpar$"Precision for setno", type="l")
 
 fit = inla(
   formula = totno ~ 1
-    + offset( log(data_offset) )
+    + offset( log(data_offset) ) # CARSTM does log-transformation internally  but this is a direct call to inla 
     + f(iid_error, model="iid", hyper=H$iid)
     + f(ti, model="rw2", scale.model=TRUE, hyper=H$rw2)
     + f(zi, model="rw2", scale.model=TRUE, hyper=H$rw2)
@@ -485,7 +485,7 @@ plot( fit$marginals.hyperpar$"Precision for setno", type="l")
 
 fit = inla(
   formula = totno ~ 1
-    + offset( log(data_offset) )
+    + offset( log(data_offset) ) # CARSTM does log-transformation internally  but this is a direct call to inla 
     + f(iid_error, model="iid", hyper=H$iid)
     + f(ti, model="rw2", scale.model=TRUE, hyper=H$rw2)
     + f(zi, model="rw2", scale.model=TRUE, hyper=H$rw2)
@@ -561,7 +561,7 @@ plot( fit$marginals.hyperpar$"Precision for setno", type="l")
 
 fit = inla(
   formula = totno ~ 1
-    + offset( log(data_offset) )
+    + offset( log(data_offset) ) # CARSTM does log-transformation internally  but this is a direct call to inla 
     + f(iid_error, model="iid", hyper=H$iid)
     + f(ti, model="rw2", scale.model=TRUE, hyper=H$rw2)
     + f(zi, model="rw2", scale.model=TRUE, hyper=H$rw2)
@@ -627,7 +627,7 @@ plot( fit$marginals.hyperpar$"Precision for setno", type="l")
 
 fit = inla(
   formula = totno ~ 1
-    + offset( log(data_offset) )
+    + offset( log(data_offset) ) # CARSTM does log-transformation internally  but this is a direct call to inla 
     + f(iid_error, model="iid", hyper=H$iid)
     + f(ti, model="rw2", scale.model=TRUE, hyper=H$rw2)
     + f(zi, model="rw2", scale.model=TRUE, hyper=H$rw2)

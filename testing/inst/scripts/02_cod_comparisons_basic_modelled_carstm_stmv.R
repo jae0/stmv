@@ -291,6 +291,7 @@ abline(a=0,b=1)
 # this uses a constant offset and so is equivalent to Model 5 .. it is a test of the method .. and it looks good..
 # problem:  adding spatial and/or temporal effects is a bit of a challenge in GLM
 
+# CARSTM does log-transformation internally  but this is a direct call to glm
 fit = glm(
   formula = totno ~ offset(log(data_offset)) + AUID:yr_factor - 1 ,
   family=poisson(link="log"),

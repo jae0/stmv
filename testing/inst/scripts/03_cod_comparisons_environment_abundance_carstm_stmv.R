@@ -235,6 +235,7 @@ H = inla_hyperparameters( sd(m), alpha=0.5, median(m) )
 
 # missing covariates/data forces more fiddling with 'kk'
 
+# CARSTM does log-transformation internally  but this is a direct call to glm
 fit = glm(
   formula = totno ~ offset(log(data_offset)) + 1 + AUID:yr_factor + AUID + yr_factor ,
   family=poisson(link="log"),
@@ -333,7 +334,7 @@ lines( INLA.full.factorial ~ yr, data=RES, lty=1, lwd=8, col="blue")
 
 # missing covariates/data forces more fiddling
 
-
+ # CARSTM does log-transformation internally  but this is a direct call to glm
 fit = glm(
   formula = totno ~ offset(log(data_offset)) + 1 + AUID:yr_factor + AUID + yr_factor +t + z,
   family=poisson(link="log"),
@@ -383,6 +384,7 @@ spplot( sppoly, vn, col.regions=p$mypalette, main=vn, at=brks, sp.layout=p$coast
 # Model 9b: as in Model 9 but GAM .. occasionally unstable .. optimizer is finding a flat area
 # rank deficient
 
+# CARSTM does log-transformation internally  but this is a direct call to gam
 fit = mgcv::gam(
   formula = totno ~ offset(log(data_offset)) + 1 + AUID:yr_factor + AUID + yr_factor + s(t, bs="tp", k=3)  + s(z, bs="tp", k=3),
   family=poisson(link="log"),
@@ -435,7 +437,7 @@ lines( gam_poisson_totno_env ~ yr, data=RES, lty=5, lwd=4, col="green", type="b"
 # interaction-only model does not really make sense here .. esp as there are other model components
 fit = inla(
   formula =
-    totno ~ 1 + offset( log( data_offset) )
+    totno ~ 1 + offset( log( data_offset) )  # CARSTM does log-transformation internally  but this is a direct call to inla 
       + AUID:yr_factor + AUID + yr_factor
       + f(iid_error, model="iid", hyper=H$iid)
       + f(ti, model="rw2", scale.model=TRUE, diagonal=1e-6, hyper=H$rw2)
@@ -504,7 +506,7 @@ if(0) {
 # interaction-only model does not make sense here .. esp as there are other model components
 fit = inla(
   formula =
-    totno ~ 1 + offset( log( data_offset) )
+    totno ~ 1 + offset( log( data_offset) )  # CARSTM does log-transformation internally  but this is a direct call to inla 
       + f(strata, model="iid", group=year, hyper=H$iid)
       + f(iid_error, model="iid", hyper=H$iid)
       + f(year, model="iid", hyper=H$iid)

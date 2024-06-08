@@ -23,7 +23,7 @@ p = aegis_stmv( DS="parameters",
   stmv_global_modelengine ="gam",
   stmv_global_family = poisson(link="log"),
   stmv_global_modelformula = formula( paste(
-    ' totno ~ offset(data_offset) ',
+    ' totno ~ offset(log(data_offset)) ',  # CARSTM does log-transformation internally  but stmv does not
     ' + s( t, k = 3, bs = "ts") + s( tsd, k = 3, bs = "ts") + s( tmax, k = 3, bs = "ts") + s( degreedays, k = 3, bs = "ts") ',
     ' + s( log(z), k=3, bs="ts") + s( log(dZ), k=3, bs="ts") + s( log(ddZ), k=3, bs="ts") ',
     # ' + s(pca1, k=3, bs="ts") + s(pca2, k=3, bs="ts") ',

@@ -1,5 +1,7 @@
 
 stmv_timecovars = function( vars, ti) {
+    # https://math.stackexchange.com/questions/3926007/least-squares-regression-of-sine-wave
+    
     # where time exists and there are seasonal components,
     # additional variables are created/needed here: cos.w, sin.w, etc..
     # for harmonic analysis: to add an offset to a trig function (b) must add cos to a sin function
@@ -7,6 +9,7 @@ stmv_timecovars = function( vars, ti) {
     # y ~ a + c*sin(b)*cos(x) + c*cos(b)*sin(x)
     #   .. as C*sin(x+b) = C*( cos(b) * sin(x) + sin(b) * cos(x) )
     # y ~ b0 + b1*x1 + b2*x2
+
     # where:
     #   a = b0
     #   c^2 = b1^2 + b2^2 = c^2*(sin^2(b) + cos^2(b))

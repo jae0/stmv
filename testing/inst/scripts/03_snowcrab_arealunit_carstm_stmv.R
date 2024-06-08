@@ -302,7 +302,7 @@ H = inla_hyperparameters( sd(m), alpha=0.5, median(m) )
 # -------------------------------------
 # simple glm
 fit = glm(
-  formula = Y ~ 1 + offset( log( data_offset) ) + AUID + yr_factor,
+  formula = Y ~ 1 + offset( log( data_offset) ) + AUID + yr_factor,  # CARSTM does log-transformation internally  but this is a direct call to glm 
   family = "poisson", # "zeroinflatedpoisson0",
   data= M[ which(M$tag=="observations"), ]
 )
@@ -349,7 +349,7 @@ spplot( sppoly, vn, col.regions=p$mypalette, main=vn, at=brks, sp.layout=p$coast
 # simple gam
 require(mgcv)
 fit = gam(
-  formula = Y ~ 1 + offset( log( data_offset) ) + AUID + yr_factor + s(space, year, bs="ts"),
+  formula = Y ~ 1 + offset( log( data_offset) ) + AUID + yr_factor + s(space, year, bs="ts"),   # CARSTM does log-transformation internally  but this is a direct call to gam 
   family = "poisson", # "zeroinflatedpoisson0",
   data= M[ which(M$tag=="observations"), ]
 )
@@ -396,7 +396,7 @@ spplot( sppoly, vn, col.regions=p$mypalette, main=vn, at=brks, sp.layout=p$coast
 # - -----------------------------
 # simple with default priors
 fit = inla(
-  formula = Y ~ 1 + offset( log( data_offset) ) + AUID + yr_factor + f(iid_error, model="iid", hyper=H$iid) ,
+  formula = Y ~ 1 + offset( log( data_offset) ) + AUID + yr_factor + f(iid_error, model="iid", hyper=H$iid) ,  # CARSTM does log-transformation internally  but this is a direct call to inla 
   family = "poisson", # "zeroinflatedpoisson0",
   data= M,
   control.compute=list(cpo=TRUE, waic=TRUE, dic=TRUE, config=TRUE),
@@ -444,7 +444,7 @@ lines( poisson_basic_cfa4x ~ yr, data=RES, lty=1, lwd=2.5, col="green", type="b"
 # simple with priors
 fit = inla(
   formula =
-    Y ~ 1 + offset( log( data_offset) )
+    Y ~ 1 + offset( log( data_offset) )  # CARSTM does log-transformation internally  but this is a direct call to inla 
       + f(space, model="iid", hyper=H$iid)
       + f(time, model="iid", hyper=H$iid )
       + f(iid_error, model="iid", hyper=H$iid)
@@ -536,7 +536,7 @@ spplot( sppoly, vn, col.regions=p$mypalette, main=vn, at=brks, sp.layout=p$coast
 # car simple each posterior config takes @30km:: 10sec .. x 25 configs = 4 min  //  @20km :: 40 sec x 25 config = 20 min // @ 10 km 123.90s tot 45 min
 fit = inla(
   formula =
-    Y ~ 1 + offset( log( data_offset) )
+    Y ~ 1 + offset( log( data_offset) ) # CARSTM does log-transformation internally  but this is a direct call to inla 
       + f(space, model="bym2", graph=slot(sppoly, "nb"), scale.model=TRUE, constr=TRUE, hyper=H$bym2)
       + f(year, model="iid", hyper=H$iid )
       + f(iid_error, model="iid", hyper=H$iid)
@@ -590,7 +590,7 @@ spplot( sppoly, vn, col.regions=p$mypalette, main=vn, at=brks, sp.layout=p$coast
 # simple car grouped by year  27 configs x 100s each = 60 min
 fit = inla(
   formula =
-    Y ~ 1 + offset( log( data_offset) )
+    Y ~ 1 + offset( log( data_offset) ) # CARSTM does log-transformation internally  but this is a direct call to inla 
       + f(space, model="bym2", graph=slot(sppoly, "nb"), scale.model=TRUE, constr=TRUE, hyper=H$bym2)
       + f(space_time, model="bym2", graph=slot(sppoly, "nb"), group=time_space, scale.model=TRUE, constr=TRUE, hyper=H$bym2)
       + f(time, model="iid", hyper=H$iid )
@@ -680,7 +680,7 @@ spplot( sppoly, vn, col.regions=p$mypalette, main=vn, at=brks, sp.layout=p$coast
 # simple car grouped by year  45 configs x 22s each = 60 min // 25 min @ 20 km
 fit = inla(
   formula =
-    Y ~ 1 + offset( log( data_offset) )
+    Y ~ 1 + offset( log( data_offset) ) # CARSTM does log-transformation internally  but this is a direct call to inla 
       + f(space, model="bym2", graph=slot(sppoly, "nb"), scale.model=TRUE, constr=TRUE, hyper=H$bym2)
       + f(time, model="iid", hyper=H$iid )
       + f(iid_error, model="iid", hyper=H$iid)
@@ -772,7 +772,7 @@ spplot( sppoly, vn, col.regions=p$mypalette, main=vn, at=brks, sp.layout=p$coast
 # simple car grouped by year nn configs x nn s each = nn min
 fit = inla(
   formula =
-    Y ~ 1 + offset( log( data_offset) )
+    Y ~ 1 + offset( log( data_offset) )  # CARSTM does log-transformation internally  but this is a direct call to inla 
       + f(space, model="bym2", graph=slot(sppoly, "nb"), scale.model=TRUE, constr=TRUE, hyper=H$bym2)
       + f(time, model="iid", hyper=H$iid )
       + f(iid_error, model="iid", hyper=H$iid)
@@ -864,7 +864,7 @@ spplot( sppoly, vn, col.regions=p$mypalette, main=vn, at=brks, sp.layout=p$coast
 # Model 1: a binomial (presence-absence) aks, habitat probability model with linear covariate effects
 
 set$Y = floor(set$Y)
-
+ # CARSTM does log-transformation internally  but this is a direct call to glm 
 fit = glm(
   formula = Y ~  offset(log(data_offset)) + 1 + z + dZ + ddZ + t + tsd, #+ tmin + tmax + degreedays + log(substrate.grainsize),
   family=poisson(link="log"),
@@ -927,6 +927,7 @@ fit = mgcv::gam(
   data=set[ok,]
 )
 
+ # CARSTM does log-transformation internally  but this is a direct call to gam
 fit = mgcv::gam(
   formula = Y ~ offset(log(data_offset)) + 1 + AUID:yr_factor + AUID + yr_factor + s(t, bs="tp", k=3)  + s(z, bs="tp", k=3),
   family=poisson(link="log"),
