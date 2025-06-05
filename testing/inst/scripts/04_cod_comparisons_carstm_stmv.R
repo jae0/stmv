@@ -216,8 +216,8 @@ M$AUID  = factor( M$AUID, levels=levels(sppoly$AUID ))
 M$strata  = as.numeric( M$AUID)
 M$year  = as.numeric( M$yr_factor)
 
-M$ti = discretize_data( M$t, p$discretization$t )
-M$zi = discretize_data( M$t, p$discretization$z )
+M$ti = discretize_data( x=M$t, brks=p$discretization$t )
+M$zi = discretize_data( x=M$t, brks=p$discretization$z )
 
 
 M$iid_error = 1:nrow(M) # for inla indexing for set level variation

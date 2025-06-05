@@ -336,9 +336,9 @@ M$z[!is.finite(M$z)] = median(M$z, na.rm=TRUE )  # missing data .. quick fix .. 
 M$yr_factor = factor( M$yr, levels=p$yrs )
 M$AUID  = factor( M$AUID, levels=levels(sppoly$AUID ))
 
-M$ti = discretize_data( M$t, p$discretization$t )
-M$zi = discretize_data( M$z, p$discretization$z )
-M$di = discretize_data( M$degreedays, p$discretization$degreedays )
+M$ti = discretize_data( x=M$t, brks=p$discretization$t )
+M$zi = discretize_data( x=M$z, brks=p$discretization$z )
+M$di = discretize_data( x=M$degreedays, brks=p$discretization$degreedays )
 
 
 fit = inla(
@@ -418,9 +418,9 @@ M$strata  = as.numeric( M$AUID)
 M$year  = as.numeric( M$yr_factor)
 
 
-M$ti = discretize_data( M$t, p$discretization$t )
-M$zi = discretize_data( M$z, p$discretization$z )
-M$di = discretize_data( M$degreedays, p$discretization$degreedays )
+M$ti = discretize_data( x=M$t, brks=p$discretization$t )
+M$zi = discretize_data( x=M$z, brks=p$discretization$z )
+M$di = discretize_data( x=M$degreedays, brks=p$discretization$degreedays )
 
 fit = inla(
   formula = pa ~ 1
@@ -495,9 +495,9 @@ M$strata  = as.numeric( M$AUID)
 M$year  = as.numeric( M$yr_factor)
 
 
-M$ti = discretize_data( M$t, p$discretization$t )
-M$zi = discretize_data( M$z, p$discretization$z )
-M$di = discretize_data( M$degreedays, p$discretization$degreedays )
+M$ti = discretize_data( x=M$t, brks=p$discretization$t )
+M$zi = discretize_data( x=M$z, brks=p$discretization$z )
+M$di = discretize_data( x=M$degreedays, brks=p$discretization$degreedays )
 
 
 # 28404.251 seconds

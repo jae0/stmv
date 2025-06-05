@@ -205,15 +205,15 @@ M$ddZ[!is.finite(M$ddZ)] = median(M$ddZ, na.rm=TRUE )  # missing data .. quick f
 M$substrate.grainsize[!is.finite(M$substrate.grainsize)] = median(M$substrate.grainsize, na.rm=TRUE )  # missing data .. quick fix .. do something better
 
 
-M$ti = discretize_data( M$t, p$discretization$t )
-M$tisd = discretize_data( M$tsd, p$discretization$tsd )
-M$timin = discretize_data( M$tmin, p$discretization$tmin )
-M$timax = discretize_data( M$tmax, p$discretization$tmax )
-M$di = discretize_data( M$t, p$discretization$degreedays )
-M$zi = discretize_data( M$t, p$discretization$z )
-M$zid = discretize_data( M$t, p$discretization$dZ )
-M$zidd = discretize_data( M$t, p$discretization$ddZ )
-M$si = discretize_data( M$t, p$discretization$substrate.grainsize )
+M$ti = discretize_data( x=M$t, brks=p$discretization$t )
+M$tisd = discretize_data( x=M$tsd, brks=p$discretization$tsd )
+M$timin = discretize_data( x=M$tmin, brks=p$discretization$tmin )
+M$timax = discretize_data( x=M$tmax, brks=p$discretization$tmax )
+M$di = discretize_data( x=M$t, brks=p$discretization$degreedays )
+M$zi = discretize_data( x=M$t, brks=p$discretization$z )
+M$zid = discretize_data( x=M$t, brks=p$discretization$dZ )
+M$zidd = discretize_data( x=M$t, brks=p$discretization$ddZ )
+M$si = discretize_data( x=M$t, brks=p$discretization$substrate.grainsize )
 
 
 totest = setdiff(1:ncol(M), which(names(M) %in% c("Y", "AUID", "tag", "yr_factor") ))
@@ -1006,9 +1006,9 @@ M$yr_factor = factor( M$yr, levels=p$yrs )
 M$AUID  = factor( M$AUID, levels=levels(sppoly$AUID ))
 
 
-M$ti = discretize_data( M$t, p$discretization$t )
-M$zi = discretize_data( M$t, p$discretization$z )
-M$di = discretize_data( M$t, p$discretization$degreedays )
+M$ti = discretize_data( x=M$t, brks=p$discretization$t )
+M$zi = discretize_data( x=M$t, brks=p$discretization$z )
+M$di = discretize_data( x=M$t, brks=p$discretization$degreedays )
 
 fit = inla(
   formula = pa ~ 1
@@ -1080,11 +1080,10 @@ M$space  = M$space_time = as.numeric( M$AUID)
 M$year  = as.numeric( M$yr_factor)
 
 
-M$ti = discretize_data( M$t, p$discretization$t )
-M$zi = discretize_data( M$t, p$discretization$z )
-M$di = discretize_data( M$t, p$discretization$degreedays )
-
-
+M$ti = discretize_data( x=M$t, brks=p$discretization$t )
+M$zi = discretize_data( x=M$t, brks=p$discretization$z )
+M$di = discretize_data( x=M$t, brks=p$discretization$degreedays )
+ 
 fit = inla(
   formula = pa ~ 1
   + f(iid_error, model="iid", hyper=H$iid)

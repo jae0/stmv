@@ -135,9 +135,9 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, improve.hyperparam.estimates
     if ( p$dimensionality == "space-time-cyclic") {
       AUID = sppoly[["AUID"]]
       year = as.character( p$yrs )
-      dyear = as.character( discretize_data( (p$dyears + diff(p$dyears)[1]/2), p$discretization[["dyear"]] ) )
+      dyear = as.character( discretize_data( brks= p$discretization[["dyear"]] ) )
       dat$year = as.character(dat$year)
-      dat$dyear = as.character( discretize_data( dat$dyear, p$discretization[["dyear"]] ) )
+      dat$dyear = as.character( discretize_data( x=dat$dyear, brks=p$discretization[["dyear"]] ) )
 
       res$i_preds = which(
         dat$tag=="predictions" &
@@ -194,7 +194,11 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, improve.hyperparam.estimates
           # nonspatial at all time slices
           resout = expand.grid( AUID=res$AUID, type = c("nonspatial", "spatial"), year=p$yrs, dyear=p$dyears )
           res$i_nonspatial = which(resout$type=="nonspatial")
-          res$ns_matchfrom = list( AUID=resout$AUID[res$i_nonspatial], year=as.character(resout$year[res$i_nonspatial]), dyear=as.character( discretize_data( resout$dyear[res$i_nonspatial], p$discretization[["dyear"]] ) ) )
+          res$ns_matchfrom = list( 
+              AUID=resout$AUID[res$i_nonspatial], 
+              year=as.character(resout$year[res$i_nonspatial]), 
+              dyear=as.character( discretize_data( x=resout$dyear[res$i_nonspatial], brks=p$discretization[["dyear"]] ) ) 
+          )
           res$ns_matchto   = list( AUID=res$AUID,   year=res$year, dyear=res$dyear )
         }
 
@@ -215,7 +219,11 @@ stmv__carstm = function( p=NULL, dat=NULL, pa=NULL, improve.hyperparam.estimates
           # at every time slice
           resout = expand.grid( AUID=res$AUID, type = c("nonspatial", "spatial"), year=p$yrs, dyear=p$dyears )
           res$i_spatial = which(resout$type=="spatial")
-          res$sp_matchfrom = list( AUID=resout$AUID[res$i_spatial], year=as.character(resout$year[res$i_spatial]), dyear=as.character( discretize_data( resout$dyear[res$i_spatial], p$discretization[["dyear"]] ) ) )
+          res$sp_matchfrom = list( 
+            AUID=resout$AUID[res$i_spatial], 
+            year=as.character(resout$year[res$i_spatial]), 
+            dyear=as.character( discretize_data( x=resout$dyear[res$i_spatial], brks=p$discretization[["dyear"]] ) ) 
+          )
           res$sp_matchto   = list( AUID=res$AUID,   year=res$year, dyear=res$dyear )
         }
 
