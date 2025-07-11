@@ -88,9 +88,9 @@ p$lookupvars = c("t", "tsd", "tmax", "tmin", "degreedays", "z",  "dZ", "ddZ", "s
 
 # --------------------------------
 if (0) {
-  fn = file.path( getwd(), "RES.rdata" )
-  # save(RES, file=fn)
-  # load(fn)
+  fn = file.path( getwd(), "RES.rdz" )
+  # read_write_fast(RES, file=fn)
+  # RES = read_write_fast(fn)
 }
 if (!exists("RES")) RES = data.frame(yr=p$selection$survey[["yr"]]) # collect model comparisons
 
@@ -410,9 +410,9 @@ fit = inla(
   verbose=TRUE
 )
 
-fn_test ="~/tmp/snowcrab_20km_bym.Rdata"
-# save( fit, file=fn_test)
-# load(fn_test)
+fn_test ="~/tmp/snowcrab_20km_bym.rdz"
+# read_write_fast( fit, file=fn_test)
+# fit = read_write_fast(fn_test)
 
 
 
@@ -462,9 +462,9 @@ fit = inla(
   verbose=TRUE
 )
 
-fn3 ="~/tmp/snowcrab_30km_iid_space_time.Rdata"
-# save( fit, file=fn3)
-# load(fn3)
+fn3 ="~/tmp/snowcrab_30km_iid_space_time.rdz"
+# read_write_fast( fit, file=fn3)
+# fit = read_write_fast(fn3)
 
 # Fixed effects:
 #               mean   sd 0.025quant 0.5quant 0.975quant   mode kld
@@ -555,9 +555,9 @@ fit = inla(
 )
 
 
-fn80 ="~/tmp/snowcrab_30km_bym_iid.Rdata"
-# save( fit, file=fn80)
-# load(fn80)
+fn80 ="~/tmp/snowcrab_30km_bym_iid.rdz"
+# read_write_fast( fit, file=fn80)
+# fit = read_write_fast(fn80)
 
 s = summary(fit)
 s$dic$dic  # 31225
@@ -616,9 +616,9 @@ fit = inla(
   verbose=FALSE
 )
 
-fn90 ="~/tmp/snowcrab_30km_bym|yr.Rdata"
-# save( fit, file=fn90)
-# load(fn90)
+fn90 ="~/tmp/snowcrab_30km_bym|yr.rdz"
+# read_write_fast( fit, file=fn90)
+# fit = read_write_fast(fn90)
 
 s = summary(fit)
 s$dic$dic  # 31107
@@ -705,9 +705,9 @@ fit = inla(
   verbose=TRUE
 )
 
-fn100 ="~/tmp/snowcrab_30km_bym_envir_temp.Rdata"
-# save( fit, file=fn100)
-# load(fn100)
+fn100 ="~/tmp/snowcrab_30km_bym_envir_temp.rdz"
+# read_write_fast( fit, file=fn100)
+# fit = read_write_fast(fn100)
 
 s = summary(fit)
 s$dic$dic  # 30288
@@ -797,9 +797,9 @@ fit = inla(
   verbose=TRUE
 )
 
-fn101 ="~/tmp/snowcrab_30km_bym_envir_all.Rdata"
-# save( fit, file=fn101)
-# load(fn101)
+fn101 ="~/tmp/snowcrab_30km_bym_envir_all.rdz"
+# read_write_fast( fit, file=fn101)
+# fit = RES = read_write_fast(fn101)
 
 s = summary(fit)
 s$dic$dic  # 30288
@@ -1126,9 +1126,9 @@ spplot( sppoly, vn, col.regions=p$mypalette, main=vn, at=brks, sp.layout=p$coast
 
 
 if (0) {
- fn = file.path( "~", "tmp", "RES.rdata" )
- # save(RES, file=fn)
- # load(fn)
+ fn = file.path( "~", "tmp", "RES.rdz" )
+ # read_write_fast(RES, file=fn)
+ # RES = read_write_fast(fn)
 }
 
 

@@ -58,7 +58,7 @@ plot( meuse$zinc ~ meuse.tess$zinc )
 
 mypalette = colorRampPalette(c("darkblue","blue3", "green", "yellow", "orange","red3", "darkred"), space = "Lab")(100)
 # mypalette = rev( heat.colors( 150 ) )
-#mypalette <- brewer.pal(8, "YlOrRd")
+#mypalette <- brewer.pal(8, "brewer.yl_or_rd")
 
 meuse$logzinc = log( meuse$zinc)
 meuse.tess$logzinc = log( meuse.tess$zinc )

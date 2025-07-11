@@ -78,11 +78,11 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
 
     RLibrary( "aegis.bathymetry", "aegis.substrate" )
     require(sp)
-    # fn = system.file( "extdata", "aegis_space_test.Rdata", package="stmv" )
+    # fn = system.file( "extdata", "aegis_space_test.rdz", package="stmv" )
     out = NULL
-    fn = project.codedirectory("stmv", "inst", "extdata", "aegis_space_test.Rdata")
+    fn = project.codedirectory("stmv", "inst", "extdata", "aegis_space_test.rdz")
     if (!redo) {
-      if (file.exists(fn)) load(fn)
+      if (file.exists(fn)) out = read_write_fast(fn)
       return(out)
     }
 
@@ -124,7 +124,7 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
     out = planar2lonlat( out, proj.type=p$aegis_proj4string_planar_km )
     out$plon = out$plat = NULL
 
-    save(out, file=fn, compress=TRUE)
+    read_write_fast(out, file=fn)
     return (out)
   }
 
@@ -133,11 +133,11 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
 
     RLibrary( "aegis.bathymetry", "aegis.substrate", "aegis.temperature" )
     require(sp)
-    # fn = system.file( "extdata", "aegis_space_test.Rdata", package="stmv" )
+    # fn = system.file( "extdata", "aegis_space_test.rdz", package="stmv" )
     out = NULL
-    fn = project.codedirectory("stmv", "inst", "extdata", "aegis_spacetime_test.Rdata")
+    fn = project.codedirectory("stmv", "inst", "extdata", "aegis_spacetime_test.rdz")
     if (!redo) {
-      if (file.exists(fn)) load(fn)
+      if (file.exists(fn)) out = read_write_fast(fn)
       return(out)
     }
 
@@ -158,7 +158,7 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
     if (length(tokeep) > 0 ) out = out[ tokeep, ]
 
     out = out[, c("lon", "lat", "t", "z", "date", "tiyr")]
-    save(out, file=fn, compress=TRUE)
+    read_write_fast(out, file=fn)
     return (out)
 
   }
@@ -169,11 +169,11 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
 
     RLibrary( "aegis.bathymetry" )
     require(sp)
-    # fn = system.file( "extdata", "aegis_space_test.Rdata", package="stmv" )
+    # fn = system.file( "extdata", "aegis_space_test.rdz", package="stmv" )
     out = NULL
-    fn = project.codedirectory("stmv", "inst", "extdata", "aegis_bathymetry.Rdata")
+    fn = project.codedirectory("stmv", "inst", "extdata", "aegis_bathymetry.rdz")
     if (!redo) {
-      if (file.exists(fn)) load(fn)
+      if (file.exists(fn)) out = read_write_fast(fn)
       return(out)
     }
 
@@ -193,7 +193,7 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
     # image(u)
 
     out = fields::interp.surface( u, loc=spatial_grid(p0) ) # linear interpolation
-    save(out, file=fn, compress=TRUE)
+    read_write_fast(out, file=fn)
     return (out)
 
   }

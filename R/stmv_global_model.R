@@ -5,11 +5,11 @@ stmv_global_model = function( p, DS, B=NULL, Yq_link=NULL, Ydata=NULL, saveresul
 
     if (DS %in% c("global_model", "global_model.redo") ) {
 
-      fn.global_model = file.path( p$stmvSaveDir, paste( "global_model", p$stmv_global_modelengine, "rdata", sep=".") )
+      fn.global_model = file.path( p$stmvSaveDir, paste( "global_model", p$stmv_global_modelengine, "rdz", sep=".") )
 
       if (DS =="global_model") {
         global_model = NULL
-        if (file.exists( fn.global_model ))  load(fn.global_model)
+        if (file.exists( fn.global_model ))  global_model = read_write_fast(fn.global_model)
         return(global_model)
       }
 
@@ -49,7 +49,7 @@ stmv_global_model = function( p, DS, B=NULL, Yq_link=NULL, Ydata=NULL, saveresul
         global_model = try( eval(parse(text=p$stmv_global_model$run )) )
         if (inherits(global_model, "try-error") ) stop( "Global modelling failed")
         print( summary( global_model ) )
-        if (saveresults) save( global_model, file= fn.global_model, compress=TRUE )
+        if (saveresults) read_write_fast( global_model, file= fn.global_model )
         return ()
       }
 
@@ -128,7 +128,7 @@ stmv_global_model = function( p, DS, B=NULL, Yq_link=NULL, Ydata=NULL, saveresul
       print( summary( global_model ) )
 
       if (saveresults) {
-        save( global_model, file= fn.global_model, compress=TRUE )
+        read_write_fast( global_model, file= fn.global_model )
         global_model = NULL
         return()
       } else {

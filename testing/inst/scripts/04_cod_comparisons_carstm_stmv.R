@@ -141,9 +141,9 @@ inla.setOption(blas.num.threads=ncores)
 
 # RES = data.frame(yr=p$selection$survey[["yr"]]) # collect model comparisons
 if (0) {
-  fn = file.path( getwd(), "RES.rdata" )
-  # save(RES, file=fn)
-  # load(fn)
+  fn = file.path( getwd(), "RES.rdz" )
+  # read_write_fast(RES, file=fn)
+  # RES = read_write_fast(fn) 
 }
 
 
@@ -432,9 +432,9 @@ fit = inla(
 
 # save as it takes so long
 if (0) {
-  fn15 = "~/tmp/car_annual15.rdata"  # 1.2GB
-  save( fit, file=fn15, compress=TRUE )
-  load (fn15)
+  fn15 = "~/tmp/car_annual15.rdz"  # 1.2GB
+  read_write_fast( fit, file=fn15 )
+  fit = read_write_fast(fn15)
 }
 
 s = summary(fit)
@@ -504,9 +504,9 @@ fit = inla(
 
 # save as it takes so long
 if (0) {
-  fn16 = "~/tmp/car_annual16.rdata"  # 1.2GB
-  save( fit, file=fn16, compress=TRUE )
-  load (fn15)
+  fn16 = "~/tmp/car_annual16.rdz"  # 1.2GB
+  read_write_fast( fit, file=fn16 )
+  fit = read_write_fast(fn15)
 }
 
 s = summary(fit)
@@ -579,9 +579,9 @@ fit = inla(
 
 # save as it takes so long  .. 24 hrs
 if (0) {
-  fn17 = "~/tmp/car_annual17.rdata"  # 1.2GB
-  save( fit, file=fn17, compress=TRUE )
-  load (fn17)
+  fn17 = "~/tmp/car_annual17.rdz"  # 1.2GB
+  read_write_fast( fit, file=fn17 )
+  fit = read_write_fast(fn17)
 }
 
 s = summary(fit)
@@ -645,9 +645,9 @@ fit = inla(
 
 # save as it takes so long
 if (0) {
-  fn18 = "~/tmp/car_annual18.rdata"  # 1.2GB
-  save( fit, file=fn18, compress=TRUE )
-  load (fn18)
+  fn18 = "~/tmp/car_annual18.rdz"  # 1.2GB
+  read_write_fast( fit, file=fn18 )
+  fit = read_write_fast(fn18)
 }
 
 s = summary(fit)

@@ -130,9 +130,9 @@ weight_year = meanweights_by_arealunit( set=set, AUID=as.character( sppoly$AUID 
 
 # RES = data.frame(yr=p$selection$survey[["yr"]]) # collect model comparisons
 if (0) {
-  fn = file.path( project.datadirectory( "carstm" ), "RES.rdata" )
- # save(RES, file=fn)
- # load(fn)
+  fn = file.path( project.datadirectory( "carstm" ), "RES.rdz" )
+ # read_write_fast(RES, file=fn)
+ # RES = read_write_fast(fn)
 }
 
 
@@ -206,9 +206,9 @@ fit = glm(
 )
 
 if (0) {
-  fnx = file.path( project.datadirectory( "carstm" ), "fit_habitat_glm.rdata" )
-  save( fit, file=fnx )
-  # load(fnx)
+  fnx = file.path( project.datadirectory( "carstm" ), "fit_habitat_glm.rdz" )
+  read_write_fast( fit, file=fnx )
+  # fit = read_write_fast(fnx)
 }
 
 s = summary(fit)
@@ -269,9 +269,9 @@ inverse.logit = function( x ) {
 }
 
 if (0) {
-  fnx = file.path( project.datadirectory( "carstm" ), "fit_habitat_gam.rdata" )
-  save( fit, file=fnx )
-  # load(fnx)
+  fnx = file.path( project.datadirectory( "carstm" ), "fit_habitat_gam.rdz" )
+  read_write_fast( fit, file=fnx )
+  # fit = read_write_fast(fnx)
 }
 
 
@@ -358,9 +358,9 @@ fit = inla(
 )
 
 if (0) {
-  fnx = file.path( project.datadirectory( "carstm" ), "fit_habitat_inla.rdata" )
-  save( fit, file=fnx )
-  # load(fnx)
+  fnx = file.path( project.datadirectory( "carstm" ), "fit_habitat_inla.rdz" )
+  read_write_fast( fit, file=fnx )
+  # fit = read_write_fast(fnx)
 }
 
 plot(fit )
@@ -442,9 +442,9 @@ fit = inla(
 )
 
 if (0) {
-  fnx = file.path( project.datadirectory( "carstm" ), "fit_habitat_strata_CAR.yr_iid.rdata" )
-  save( fit, file=fnx )
-  # load(fnx)
+  fnx = file.path( project.datadirectory( "carstm" ), "fit_habitat_strata_CAR.yr_iid.rdz" )
+  read_write_fast( fit, file=fnx )
+  # fit = read_write_fast(fnx)
 }
 
 plot(fit )
@@ -522,9 +522,9 @@ fit = inla(
 
 
 if (0) {
-  fnx = file.path( project.datadirectory( "carstm" ), "fit_habitat_strata_CAR_yr.yr_iid.rdata" )
-  save( fit, file=fnx )
-  # load(fnx)
+  fnx = file.path( project.datadirectory( "carstm" ), "fit_habitat_strata_CAR_yr.yr_iid.rdz" )
+  read_write_fast( fit, file=fnx )
+  # fit = read_write_fast(fnx)
 }
 
 
@@ -549,16 +549,16 @@ sppoly[,vn] = out[,"2017"]
 brks = interval_break(X= sppoly[[vn]], n=length(p$mypalette), style="quantile")
 spplot( sppoly, vn, col.regions=p$mypalette, main=vn, at=brks, sp.layout=p$coastLayout, col="transparent" )
 
-# fn2="habitat_strata_CAR_yr.yr_iid.rdata"
-# save(fit, file=fn2)
-# load( fn2)
+# fn2="habitat_strata_CAR_yr.yr_iid.rdz"
+# read_write_fast(fit, file=fn2)
+# fit = read_write_fast( fn2)
 
 ######
 
 if (0) {
- fn = file.path( project.datadirectory( "carstm" ), "RES.rdata" )
- # save(RES, file=fn)
- # load(fn)
+ fn = file.path( project.datadirectory( "carstm" ), "RES.rdz" )
+ # read_write_fast(RES, file=fn)
+ # RES = read_write_fast(fn)
 }
 
 # RES$habitat_strata_CAR.yr_iid  = RES$habitat_bym_yriid

@@ -169,6 +169,8 @@ stmv_scale_and_interpolate = function( ip=NULL, p, debugging=FALSE, eps=1e-6, ..
     if (p$dimensionality =="space-time") {
 
       if (0) {
+        
+        dyear_centre = p$dyears[ trunc(p$nw/2) ] + p$tres/2  
 
         # annual ts, seasonally centered and spatially
         ar_timerange = NA
@@ -176,7 +178,7 @@ stmv_scale_and_interpolate = function( ip=NULL, p, debugging=FALSE, eps=1e-6, ..
 
         pac = res$predictions[ pac_i, ]
         pac$dyr = pac[, p$stmv_variables$TIME] - trunc(pac[, p$stmv_variables$TIME] )
-        piid = which( zapsmall( pac$dyr - p$dyear_centre) == 0 )
+        piid = which( zapsmall( pac$dyr - dyear_centre) == 0 )
         pac = pac[ piid, c(p$stmv_variables$TIME, "mean")]
         pac = pac[ order(pac[,p$stmv_variables$TIME]),]
         if (length(piid) > 5 ) {
@@ -222,14 +224,15 @@ stmv_scale_and_interpolate = function( ip=NULL, p, debugging=FALSE, eps=1e-6, ..
     if (p$dimensionality=="space-time-cyclic")  {
 
       if (0) {
-
+        
+        dyear_centre = p$dyears[ trunc(p$nw/2) ] + p$tres/2  
         # annual ts, seasonally centered and spatially
         ar_timerange = NA
         ar_1 = NA
 
         pac = res$predictions[ pac_i, ]
         pac$dyr = pac[, p$stmv_variables$TIME] - trunc(pac[, p$stmv_variables$TIME] )
-        piid = which( zapsmall( pac$dyr - p$dyear_centre) == 0 )
+        piid = which( zapsmall( pac$dyr - dyear_centre) == 0 )
         pac = pac[ piid, c(p$stmv_variables$TIME, "mean")]
         pac = pac[ order(pac[,p$stmv_variables$TIME]),]
         if (length(piid) > 5 ) {
