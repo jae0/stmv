@@ -269,8 +269,8 @@
               }
 
               read_write_fast( P,  file=file.path( p$stmvSaveDir, paste("stmv.prediction", "mean", y, "rdz", sep="." ) ) )
-              read_write_fast( Pl, file=file.path( p$stmvSaveDir, paste("stmv.prediction", "lb",   y, "rdz", sep="." ) )
-              read_write_fast( Pu, file=file.path( p$stmvSaveDir, paste("stmv.prediction", "ub",   y, "rdz", sep="." ) )
+              read_write_fast( Pl, file=file.path( p$stmvSaveDir, paste("stmv.prediction", "lb",   y, "rdz", sep="." ) ) )
+              read_write_fast( Pu, file=file.path( p$stmvSaveDir, paste("stmv.prediction", "ub",   y, "rdz", sep="." ) ) )
               # print ( paste("Year:", y)  )
             }
           }
@@ -318,9 +318,9 @@
           P = p$stmv_Y_transform$invers (P[])
         }
 
-        read_write_fast( P,  file=file.path( p$stmvSaveDir, paste("stmv.prediction", "mean", "rdz", sep="." ) )
-        read_write_fast( Pl, file=file.path( p$stmvSaveDir, paste("stmv.prediction", "lb",   "rdz", sep="." ) )
-        read_write_fast( Pu, file=file.path( p$stmvSaveDir, paste("stmv.prediction", "ub",   "rdz", sep="." ) )
+        read_write_fast( P,  file=file.path( p$stmvSaveDir, paste("stmv.prediction", "mean", "rdz", sep="." ) ) )
+        read_write_fast( Pl, file=file.path( p$stmvSaveDir, paste("stmv.prediction", "lb",   "rdz", sep="." ) ) )
+        read_write_fast( Pu, file=file.path( p$stmvSaveDir, paste("stmv.prediction", "ub",   "rdz", sep="." ) ) )
       } # end if TIME
 
       message( "\n||| Saving predictions complete: ", format(Sys.time()),  "\n" )
