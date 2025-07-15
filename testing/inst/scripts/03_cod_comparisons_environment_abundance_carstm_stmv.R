@@ -575,13 +575,18 @@ plot( RES[, c("stratanal_towdistance", "glm_poisson_totno_factorial", "INLA.Envi
 # ---- bias in station selection:
 
 set$strata_year = paste( set$AUID, set$yr, sep=".")
-zz = applyMean( set[, c("strata_year", "z")]  )
-tt = applyMean( set[, c("strata_year", "t")]  )
+setDT(set)
+zt = set[, 
+  .(
+    z=mean(z, na.rm=TRUE),
+    t=mean(z, na.rm=TRUE)
+  ),
+  by=.(strata_year)
+]
 
 APS$strata_year = paste( APS$AUID, APS$yr, sep=".")
-APS = merge( APS, zz, by="strata_year", all.x=TRUE, all.y=FALSE, suffixes=c("", ".set") )
-APS = merge( APS, tt, by="strata_year", all.x=TRUE, all.y=FALSE, suffixes=c("", ".set") )
-
+APS = merge( APS, zt, by="strata_year", all.x=TRUE, all.y=FALSE, suffixes=c("", ".set") )
+ 
 APS$z_diff = APS$z - APS$z.set
 APS$t_diff = APS$t - APS$t.set
 
