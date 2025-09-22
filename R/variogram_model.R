@@ -18,7 +18,7 @@ variogram_model = function(
   } 
 
   retain = which( out$vgm$distances < max(out$vgm$distances, na.rm=TRUE)*trim ) 
-  if (exists("keep", vgm)) retain = unique( retain, c(which( vgm$keep )) )
+  if (exists("keep", vgm)) retain = unique( c(retain, which( vgm$keep )) )
 
   out = list(
     vgm = vgm,
