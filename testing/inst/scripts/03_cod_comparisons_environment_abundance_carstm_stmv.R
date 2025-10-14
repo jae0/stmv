@@ -40,7 +40,7 @@ p = aegis.survey::survey_parameters(
       yr = p$yrs,  # time frame for comparison specified above
       months=6:8,  # "summer"
       # dyear = c(150,250)/365, # alternate way of specifying season: summer = which( (x>150) & (x<250) ) , spring = which(  x<149 ), winter = which(  x>251 )
-      settype = 1, # same as geartype in groundfish_survey_db
+      settype = 1, 
       gear = c("Western IIA trawl", "Yankee #36 otter trawl"),
       polygon_enforce=TRUE,  # make sure mis-classified stations or incorrectly entered positions get filtered out
       ranged_data = c("dyear")  # not used .. just to show how to use range_data
