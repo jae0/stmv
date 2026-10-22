@@ -130,7 +130,7 @@ weight_year = meanweights_by_arealunit( set=set, AUID=as.character( sppoly$AUID 
 
 # RES = data.frame(yr=p$selection$survey[["yr"]]) # collect model comparisons
 if (0) {
-  fn = file.path( project.datadirectory( "carstm" ), "RES.rdz" )
+  fn = file.path( project.datadirectory( "carstm" ), "RES.rds" )
  # read_write_fast(RES, file=fn)
  # RES = read_write_fast(fn)
 }
@@ -206,7 +206,7 @@ fit = glm(
 )
 
 if (0) {
-  fnx = file.path( project.datadirectory( "carstm" ), "fit_habitat_glm.rdz" )
+  fnx = file.path( project.datadirectory( "carstm" ), "fit_habitat_glm.rds" )
   read_write_fast( fit, file=fnx )
   # fit = read_write_fast(fnx)
 }
@@ -269,7 +269,7 @@ inverse.logit = function( x ) {
 }
 
 if (0) {
-  fnx = file.path( project.datadirectory( "carstm" ), "fit_habitat_gam.rdz" )
+  fnx = file.path( project.datadirectory( "carstm" ), "fit_habitat_gam.rds" )
   read_write_fast( fit, file=fnx )
   # fit = read_write_fast(fnx)
 }
@@ -358,7 +358,7 @@ fit = inla(
 )
 
 if (0) {
-  fnx = file.path( project.datadirectory( "carstm" ), "fit_habitat_inla.rdz" )
+  fnx = file.path( project.datadirectory( "carstm" ), "fit_habitat_inla.rds" )
   read_write_fast( fit, file=fnx )
   # fit = read_write_fast(fnx)
 }
@@ -442,7 +442,7 @@ fit = inla(
 )
 
 if (0) {
-  fnx = file.path( project.datadirectory( "carstm" ), "fit_habitat_strata_CAR.yr_iid.rdz" )
+  fnx = file.path( project.datadirectory( "carstm" ), "fit_habitat_strata_CAR.yr_iid.rds" )
   read_write_fast( fit, file=fnx )
   # fit = read_write_fast(fnx)
 }
@@ -522,7 +522,7 @@ fit = inla(
 
 
 if (0) {
-  fnx = file.path( project.datadirectory( "carstm" ), "fit_habitat_strata_CAR_yr.yr_iid.rdz" )
+  fnx = file.path( project.datadirectory( "carstm" ), "fit_habitat_strata_CAR_yr.yr_iid.rds" )
   read_write_fast( fit, file=fnx )
   # fit = read_write_fast(fnx)
 }
@@ -549,14 +549,14 @@ sppoly[,vn] = out[,"2017"]
 brks = interval_break(X= sppoly[[vn]], n=length(p$mypalette), style="quantile")
 spplot( sppoly, vn, col.regions=p$mypalette, main=vn, at=brks, sp.layout=p$coastLayout, col="transparent" )
 
-# fn2="habitat_strata_CAR_yr.yr_iid.rdz"
+# fn2="habitat_strata_CAR_yr.yr_iid.rds"
 # read_write_fast(fit, file=fn2)
 # fit = read_write_fast( fn2)
 
 ######
 
 if (0) {
- fn = file.path( project.datadirectory( "carstm" ), "RES.rdz" )
+ fn = file.path( project.datadirectory( "carstm" ), "RES.rds" )
  # read_write_fast(RES, file=fn)
  # RES = read_write_fast(fn)
 }

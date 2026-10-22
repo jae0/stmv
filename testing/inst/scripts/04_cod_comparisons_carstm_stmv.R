@@ -141,7 +141,7 @@ inla.setOption(blas.num.threads=ncores)
 
 # RES = data.frame(yr=p$selection$survey[["yr"]]) # collect model comparisons
 if (0) {
-  fn = file.path( getwd(), "RES.rdz" )
+  fn = file.path( getwd(), "RES.rds" )
   # read_write_fast(RES, file=fn)
   # RES = read_write_fast(fn) 
 }
@@ -432,7 +432,7 @@ fit = inla(
 
 # save as it takes so long
 if (0) {
-  fn15 = "~/tmp/car_annual15.rdz"  # 1.2GB
+  fn15 = "~/tmp/car_annual15.rds"  # 1.2GB
   read_write_fast( fit, file=fn15 )
   fit = read_write_fast(fn15)
 }
@@ -504,7 +504,7 @@ fit = inla(
 
 # save as it takes so long
 if (0) {
-  fn16 = "~/tmp/car_annual16.rdz"  # 1.2GB
+  fn16 = "~/tmp/car_annual16.rds"  # 1.2GB
   read_write_fast( fit, file=fn16 )
   fit = read_write_fast(fn15)
 }
@@ -579,7 +579,7 @@ fit = inla(
 
 # save as it takes so long  .. 24 hrs
 if (0) {
-  fn17 = "~/tmp/car_annual17.rdz"  # 1.2GB
+  fn17 = "~/tmp/car_annual17.rds"  # 1.2GB
   read_write_fast( fit, file=fn17 )
   fit = read_write_fast(fn17)
 }
@@ -645,7 +645,7 @@ fit = inla(
 
 # save as it takes so long
 if (0) {
-  fn18 = "~/tmp/car_annual18.rdz"  # 1.2GB
+  fn18 = "~/tmp/car_annual18.rds"  # 1.2GB
   read_write_fast( fit, file=fn18 )
   fit = read_write_fast(fn18)
 }

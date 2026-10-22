@@ -88,7 +88,7 @@ p$lookupvars = c("t", "tsd", "tmax", "tmin", "degreedays", "z",  "dZ", "ddZ", "s
 
 # --------------------------------
 if (0) {
-  fn = file.path( getwd(), "RES.rdz" )
+  fn = file.path( getwd(), "RES.rds" )
   # read_write_fast(RES, file=fn)
   # RES = read_write_fast(fn)
 }
@@ -410,7 +410,7 @@ fit = inla(
   verbose=TRUE
 )
 
-fn_test ="~/tmp/snowcrab_20km_bym.rdz"
+fn_test ="~/tmp/snowcrab_20km_bym.rds"
 # read_write_fast( fit, file=fn_test)
 # fit = read_write_fast(fn_test)
 
@@ -462,7 +462,7 @@ fit = inla(
   verbose=TRUE
 )
 
-fn3 ="~/tmp/snowcrab_30km_iid_space_time.rdz"
+fn3 ="~/tmp/snowcrab_30km_iid_space_time.rds"
 # read_write_fast( fit, file=fn3)
 # fit = read_write_fast(fn3)
 
@@ -555,7 +555,7 @@ fit = inla(
 )
 
 
-fn80 ="~/tmp/snowcrab_30km_bym_iid.rdz"
+fn80 ="~/tmp/snowcrab_30km_bym_iid.rds"
 # read_write_fast( fit, file=fn80)
 # fit = read_write_fast(fn80)
 
@@ -616,7 +616,7 @@ fit = inla(
   verbose=FALSE
 )
 
-fn90 ="~/tmp/snowcrab_30km_bym|yr.rdz"
+fn90 ="~/tmp/snowcrab_30km_bym|yr.rds"
 # read_write_fast( fit, file=fn90)
 # fit = read_write_fast(fn90)
 
@@ -705,7 +705,7 @@ fit = inla(
   verbose=TRUE
 )
 
-fn100 ="~/tmp/snowcrab_30km_bym_envir_temp.rdz"
+fn100 ="~/tmp/snowcrab_30km_bym_envir_temp.rds"
 # read_write_fast( fit, file=fn100)
 # fit = read_write_fast(fn100)
 
@@ -797,7 +797,7 @@ fit = inla(
   verbose=TRUE
 )
 
-fn101 ="~/tmp/snowcrab_30km_bym_envir_all.rdz"
+fn101 ="~/tmp/snowcrab_30km_bym_envir_all.rds"
 # read_write_fast( fit, file=fn101)
 # fit = RES = read_write_fast(fn101)
 
@@ -1126,7 +1126,7 @@ spplot( sppoly, vn, col.regions=p$mypalette, main=vn, at=brks, sp.layout=p$coast
 
 
 if (0) {
- fn = file.path( "~", "tmp", "RES.rdz" )
+ fn = file.path( "~", "tmp", "RES.rds" )
  # read_write_fast(RES, file=fn)
  # RES = read_write_fast(fn)
 }

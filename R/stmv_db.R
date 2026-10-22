@@ -43,14 +43,14 @@
       p$cache$Sflag =     file.path( p$stloc, "statistics_flag.cache" )
 
       p$saved_state_fn = list()
-      p$saved_state_fn$P = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean", "rdz", sep="." ) )
-      p$saved_state_fn$Pn = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "n", "rdz", sep="." ) )
-      p$saved_state_fn$Psd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd", "rdz", sep="." ) )
-      p$saved_state_fn$stats = file.path( p$stmvSaveDir, paste( "tmp_stmv.statistics", "rdz", sep=".") )
-      p$saved_state_fn$sflag = file.path( p$stmvSaveDir, paste( "tmp_stmv.sflag", "rdz", sep=".") )
+      p$saved_state_fn$P = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean", "rds", sep="." ) )
+      p$saved_state_fn$Pn = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "n", "rds", sep="." ) )
+      p$saved_state_fn$Psd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd", "rds", sep="." ) )
+      p$saved_state_fn$stats = file.path( p$stmvSaveDir, paste( "tmp_stmv.statistics", "rds", sep=".") )
+      p$saved_state_fn$sflag = file.path( p$stmvSaveDir, paste( "tmp_stmv.sflag", "rds", sep=".") )
         if (p$stmv_global_modelengine !="none" ) {
-          p$saved_state_fn$P0 = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean0", "rdz", sep="." ) )
-          p$saved_state_fn$P0sd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd0", "rdz", sep="." ) )
+          p$saved_state_fn$P0 = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "mean0", "rds", sep="." ) )
+          p$saved_state_fn$P0sd = file.path( p$stmvSaveDir, paste("tmp_stmv.prediction", "sd0", "rds", sep="." ) )
         }
 
       if (p$storage_backend == "bigmemory.filebacked" ) {
@@ -74,7 +74,7 @@
     # --------------------------
 
     if (DS=="save.parameters")  {
-      fns = file.path( p$stmvSaveDir, "p.rdz" )
+      fns = file.path( p$stmvSaveDir, "p.rds" )
       read_write_fast( p, file=fns )
       message( "||| Saved parameters to file:")
       message( fns )
@@ -83,7 +83,7 @@
     # --------------------------
 
     if (DS=="load.parameters")  {
-      fns = file.path( p$stmvSaveDir, "p.rdz" )
+      fns = file.path( p$stmvSaveDir, "p.rds" )
       if (file.exists( fns)) p = read_write_fast( fns )
       return(p)
     }
@@ -112,7 +112,7 @@
 
     if (DS %in% c( "boundary.redo", "boundary" ) )  {
 
-      fn =  file.path(p$stmvSaveDir, "boundary.rdz" )
+      fn =  file.path(p$stmvSaveDir, "boundary.rds" )
       if (DS=="boundary") {
         boundary = NULL
         if( file.exists(fn)) boundary = read_write_fast( fn)
@@ -172,16 +172,16 @@
 
       if (DS=="stmv.prediction") {
         if (! exists("TIME", p$stmv_variables)) {
-          fn = file.path( p$stmvSaveDir, paste("stmv.prediction",  ret, "rdz", sep="." ) )
+          fn = file.path( p$stmvSaveDir, paste("stmv.prediction",  ret, "rds", sep="." ) )
         } else {
-          fn = file.path( p$stmvSaveDir, paste("stmv.prediction",  ret, yr, "rdz", sep="." ) )
+          fn = file.path( p$stmvSaveDir, paste("stmv.prediction",  ret, yr, "rds", sep="." ) )
         }
         if (file.exists(fn) ) out = read_write_fast(fn)
         return(out)
       }
 
       if (DS=="stmv.stats") {
-        fn = file.path( p$stmvSaveDir, paste( "stmv.statistics", "rdz", sep=".") )
+        fn = file.path( p$stmvSaveDir, paste( "stmv.statistics", "rds", sep=".") )
         stats = NULL
         if (file.exists(fn)) stats=read_write_fast(fn)
         return(stats)
@@ -268,9 +268,9 @@
                 P = p$stmv_Y_transform$invers (P[])
               }
 
-              read_write_fast( P,  file=file.path( p$stmvSaveDir, paste("stmv.prediction", "mean", y, "rdz", sep="." ) ) )
-              read_write_fast( Pl, file=file.path( p$stmvSaveDir, paste("stmv.prediction", "lb",   y, "rdz", sep="." ) ) )
-              read_write_fast( Pu, file=file.path( p$stmvSaveDir, paste("stmv.prediction", "ub",   y, "rdz", sep="." ) ) )
+              read_write_fast( P,  file=file.path( p$stmvSaveDir, paste("stmv.prediction", "mean", y, "rds", sep="." ) ) )
+              read_write_fast( Pl, file=file.path( p$stmvSaveDir, paste("stmv.prediction", "lb",   y, "rds", sep="." ) ) )
+              read_write_fast( Pu, file=file.path( p$stmvSaveDir, paste("stmv.prediction", "ub",   y, "rds", sep="." ) ) )
               # print ( paste("Year:", y)  )
             }
           }
@@ -318,9 +318,9 @@
           P = p$stmv_Y_transform$invers (P[])
         }
 
-        read_write_fast( P,  file=file.path( p$stmvSaveDir, paste("stmv.prediction", "mean", "rdz", sep="." ) ) )
-        read_write_fast( Pl, file=file.path( p$stmvSaveDir, paste("stmv.prediction", "lb",   "rdz", sep="." ) ) )
-        read_write_fast( Pu, file=file.path( p$stmvSaveDir, paste("stmv.prediction", "ub",   "rdz", sep="." ) ) )
+        read_write_fast( P,  file=file.path( p$stmvSaveDir, paste("stmv.prediction", "mean", "rds", sep="." ) ) )
+        read_write_fast( Pl, file=file.path( p$stmvSaveDir, paste("stmv.prediction", "lb",   "rds", sep="." ) ) )
+        read_write_fast( Pu, file=file.path( p$stmvSaveDir, paste("stmv.prediction", "ub",   "rds", sep="." ) ) )
       } # end if TIME
 
       message( "\n||| Saving predictions complete: ", format(Sys.time()),  "\n" )
@@ -376,7 +376,7 @@
         if (length(shallower)>0) stats[shallower,] = NA
       }
 
-      fn = file.path( p$stmvSaveDir, paste( "stmv.statistics", "rdz", sep=".") )
+      fn = file.path( p$stmvSaveDir, paste( "stmv.statistics", "rds", sep=".") )
       read_write_fast( stats, file=fn )
       message( "\n||| Saving statistics complete: ", format(Sys.time()),  "\n" )
 
@@ -412,47 +412,47 @@
       # named differently to avoid collisions
       if ( "P" %in% datasubset ) {
         sP = stmv_attach( p$storage_backend, p$ptr$P )[]
-        read_write_fast( sP, file=paste(p$saved_state_fn$P, runmode, "rdz", sep=".") )
+        read_write_fast( sP, file=paste(p$saved_state_fn$P, runmode, "rds", sep=".") )
         sP = NULL
 
       }
       if ( "P0" %in% datasubset ) {
         if (p$stmv_global_modelengine !="none" ) {
           sP0 = stmv_attach( p$storage_backend, p$ptr$P0 )[]
-          read_write_fast( sP0,   file=paste(p$saved_state_fn$P0, runmode, "rdz",  sep=".")  )
+          read_write_fast( sP0,   file=paste(p$saved_state_fn$P0, runmode, "rds",  sep=".")  )
           sP0 = NULL
         }
       }
 
       if ( "Psd" %in% datasubset ) {
         sPsd = stmv_attach( p$storage_backend, p$ptr$Psd )[]
-        read_write_fast( sPsd, file=paste(p$saved_state_fn$Psd, runmode, "rdz", sep=".") )
+        read_write_fast( sPsd, file=paste(p$saved_state_fn$Psd, runmode, "rds", sep=".") )
         sPsd = NULL
       }
 
       if ( "P0sd" %in% datasubset ) {
         if (p$stmv_global_modelengine !="none" ) {
             sP0sd = stmv_attach( p$storage_backend, p$ptr$P0sd )[]
-            read_write_fast( sP0sd, file=paste(p$saved_state_fn$P0sd, runmode, "rdz", sep=".")  )
+            read_write_fast( sP0sd, file=paste(p$saved_state_fn$P0sd, runmode, "rds", sep=".")  )
             sP0sd = NULL
           }
       }
 
       if ( "Pn" %in% datasubset ) {
         sPn = stmv_attach( p$storage_backend, p$ptr$Pn )[]
-        read_write_fast( sPn, file=paste(p$saved_state_fn$Pn, runmode, "rdz",  sep=".") )
+        read_write_fast( sPn, file=paste(p$saved_state_fn$Pn, runmode, "rds",  sep=".") )
         sPn = NULL
       }
 
       if ( "S" %in% datasubset ) {
         sS = stmv_attach( p$storage_backend, p$ptr$S )[]
-        read_write_fast( sS, file=paste(p$saved_state_fn$stats, runmode, "rdz", sep=".") )
+        read_write_fast( sS, file=paste(p$saved_state_fn$stats, runmode, "rds", sep=".") )
         sS = NULL
       }
 
       if ( "Sflag" %in% datasubset ) {
         sSflag = stmv_attach( p$storage_backend, p$ptr$Sflag )[]
-        read_write_fast( sSflag, file=paste(p$saved_state_fn$sflag, runmode, "rdz", sep=".") )
+        read_write_fast( sSflag, file=paste(p$saved_state_fn$sflag, runmode, "rds", sep=".") )
         sSflag = NULL
       }
       gc()
@@ -472,7 +472,7 @@
         P = stmv_attach( p$storage_backend, p$ptr$P )
         sP = matrix( NaN, nrow=nrow(P), ncol=ncol(P) )
         if (file.exists(paste( p$saved_state_fn$P, runmode, sep="."))) {
-          P = read_write_fast( paste( p$saved_state_fn$P, runmode, "rdz", sep=".") )
+          P = read_write_fast( paste( p$saved_state_fn$P, runmode, "rds", sep=".") )
         } else {
           returnflag = FALSE
         }
@@ -486,7 +486,7 @@
           P0 = stmv_attach( p$storage_backend, p$ptr$P0 )
           sP0 = matrix( NaN, nrow=nrow(P0), ncol=ncol(P0) )
           if (file.exists(paste( p$saved_state_fn$P0, runmode, sep="."))) {
-            P0 = read_write_fast( paste( p$saved_state_fn$P0, runmode, "rdz", sep=".") )
+            P0 = read_write_fast( paste( p$saved_state_fn$P0, runmode, "rds", sep=".") )
           } else {
             returnflag = FALSE
           }
@@ -500,7 +500,7 @@
         Psd = stmv_attach( p$storage_backend, p$ptr$Psd )
         sPsd = matrix( NaN, nrow=nrow(Psd), ncol=ncol(Psd) )
         if (file.exists(paste( p$saved_state_fn$Psd, runmode, sep="."))) {
-          Psd = read_write_fast( paste( p$saved_state_fn$Psd, runmode, "rdz", sep=".") )
+          Psd = read_write_fast( paste( p$saved_state_fn$Psd, runmode, "rds", sep=".") )
         } else {
           returnflag = FALSE
         }
@@ -514,7 +514,7 @@
           P0sd = stmv_attach( p$storage_backend, p$ptr$P0sd )
           sP0sd = matrix( NaN, nrow=nrow(P0sd), ncol=ncol(P0sd) )
           if (file.exists(paste( p$saved_state_fn$P0sd, runmode, sep="."))) {
-            P0sd = read_write_fast( paste( p$saved_state_fn$P0sd, runmode, "rdz", sep=".") )
+            P0sd = read_write_fast( paste( p$saved_state_fn$P0sd, runmode, "rds", sep=".") )
           } else {
             returnflag = FALSE
           }
@@ -528,7 +528,7 @@
         Pn = stmv_attach( p$storage_backend, p$ptr$Pn )
         sPn = matrix( NaN, nrow=nrow(Pn), ncol=ncol(Pn) )
         if (file.exists(paste( p$saved_state_fn$Pn, runmode, sep="."))) {
-          Pn = read_write_fast( paste( p$saved_state_fn$Pn, runmode, "rdz", sep=".") )
+          Pn = read_write_fast( paste( p$saved_state_fn$Pn, runmode, "rds", sep=".") )
         } else {
           returnflag = FALSE
         }
@@ -542,9 +542,9 @@
         S = stmv_attach( p$storage_backend, p$ptr$S )
         sS = matrix( NaN, nrow=nrow(S), ncol=ncol(S) )
         if (file.exists(paste( p$saved_state_fn$stats, runmode, sep="."))) {
-          stats = read_write_fast( paste( p$saved_state_fn$stats, runmode, "rdz", sep=".") )
+          stats = read_write_fast( paste( p$saved_state_fn$stats, runmode, "rds", sep=".") )
         } else {
-          fn = file.path( p$stmvSaveDir, paste( "stmv.statistics", "rdz", sep=".") )
+          fn = file.path( p$stmvSaveDir, paste( "stmv.statistics", "rds", sep=".") )
           if (!file.exists(fn)) stop( "stmv.stats not found")
           stats = NULL
           stats = read_write_fast(fn)
@@ -574,7 +574,7 @@
         Sflag = stmv_attach( p$storage_backend, p$ptr$Sflag )
         sSflag = matrix( NaN, nrow=nrow(Sflag), ncol=ncol(Sflag) )
         if (file.exists(paste( p$saved_state_fn$sflag, runmode, sep="."))) {
-          sflag = read_write_fast( paste( p$saved_state_fn$sflag, runmode, "rdz", sep=".") )
+          sflag = read_write_fast( paste( p$saved_state_fn$sflag, runmode, "rds", sep=".") )
         } else {
           returnflag = FALSE
         }

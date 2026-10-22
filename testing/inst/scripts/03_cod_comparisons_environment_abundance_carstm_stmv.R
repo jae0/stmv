@@ -137,7 +137,7 @@ inla.setOption(blas.num.threads=ncores)
 
 # RES = data.frame(yr=p$selection$survey[["yr"]]) # collect model comparisons
 if (0) {
-  fn = file.path( getwd(), "RES.rdz" )
+  fn = file.path( getwd(), "RES.rds" )
   # read_write_fast(RES, file=fn)
   # RES = read_write_fast(fn)
 }

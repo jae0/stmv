@@ -141,7 +141,7 @@ ok = which(
 
 if (0) {
   # RES = data.frame(yr=p$selection$survey[["yr"]]) # collect model comparisons
-  fn = file.path( getwd(), "RES.rdz" )
+  fn = file.path( getwd(), "RES.rds" )
   # read_write_fast(RES, file=fn)
   # RES = read_write_fast(fn)
 }

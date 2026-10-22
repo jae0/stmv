@@ -5,7 +5,7 @@ stmv_global_model = function( p, DS, B=NULL, Yq_link=NULL, Ydata=NULL, saveresul
 
     if (DS %in% c("global_model", "global_model.redo") ) {
 
-      fn.global_model = file.path( p$stmvSaveDir, paste( "global_model", p$stmv_global_modelengine, "rdz", sep=".") )
+      fn.global_model = file.path( p$stmvSaveDir, paste( "global_model", p$stmv_global_modelengine, "rds", sep=".") )
 
       if (DS =="global_model") {
         global_model = NULL

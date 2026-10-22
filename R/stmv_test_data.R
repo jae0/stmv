@@ -78,9 +78,9 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
 
     RLibrary( "aegis.bathymetry", "aegis.substrate" )
     require(sp)
-    # fn = system.file( "extdata", "aegis_space_test.rdz", package="stmv" )
+    # fn = system.file( "extdata", "aegis_space_test.rds", package="stmv" )
     out = NULL
-    fn = project.codedirectory("stmv", "inst", "extdata", "aegis_space_test.rdz")
+    fn = project.codedirectory("stmv", "inst", "extdata", "aegis_space_test.rds")
     if (!redo) {
       if (file.exists(fn)) out = read_write_fast(fn)
       return(out)
@@ -133,9 +133,9 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
 
     RLibrary( "aegis.bathymetry", "aegis.substrate", "aegis.temperature" )
     require(sp)
-    # fn = system.file( "extdata", "aegis_space_test.rdz", package="stmv" )
+    # fn = system.file( "extdata", "aegis_space_test.rds", package="stmv" )
     out = NULL
-    fn = project.codedirectory("stmv", "inst", "extdata", "aegis_spacetime_test.rdz")
+    fn = project.codedirectory("stmv", "inst", "extdata", "aegis_spacetime_test.rds")
     if (!redo) {
       if (file.exists(fn)) out = read_write_fast(fn)
       return(out)
@@ -169,9 +169,9 @@ stmv_test_data = function( datasource="swiss", redo=FALSE, p=NULL ) {
 
     RLibrary( "aegis.bathymetry" )
     require(sp)
-    # fn = system.file( "extdata", "aegis_space_test.rdz", package="stmv" )
+    # fn = system.file( "extdata", "aegis_space_test.rds", package="stmv" )
     out = NULL
-    fn = project.codedirectory("stmv", "inst", "extdata", "aegis_bathymetry.rdz")
+    fn = project.codedirectory("stmv", "inst", "extdata", "aegis_bathymetry.rds")
     if (!redo) {
       if (file.exists(fn)) out = read_write_fast(fn)
       return(out)
